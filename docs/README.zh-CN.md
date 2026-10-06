@@ -218,6 +218,8 @@ ducker 由一个人和 AI 助手共同开发。代码由 Anthropic 的 AI 模型
 - 应用内的新版本通知。
 - Linux 和 Windows 客户端计划作为独立项目开发，暂无时间表。
 
+各版本已完成的内容见[更新日志](../CHANGELOG.md)（英文）。
+
 ## 构建
 
 需要 JDK 21、Android SDK（platform 37、NDK 29.0.14206865）、Go 1.26 或更高版本，以及 git。

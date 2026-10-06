@@ -238,6 +238,8 @@ app that is able to send these commands. ducker's own widgets, tile and shortcut
 - A notification about a new version inside the app.
 - Linux and Windows clients are planned as a separate project; there are no dates yet.
 
+What has already been done, version by version, is in the [changelog](CHANGELOG.md).
+
 ## Build
 
 You need JDK 21, the Android SDK (platform 37, NDK 29.0.14206865), Go 1.26 or newer, and git.
