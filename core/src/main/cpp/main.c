@@ -109,10 +109,11 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeNotifyInstalledAppChanged(J
     notifyInstalledAppsChanged(_uid_list);
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeStartTun(JNIEnv *env, jobject thiz,
                                                               jint fd,
                                                               jstring stack,
+                                                              jstring congestion,
                                                               jstring gateway,
                                                               jstring portal,
                                                               jstring dns,
@@ -120,12 +121,13 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeStartTun(JNIEnv *env, jobje
     TRACE_METHOD();
 
     scoped_string _stack = get_string(stack);
+    scoped_string _congestion = get_string(congestion);
     scoped_string _gateway = get_string(gateway);
     scoped_string _portal = get_string(portal);
     scoped_string _dns = get_string(dns);
     jobject _interface = new_global(cb);
 
-    startTun(fd, _stack, _gateway, _portal, _dns, _interface);
+    return startTun(fd, _stack, _congestion, _gateway, _portal, _dns, _interface);
 }
 
 JNIEXPORT void JNICALL
@@ -155,6 +157,92 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeStopHttp(JNIEnv *env, jobje
     TRACE_METHOD();
 
     stopHttp();
+}
+
+JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeCloseAllConnections(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    closeAllConnections();
+}
+
+JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeHealthCheckAuto(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    healthCheckAuto();
+}
+
+JNIEXPORT jint JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeSetTunnelMode(JNIEnv *env, jobject thiz,
+                                                                   jstring mode) {
+    TRACE_METHOD();
+
+    scoped_string _mode = get_string(mode);
+
+    return (jint) setTunnelMode(_mode);
+}
+
+JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeResetMux(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    resetMux();
+}
+
+JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeProbeMux(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    probeMux();
+}
+
+JNIEXPORT jint JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeSetLogLevel(JNIEnv *env, jobject thiz,
+                                                                 jstring level) {
+    TRACE_METHOD();
+
+    scoped_string _level = get_string(level);
+
+    return (jint) setLogLevel(_level);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeProbeProxy(JNIEnv *env, jobject thiz,
+                                                                jstring name, jstring url,
+                                                                jint timeout) {
+    TRACE_METHOD();
+
+    scoped_string _name = get_string(name);
+    scoped_string _url = get_string(url);
+
+    scoped_string response = probeProxy(_name, _url, (int) timeout);
+
+    return new_string(response);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryProfileNetwork(JNIEnv *env, jobject thiz,
+                                                                         jstring path) {
+    TRACE_METHOD();
+
+    scoped_string _path = get_string(path);
+
+    scoped_string response = queryProfileNetwork(_path);
+
+    return new_string(response);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryProfileGroups(JNIEnv *env, jobject thiz,
+                                                                        jstring path) {
+    TRACE_METHOD();
+
+    scoped_string _path = get_string(path);
+
+    scoped_string response = queryProfileGroups(_path);
+
+    return new_string(response);
 }
 
 JNIEXPORT jstring JNICALL
@@ -236,6 +324,61 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeFetchAndValid(JNIEnv *env, 
     scoped_string _url = get_string(url);
 
     fetchAndValid(_completable, _path, _url, force);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeConvertAndApplyTemplate(JNIEnv *env,
+                                                                            jobject thiz,
+                                                                            jstring content,
+                                                                            jstring template_,
+                                                                            jstring direct_host) {
+    TRACE_METHOD();
+
+    scoped_string _content = get_string(content);
+    scoped_string _template = get_string(template_);
+    scoped_string _direct_host = get_string(direct_host);
+
+    scoped_string response = convertAndApplyTemplate(_content, _template, _direct_host);
+
+    return new_string(response);
+}
+
+JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeSetSubscriptionHeaders(JNIEnv *env,
+                                                                           jobject thiz,
+                                                                           jstring headers) {
+    TRACE_METHOD();
+
+    if (headers == NULL) {
+        setSubscriptionHeaders(NULL);
+        return;
+    }
+
+    scoped_string _headers = get_string(headers);
+
+    setSubscriptionHeaders(_headers);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeValidateConfig(JNIEnv *env, jobject thiz,
+                                                                    jstring path) {
+    TRACE_METHOD();
+
+    scoped_string _path = get_string(path);
+
+    scoped_string response = validateConfig(_path);
+
+    return new_string(response);
+}
+
+JNIEXPORT jint JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeSetUserRules(JNIEnv *env, jobject thiz,
+                                                                  jstring rules) {
+    TRACE_METHOD();
+
+    scoped_string _rules = get_string(rules);
+
+    return (jint) setUserRules(_rules);
 }
 
 JNIEXPORT void JNICALL
@@ -372,15 +515,6 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeClearOverride(JNIEnv *env, 
     clearOverride(slot);
 }
 
-JNIEXPORT jstring JNICALL
-Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryConfiguration(JNIEnv *env, jobject thiz) {
-    TRACE_METHOD();
-
-    scoped_string response = queryConfiguration();
-
-    return new_string(response);
-}
-
 JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeSubscribeLogcat(JNIEnv *env, jobject thiz,
                                                                      jobject callback) {
@@ -389,6 +523,16 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeSubscribeLogcat(JNIEnv *env
     jobject _callback = new_global(callback);
 
     subscribeLogcat(_callback);
+}
+
+JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeSubscribeRecorder(JNIEnv *env, jobject thiz,
+                                                                       jobject callback) {
+    TRACE_METHOD();
+
+    jobject _callback = new_global(callback);
+
+    subscribeRecorder(_callback);
 }
 
 
@@ -406,130 +550,126 @@ static jclass c_clash_exception;
 static jclass c_content;
 static jobject o_unit;
 
-static void call_tun_interface_mark_socket_impl(void *tun_interface, int fd) {
+// All callbacks may run on threads attached by Go. Never leave a Java exception
+// pending when returning to Go or detaching that thread.
+static int catch_callback_exception(JNIEnv *env, const char *name) {
+    if (!jni_catch_exception(env)) return 0;
+    __android_log_write(ANDROID_LOG_ERROR, TAG, name);
+    return 1;
+}
+
+static int call_tun_interface_mark_socket_impl(void *tun_interface, int fd) {
     TRACE_METHOD();
-
     ATTACH_JNI();
-
-    (*env)->CallVoidMethod(env, (jobject) tun_interface,
-                           (jmethodID) m_tun_interface_mark_socket,
-                           (jint) fd);
+    jboolean protected = (*env)->CallBooleanMethod(env, (jobject) tun_interface,
+                                                  m_tun_interface_mark_socket, (jint) fd);
+    return catch_callback_exception(env, "JNI markSocket failed") ? 0 : protected;
 }
 
 static int call_tun_interface_query_socket_uid_impl(void *tun_interface, int protocol,
                                                     const char *source, const char *target) {
     TRACE_METHOD();
-
     ATTACH_JNI();
-
-    return (*env)->CallIntMethod(env, (jobject) tun_interface,
-                                 (jmethodID) m_tun_interface_query_socket_uid,
-                                 (jint) protocol,
-                                 (jstring) new_string(source),
-                                 (jstring) new_string(target));
+    jstring _source = new_string(source);
+    if (catch_callback_exception(env, "JNI source allocation failed")) return -1;
+    jstring _target = new_string(target);
+    if (catch_callback_exception(env, "JNI target allocation failed")) {
+        (*env)->DeleteLocalRef(env, _source);
+        return -1;
+    }
+    jint uid = (*env)->CallIntMethod(env, (jobject) tun_interface,
+                                    m_tun_interface_query_socket_uid, (jint) protocol,
+                                    _source, _target);
+    int failed = catch_callback_exception(env, "JNI querySocketUid failed");
+    (*env)->DeleteLocalRef(env, _source);
+    (*env)->DeleteLocalRef(env, _target);
+    return failed ? -1 : uid;
 }
 
 static void call_completable_complete_impl(void *completable, const char *exception) {
     TRACE_METHOD();
-
     ATTACH_JNI();
-
     if (exception == NULL) {
-        (*env)->CallBooleanMethod(env,
-                                  (jobject) completable,
-                                  (jmethodID) m_completable_complete,
-                                  (jobject) o_unit);
+        (*env)->CallBooleanMethod(env, (jobject) completable, m_completable_complete, o_unit);
     } else {
-        jthrowable _exception = (jthrowable)
-                (*env)->NewObject(env,
-                                  (jclass) c_clash_exception,
-                                  (jmethodID) m_clash_exception,
-                                  (jstring) new_string(exception)
-                );
-
-        (*env)->CallBooleanMethod(env,
-                                  (jobject) completable,
-                                  (jmethodID) m_completable_complete_exceptionally,
-                                  (jobject) _exception);
+        jstring message = new_string(exception);
+        if (catch_callback_exception(env, "JNI completion message allocation failed")) return;
+        jobject failure = (*env)->NewObject(env, c_clash_exception, m_clash_exception, message);
+        (*env)->DeleteLocalRef(env, message);
+        if (catch_callback_exception(env, "JNI exception allocation failed")) return;
+        (*env)->CallBooleanMethod(env, (jobject) completable,
+                                  m_completable_complete_exceptionally, failure);
+        (*env)->DeleteLocalRef(env, failure);
     }
+    catch_callback_exception(env, "JNI completion failed");
 }
 
 static void call_fetch_callback_report_impl(void *fetch_callback, const char *status_json) {
     TRACE_METHOD();
-
     ATTACH_JNI();
-
-    jstring _status_json = new_string(status_json);
-
-    (*env)->CallVoidMethod(env,
-                           (jobject) fetch_callback,
-                           (jmethodID) m_fetch_callback_report,
-                           (jstring) _status_json);
+    jstring status = new_string(status_json);
+    if (catch_callback_exception(env, "JNI fetch status allocation failed")) return;
+    (*env)->CallVoidMethod(env, (jobject) fetch_callback, m_fetch_callback_report, status);
+    catch_callback_exception(env, "JNI fetch.report failed");
+    (*env)->DeleteLocalRef(env, status);
 }
 
 static void call_fetch_callback_complete_impl(void *fetch_callback, const char *error) {
     TRACE_METHOD();
-
     ATTACH_JNI();
-
-    jstring _error = NULL;
-
-    if (error != NULL)
-        _error = new_string(error);
-
-    (*env)->CallVoidMethod(env,
-                           (jobject) fetch_callback,
-                           (jmethodID) m_fetch_callback_complete,
-                           (jstring) _error);
+    jstring message = error == NULL ? NULL : new_string(error);
+    if (catch_callback_exception(env, "JNI fetch error allocation failed")) return;
+    (*env)->CallVoidMethod(env, (jobject) fetch_callback, m_fetch_callback_complete, message);
+    catch_callback_exception(env, "JNI fetch.complete failed");
+    if (message != NULL) (*env)->DeleteLocalRef(env, message);
 }
 
 static int call_logcat_interface_received_impl(void *callback, const char *payload) {
     TRACE_METHOD();
-
     ATTACH_JNI();
+    jstring message = new_string(payload);
+    if (catch_callback_exception(env, "JNI log message allocation failed")) return 1;
+    (*env)->CallVoidMethod(env, (jobject) callback, m_logcat_interface_received, message);
+    // CancellationException is the normal unsubscribe signal; no stack dump.
+    int failed = jni_catch_exception(env);
+    (*env)->DeleteLocalRef(env, message);
+    return failed;
+}
 
-    (*env)->CallVoidMethod(env,
-                           (jobject) callback,
-                           (jmethodID) m_logcat_interface_received,
-                           (jstring) new_string(payload));
-
-    if (jni_catch_exception(env)) {
-        return 1;
-    }
-
-    return 0;
+static void content_error(char *error, int length, const char *message) {
+    if (length <= 0) return;
+    strncpy(error, message, length - 1);
+    error[length - 1] = 0;
 }
 
 static int open_content_impl(const char *url, char *error, int error_length) {
     TRACE_METHOD();
-
     ATTACH_JNI();
-
-    int fd = (*env)->CallStaticIntMethod(env, c_content, m_open, new_string(url));
-
-    if ((*env)->ExceptionCheck(env)) {
-        jthrowable exception = (*env)->ExceptionOccurred(env);
-
-        (*env)->ExceptionClear(env);
-
-        jstring message = (jstring) (*env)->CallObjectMethod(
-                env,
-                (jthrowable) exception,
-                (jmethodID) m_get_message
-        );
-
-        if (message == NULL) {
-            strncpy(error, "unknown", error_length - 1);
-        } else {
-            scoped_string _message = get_string(message);
-
-            strncpy(error, _message, error_length - 1);
-        }
-
+    jstring address = new_string(url);
+    if (catch_callback_exception(env, "JNI content URL allocation failed")) {
+        content_error(error, error_length, "content URL allocation failed");
         return -1;
     }
+    int fd = (*env)->CallStaticIntMethod(env, c_content, m_open, address);
+    (*env)->DeleteLocalRef(env, address);
+    if (!(*env)->ExceptionCheck(env)) return fd;
 
-    return fd;
+    jthrowable exception = (*env)->ExceptionOccurred(env);
+    (*env)->ExceptionClear(env);
+    jstring message = (jstring) (*env)->CallObjectMethod(env, exception, m_get_message);
+    (*env)->DeleteLocalRef(env, exception);
+    if (catch_callback_exception(env, "JNI exception.getMessage failed") || message == NULL) {
+        content_error(error, error_length, "content open failed");
+        return -1;
+    }
+    scoped_string text = get_string(message);
+    (*env)->DeleteLocalRef(env, message);
+    if (catch_callback_exception(env, "JNI exception message conversion failed") || text == NULL) {
+        content_error(error, error_length, "content open failed");
+    } else {
+        content_error(error, error_length, text);
+    }
+    return -1;
 }
 
 static void release_jni_object_impl(void *obj) {
@@ -538,6 +678,18 @@ static void release_jni_object_impl(void *obj) {
     ATTACH_JNI();
 
     del_global((jobject) obj);
+}
+
+// Called only by synchronous exports on the original Java caller's thread.
+static void raise_clash_exception_impl(const char *message) {
+    ATTACH_JNI();
+    jstring text = new_string(message);
+    if ((*env)->ExceptionCheck(env)) return;
+    jthrowable exception = (jthrowable) (*env)->NewObject(env, c_clash_exception, m_clash_exception, text);
+    (*env)->DeleteLocalRef(env, text);
+    if ((*env)->ExceptionCheck(env)) return;
+    (*env)->Throw(env, exception);
+    (*env)->DeleteLocalRef(env, exception);
 }
 
 JNIEXPORT jint JNICALL
@@ -561,7 +713,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     jclass c_unit = find_class("kotlin/Unit");
 
     m_tun_interface_mark_socket = find_method(c_tun_interface, "markSocket",
-                                              "(I)V");
+                                              "(I)Z");
     m_tun_interface_query_socket_uid = find_method(c_tun_interface, "querySocketUid",
                                                    "(ILjava/lang/String;Ljava/lang/String;)I");
     m_completable_complete = find_method(c_completable, "complete",
@@ -597,6 +749,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     logcat_received_func = &call_logcat_interface_received_impl;
     open_content_func = &open_content_impl;
     release_object_func = &release_jni_object_impl;
+    raise_exception_func = &raise_clash_exception_impl;
 
     return JNI_VERSION_1_6;
 }

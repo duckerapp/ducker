@@ -4,11 +4,13 @@ package main
 import "C"
 
 import (
+	"cfa/native/panicguard"
 	"cfa/native/proxy"
 )
 
 //export startHttp
 func startHttp(listenAt C.c_string) *C.char {
+	defer panicguard.Recover("startHttp", failExport)
 	l := C.GoString(listenAt)
 
 	listen, err := proxy.Start(l)
@@ -21,5 +23,6 @@ func startHttp(listenAt C.c_string) *C.char {
 
 //export stopHttp
 func stopHttp() {
+	defer panicguard.Recover("stopHttp", failExport)
 	proxy.Stop()
 }

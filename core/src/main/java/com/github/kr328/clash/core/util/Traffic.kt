@@ -17,6 +17,31 @@ fun Traffic.trafficTotal(): String {
     return trafficString(upload + download)
 }
 
+/**
+ * ducker: то же значение, но числом в байтах — своему интерфейсу нужны цифры,
+ * а не готовая строка с английскими единицами.
+ *
+ * Упаковка описана в одном месте (cpp/bridge_helper.c): верхние два бита — единица
+ * измерения, остальное — значение. Для всех единиц, кроме байтов, значение умножено
+ * на 100, поэтому здесь деление.
+ */
+fun Traffic.uploadBytes(): Long = trafficBytes(this ushr 32)
+
+fun Traffic.downloadBytes(): Long = trafficBytes(this and 0xFFFFFFFF)
+
+private fun trafficBytes(value: Long): Long {
+    val type = (value ushr 30) and 0x3
+    val data = value and 0x3FFFFFFF
+
+    return when (type) {
+        0L -> data
+        1L -> data * 1024 / 100
+        2L -> data * 1024 * 1024 / 100
+        3L -> data * 1024 * 1024 * 1024 / 100
+        else -> 0
+    }
+}
+
 private fun trafficString(scaled: Long): String {
     return when {
         scaled > 1024 * 1024 * 1024 * 100L -> {

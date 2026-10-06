@@ -4,7 +4,6 @@ import com.github.kr328.clash.common.util.packageName
 
 object Intents {
     // Public
-    val ACTION_PROVIDE_URL = "$packageName.action.PROVIDE_URL"
     val ACTION_START_CLASH = "$packageName.action.START_CLASH"
     val ACTION_STOP_CLASH = "$packageName.action.STOP_CLASH"
     val ACTION_TOGGLE_CLASH = "$packageName.action.TOGGLE_CLASH"
@@ -22,7 +21,9 @@ object Intents {
     val ACTION_PROFILE_REQUEST_UPDATE = "$packageName.intent.action.REQUEST_UPDATE"
     val ACTION_PROFILE_SCHEDULE_UPDATES = "$packageName.intent.action.SCHEDULE_UPDATES"
     val ACTION_PROFILE_LOADED = "$packageName.intent.action.PROFILE_LOADED"
+    val ACTION_SELECTOR_CHANGED = "$packageName.intent.action.SELECTOR_CHANGED"
     val ACTION_OVERRIDE_CHANGED = "$packageName.intent.action.OVERRIDE_CHANGED"
+    val ACTION_CHECK_LOCKDOWN = "$packageName.intent.action.CHECK_LOCKDOWN"
 
     const val EXTRA_STOP_REASON = "stop_reason"
     const val EXTRA_UUID = "uuid"

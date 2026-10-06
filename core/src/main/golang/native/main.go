@@ -1,3 +1,5 @@
+//go:debug panicnil=0
+
 package main
 
 /*
@@ -8,6 +10,7 @@ package main
 import "C"
 
 import (
+	"cfa/native/panicguard"
 	"runtime"
 	"runtime/debug"
 
@@ -24,10 +27,13 @@ func main() {
 
 //export coreInit
 func coreInit(home, versionName, gitVersion C.c_string, sdkVersion C.int) {
+	defer panicguard.Recover("coreInit", failExport)
 	h := C.GoString(home)
 	v := C.GoString(versionName)
 	g := C.GoString(gitVersion)
 	s := int(sdkVersion)
+
+	redirectStderr(h)
 
 	delegate.Init(h, v, g, s)
 
@@ -36,6 +42,7 @@ func coreInit(home, versionName, gitVersion C.c_string, sdkVersion C.int) {
 
 //export reset
 func reset() {
+	defer panicguard.Recover("reset", failExport)
 	config.LoadDefault()
 	tunnel.ResetStatistic()
 	tunnel.CloseAllConnections()
@@ -46,10 +53,11 @@ func reset() {
 
 //export forceGc
 func forceGc() {
-	go func() {
+	defer panicguard.Recover("forceGc", failExport)
+	runAsync("forceGc.worker", func() {
 		log.Infoln("[APP] request force GC")
 
 		runtime.GC()
 		debug.FreeOSMemory()
-	}()
+	})
 }

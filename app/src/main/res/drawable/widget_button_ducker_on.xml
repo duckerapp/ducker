@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Кнопка виджета ducker, VPN включён: сплошная заливка, как выбранное в приложении. Одной картинкой: виджет растягивают как угодно, а картинка вписывается
+     с сохранением пропорций, и круг остаётся кругом (D-147). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="96dp"
+        android:height="96dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/widget_ducker_fg" />
+        </shape>
+    </item>
+    <item
+        android:width="56dp"
+        android:height="56dp"
+        android:drawable="@drawable/ic_widget_power_ducker_on"
+        android:gravity="center" />
+</layer-list>

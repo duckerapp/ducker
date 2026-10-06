@@ -8,6 +8,10 @@
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false" />
+    <!-- Камера только для сканера QR (D-88): без неё приложение ставится и работает. -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -16,6 +20,9 @@
         tools:ignore="QueryAllPackagesPermission" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Окно «Разрешить работу в фоне?» после первого подключения (D-106). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- Workaround for Android 17+ cross profile loopback networking restrictions.
          This permission allows CMFA to connect to loopback addresses and ports bound
@@ -29,6 +36,8 @@
         android:allowBackup="true"
         android:banner="@mipmap/ic_banner"
         android:fullBackupContent="@xml/full_backup_content"
+        android:dataExtractionRules="@xml/backup_rules"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/application_name"
         android:localeConfig="@xml/locales_config"
@@ -36,8 +45,21 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/BootstrapTheme"
-        tools:ignore="GoogleAppIndexingWarning"
-        tools:targetApi="N">
+        tools:ignore="GoogleAppIndexingWarning">
+
+        <!-- ducker: релизную сборку можно мерить профилировщиком (D-77). Без этого
+             `simpleperf` отказывается её трогать, и замерять приходится отладочную,
+             где всё время уходит в интерпретатор, а не в наш код. Само по себе это
+             ничего не открывает: нужен ещё включённый отладочный мост. -->
+        <profileable android:shell="true" />
+
+        <!-- ducker: enableOnBackInvokedCallback выше включает предсказуемое «назад» (D-87):
+             жест назад на главной показывает системную анимацию ухода на рабочий стол,
+             а не обрывается. Все наши обработчики «назад» идут через androidx
+             (BackHandler в Compose, onBackPressedDispatcher), а он сам переходит
+             на OnBackInvokedCallback — поэтому менять код не пришлось. С targetSdk 36
+             это станет обязательным; включаем заранее. -->
+
         <meta-data
             android:name="releaseName"
             android:value="@string/release_name" />
@@ -45,12 +67,24 @@
             android:name="releaseCode"
             android:value="@integer/release_code" />
 
+        <!-- ducker: своя главная на Compose. Экранов CMFA больше нет (этап 8.3), поэтому
+             сюда же переехали системные точки входа: «Настройки приложения» и настройки
+             плитки быстрого доступа. Значок в списке приложений даёт алиас ниже, а при
+             маскировке — второй, «Калькулятор» (D-147). -->
         <activity
-            android:name=".MainActivity"
-            android:configChanges="uiMode"
+            android:name=".HomeActivity"
+            android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize"
             android:exported="true"
             android:label="@string/launch_name"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <!-- adjustResize: клавиатуру обходят отступом (imePadding), а не сдвигом окна —
+                 иначе оба сразу: окно уезжало вверх, а под ним оставалась пустота (D-124). -->
+            <!-- Поворот и смена размера окна — без пересоздания: интерфейс на Compose и так
+                 перестраивается, а редактор конфига держит правки и их историю в своём виде
+                 и терял их при повороте (F-150). -->
+            <!-- Системная строка «Настройки приложения» и настройки плитки быстрого
+                 доступа вели на экран CMFA; теперь сюда. -->
             <intent-filter>
                 <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
                 <action android:name="android.intent.action.MAIN" />
@@ -58,11 +92,41 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
             </intent-filter>
+            <!-- ducker: .yaml из файлового менеджера — в редактор конфига (D-124). -->
+            <intent-filter android:label="@string/config_open_with">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/yaml" />
+                <data android:mimeType="application/x-yaml" />
+                <data android:mimeType="text/yaml" />
+                <data android:mimeType="text/x-yaml" />
+            </intent-filter>
+            <!-- Ссылка со страницы провайдера открывает само приложение с панелью «+» (D-211):
+                 отдельное окно ссылки жило в своей задаче и выглядело в недавних вторым приложением. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!--
+                    ducker:// — своя схема: когда на телефоне стоит несколько клиентов,
+                    clash:// открывает выбор приложения, а ducker:// ведёт сразу сюда.
+                    clash:// и clashmeta:// оставлены: такие ссылки выдают панели,
+                    и ломать их нельзя.
+                -->
+                <data android:scheme="ducker"/>
+                <data android:scheme="clash"/>
+                <data android:scheme="clashmeta"/>
+                <data android:host="install-config"/>
+            </intent-filter>
         </activity>
+
         <activity-alias
             android:name=".MainActivityAlias"
             android:exported="true"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".HomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -71,36 +135,63 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- Маскировка (D-147): тот же вход под именем и значком калькулятора. Включён
+             всегда ровно один из двух алиасов — спрятать значок совсем Android 10+ не даёт
+             (F-159), а подменить можно. -->
+        <activity-alias
+            android:name=".DisguiseAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_disguise"
+            android:label="@string/disguise_name"
+            android:roundIcon="@mipmap/ic_disguise"
+            android:targetActivity=".HomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Closed command target for immutable widget PendingIntents and launcher shortcuts.
+             The launcher starts published shortcuts as their publisher, including private activities. -->
+        <activity
+            android:name=".InternalControlActivity"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:exported="false"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
+
+        <!-- Своя пустая задача (taskAffinity=""): иначе Android кладёт это окно в задачу ducker
+             и вместе с ним выводит на экран приложение — кнопка виджета, ярлык или Tasker
+             переключали VPN и заодно открывали ducker (D-147). -->
         <activity
             android:name=".ExternalControlActivity"
             android:excludeFromRecents="true"
+            android:taskAffinity=""
             android:exported="true"
             android:label="@string/external_control_activity"
             android:noHistory="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen">
             <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="clash"/>
-                <data android:scheme="clashmeta"/>
-                <data android:host="install-config"/>
-            </intent-filter>
-            <intent-filter>
-                <action android:name="com.github.metacubex.clash.meta.action.START_CLASH" />
+                <action android:name="${applicationId}.action.START_CLASH" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <intent-filter>
-                <action android:name="com.github.metacubex.clash.meta.action.STOP_CLASH" />
+                <action android:name="${applicationId}.action.STOP_CLASH" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <intent-filter>
-                <action android:name="com.github.metacubex.clash.meta.action.TOGGLE_CLASH" />
+                <action android:name="${applicationId}.action.TOGGLE_CLASH" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".QrScanActivity"
+            android:exported="false"
+            android:theme="@style/BootstrapTheme" />
         <activity
             android:name=".ApkBrokenActivity"
             android:configChanges="uiMode"
@@ -113,89 +204,12 @@
             android:label="@string/application_crashed"
             android:launchMode="singleTask" />
         <activity
-            android:name=".ProfilesActivity"
+            android:name=".DashboardActivity"
             android:configChanges="uiMode"
+            android:process=":dashboard"
             android:exported="false"
-            android:label="@string/profiles" />
-        <activity
-            android:name=".NewProfileActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/create_profile" />
-        <activity
-            android:name=".PropertiesActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/profile" />
-        <activity
-            android:name=".ProxyActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/proxy" />
-        <activity
-            android:name=".ProvidersActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/providers" />
-        <activity
-            android:name=".LogsActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/logs" />
-        <activity
-            android:name=".LogcatActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/logcat" />
-        <activity
-            android:name=".SettingsActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/settings" />
-        <activity
-            android:name=".NetworkSettingsActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/network" />
-        <activity
-            android:name=".AppSettingsActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/app" />
-        <activity
-            android:name=".OverrideSettingsActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/override" />
-        <activity
-            android:name=".MetaFeatureSettingsActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/meta_features" />
-        <activity
-            android:name=".AccessControlActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/access_control_packages" />
-        <activity
-            android:name=".HelpActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/help" />
-        <activity
-            android:name=".FilesActivity"
-            android:configChanges="uiMode"
-            android:exported="false"
-            android:label="@string/files" />
+            android:label="@string/dashboard" />
 
-        <service
-            android:name=".LogcatService"
-            android:exported="false"
-            android:label="@string/clash_logcat"
-            android:foregroundServiceType="specialUse">
-            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-            android:value="explanation_for_special_use"/>
-        </service>
         <service
             android:name=".TileService"
             android:exported="true"
@@ -207,23 +221,147 @@
             </intent-filter>
         </service>
 
+        <!-- Виджеты (D-147, D-150): кнопка и переключатель в трёх стилях, белый переключатель и «Узлы». Перерисовываются по
+             событиям службы; события им передаёт WidgetEvents ниже. -->
+        <receiver
+            android:name=".widget.ButtonWidget"
+            android:exported="false"
+            android:label="@string/widget_button">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_button_ducker" />
+        </receiver>
+        <receiver
+            android:name=".widget.ButtonNothingWidget"
+            android:exported="false"
+            android:label="@string/widget_button_nothing">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_button_nothing" />
+        </receiver>
+        <receiver
+            android:name=".widget.ButtonNothingBlackWidget"
+            android:exported="false"
+            android:label="@string/widget_button_nothing_black">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_button_nothing_black" />
+        </receiver>
+        <receiver
+            android:name=".widget.SwitchWidget"
+            android:exported="false"
+            android:label="@string/widget_switch">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_switch_ducker" />
+        </receiver>
+        <receiver
+            android:name=".widget.SwitchWhiteWidget"
+            android:exported="false"
+            android:label="@string/widget_switch_white">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_switch_white" />
+        </receiver>
+        <receiver
+            android:name=".widget.SwitchNothingWidget"
+            android:exported="false"
+            android:label="@string/widget_switch_nothing">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_switch_nothing" />
+        </receiver>
+        <receiver
+            android:name=".widget.SwitchNothingBlackWidget"
+            android:exported="false"
+            android:label="@string/widget_switch_nothing_black">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_switch_nothing_black" />
+        </receiver>
+        <receiver
+            android:name=".widget.NodesWidget"
+            android:exported="false"
+            android:label="@string/widget_nodes">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_nodes" />
+        </receiver>
+        <receiver
+            android:name=".widget.NodesBlackWidget"
+            android:exported="false"
+            android:label="@string/widget_nodes_black">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_nodes_black" />
+        </receiver>
+        <!-- События службы для виджетов. Выключен, пока на рабочем столе нет ни одного виджета:
+             иначе система поднимала процесс интерфейса на каждое событие ради ничего (D-221). -->
+        <receiver
+            android:name=".widget.WidgetEvents"
+            android:enabled="false"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="${applicationId}.intent.action.CLASH_STARTED" />
+                <action android:name="${applicationId}.intent.action.CLASH_STOPPED" />
+                <action android:name="${applicationId}.intent.action.CLASH_RECREATED" />
+                <action android:name="${applicationId}.intent.action.PROFILE_LOADED" />
+                <action android:name="${applicationId}.intent.action.SELECTOR_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Старт после перезагрузки и обновления — включён по умолчанию (D-129): выключают
+             его явно, тумблером, и это выключение переживает обновления. Кто тумблер не
+             трогал, у тех состояние «по умолчанию» и он включается с этой версии сам. -->
         <receiver
             android:name=".RestartReceiver"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true">
-            <intent-filter>
+            <!-- Приоритет (D-128): загрузку система раздаёт приложениям по очереди, и на
+                 Redmi Note 9S до ducker она доходила через две минуты — всё это время телефон
+                 был без VPN. С приоритетом ducker — в начале очереди. -->
+            <intent-filter android:priority="999">
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".DialerReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.provider.Telephony.SECRET_CODE" />
-                <!-- 252746382 is the name of Clash Meta in T9 -->
-                <data android:scheme="android_secret_code" android:host="252746382" />
-            </intent-filter>
-        </receiver>
+        <!-- Журнал файлом в «Поделиться» (D-111). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.logs"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/logs_paths" />
+        </provider>
     </application>
 </manifest>

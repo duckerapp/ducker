@@ -1,7 +1,10 @@
 package com.github.kr328.clash.service
 
+import com.github.kr328.clash.service.store.UserRulesStore
 import android.content.Context
+import com.github.kr328.clash.common.util.backgroundScope
 import com.github.kr328.clash.service.data.Database
+import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.service.data.ImportedDao
 import com.github.kr328.clash.service.data.Pending
 import com.github.kr328.clash.service.data.PendingDao
@@ -11,6 +14,7 @@ import com.github.kr328.clash.service.remote.IProfileManager
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.directoryLastModified
 import com.github.kr328.clash.service.util.generateProfileUUID
+import com.github.kr328.clash.service.util.ProviderInfo
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.pendingDir
 import com.github.kr328.clash.service.util.sendProfileChanged
@@ -22,7 +26,7 @@ import java.io.FileNotFoundException
 import java.util.*
 
 class ProfileManager(private val context: Context) : IProfileManager,
-    CoroutineScope by CoroutineScope(Dispatchers.IO) {
+    CoroutineScope by backgroundScope("ProfileManager") {
     private val store = ServiceStore(context)
 
     init {
@@ -57,6 +61,24 @@ class ProfileManager(private val context: Context) : IProfileManager,
             @Suppress("BlockingMethodInNonBlockingContext")
             resolve("config.yaml").createNewFile()
             resolve("providers").mkdir()
+        }
+
+        return uuid
+    }
+
+    override suspend fun createFromContent(name: String, content: String): UUID {
+        val template = withContext(Dispatchers.IO) {
+            context.assets.open("ducker/template.yaml").bufferedReader().use { it.readText() }
+        }
+
+        // Конвертируем до создания профиля: если пришёл мусор, не остаётся висящей записи,
+        // а человек видит ошибку ядра.
+        val config = Clash.convertAndApplyTemplate(content, template)
+
+        val uuid = create(Profile.Type.File, name)
+
+        withContext(Dispatchers.IO) {
+            context.pendingDir.resolve(uuid.toString()).resolve("config.yaml").writeText(config)
         }
 
         return uuid
@@ -128,6 +150,11 @@ class ProfileManager(private val context: Context) : IProfileManager,
     }
 
     override suspend fun update(uuid: UUID) {
+        // Подписка, которая ни разу не загрузилась, лежит в «ожидающих», и планировщику
+        // обновлений она неизвестна: `scheduleUpdate` молча возвращался, приложение
+        // оставалось ждать ответа, которого не будет, и карточка крутилась вечно (D-83).
+        check(ImportedDao().exists(uuid)) { "profile $uuid is not imported" }
+
         scheduleUpdate(uuid, true)
     }
 
@@ -147,6 +174,9 @@ class ProfileManager(private val context: Context) : IProfileManager,
         }
 
         ProfileProcessor.delete(context, uuid)
+
+        // Свои правила уходят вместе с подпиской (D-123).
+        UserRulesStore(context).delete(uuid)
     }
 
     override suspend fun queryByUUID(uuid: UUID): Profile? {
@@ -189,6 +219,9 @@ class ProfileManager(private val context: Context) : IProfileManager,
         val total = pending?.total ?: imported?.total ?: return null
         val expire = pending?.expire ?: imported?.expire ?: return null
 
+        // Сведения от провайдера лежат файлом в каталоге профиля (D-32), а не в базе.
+        val provider = ProviderInfo.read(context.importedDir.resolve(uuid.toString()))
+
         return Profile(
             uuid = uuid,
             name = name,
@@ -201,9 +234,24 @@ class ProfileManager(private val context: Context) : IProfileManager,
             total = total,
             expire = expire,
             updatedAt = resolveUpdatedAt(uuid),
+            createdAt = imported?.createdAt ?: 0,
             imported = imported != null,
             pending = pending != null,
             ageSecretKey = if (pending != null) pending.ageSecretKey else imported?.ageSecretKey,
+            profileTitle = provider.profileTitle,
+            announce = provider.announce,
+            supportUrl = provider.supportUrl,
+            profileWebPageUrl = provider.profileWebPageUrl,
+            brandName = provider.brandName,
+            brandLogo = provider.brandLogo,
+            buyUrl = provider.buyUrl,
+            overrideUser = provider.overrideUser,
+            globalHidden = provider.globalHidden,
+            refillAt = provider.refillAt,
+            hwidBlocked = provider.hwidBlocked,
+            hwidReason = provider.hwidReason,
+            usedTemplate = provider.usedTemplate,
+            lastError = provider.lastError,
         )
     }
 

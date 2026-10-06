@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Виджет «Узлы» (D-147), по умолчанию 3×3. Превью — картинка с примером (drawable-nodpi и
+     drawable-ru-nodpi): лаунчер ColorOS рисует только её. targetCell ColorOS только пишет в подписи,
+     ставит по-своему: при 180×180 dp — 3×3 (F-170). Обновляется событиями службы, а не по таймеру: updatePeriodMillis 0. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_nodes_description"
+    android:initialLayout="@layout/widget_nodes"
+    android:previewImage="@drawable/widget_preview_nodes"
+    android:minWidth="180dp"
+    android:minHeight="180dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="3"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

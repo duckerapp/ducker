@@ -52,8 +52,12 @@ func Init(home, versionName, gitVersion string, platformVersion int) {
 			return errBlocked
 		}
 
-		return conn.Control(func(fd uintptr) {
-			app.MarkSocket(int(fd))
-		})
+		var protectErr error
+		if err := conn.Control(func(fd uintptr) {
+			protectErr = app.MarkSocket(int(fd))
+		}); err != nil {
+			return err
+		}
+		return protectErr
 	}
 }

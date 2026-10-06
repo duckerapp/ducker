@@ -4,6 +4,7 @@ package main
 import "C"
 
 import (
+	"cfa/native/panicguard"
 	"errors"
 	"unsafe"
 
@@ -12,7 +13,8 @@ import (
 	"github.com/metacubex/mihomo/log"
 )
 
-func openRemoteContent(url string) (int, error) {
+func openRemoteContent(url string) (fd int, err error) {
+	defer panicguard.Recover("openRemoteContent", func(failure error) { fd, err = -1, failure })
 	u := C.CString(url)
 	e := (*C.char)(C.malloc(1024))
 
@@ -20,7 +22,7 @@ func openRemoteContent(url string) (int, error) {
 
 	defer C.free(unsafe.Pointer(e))
 
-	fd := C.open_content(u, e, 1024)
+	fd = int(C.open_content(u, e, 1024))
 
 	if fd < 0 {
 		return -1, errors.New(C.GoString(e))
@@ -31,6 +33,7 @@ func openRemoteContent(url string) (int, error) {
 
 //export notifyDnsChanged
 func notifyDnsChanged(dnsList C.c_string) {
+	defer panicguard.Recover("notifyDnsChanged", failExport)
 	d := C.GoString(dnsList)
 
 	app.NotifyDnsChanged(d)
@@ -38,6 +41,7 @@ func notifyDnsChanged(dnsList C.c_string) {
 
 //export notifyInstalledAppsChanged
 func notifyInstalledAppsChanged(uids C.c_string) {
+	defer panicguard.Recover("notifyInstalledAppsChanged", failExport)
 	u := C.GoString(uids)
 
 	app.NotifyInstallAppsChanged(u)
@@ -45,16 +49,10 @@ func notifyInstalledAppsChanged(uids C.c_string) {
 
 //export notifyTimeZoneChanged
 func notifyTimeZoneChanged(name C.c_string, offset C.int) {
+	defer panicguard.Recover("notifyTimeZoneChanged", failExport)
 	app.NotifyTimeZoneChanged(C.GoString(name), int(offset))
 }
 
-
-//export queryConfiguration
-func queryConfiguration() *C.char {
-	response := &struct{}{}
-
-	return marshalJson(&response)
-}
 
 func init() {
 	app.ApplyContentContext(openRemoteContent)

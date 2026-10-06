@@ -16,6 +16,15 @@ class AppStore(context: Context) {
         defaultValue = -1,
     )
 
+    /**
+     * Порядок подписок, заданный перетаскиванием (этап 13, пакет 5): номера через запятую. Здесь, а
+     * не в базе службы: порядок нужен только вкладке «Подписки», и базе не нужна миграция.
+     */
+    var profileOrder: String by store.string(
+        key = "profile_order",
+        defaultValue = "",
+    )
+
     companion object {
         private const val FILE_NAME = "app"
     }

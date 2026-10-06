@@ -1,4 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="color_launcher_background">#FFFFFF</color>
+    <!-- Фон окна до первой отрисовки Compose. Совпадает с background нашей палитры
+         (ui/theme/Theme.kt), иначе на старте мигает белым или чёрным. -->
+    <color name="window_background">#FFF2F2F2</color>
+
+    <!-- Виджеты (D-147). Стиль ducker — палитра приложения (ui/theme/Theme.kt): чернила и
+         бумага, выбранное — сплошная заливка. Стиль Nothing (кнопка и переключатель) — точки, кругляш с тенью, красный — включено. -->
+    <color name="widget_ducker_bg">#FFFFFFFF</color>
+    <color name="widget_ducker_fg">#FF101010</color>
+    <color name="widget_ducker_muted">#FF6E6E6E</color>
+    <color name="widget_ducker_pill">#FFEDEDED</color>
+    <!-- Тени тумблера ducker (D-152): на тёмной дорожке светлые — негатив светлой. -->
+    <color name="widget_ducker_shade_on">#FFFFFFFF</color>
+    <color name="widget_ducker_shade_on_clear">#00FFFFFF</color>
+    <color name="widget_ducker_shade_off">#FF000000</color>
+    <color name="widget_ducker_shade_off_clear">#00000000</color>
+    <!-- «Узлы · чёрный»: тёмная палитра ducker без подмены в ночной теме — всегда чёрный. -->
+    <color name="widget_black_bg">#FF101010</color>
+    <color name="widget_black_fg">#FFF5F5F5</color>
+    <color name="widget_black_muted">#FFA3A3A3</color>
+    <color name="widget_black_pill">#FF262626</color>
+    <!-- Подложка тумблера Nothing во всю высоту и кромки объёма, как у чёрного (D-152). -->
+    <color name="widget_nothing_body">#FFF2F2F2</color>
+    <color name="widget_nothing_rim">#FFFFFFFF</color>
+    <color name="widget_nothing_knob_rim">#FFFFFFFF</color>
+    <color name="widget_nothing_track">#FFE4E4E4</color>
+    <color name="widget_nothing_grid">#FFB8B8B8</color>
+    <color name="widget_nothing_knob">#FFF7F7F7</color>
+    <color name="widget_nothing_glyph">#FF1A1A1A</color>
+    <color name="widget_nothing_red">#FFD71921</color>
 </resources>

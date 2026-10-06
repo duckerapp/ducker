@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="color_clash">#1E4376</color>
+    <!-- ducker: чёрно-белый бренд (D-94) — мяты больше нет. Этим цветом система красит
+         значок уведомления и плитки; в тёмной теме системы — светлый, см. values-night. -->
+    <color name="color_clash">#111111</color>
 </resources>

@@ -39,7 +39,6 @@ object Remote {
             else {
                 Log.d("App becomes invisible")
                 service.unbind()
-                broadcasts.unregister()
             }
         }
 

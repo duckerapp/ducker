@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="receive_clash_broadcasts">Получать оповещения от Clash</string>
-    <string name="receive_broadcasts_of_clash">Получать оповещения от сервисов Clash</string>
+    <string name="receive_clash_broadcasts">Получать события ducker</string>
+    <string name="receive_broadcasts_of_clash">Позволяет приложению узнавать, когда VPN включается или выключается и когда меняются подписки</string>
+    <string name="unit_b">Б</string>
+    <string name="unit_kb">КБ</string>
+    <string name="unit_mb">МБ</string>
+    <string name="unit_gb">ГБ</string>
+    <string name="unit_tb">ТБ</string>
+    <string name="size_format">%1$s %2$s</string>
+    <string name="speed_per_second">%s/с</string>
 </resources>

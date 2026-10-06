@@ -23,6 +23,10 @@ data class ConfigurationOverride(
     @SerialName("mixed-port")
     var mixedPort: Int? = null,
 
+    /** Только пустым списком: закрыть все входы раздела `listeners` (D-218). */
+    @SerialName("listeners")
+    var listeners: List<String>? = null,
+
     @SerialName("authentication")
     var authentication: List<String>? = null,
 

@@ -26,6 +26,30 @@ data class Profile(
     val imported: Boolean,
     val pending: Boolean,
     val ageSecretKey: String? = null,
+    /** Когда подписка добавлена в приложение. Нужен, чтобы показать долю оставшегося срока. */
+    val createdAt: Long = 0,
+    /**
+     * Сведения от провайдера: как он назвал подписку, что хочет сказать, куда отправить
+     * и не упёрся ли человек в лимит устройств. Приходят заголовками ответа, лежат файлом
+     * в каталоге профиля и подмешиваются сюда при чтении (D-32).
+     *
+     * Поля с умолчаниями: у профиля из файла или от провайдера, который ничего не прислал,
+     * они просто пустые, и интерфейс такие элементы не показывает.
+     */
+    val profileTitle: String = "",
+    val announce: String = "",
+    val supportUrl: String = "",
+    val profileWebPageUrl: String = "",
+    val brandName: String = "",
+    val brandLogo: String = "",
+    val buyUrl: String = "",
+    val overrideUser: Boolean = false,
+    val globalHidden: Boolean = false,
+    val refillAt: Long = 0,
+    val hwidBlocked: Boolean = false,
+    val hwidReason: String = "",
+    val usedTemplate: Boolean = false,
+    val lastError: String = "",
 ) : Parcelable {
     enum class Type {
         File, Url, External

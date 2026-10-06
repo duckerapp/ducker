@@ -9,7 +9,7 @@
 
 typedef const char *c_string;
 
-extern void (*mark_socket_func)(void *tun_interface, int fd);
+extern int (*mark_socket_func)(void *tun_interface, int fd);
 
 extern int (*query_socket_uid_func)(void *tun_interface, int protocol, const char *source, const char *target);
 
@@ -23,10 +23,12 @@ extern int (*logcat_received_func)(void *logcat_interface, const char *payload);
 
 extern void (*release_object_func)(void *obj);
 
+extern void (*raise_exception_func)(const char *message);
+
 extern int (*open_content_func)(const char *url, char *error, int error_length);
 
 // cgo
-extern void mark_socket(void *interface, int fd);
+extern int mark_socket(void *interface, int fd);
 
 extern int query_socket_uid(void *interface, int protocol, char *source, char *target);
 
@@ -39,6 +41,8 @@ extern void fetch_report(void *fetch_callback, char *status_json);
 extern int logcat_received(void *logcat_interface, char *payload);
 
 extern void release_object(void *obj);
+
+extern void raise_exception(char *message);
 
 extern int open_content(char *url, char *error, int error_length);
 

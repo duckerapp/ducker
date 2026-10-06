@@ -14,15 +14,27 @@ object Bridge {
     external fun nativeForceGc()
     external fun nativeSuspend(suspend: Boolean)
     external fun nativeQueryTunnelState(): String
+    external fun nativeSetTunnelMode(mode: String): Int
     external fun nativeQueryTrafficNow(): Long
     external fun nativeQueryTrafficTotal(): Long
     external fun nativeNotifyDnsChanged(dnsList: String)
     external fun nativeNotifyTimeZoneChanged(name: String, offset: Int)
     external fun nativeNotifyInstalledAppChanged(uidList: String)
-    external fun nativeStartTun(fd: Int, stack: String, gateway: String, portal: String, dns: String, cb: TunInterface)
+    external fun nativeStartTun(fd: Int, stack: String, congestion: String, gateway: String, portal: String, dns: String, cb: TunInterface): Int
     external fun nativeStopTun()
     external fun nativeStartHttp(listenAt: String): String?
     external fun nativeStopHttp()
+    external fun nativeCloseAllConnections()
+    external fun nativeHealthCheckAuto()
+    external fun nativeResetMux()
+    external fun nativeProbeMux()
+
+    external fun nativeProbeProxy(name: String, url: String, timeout: Int): String
+
+    external fun nativeQueryProfileNetwork(path: String): String
+
+    external fun nativeQueryProfileGroups(path: String): String
+
     external fun nativeQueryGroupNames(excludeNotSelectable: Boolean): String
     external fun nativeQueryGroup(name: String, sort: String): String?
     external fun nativeHealthCheck(completable: CompletableDeferred<Unit>, name: String)
@@ -46,13 +58,19 @@ object Bridge {
     external fun nativeReadOverride(slot: Int): String
     external fun nativeWriteOverride(slot: Int, content: String)
     external fun nativeClearOverride(slot: Int)
-    external fun nativeQueryConfiguration(): String
     external fun nativeSubscribeLogcat(callback: LogcatInterface)
+    external fun nativeSubscribeRecorder(callback: LogcatInterface)
     external fun nativeCoreVersion(): String
 
+    external fun nativeSetSubscriptionHeaders(headers: String?)
+    external fun nativeConvertAndApplyTemplate(content: String, template: String, directHost: String): String
     external fun nativeSetAgeSecretKey(key: String?)
+    external fun nativeSetUserRules(rules: String): Int
+    external fun nativeValidateConfig(path: String): String
     external fun nativeGenX25519KeyPair(): String?
     external fun nativeGenHybridKeyPair(): String?
+    external fun nativeSetLogLevel(level: String): Int
+
     external fun nativeVeritySecretKeys(secretKeys: String): Boolean
     external fun nativeToPublicKeys(secretKeys: String): String?
     external fun nativeVerityPublicKeys(publicKeys: String): Boolean

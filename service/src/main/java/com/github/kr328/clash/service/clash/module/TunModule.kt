@@ -2,7 +2,6 @@ package com.github.kr328.clash.service.clash.module
 
 import android.net.ConnectivityManager
 import android.net.VpnService
-import android.os.Build
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.util.parseInetSocketAddress
@@ -16,6 +15,7 @@ class TunModule(private val vpn: VpnService) : Module<Unit>(vpn) {
     data class TunDevice(
         val fd: Int,
         var stack: String,
+        val congestion: String,
         val gateway: String,
         val portal: String,
         val dns: String,
@@ -29,9 +29,6 @@ class TunModule(private val vpn: VpnService) : Module<Unit>(vpn) {
         source: InetSocketAddress,
         target: InetSocketAddress,
     ): Int {
-        if (Build.VERSION.SDK_INT < 29)
-            return -1
-
         return runCatching { connectivity.getConnectionOwnerUid(protocol, source, target) }
             .getOrElse { -1 }
     }
@@ -55,15 +52,20 @@ class TunModule(private val vpn: VpnService) : Module<Unit>(vpn) {
     }
 
     fun attach(device: TunDevice) {
-        Clash.startTun(
-            fd = device.fd,
-            stack = device.stack,
-            gateway = device.gateway,
-            portal = device.portal,
-            dns = device.dns,
-            markSocket = vpn::protect,
-            querySocketUid = this::queryUid
-        )
+        // Ядро не собрало туннель — служба останавливается с этой причиной, а не числится
+        // включённой без туннеля (D-226). Подробности ядро пишет в журнал строкой «TUN:».
+        check(
+            Clash.startTun(
+                fd = device.fd,
+                stack = device.stack,
+                congestion = device.congestion,
+                gateway = device.gateway,
+                portal = device.portal,
+                dns = device.dns,
+                markSocket = vpn::protect,
+                querySocketUid = this::queryUid
+            )
+        ) { START_FAILED }
     }
 
     suspend fun close() {
@@ -71,6 +73,9 @@ class TunModule(private val vpn: VpnService) : Module<Unit>(vpn) {
     }
 
     companion object {
+        /** Причина остановки службы; по ней главная объясняет, почему VPN не включился. */
+        const val START_FAILED = "Tunnel start failed"
+
         private val random = SecureRandom()
 
         fun requestStop() {

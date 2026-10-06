@@ -7,6 +7,16 @@ import java.util.*
 @BinderInterface
 interface IProfileManager {
     suspend fun create(type: Profile.Type, name: String, source: String = "", ageSecretKey: String? = null): UUID
+
+    /**
+     * Создаёт профиль из набора ссылок протоколов (D-17): человек вставил `vless://…`
+     * или подписку в base64, скачивать нечего.
+     *
+     * Конвертация идёт здесь, а не в интерфейсе, намеренно: она делается ядром, а ядро
+     * живёт в процессе службы. Тронуть его из процесса интерфейса — значит загрузить туда
+     * libclash.so целиком и потерять смысл разделения процессов (FACTS.md, F-5).
+     */
+    suspend fun createFromContent(name: String, content: String): UUID
     suspend fun clone(uuid: UUID): UUID
     suspend fun commit(uuid: UUID, callback: IFetchObserver? = null)
     suspend fun release(uuid: UUID)

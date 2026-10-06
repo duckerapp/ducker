@@ -2,20 +2,51 @@
     <!-- from https://github.com/shadowsocks/shadowsocks-android/blob/master/core/src/main/res/values/strings.xml -->
     <string name="clash_notification_content" translatable="false">"%1$s↑\t%2$s↓"</string>
 
-    <string name="clash_service_status_channel">Clash Status</string>
-    <string name="profile_service_status">Profile Service Status</string>
-    <string name="profile_process_status">Profile Processing Status</string>
-    <string name="profile_process_result">Profile Process Result</string>
-    <string name="update_successfully">Update Successfully</string>
-    <string name="update_failure">Update Failure</string>
-    <string name="format_update_complete">Update %s completed</string>
-    <string name="format_update_failure">Update %1$s: %2$s</string>
+    <string name="clash_service_status_channel">VPN status</string>
+    <string name="profile_service_status">Subscription updates</string>
+    <string name="profile_process_status">Subscription update progress</string>
+    <string name="profile_process_result">Subscription update results</string>
+    <string name="update_successfully">Subscription updated</string>
+    <string name="update_failure">Subscription not updated</string>
+    <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="subscription_http_status">Subscription server error %1$d</string>
+    <string name="subscription_http_not_found">No subscription at this link (error %1$d). Check the link or ask your provider</string>
+    <string name="subscription_http_denied">Access denied (error %1$d). The subscription may be disabled — ask your provider</string>
+    <string name="subscription_http_busy">Too many requests (error %1$d). Try again in a few minutes</string>
+    <string name="subscription_http_server">The subscription server is down (error %1$d). Try again later</string>
+    <string name="disconnect">Disconnect</string>
     <string name="running">Running</string>
-    <string name="loading">Loading</string>
-    <string name="clash_meta_for_android">Clash Meta for Android</string>
-    <string name="profiles_and_providers">Profiles and Providers</string>
-    <string name="configuration_yaml">Configuration.yaml</string>
-    <string name="provider_files">Provider Files</string>
-    <string name="profile_updater">Profile Updater</string>
-    <string name="profile_updating">Profile Updating</string>
+    <string name="loading">Starting…</string>
+    <!-- ducker: марка приложения. Её показывает система: окно согласия на VPN,
+         список VPN в настройках и корень в системном выборе файлов (D-80). -->
+    <string name="brand_name" translatable="false">ducker</string>
+    <string name="profile_updater">Updating subscriptions</string>
+    <string name="profile_updating">Updating subscription</string>
+    <!-- Конец подписки (D-149) -->
+    <string name="expiry_channel">Subscription ending</string>
+    <plurals name="expiry_title">
+        <item quantity="one">Subscription ends in %d day</item>
+        <item quantity="other">Subscription ends in %d days</item>
+    </plurals>
+    <string name="expiry_text">“%1$s” is valid until %2$s. Renew it to keep the VPN working.</string>
+    <string name="expiry_renew">Renew</string>
+    <string name="subscription_profile_too_large">The subscription is too large (over 16 MB). Tell your provider</string>
+    <string name="subscription_provider_too_large">A rule or node list in the subscription is too large (over 64 MB). Tell your provider</string>
+    <string name="subscription_download_failed">Couldn’t download the subscription. Check your connection and try again</string>
+    <!-- Неудачи словами (D-227): строки таблицы `util/Failure.kt` -->
+    <string name="subscription_redirects">The subscription link keeps redirecting to other addresses. Tell your provider</string>
+    <string name="subscription_bad_link">The link must start with https://</string>
+    <string name="subscription_not_links">This is neither a subscription link nor a list of nodes. Paste the link from your provider</string>
+    <string name="subscription_no_servers">The subscription has no nodes. Tell your provider</string>
+    <string name="subscription_bad_config">The link returned something other than a subscription, or its config has an error. Check the link or tell your provider</string>
+    <string name="subscription_limit_devices">Device limit reached</string>
+    <string name="subscription_limit_hwid">The provider requires a device ID</string>
+    <string name="subscription_limit_other">This subscription isn’t available on this device</string>
+    <string name="vpn_config_failed">The subscription config didn’t load. Update the subscription; if that doesn’t help, tell your provider</string>
+    <string name="config_reload_failed">The VPN keeps running on the previous settings. Check your rules and config edits</string>
+    <string name="vpn_no_profile">No subscription selected. Open ducker and choose one</string>
+    <string name="vpn_rejected">Android didn’t let the VPN start. Turn it on with the button in the app; if that doesn’t help, check in settings whether another VPN is set as always-on</string>
+    <string name="failure_try_again">Try again</string>
+    <string name="vpn_failure_channel">VPN failures</string>
+    <string name="vpn_failure_title">VPN didn’t start</string>
 </resources>

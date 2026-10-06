@@ -30,6 +30,8 @@ class RemoteService : BaseService(), IRemoteService {
 
         clash?.cancelAndJoinBlocking()
         profile?.cancelAndJoinBlocking()
+
+        clash?.unloadPreview()
     }
 
     override fun onBind(intent: Intent?): IBinder {

@@ -1,0 +1,102 @@
+# Сайт документации ducker (этап 17, D-197). Собирается из этой папки:
+#   pip install -r requirements.txt && mkdocs build --strict
+# Рабочие записи проекта лежат в ../docs и на сайт не попадают.
+
+site_name: DUCKER
+site_description: Открытый клиент mihomo для Android
+site_url: https://duckerapp.github.io/ducker/
+site_dir: build
+
+# repo_url не задаём намеренно: с ним Material из браузера посетителя ходит в API GitHub
+# за звёздами и форками. Сайт, как и приложение, ничего никуда не шлёт — ссылка на
+# репозиторий стоит в подвале (extra.social), это обычная ссылка без запросов.
+copyright: ducker — GPL-3.0. Без аналитики и без счётчиков.
+
+theme:
+  name: material
+  custom_dir: overrides
+  language: ru
+  # false — никаких шрифтов Google: берутся системные, как в приложении.
+  font: false
+  favicon: assets/favicon.png
+  icon:
+    logo: ducker/duck
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Тёмная тема
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Светлая тема
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.highlight
+
+hooks:
+  # FAQ, приватность, CONTRIBUTING, SECURITY и благодарности берутся из документов
+  # репозитория при каждой сборке (D-197).
+  - hooks/sources.py
+
+# Битая ссылка или якорь — ошибка сборки при --strict.
+validation:
+  links:
+    anchors: warn
+
+extra_css:
+  - assets/ducker.css
+
+extra:
+  # Строка «Made with Material for MkDocs» в подвале не нужна.
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/duckerapp/ducker
+      name: Исходники на GitHub
+
+plugins:
+  # Поиск работает в браузере по готовому индексу, запросов наружу нет.
+  - search:
+      lang: ru
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      # Якоря кириллицей, как в ссылках из FAQ (#vpn-сам-отключается).
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+
+nav:
+  - Главная: index.md
+  - Пользователям:
+      - Установка: users/install.md
+      - Вопросы и ответы: users/faq.md
+      - Приватность: users/privacy.md
+  - Провайдерам:
+      - Заголовки ducker-*: providers/headers.md
+  - Помочь проекту:
+      - Как помочь: help/contributing.md
+      - Уязвимости: help/security.md
+  - Поддержать:
+      - Донаты: support/donate.md
+      - Написать разработчику: support/contact.md
+      - Благодарности: support/credits.md

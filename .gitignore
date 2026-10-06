@@ -28,7 +28,9 @@ gradle-app.setting
 !/core/src/premium/golang/.idea/codeStyles
 
 # Ignore builtin geofiles
-app/src/main/assets
+# ducker: исключается содержимое, а не сам каталог — иначе git не заглядывает
+# внутрь и не видит исключение-наоборот для нашего подкаталога ниже.
+app/src/main/assets/*
 
 # KeyStore
 signing.properties
@@ -64,3 +66,9 @@ google-services.json
 
 # MacOS
 .DS_Store
+
+# ducker: чужие исходники для чтения, в репозиторий не попадают
+upstream/
+
+# ducker: свои ресурсы в assets (остальное там — скачиваемые при сборке geo-файлы)
+!app/src/main/assets/ducker/

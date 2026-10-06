@@ -1,0 +1,24 @@
+name: "Идея"
+description: "Предложить новую возможность или улучшение"
+title: "[Идея] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Какую задачу это решает"
+      description: "Что сейчас неудобно или невозможно. Например: «на мобильной сети приходится каждый раз вручную менять сервер»."
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: "Как это могло бы выглядеть"
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Как вы обходитесь сейчас"
+    validations:
+      required: false

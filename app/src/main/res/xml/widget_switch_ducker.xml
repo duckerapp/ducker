@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Виджет-переключатель ducker (D-147): 2×1, растягивается; картинка вписывается с сохранением
+     пропорций. Обновляется событиями службы, а не по таймеру: updatePeriodMillis 0. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_button_description"
+    android:initialLayout="@layout/widget_button"
+    android:previewImage="@drawable/widget_switch_ducker_on"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="80dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

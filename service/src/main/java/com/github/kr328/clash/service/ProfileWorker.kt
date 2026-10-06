@@ -1,7 +1,9 @@
 package com.github.kr328.clash.service
 
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Binder
 import android.os.IBinder
 import androidx.core.app.NotificationChannelCompat
@@ -15,7 +17,11 @@ import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.common.id.UndefinedIds
 import com.github.kr328.clash.common.util.setUUID
 import com.github.kr328.clash.common.util.uuid
+import com.github.kr328.clash.service.data.Imported
 import com.github.kr328.clash.service.data.ImportedDao
+import com.github.kr328.clash.service.util.ProviderInfo
+import com.github.kr328.clash.service.util.importedDir
+import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.service.util.sendProfileUpdateCompleted
 import com.github.kr328.clash.service.util.sendProfileUpdateFailed
 import kotlinx.coroutines.*
@@ -81,17 +87,30 @@ class ProfileWorker : BaseService() {
 
     private suspend fun run(uuid: UUID) {
         val imported = ImportedDao().queryByUUID(uuid) ?: return
+        var updated = false
 
         try {
-            processing(imported.name) {
+            processing(shownName(imported)) {
                 ProfileProcessor.update(this, imported.uuid, null)
             }
+            updated = true
 
-            completed(imported.uuid, imported.name)
-
-            ProfileReceiver.scheduleNext(this, imported)
+            completed(imported.uuid, shownName(imported))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            failed(imported.uuid, imported.name, e.message ?: "Unknown")
+            failed(imported.uuid, shownName(imported), e.message ?: "Unknown")
+        } finally {
+            withContext(NonCancellable) {
+                // Подписка могла быть удалена или её интервал изменён, пока шла загрузка.
+                val current = ImportedDao().queryByUUID(uuid)
+                if (current != null) {
+                    if (updated) ProfileReceiver.scheduleNext(this@ProfileWorker, current)
+                    else ProfileReceiver.scheduleRetry(this@ProfileWorker, current)
+                } else {
+                    ProfileReceiver.cancelNext(this@ProfileWorker, imported)
+                }
+            }
         }
     }
 
@@ -152,10 +171,10 @@ class ProfileWorker : BaseService() {
         }
     }
 
-    private fun resultBuilder(id: Int, uuid: UUID): NotificationCompat.Builder {
+    private fun resultBuilder(uuid: UUID): NotificationCompat.Builder {
         val intent = PendingIntent.getActivity(
             this,
-            id,
+            uuid.hashCode(),
             Intent().setComponent(Components.PROPERTIES_ACTIVITY).setUUID(uuid),
             pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT)
         )
@@ -169,33 +188,34 @@ class ProfileWorker : BaseService() {
             .setGroup(RESULT_CHANNEL)
     }
 
+    // Итог — одна карточка на подписку: метка уведомления — её номер, и каждое следующее
+    // обновление заменяет прежнюю карточку, а не добавляет новую.
     private fun completed(uuid: UUID, name: String) {
-        val id = UndefinedIds.next()
-
-        val notification = resultBuilder(id, uuid)
+        val notification = resultBuilder(uuid)
             .setContentTitle(getString(R.string.update_successfully))
-            .setContentText(getString(R.string.format_update_complete, name))
+            .setContentText(name)
             .build()
 
         NotificationManagerCompat.from(this)
-            .notify(id, notification)
+            .notify(uuid.toString(), RESULT_ID, notification)
 
         sendProfileUpdateCompleted(uuid)
     }
 
     private fun failed(uuid: UUID, name: String, reason: String) {
-        val id = UndefinedIds.next()
+        // В шторке — объяснение словами (D-227); экрану уходит сырой текст, он переведёт сам.
+        val content = getString(
+            R.string.format_update_failure, name, Failure.of(reason, Failure.Kind.BadConfig).text(this),
+        )
 
-        val content = getString(R.string.format_update_failure, name, reason)
-
-        val notification = resultBuilder(id, uuid)
+        val notification = resultBuilder(uuid)
             .setContentTitle(getString(R.string.update_failure))
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText(content))
             .build()
 
         NotificationManagerCompat.from(this)
-            .notify(id, notification)
+            .notify(uuid.toString(), RESULT_ID, notification)
 
         sendProfileUpdateFailed(uuid, reason)
     }
@@ -204,9 +224,20 @@ class ProfileWorker : BaseService() {
         private const val SERVICE_CHANNEL = "profile_service_channel"
         private const val STATUS_CHANNEL = "profile_status_channel"
         private const val RESULT_CHANNEL = "profile_result_channel"
+        private const val RESULT_ID = 1
     }
 
     override fun onBind(intent: Intent?): IBinder {
         return Binder()
     }
+}
+
+// Как на карточке подписки (D-117): своё имя, иначе название провайдера, иначе домен.
+internal fun Context.shownName(imported: Imported): String {
+    val own = imported.name.isNotEmpty() &&
+        imported.name != Uri.parse(imported.source).host.orEmpty()
+    if (own) return imported.name
+
+    return ProviderInfo.read(importedDir.resolve(imported.uuid.toString()))
+        .profileTitle.ifEmpty { imported.name }
 }

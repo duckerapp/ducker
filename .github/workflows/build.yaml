@@ -1,0 +1,104 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - main
+
+# Сборка занимает минуты и на приватном репозитории тратит платную квоту Actions.
+# Несколько пушей подряд не должны запускать несколько сборок: живёт последняя.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # Подмодули — ядро и наши форки uTLS и sing-mux (D-131, D-132). Версию ядра CMake
+      # берёт из самого подмодуля (FACTS.md, F-186).
+      - name: Checkout submodules
+        run: git submodule update --init --recursive --force
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      # Патченный Go от MetaCubeX: в нём отключён pidfd на Android и futex_time64
+      # на 32-битном Linux. Патчи лежат в .github/patch и накладываются ниже.
+      - name: Setup Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
+        with:
+          go-download-base-url: 'https://github.com/MetaCubeX/go/releases/download/build'
+          go-version: '1.26'
+
+      - name: Apply Go patches
+        run: |
+          cd $(go env GOROOT)
+          for p in $GITHUB_WORKSPACE/.github/patch/*.patch; do patch --verbose -p 1 < "$p"; done
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Update CA bundle
+        run: |
+          sudo apt-get update && sudo apt-get install ca-certificates
+          sudo update-ca-certificates
+          cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
+
+      # Юнит-тесты приложения, среди них чистка журнала (D-46). AGP 9 заводит их только для
+      # отладочной сборки: задачи testMetaReleaseUnitTest больше нет, и с 22.09.2026 CI
+      # падал здесь, не доходя до сборки (F-139).
+      - name: Check log scrubbing
+        run: ./gradlew --no-daemon :app:testMetaDebugUnitTest
+
+      # Проверка сессий мультиплекса (D-105) — на настоящем HTTP/2 и настоящем сервере
+      # sing-mux, с детектором гонок: она живёт в фоновых горутинах.
+      - name: Test mux health checks
+        working-directory: core/src/foss/golang/sing-mux
+        # -race работает только с cgo, а в окружении раннера CGO_ENABLED=0 (видно в
+        # `go env` шага Setup Go). Шаг добавлен 23.09 и до 27.09 ни разу не запускался (F-139).
+        env:
+          CGO_ENABLED: "1"
+        run: go test -race -count=3 ./...
+
+      # Только ядро, без APK (владелец, 28.09.2026): APK собираются на компьютере, а их выгрузка
+      # упиралась в квоту хранилища артефактов. Задача настраивает CMake (версия ядра), собирает
+      # Go-ядро под все четыре ABI и мост к нему; код приложения компилирует шаг юнит-тестов.
+      - name: Build core
+        run: ./gradlew --no-daemon :core:externalNativeBuildMetaRelease
+
+      # Проверка D-5: в собранном ядре должна быть наша uTLS, а не та, что тянется
+      # транзитом. Молчаливая подмена уже случалась — см. FACTS.md, F-39 и F-44.
+      - name: Verify pinned dependencies
+        run: |
+          set -e
+          SO=core/build/outputs/golang/metaRelease/arm64-v8a/libclash.so
+          # `go version -m` печатает замену отдельной строкой, начинающейся с "=>",
+          # а не дописывает её к строке dep — отсюда такой шаблон.
+          # Пин легко перестаёт действовать молча, если замену положить не в тот
+          # модуль (FACTS.md, F-39), поэтому проверяем сам бинарь, а не go.mod.
+          # uTLS — подмодуль ./utls, наш форк duckerapp/utls (D-132).
+          go version -m "$SO" | grep -qE "^[[:space:]]*=>[[:space:]]+\./utls" \
+            || { echo "В libclash.so нет подменённого utls"; go version -m "$SO" | grep utls; exit 1; }
+          # sing-mux — подмодуль ./sing-mux, наш форк duckerapp/sing-mux (D-105, D-132).
+          go version -m "$SO" | grep -qE "^[[:space:]]*=>[[:space:]]+\./sing-mux" \
+            || { echo "В libclash.so не наша копия sing-mux"; go version -m "$SO" | grep sing-mux; exit 1; }
+          go version -m "$SO" | grep -E 'utls|sing-mux'

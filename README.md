@@ -1,87 +1,146 @@
-## Clash Meta for Android
+# ducker
 
-A Graphical user interface of [Clash.Meta](https://github.com/MetaCubeX/Clash.Meta) for Android
+Клиент [mihomo](https://github.com/MetaCubeX/mihomo) для Android: подключение по подписке,
+выбор узла, честные задержки — и ничего лишнего на экране.
 
-### Feature
+Сделан на основе [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid):
+ядро и служба оттуда, интерфейс свой.
 
-Feature of [Clash.Meta](https://github.com/MetaCubeX/Clash.Meta)
+## Чем отличается от родителя
 
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-     alt="Get it on F-Droid"
-     height="80">](https://f-droid.org/packages/com.github.metacubex.clash.meta/)
+- **Экран под одну задачу.** Главная: включить, посмотреть узел, срок подписки и остаток трафика.
+  Всё остальное — на соседних вкладках, которые листаются пальцем.
+- **Подписка, а не конфиг.** Провайдер может прислать не готовый конфиг mihomo,
+  а просто список узлов — приложение подставит их во встроенный профиль
+  с маршрутизацией под Россию: заблокированное идёт через узел, российское напрямую.
+- **Брендинг провайдера.** Название, логотип, объявление, ссылки на поддержку и оплату
+  приходят заголовками ответа вместе с подпиской.
+- **Идентификатор устройства.** Провайдер, который считает устройства, получает
+  устойчивый идентификатор — и человек видит в приложении, какой именно.
+- **Чёрно-белый вид** и тёмная тема, которая накатывает волной от кнопки.
 
-### Requirement
+## Установка
 
-- Android 5.0+ (minimum)
-- Android 7.0+ (recommend)
-- `armeabi-v7a` , `arm64-v8a`, `x86` or `x86_64` Architecture
+Скачать apk из [релизов](https://github.com/duckerapp/ducker/releases) и открыть на телефоне.
+Android попросит разрешить установку из этого источника — это нормально для приложений
+не из Play.
 
-### Build
+Какой файл брать:
 
-1. Update submodules
+- `arm64-v8a` — любой телефон свежее 2017 года;
+- `armeabi-v7a` — старый телефон, если первый не ставится.
 
-   ```bash
-   git submodule update --init --recursive
-   ```
+Минимальная версия Android — 10.
 
-2. Install **OpenJDK 11**, **Android SDK**, **CMake** and **Golang**
+Дальше: «Подписки» → «+» → вставить ссылку от провайдера. Или открыть ссылку вида
+`ducker://install-config?url=…` прямо из письма или чата.
 
-3. Create `local.properties` in project root with
+Если что-то не получается — [вопросы и ответы](docs/FAQ.md): как добавить подписку, что делать,
+если VPN сам отключается или нет интернета, как прислать журнал.
 
-   ```properties
-   sdk.dir=/path/to/android-sdk
-   ```
+## Сборка из исходников
 
-4. (Optional) Custom app package name. Add the following configuration to `local.properties`.
+Нужны JDK 21, Android SDK (platform 37, NDK 29.0.14206865), Go 1.26 или новее и git.
+Подробнее — в [CONTRIBUTING.md](CONTRIBUTING.md).
 
-   ```properties
-   # config your ownn applicationId, or it will be 'com.github.metacubex.clash'
-   custom.application.id=com.my.compile.clash
-   # remove application id suffix, or the applicaion id will be 'com.github.metacubex.clash.alpha'
-   remove.suffix=true
+```
+git clone --recurse-submodules https://github.com/duckerapp/ducker.git
+cd ducker
+./gradlew :app:assembleMetaRelease
+```
 
-5. Create `signing.properties` in project root with
+Без `--recurse-submodules` не соберётся: ядро подключено подмодулем.
 
-   ```properties
-   keystore.path=/path/to/keystore/file
-   keystore.password=<key store password>
-   key.alias=<key alias>
-   key.password=<key password>
-   ```
+Собранное подписывается отладочным ключом. Свой ключ подключается файлом
+`signing.properties` в корне: поля `keystore.path`, `keystore.password`, `key.alias`,
+`key.password`.
 
-6. Build
+Проверка собранного — `./scripts/smoke.sh`.
 
-   ```bash
-   ./gradlew app:assembleAlphaRelease
-   ```
+## Управление снаружи
 
-### Automation
+Приложение понимает интенты — удобно для Tasker и ярлыков:
 
-APP package name is `com.github.metacubex.clash.meta`
+Для внешних START/STOP/TOGGLE включите «Настройки → Управление из других приложений».
+По умолчанию доступ выключен, в том числе после обновления существующей установки.
+Разрешение действует для всех приложений, способных отправить эти команды.
+Встроенные виджеты, плитка и ярлыки работают независимо от него; импорт подписки
+по ссылке по-прежнему требует подтверждения.
 
-- Toggle Clash.Meta service status
-  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `com.github.metacubex.clash.meta.action.TOGGLE_CLASH`
-- Start Clash.Meta service
-  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `com.github.metacubex.clash.meta.action.START_CLASH`
-- Stop Clash.Meta service
-  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `com.github.metacubex.clash.meta.action.STOP_CLASH`
-- Import a profile
-  - URL Scheme `clash://install-config?url=<encoded URI>` or `clashmeta://install-config?url=<encoded URI>`
+| Действие | Интент |
+|---|---|
+| включить | `am start -a app.ducker.android.action.START_CLASH` |
+| выключить | `am start -a app.ducker.android.action.STOP_CLASH` |
+| переключить | `am start -a app.ducker.android.action.TOGGLE_CLASH` |
+| добавить подписку | `ducker://install-config?url=<ссылка>` |
 
-### Contribution and Project Maintenance
+## Заголовки для провайдера
 
-#### Meta Kernel
+Провайдер может настроить вид приложения заголовками ответа на запрос подписки.
+В Remnawave они задаются в настройках ответа подписки (`customResponseHeaders`),
+править код панели не нужно.
 
-- CMFA uses the kernel from `android-real` branch under `MetaCubeX/Clash.Meta`, which is a merge of the main `Alpha` branch and `android-open`.
-  - If you want to contribute to the kernel, make PRs to `Alpha` branch of the Meta kernel repository.
-  - If you want to contribute Android-specific patches to the kernel, make PRs to  `android-open` branch of the Meta kernel repository.
+| Заголовок | Значение | Что делает |
+|---|---|---|
+| `ducker-brand-name` | текст | Название провайдера в шапке главной вместо надписи DUCKER. Оно же — в шторке и на плитке быстрых настроек. |
+| `ducker-brand-logo` | ссылка `https://…` на картинку или сама картинка строкой `data:…;base64,…`: PNG, JPEG, WebP или SVG | Логотип слева от названия на главной и у подписки на вкладке «Подписки». Не загрузился — стоит значок ducker. |
+| `ducker-buy-url` | ссылка | Кнопка «Продлить» на карточке подписки, когда до конца меньше трёх дней, срок вышел или осталось меньше 10 % трафика; та же ссылка — в уведомлении о скором конце подписки. Без заголовка берётся `profile-web-page-url`. |
+| `ducker-global` | `off` | Прячет переключатель Global/Rules на вкладке «Прокси»; режим остаётся тем, что задан в конфиге. Без заголовка или с другим значением переключатель есть. |
+| `ducker-local-proxy` | `off` | Туннель поднимается с закрытыми локальными портами конфига (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`) и без раздела `listeners`: другие приложения на телефоне не находят прокси на `127.0.0.1`. Сам конфиг не переписывается. Открыть порт заголовком нельзя; без заголовка или с другим значением конфиг применяется как есть. |
+| `ducker-override-user` | `on` или `off` | Зарезервирован под настройки, которые провайдер задаёт заголовками. Сейчас приложение его читает, но ни на что он не влияет. |
 
-#### Maintenance
+Общие правила:
 
-- When `MetaCubeX/Clash.Meta` kernel is updated to a new version, the `Update Dependencies` actions in this repo will be triggered automatically.
-  - It will pull the new version of the meta kernel, update all the golang dependencies, and create a PR without manual intervention.
-  - If there is any compile error in PR, you need to fix it before merging. Alternatively, you may merge the PR directly.
-- Manually triggering `Build Pre-Release` actions will compile and publish a `PreRelease` version.
-- Manually triggering `Build Release` actions will compile, tag and publish a `Release` version.
-  - You must fill the blank `Release Tag` with the tag you want to release in the format of `v1.2.3`.
-  - `versionName` and `versionCode` in `build.gradle.kts` will be automatically bumped to the tag you filled above.
+- Регистр в имени заголовка не важен.
+- Текст с кириллицей или переводом строки передаётся как `base64:<…>` (UTF-8) —
+  так же, как Remnawave отдаёт `announce`.
+- Значение из одного прочерка `-` значит «не задано». Панель не даёт сохранить пустой
+  заголовок, а прочерком можно убрать свой — например, чтобы в шапке осталась надпись DUCKER.
+- Заголовки меняют только вид и поведение из списка выше. К безопасности — секрету API
+  ядра, журналам, адресу обновлений приложения — у них доступа нет.
+
+Кроме `ducker-*`, приложение понимает общепринятые заголовки подписки: `profile-title`,
+`profile-update-interval`, `profile-web-page-url`, `support-url`, `announce`,
+`subscription-userinfo`, `subscription-refill-date` и `x-hwid-*`.
+
+## Благодарности
+
+- [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo) — ядро;
+- [MetaCubeX/ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid) —
+  служба, сборка и всё, что под интерфейсом;
+- [Zephyruso/zashboard](https://github.com/Zephyruso/zashboard) — веб-панель,
+  встроенная в приложение.
+
+Подробнее о заимствованиях — [docs/CREDITS.md](docs/CREDITS.md).
+
+## Документы
+
+- [docs/FAQ.md](docs/FAQ.md) — вопросы и ответы для тех, кто пользуется приложением;
+- [CONTRIBUTING.md](CONTRIBUTING.md) — как сообщить об ошибке, собрать и прислать изменение;
+- [PRIVACY_POLICY.md](PRIVACY_POLICY.md) — что приложение отправляет в сеть и что хранит;
+- [SECURITY.md](SECURITY.md) — как сообщить об уязвимости.
+
+## Лицензия
+
+GPL-3.0, как у родительского проекта. Текст — в файле [LICENSE](LICENSE).
+
+---
+
+## In English
+
+ducker is an Android client for [mihomo](https://github.com/MetaCubeX/mihomo), forked from
+[Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) with its own Compose UI.
+Add a subscription, press one button, pick a server — the rest is on neighbouring tabs.
+
+- Works with mihomo configs and with plain lists of `vless://`, `vmess://` and similar links.
+- Provider branding and behaviour via `ducker-*` subscription headers (see the table above).
+- No analytics, no ads, no crash reports sent anywhere: [PRIVACY_POLICY.md](PRIVACY_POLICY.md).
+- Android 10+. Download APKs from [Releases](https://github.com/duckerapp/ducker/releases):
+  `arm64-v8a` for most phones, `armeabi-v7a` for old ones.
+- Help for users: [docs/FAQ.md](docs/FAQ.md) — in Russian, with a short English part at the end.
+- Build: JDK 21, Android SDK platform 37, NDK 29.0.14206865, Go 1.26+,
+  `git clone --recurse-submodules` and `./gradlew :app:assembleMetaRelease`.
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security: [SECURITY.md](SECURITY.md).
+  Project docs are in Russian.
+
+License: GPL-3.0.

@@ -11,6 +11,8 @@ data class ProxyGroup(
     val type: String,
     val proxies: List<Proxy>,
     val now: String,
+    /** Иконка группы из профиля. Пустая строка — провайдер её не задал. */
+    val icon: String = "",
 ) : Parcelable {
     class SliceProxyList(data: List<Proxy>) : List<Proxy> by data, Parcelable {
         constructor(parcel: Parcel) : this(Proxy.createListFromParcelSlice(parcel, 0, 50))
@@ -38,12 +40,14 @@ data class ProxyGroup(
         parcel.readString()!!,
         SliceProxyList(parcel),
         parcel.readString()!!,
+        parcel.readString()!!,
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(type)
         SliceProxyList(proxies).writeToParcel(parcel, 0)
         parcel.writeString(now)
+        parcel.writeString(icon)
     }
 
     override fun describeContents(): Int {

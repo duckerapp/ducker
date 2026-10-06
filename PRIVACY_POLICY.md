@@ -1,50 +1,143 @@
-## Privacy Policy
+# Политика конфиденциальности ducker
 
-The Clash for Android is built as an Open Source software. This app is provided by personal at no cost and is intended for use as is.
+*English version is below.*
 
-This page is used to inform visitors regarding our policies with the collection, use, and disclosure of Personal Information if anyone decided to use our app.
+## Коротко
 
-If you choose to use our app, then you agree to the collection and use of information in relation to this policy. The Personal Information that we collect is used for providing and improving the app. We will not use or share your information with anyone except as described in this Privacy Policy.
+- ducker не собирает статистику, не показывает рекламу и не отправляет разработчику ни журналы,
+  ни отчёты об ошибках. Своего сервера, куда что-то уходило бы, у проекта нет.
+- В сеть уходит только то, без чего VPN не работает: запрос подписки провайдеру, ваш трафик
+  через его серверы и служебные запросы ядра по настройкам профиля. Подробно — ниже.
+- Всё остальное хранится только на телефоне и удаляется вместе с приложением.
 
-The terms used in this Privacy Policy have the same meanings as in our Terms and Conditions, which is accessible at Clash for Android unless otherwise defined in this Privacy Policy.
+## Что уходит в сеть и кому
 
-**Information Collection and Use**
+**1. Провайдеру подписки** — когда вы добавляете или обновляете подписку. Запрос идёт по ссылке,
+которую вы дали, и в нём:
+- строка `User-Agent` вида `mihomo/<версия ядра> ducker/<версия приложения>`;
+- если включён переключатель **Настройки → Идентификатор устройства** (по умолчанию включён):
+  идентификатор устройства, слово «Android», версия Android, производитель и модель телефона.
+  Идентификатор — это `ANDROID_ID`: Android выдаёт его отдельно каждому приложению на телефоне,
+  другие приложения его не видят. Если его нет, ducker один раз создаёт случайный. По
+  идентификатору провайдер считает ваши устройства. Какой идентификатор отправляется, видно
+  там же, в настройках. Если выключить переключатель, провайдер, который считает устройства,
+  может перестать выдавать подписку.
 
-For a better experience, while using our app, we may require you to provide us with certain personally identifiable information. The information that we request will be retained by us and used as described in this privacy policy.
+Как и любой сервер, провайдер видит ваш IP-адрес — или адрес своего узла, если VPN включён
+и запрос пошёл через него.
 
-The app does use third party services that may collect information used to identify you.
+Ссылка `ducker://install-config` (также `clash://` и `clashmeta://`) сначала показывает
+источник и спрашивает подтверждение. До «Добавить» профиль не скачивается; отмена
+не создаёт подписку. По HTTP данные устройства не передаются. Для HTTPS они также
+не передаются известным публичным хостингам: GitHub/GitHub Pages, jsDelivr, GitLab,
+Bitbucket, Codeberg, Pastebin/paste.ee/Hastebin/Githack, Google Drive/Docs, Dropbox,
+Cloudflare Pages/Workers, Netlify и Vercel (включая поддомены их публичных доменов).
+User-Agent сохраняется. HTTP оставляет ссылку и профиль доступными сети — перед
+добавлением или изменением такой ссылки приложение предупреждает об этом.
+При перенаправлении на другой источник (хост или порт) данные устройства, авторизация,
+cookies и Referer не пересылаются и не возвращаются в следующих переходах цепочки.
+Перенаправление HTTPS → HTTP отклоняется; провайдеру нужна рабочая ссылка HTTPS.
 
-Link to privacy policy of third party service providers used by the app
+**2. Картинки из подписки.** Иконки групп и логотип провайдера загружаются по адресам, которые
+указал сам провайдер.
 
-*   [Google Play Services](https://www.google.com/policies/privacy/)
-*   [AppCenter](https://docs.microsoft.com/en-us/appcenter/gdpr/)
+**3. Ваш трафик.** При включённом VPN трафик приложений идёт через серверы (узлы) провайдера — так
+работает любой VPN. Провайдер и его узлы видят то же, что видит любой VPN-сервис; ducker на это
+не влияет.
 
-**Log Data**
+**4. Служебные запросы ядра.** Их задаёт профиль, то есть провайдер, или встроенный шаблон:
+- проверка задержки узлов: запрос через проверяемый узел на адрес из профиля, обычно
+  `www.gstatic.com/generate_204`; проверка связи в приложении — через узел на
+  `cp.cloudflare.com/generate_204`;
+- синхронизация времени (NTP), если профиль её включает (встроенный шаблон — `pool.ntp.org`);
+- наборы правил и базы адресов, если профиль на них ссылается.
 
-We want to inform you that whenever you use our app, in a case of an error in the app we collect data and information (through third party products) on your phone called Log Data. This Log Data may include information such as your device Internet Protocol (“IP”) address, device name, operating system version, the configuration of the app when utilizing our App, the time and date of your use of the app, and other statistics.
+**5. По вашему нажатию.** Ссылки на страницу провайдера, поддержку, оплату и релизы ducker
+открываются в браузере только тогда, когда вы сами на них нажали.
 
-**Cookies**
+## Что хранится на телефоне
 
-Cookies are files with a small amount of data that are commonly used as anonymous unique identifiers. These are sent to your browser from the websites that you visit and are stored on your device's internal memory.
+- подписки: ссылки и скачанные конфиги;
+- настройки приложения и ваши правила;
+- результаты замеров задержки узлов;
+- журнал службы: два файла по 256 КБ, которые перезаписываются по кругу;
+- записи падений: два файла до 64 КБ на процесс и локальный журнал ошибок ядра;
+- кэш картинок из подписки.
 
-This app does not use these “cookies” explicitly. However, the app may use third party code and libraries that use “cookies” to collect information and improve their services. You have the option to either accept or refuse these cookies and know when a cookie is being sent to your device. If you choose to refuse our cookies, you may not be able to use some portions of this app.
+Всё это удаляется вместе с приложением.
 
-**Security**
+**Резервная копия Android.** В облачную копию и при переносе на новый телефон попадают только
+настройки. Подписки и конфиги туда не попадают: в них ключи доступа к вашему VPN.
 
-We value your trust in providing us your Personal Information, thus we are striving to use commercially acceptable means of protecting it. But remember that no method of transmission over the internet, or method of electronic storage is 100% secure and reliable, and we cannot guarantee its absolute security.
+## Журнал
 
-**Links to Other Sites**
+Журнал остаётся на телефоне. Наружу он уходит, только когда вы сами нажмёте **Скопировать**,
+**Отправить** или **Сохранить** в разделе **Настройки → Журнал**. Перед этим из него вырезаются адреса узлов, ключи и
+идентификатор устройства. Домены сайтов, которые вы открывали, остаются — без них нельзя
+разобраться в работе правил. Об этом предупреждает экран, и текст можно просмотреть перед
+отправкой. Записи падений Kotlin и хвост ошибок ядра проходят ту же чистку; экран сбоя
+показывает и копирует только подготовленный отчёт. Автоматической отправки нет.
 
-This app may contain links to other sites. If you click on a third-party link, you will be directed to that site. Note that these external sites are not operated by us. Therefore, we strongly advise you to review the Privacy Policy of these websites. We have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
+## Разрешения и зачем они нужны
 
-**Children’s Privacy**
+- **VPN** — чтобы направлять трафик через туннель.
+- **Уведомления** — чтобы показывать, что VPN работает, и присылать напоминание о конце подписки.
+- **Камера** — только для сканера QR-кода подписки. Кадры не сохраняются и никуда не уходят.
+- **Список приложений** — чтобы вы могли выбрать, какие приложения идут мимо VPN. Список
+  остаётся на телефоне.
+- **Работа в фоне и запуск после перезагрузки** — чтобы VPN не отключался сам.
+- **`INTERACT_ACROSS_USERS`** объявлено в манифесте, но выдать его можно только вручную, через
+  отладку по USB (adb). Приложение само его не просит.
 
-These Services do not address anyone under the age of 13\. We do not knowingly collect personally identifiable information from children under 13\. In the case we discover that a child under 13 has provided us with personal information, we immediately delete this from our servers. If you are a parent or guardian and you are aware that your child has provided us with personal information, please contact us so that we will be able to do necessary actions.
+## Изменения
 
-**Changes to This Privacy Policy**
+Политика меняется вместе с приложением. История изменений — в истории этого файла в репозитории.
 
-We may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. We will notify you of any changes by posting the new Privacy Policy on this page. These changes are effective immediately after they are posted on this page.
+## Вопросы
 
-**Contact Us**
+Через [Issues](../../issues) репозитория. Уязвимости — по правилам [SECURITY.md](SECURITY.md).
 
-If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us.
+---
+
+# ducker privacy policy
+
+**In short:** ducker does not collect analytics, show ads or send logs or crash reports to the
+developer. The project has no server of its own.
+
+**What goes to the network and to whom:**
+1. **Your subscription provider** — when you add or update a subscription: a `User-Agent`
+   (`mihomo/<core version> ducker/<app version>`) and, if **Settings → Device id** is on (default),
+   the device id (the per-app `ANDROID_ID` or a random id created once), `Android`, the Android
+   version, and the phone's manufacturer and model. The provider also sees your IP address.
+   External install-config links require confirmation before any profile download or creation.
+   Device headers are omitted over HTTP and for known public hosting domains: GitHub/Pages,
+   jsDelivr, GitLab, Bitbucket, Codeberg, Pastebin/paste.ee/Hastebin/Githack, Google Drive/Docs,
+   Dropbox, Cloudflare Pages/Workers, Netlify and Vercel, including their subdomains.
+   User-Agent is preserved. HTTP links and profiles remain visible to the network; the app
+   warns about this when adding or editing an HTTP link.
+   Redirects to another host or port remove device headers, authorization, cookies and
+   Referer for the rest of the redirect chain. HTTPS to HTTP redirects are refused.
+2. **Images** referenced by the subscription (group icons, provider logo), from addresses set by
+   the provider.
+3. **Your traffic** goes through the provider's servers while the VPN is on, as with any VPN.
+4. **Core service requests** defined by the profile: latency checks through the checked server
+   (usually `www.gstatic.com/generate_204`; the in-app link check uses `cp.cloudflare.com`), NTP if
+   the profile enables it (the built-in template uses `pool.ntp.org`), and rule sets or address
+   databases the profile refers to.
+5. **Links you tap** (provider page, support, payment, ducker releases) open in your browser.
+
+**Stored on the device only:** subscriptions and configs, settings and your rules, latency results,
+the service log (two rotating 256 KB files), crash records (two files up to 64 KB per process),
+the local core error log, and the image cache. Android cloud backup includes
+settings only, never subscriptions or configs. Everything is removed with the app.
+
+**Logs** leave the device only when you tap **Copy**, **Send** or **Save** in **Settings → Log**. Server
+addresses, keys and the device id are removed first; visited domain names remain. Kotlin crash
+records and the tail of core errors use the same scrubber. The crash screen displays and copies
+the prepared report; nothing is sent automatically.
+
+**Permissions:** VPN; notifications; camera (QR scanner only, frames are not stored); the app list
+(to choose apps that bypass the VPN, kept on the device); background work and start after reboot.
+`INTERACT_ACROSS_USERS` is declared but can only be granted manually via adb.
+
+Questions: repository [Issues](../../issues). Security reports: [SECURITY.md](SECURITY.md).

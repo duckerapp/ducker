@@ -1,17 +1,21 @@
 package com.github.kr328.clash.service
 
-import android.annotation.TargetApi
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.ProxyInfo
 import android.net.VpnService
-import android.os.Build
 import com.github.kr328.clash.common.compat.pendingIntentFlags
 import com.github.kr328.clash.common.constants.Components
 import com.github.kr328.clash.common.log.Log
+import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.service.clash.clashRuntime
 import com.github.kr328.clash.service.clash.module.*
-import com.github.kr328.clash.service.model.AccessControlMode
+import com.github.kr328.clash.core.Clash
+import com.github.kr328.clash.core.model.ProfileNetwork
+import com.github.kr328.clash.service.util.Cidr
+import com.github.kr328.clash.service.util.Failure
+import com.github.kr328.clash.service.util.PackageFilter
+import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.cancelAndJoinBlocking
 import com.github.kr328.clash.service.util.parseCIDR
@@ -19,6 +23,7 @@ import com.github.kr328.clash.service.util.sendClashStarted
 import com.github.kr328.clash.service.util.sendClashStopped
 import kotlinx.coroutines.*
 import kotlinx.coroutines.selects.select
+import java.util.concurrent.atomic.AtomicBoolean
 
 class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.Default) {
     private val self: TunService
@@ -26,13 +31,34 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     private var reason: String? = null
 
+    /** С каким режимом блокировки собран текущий туннель. */
+    private var lockdownApplied = false
+
     private val runtime = clashRuntime {
         val store = ServiceStore(self)
+
+        // До первой загрузки конфига: истёкший «Подробный журнал» в неё уже не попадёт (D-224).
+        runCatching { VerboseLog.check(self) }
 
         val close = install(CloseModule(self))
         val tun = install(TunModule(self))
         val config = install(ConfigurationModule(self))
+
+        // Первая проверка групп с автовыбором идёт при загрузке конфига, а конфиг и туннель
+        // встают одновременно: кто первым — дело случая. Проверка до туннеля или в первые
+        // мгновения после него записывает узлы мёртвыми, и автовыбор держит первый попавшийся
+        // до пяти минут. Перемеряем один раз, когда готово и то и другое: запускает тот,
+        // кто закончил вторым (D-110). Флаги ставятся до проверки чужого — хотя бы одна
+        // сторона увидит другую; дважды не запустится.
+        val rechecked = AtomicBoolean(false)
+        val tunOpened = AtomicBoolean(false)
+        val recheck = {
+            if (rechecked.compareAndSet(false, true)) Clash.healthCheckAuto()
+        }
+
+        config.onLoaded = { if (tunOpened.get()) recheck() }
         val network = install(NetworkObserveModule(self))
+        val lockdown = install(LockdownModule(self))
 
         if (store.dynamicNotification)
             install(DynamicNotificationModule(self))
@@ -46,6 +72,13 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         try {
             tun.open()
 
+            tunOpened.set(true)
+
+            // В самописец: «постоянный VPN» и блокировка без VPN меняют маршруты (F-110).
+            Log.i("Tunnel up: always-on=$isAlwaysOn, lockdown=$isLockdownEnabled")
+
+            if (config.ready) recheck()
+
             while (isActive) {
                 val quit = select<Boolean> {
                     close.onEvent {
@@ -56,9 +89,23 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
                         true
                     }
-                    network.onEvent { n ->
-                        if (Build.VERSION.SDK_INT in 22..28) @TargetApi(22) {
-                            setUnderlyingNetworks(n?.let { arrayOf(it) })
+                    // Ветку с setUnderlyingNetworks сняли вместе с подъёмом minSdk до 29
+                    // (D-13): она работала только на 22..28. Событие всё равно вычитываем —
+                    // иначе очередь модуля некому разбирать.
+                    network.onEvent {
+                        false
+                    }
+                    // Блокировку включили или выключили — пересобираем туннель на месте:
+                    // ядро само подменит старый интерфейс новым.
+                    lockdown.onEvent {
+                        val now = isLockdownEnabled
+
+                        if (now != lockdownApplied) {
+                            tun.open(now)
+
+                            // Главная и плитка перечитают состояние, в том числе
+                            // предупреждение о приложениях без сети.
+                            sendClashStarted()
                         }
 
                         false
@@ -88,8 +135,20 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         StatusProvider.serviceRunning = true
 
+        // Причина прошлой остановки к новому подъёму не относится (D-227).
+        StopNotice.clear(this)
+
+        FlightRecorder.attachCore()
+
+        // Отсюда считается время работы туннеля на главном экране.
+        ServiceStore(this).tunnelStartedAt = System.currentTimeMillis()
+
         StaticNotificationModule.createNotificationChannel(this)
         StaticNotificationModule.notifyLoadingNotification(this)
+
+        // Страж поднимет туннель, если процесс умрёт на ходу (D-90). Стартуем после
+        // уведомления: служба уже на переднем плане, и фоновый запуск разрешён.
+        startService(TunGuard::class.intent)
 
         runtime.launch()
     }
@@ -104,6 +163,17 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         TunModule.requestStop()
 
         StatusProvider.serviceRunning = false
+
+        ServiceStore(this).apply {
+            tunnelStartedAt = 0
+            lockdownOffline = false
+        }
+
+        // Остановка штатная — поднимать после неё нечего.
+        stopService(TunGuard::class.intent)
+
+        // До сообщения об остановке: главная по нему перечитывает причину с диска (D-227).
+        reason?.let { StopNotice.show(this, it) }
 
         sendClashStopped(reason)
 
@@ -120,8 +190,51 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         runtime.requestGc()
     }
 
-    private fun TunModule.open() {
+
+    /**
+     * Какие приложения идут в туннель.
+     *
+     * Android разрешает либо белый список, либо чёрный, но не оба сразу, поэтому порядок
+     * такой: если профиль задал `include-package`, это белый список, иначе — чёрный из
+     * `exclude-package`. Выбор человека в настройках складывается с профильным, а не
+     * отменяет его: список провайдера нужен, чтобы банковские и госприложения видели сеть
+     * без VPN, и молча его терять нельзя.
+     *
+     * Возвращает, осталось ли хоть одно приложение мимо туннеля.
+     */
+    private fun applyPackageFilter(builder: Builder, store: ServiceStore, profile: ProfileNetwork): Boolean {
+        val decision = PackageFilter.decide(store.accessControlMode, store.accessControlPackages, profile)
+
+        val allowed = decision.allowed
+
+        if (allowed != null) {
+            (allowed + packageName).forEach { runCatching { builder.addAllowedApplication(it) } }
+
+            return true
+        }
+
+        // В списке провайдера сотни пакетов, а стоит из них горстка: считаем только те,
+        // что система приняла.
+        return (decision.denied - packageName).count {
+            runCatching { builder.addDisallowedApplication(it) }.isSuccess
+        } > 0
+    }
+
+    private fun TunModule.open(lockdown: Boolean = false) {
         val store = ServiceStore(self)
+
+        // Раздел `tun:` профиля ядро на Android не применяет — интерфейс создаём мы,
+        // поэтому списки пакетов и признак отключённого DNS читаем сами (F-69).
+        val profile = store.activeProfile
+            ?.let { Clash.queryProfileNetwork(self.importedDir.resolve(it.toString()).absolutePath) }
+            ?: ProfileNetwork()
+
+        // В режиме «Блокировать соединения без VPN» система режет всё, что идёт мимо
+        // туннеля (F-110): исключённые из маршрутов адреса — и домашняя сеть в первую
+        // очередь — стали бы недоступны. Поэтому в этом режиме маршрутов не вырезаем,
+        // а локальные адреса ядро само отправит напрямую: правило для них в шаблоне
+        // есть, а сокеты ядра блокировка не трогает.
+        lockdownApplied = lockdown
 
         val device = with(Builder()) {
             // Interface address
@@ -131,13 +244,32 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             }
 
             // Route
-            if (store.bypassPrivateNetwork) {
-                resources.getStringArray(R.array.bypass_private_route).map(::parseCIDR).forEach {
-                    addRoute(it.ip, it.prefix)
+            // Исключения собираем из двух источников: приватные сети (настройка
+            // приложения) и `tun.route-exclude-address` из профиля (D-56). Встроенный
+            // список приложения задан уже как маршруты-дополнения, поэтому обратно в
+            // исключения его переводит та же арифметика.
+            val excludedV4 = if (lockdown) emptyList() else buildList {
+                if (store.bypassPrivateNetwork) {
+                    addAll(
+                        Cidr.complementV4(
+                            resources.getStringArray(R.array.bypass_private_route).toList()
+                        ).map { "${it.address}/${it.prefix}" }
+                    )
                 }
+
+                addAll(profile.routeExcludeAddress)
+            }
+
+            if (excludedV4.isNotEmpty()) {
+                Cidr.complementV4(excludedV4).forEach { addRoute(it.address, it.prefix) }
+
                 if (store.allowIpv6) {
-                    resources.getStringArray(R.array.bypass_private_route6).map(::parseCIDR).forEach {
-                        addRoute(it.ip, it.prefix)
+                    if (store.bypassPrivateNetwork) {
+                        resources.getStringArray(R.array.bypass_private_route6)
+                            .map(::parseCIDR)
+                            .forEach { addRoute(it.ip, it.prefix) }
+                    } else {
+                        addRoute(NET_ANY6, 0)
                     }
                 }
 
@@ -154,19 +286,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             }
 
             // Access Control
-            when (store.accessControlMode) {
-                AccessControlMode.AcceptAll -> Unit
-                AccessControlMode.AcceptSelected -> {
-                    (store.accessControlPackages + packageName).forEach {
-                        runCatching { addAllowedApplication(it) }
-                    }
-                }
-                AccessControlMode.DenySelected -> {
-                    (store.accessControlPackages - packageName).forEach {
-                        runCatching { addDisallowedApplication(it) }
-                    }
-                }
-            }
+            store.lockdownOffline = applyPackageFilter(this, store, profile) && lockdown
 
             // Blocking
             setBlocking(false)
@@ -175,12 +295,18 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             setMtu(TUN_MTU)
 
             // Session Name
-            setSession("Clash")
+            // Это имя система показывает в своём уведомлении «VPN включён»,
+            // поэтому здесь название приложения, а не ядра.
+            setSession("ducker")
 
             // Virtual Dns Server
-            addDnsServer(TUN_DNS)
-            if (store.allowIpv6) {
-                addDnsServer(TUN_DNS6)
+            // Если профиль отключил DNS ядра, перехватывать запросы нельзя: обслуживать
+            // их будет некому. Пусть приложения спрашивают системный DNS через туннель.
+            if (!profile.dnsDisabled) {
+                addDnsServer(TUN_DNS)
+                if (store.allowIpv6) {
+                    addDnsServer(TUN_DNS6)
+                }
             }
 
             // Open MainActivity
@@ -194,12 +320,10 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             )
 
             // Metered
-            if (Build.VERSION.SDK_INT >= 29) {
-                setMetered(false)
-            }
+            setMetered(false)
 
             // System Proxy
-            if (Build.VERSION.SDK_INT >= 29 && store.systemProxy) {
+            if (store.systemProxy) {
                 listenHttp()?.let {
                     setHttpProxy(
                         ProxyInfo.buildDirectProxy(
@@ -217,15 +341,32 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
             TunModule.TunDevice(
                 fd = establish()?.detachFd()
-                    ?: throw NullPointerException("Establish VPN rejected by system"),
-                stack = store.tunStackMode,
+                    ?: throw NullPointerException(Failure.VPN_REJECTED),
+                // Пока человек не выбрал стек, решает `tun.stack` провайдера (D-56);
+                // выбрал — его выбор главнее, иначе настройка была бы декоративной (D-86).
+                stack = store.tunStackMode.ifEmpty { profile.stack },
+                // Действует только на стеке mips; значение провайдера идёт как есть (D-235).
+                congestion = profile.congestionController,
                 gateway = "$TUN_GATEWAY/$TUN_SUBNET_PREFIX" + if (store.allowIpv6) ",$TUN_GATEWAY6/$TUN_SUBNET_PREFIX6" else "",
                 portal = TUN_PORTAL + if (store.allowIpv6) ",$TUN_PORTAL6" else "",
-                dns = if (store.dnsHijacking) NET_ANY else (TUN_DNS + if (store.allowIpv6) ",$TUN_DNS6" else ""),
+                // Перехват DNS имеет смысл, только если запросы есть кому обслуживать.
+                // При `dns.enable: false` в профиле резолвера у ядра нет, и перехваченные
+                // запросы просто умирали бы: имена перестали бы разрешаться совсем.
+                // Пустая строка означает «не перехватывать» (native/tun/tun.go:45).
+                dns = when {
+                    profile.dnsDisabled -> ""
+                    store.dnsHijacking -> NET_ANY
+                    else -> TUN_DNS + if (store.allowIpv6) ",$TUN_DNS6" else ""
+                },
             )
         }
 
         attach(device)
+
+        // Про блокировку система отвечает только тому, у кого туннель уже поднят: до
+        // establish() ответ всегда «нет». Поэтому поднимаемся как обычно и, если режим
+        // не совпал, сразу пересобираемся — ядро подменит интерфейс на месте.
+        if (isLockdownEnabled != lockdown) open(!lockdown)
     }
 
     companion object {

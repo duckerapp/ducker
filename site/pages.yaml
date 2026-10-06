@@ -1,0 +1,73 @@
+name: Site
+
+# Сайт документации (этап 17, D-197): собирается из site/ и выкладывается на GitHub Pages.
+#
+# ЛЕЖИТ НЕ НА МЕСТЕ: место файла — .github/workflows/pages.yaml. Облачная сессия не может
+# пушить в .github/workflows (у её токена нет права workflow), перенести — с основной машины:
+#   git mv site/pages.yaml .github/workflows/pages.yaml
+#
+# Пока выключен: бесплатный GitHub публикует Pages только у открытых репозиториев (Q-32).
+# Включить в день открытия:
+#   1. Settings → Pages → Source: GitHub Actions.
+#   2. Раскомментировать push ниже — сайт будет обновляться сам после каждого слияния в main.
+# До этого workflow можно запустить только вручную (Actions → Site → Run workflow).
+on:
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "site/**"
+  #     - "docs/FAQ.md"
+  #     - "docs/CREDITS.md"
+  #     - "PRIVACY_POLICY.md"
+  #     - "CONTRIBUTING.md"
+  #     - "SECURITY.md"
+  #     - ".github/workflows/pages.yaml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: site/requirements.txt
+
+      - name: Install MkDocs
+        run: pip install -r site/requirements.txt
+
+      # --strict: битая ссылка, якорь или промах замены в hooks/sources.py — ошибка сборки.
+      - name: Build
+        working-directory: site
+        run: mkdocs build --strict
+
+      - name: Upload
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

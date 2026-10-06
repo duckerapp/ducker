@@ -1,0 +1,119 @@
+package com.github.kr328.clash.service.util
+
+import android.util.Base64
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import java.io.File
+
+/**
+ * Сведения о подписке, пришедшие заголовками ответа: как её назвал провайдер, что он хочет
+ * сказать человеку, куда его отправить и не упёрся ли он в лимит устройств.
+ *
+ * Лежат файлом в каталоге профиля, а не в базе (D-32): каталог и так копируется целиком
+ * `processing` → `imported`, поэтому при неудачном обновлении остаются прежние сведения
+ * вместе с прежним профилем, и миграция базы при каждом новом заголовке не нужна.
+ */
+@Serializable
+data class ProviderInfo(
+    val profileTitle: String = "",
+    val announce: String = "",
+    val supportUrl: String = "",
+    val profileWebPageUrl: String = "",
+    val brandName: String = "",
+    val brandLogo: String = "",
+    val buyUrl: String = "",
+    /** `ducker-override-user: on` — провайдер главнее пользователя в настройках (D-16). */
+    val overrideUser: Boolean = false,
+    /** `ducker-global: off` — спрятать переключатель Global/Rules на «Прокси» (D-143). */
+    val globalHidden: Boolean = false,
+    /** `ducker-local-proxy: off` — поднять туннель с закрытыми портами конфига (D-218). */
+    val localProxyOff: Boolean = false,
+    val updateIntervalHours: Int = 0,
+    /** `subscription-refill-date` — когда обнулится счётчик трафика, unix-секунды. */
+    val refillAt: Long = 0,
+    /**
+     * Панель отказала из-за идентификатора устройства. Профиль в этом случае приходит
+     * заглушкой, которая проходит проверку ядра (FACTS.md, F-51), поэтому отличить её
+     * можно только по заголовкам.
+     */
+    val hwidBlocked: Boolean = false,
+    /** `max_devices`, `not_supported` или пусто. */
+    val hwidReason: String = "",
+    /**
+     * Конфиг провайдера не прошёл проверку, и включён встроенный шаблон (D-19).
+     * Человеку это показывается плашкой вместе с [lastError], чтобы он мог отправить
+     * текст провайдеру.
+     */
+    val usedTemplate: Boolean = false,
+    val lastError: String = "",
+) {
+    companion object {
+        private const val FILE_NAME = "provider.json"
+
+        private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
+        fun of(headers: Map<String, String>): ProviderInfo {
+            val h = headers.mapKeys { it.key.lowercase() }
+
+            val maxDevices = h["x-hwid-max-devices-reached"].isTrue()
+            val notSupported = h["x-hwid-not-supported"].isTrue()
+
+            return ProviderInfo(
+                profileTitle = h["profile-title"].decode(),
+                announce = h["announce"].decode(),
+                supportUrl = h["support-url"].decode(),
+                profileWebPageUrl = h["profile-web-page-url"].decode(),
+                brandName = h["ducker-brand-name"].decode(),
+                brandLogo = h["ducker-brand-logo"].decode(),
+                buyUrl = h["ducker-buy-url"].decode(),
+                overrideUser = h["ducker-override-user"]?.trim()?.equals("on", true) == true,
+                globalHidden = h["ducker-global"]?.trim()?.equals("off", true) == true,
+                localProxyOff = h["ducker-local-proxy"]?.trim()?.equals("off", true) == true,
+                updateIntervalHours = h["profile-update-interval"]?.trim()?.toIntOrNull()
+                    ?.takeIf { it > 0 } ?: 0,
+                refillAt = h["subscription-refill-date"]?.trim()?.toLongOrNull() ?: 0,
+                hwidBlocked = maxDevices || notSupported,
+                hwidReason = when {
+                    maxDevices -> "max_devices"
+                    notSupported -> "not_supported"
+                    else -> ""
+                },
+            )
+        }
+
+        fun write(profileDir: File, info: ProviderInfo) {
+            runCatching {
+                profileDir.mkdirs()
+                File(profileDir, FILE_NAME).writeText(json.encodeToString(serializer(), info))
+            }
+        }
+
+        fun read(profileDir: File): ProviderInfo {
+            return runCatching {
+                json.decodeFromString(serializer(), File(profileDir, FILE_NAME).readText())
+            }.getOrDefault(ProviderInfo())
+        }
+
+        private fun String?.isTrue(): Boolean = this?.trim()?.equals("true", true) == true
+
+        /**
+         * Панель кодирует текст, который может содержать перевод строки или кириллицу,
+         * как `base64:<…>` (FACTS.md, F-33). Если префикса нет — значение берётся как есть.
+         *
+         * Одинокий прочерк значит «не задано» (D-68). Пустое значение заголовка панель
+         * сохранить не даёт, поэтому убрать свой заголовок — например, чтобы в шапке
+         * стояла марка приложения, — провайдер иначе не может.
+         */
+        private fun String?.decode(): String {
+            val value = this?.trim().orEmpty()
+
+            val decoded = if (value.startsWith("base64:")) {
+                runCatching {
+                    String(Base64.decode(value.removePrefix("base64:"), Base64.DEFAULT))
+                }.getOrDefault(value)
+            } else value
+
+            return if (decoded.trim() == "-") "" else decoded
+        }
+    }
+}

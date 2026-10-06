@@ -27,6 +27,12 @@ class SuspendModule(service: Service) : Module<Unit>(service) {
                     Intent.ACTION_SCREEN_ON -> {
                         Clash.suspendCore(false)
 
+                        // Пока экран был выключен, оператор мог забыть канал мультиплекса
+                        // в NAT, а оболочка телефона — заморозить службу. Проверяем сейчас,
+                        // чтобы к моменту, когда человек откроет приложение, мёртвые сессии
+                        // уже были закрыты (D-105).
+                        Clash.probeMux()
+
                         Log.d("Clash resumed")
                     }
                     Intent.ACTION_SCREEN_OFF -> {

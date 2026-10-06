@@ -3,6 +3,7 @@ package com.github.kr328.clash.service.clash.module
 import android.app.Service
 import android.net.*
 import android.os.Build
+import android.os.SystemClock
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.core.Clash
@@ -20,9 +21,7 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
     private val request = NetworkRequest.Builder().apply {
         addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
         addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
-        }
+        addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
         addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
     }.build()
 
@@ -38,16 +37,31 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
     @Volatile
     private var curDnsList = emptyList<String>()
 
+    /**
+     * Какая сеть сейчас основная. По ней и определяется настоящая смена сети: колбэки
+     * вроде `onLinkPropertiesChanged` прилетают и без неё — например при обновлении
+     * списка DNS или адреса IPv6, — а закрывать соединения на каждый чих нельзя.
+     */
+    @Volatile
+    private var bestNetwork: Network? = null
+
+    /** Когда подписались на сети, `elapsedRealtime`: от него отсчитываем первую раздачу. */
+    @Volatile
+    private var registeredAt = 0L
+
     private val callback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             Log.i("NetworkObserve onAvailable network=$network")
             networkInfos[network] = NetworkInfo()
+
+            notifyNetworkChange()
         }
 
         override fun onLosing(network: Network, maxMsToLive: Int) {
             Log.i("NetworkObserve onLosing network=$network")
             networkInfos[network]?.losingMs = System.currentTimeMillis() + maxMsToLive
             notifyDnsChange()
+            notifyNetworkChange()
 
             networks.trySend(network)
         }
@@ -56,14 +70,18 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
             Log.i("NetworkObserve onLost network=$network")
             networkInfos.remove(network)
             notifyDnsChange()
+            notifyNetworkChange()
 
             networks.trySend(network)
         }
 
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
-            Log.i("NetworkObserve onLinkPropertiesChanged network=$network $linkProperties")
+            // Целиком LinkProperties — около килобайта на строку, и меняется часто: самописец
+            // забивался, а с ним адреса телефона (аудит, perf 2.5). Хватает интерфейса и DNS.
+            Log.i("NetworkObserve onLinkPropertiesChanged network=$network ${linkProperties.interfaceName} dns=${linkProperties.dnsServers}")
             networkInfos[network]?.dnsList = linkProperties.dnsServers
             notifyDnsChange()
+            notifyNetworkChange()
 
             networks.trySend(network)
         }
@@ -76,6 +94,7 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
     private fun register(): Boolean {
         Log.i("NetworkObserve start register")
         return try {
+            registeredAt = SystemClock.elapsedRealtime()
             connectivity.registerNetworkCallback(request, callback)
 
             true
@@ -116,6 +135,34 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         } + (if (entry.value.isAvailable()) 0 else 10)
     }
 
+    /**
+     * Соединения, открытые через пропавший интерфейс, сами об этом не узнают и висят до
+     * своего таймаута — десятки секунд, в которые приложения кажутся зависшими. Закрываем
+     * их сразу, и приложения переподключаются по новой сети (D-59).
+     */
+    private fun notifyNetworkChange() {
+        val best = networkInfos.asSequence().minByOrNull { networkToInt(it) }?.key
+
+        if (best == bestNetwork) return
+
+        val previous = bestNetwork
+
+        bestNetwork = best
+
+        // При первом появлении сети закрывать нечего: соединений ещё нет. И сразу после
+        // подписки Android по очереди присылает все уже подключённые сети — «лучшая» за
+        // миллисекунды меняется с мобильной на Wi-Fi. Это знакомство, а не смена сети:
+        // сброс мультиплекса (D-105) рвал бы проверки узлов, начатые в ту же секунду (D-109).
+        if (previous == null || SystemClock.elapsedRealtime() - registeredAt < SETTLE_MS) return
+
+        Log.i("NetworkObserve best network $previous -> $best, closing connections")
+
+        // Сессии мультиплекса — отдельно: это не соединения туннеля, и без сброса новые
+        // потоки уходили бы в канал через прежнюю сеть (D-105).
+        Clash.resetMux()
+        Clash.closeAllConnections()
+    }
+
     private fun notifyDnsChange() {
         val dnsList = (networkInfos.asSequence().minByOrNull { networkToInt(it) }?.value?.dnsList
             ?: emptyList()).map { x -> x.asSocketAddressText(53) }
@@ -153,3 +200,6 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         }
     }
 }
+
+/** Первая раздача сетей после подписки приходит за миллисекунды; секунды хватает с запасом. */
+private const val SETTLE_MS = 1000L

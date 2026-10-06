@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Переключатель ducker (D-147), VPN включён: кругляш справа. Мягкая тень по краю дорожки и лёгкая тень у ручки — на тёмной дорожке светлые, как негатив светлой. Дорожка во всю высоту, как подложка Nothing: одного с ним размера (D-152). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="192dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="50">
+    <path
+        android:fillColor="@color/widget_ducker_fg"
+        android:pathData="M25,0H75A25,25 0 0 1 75,50H25A25,25 0 0 1 25,0z" />
+    <path
+        android:pathData="M25,0.25H75A24.75,24.75 0 0 1 75,49.75H25A24.75,24.75 0 0 1 25,0.25z"
+        android:strokeColor="@color/widget_ducker_shade_on"
+        android:strokeAlpha="0.110"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M25,0.75H75A24.25,24.25 0 0 1 75,49.25H25A24.25,24.25 0 0 1 25,0.75z"
+        android:strokeColor="@color/widget_ducker_shade_on"
+        android:strokeAlpha="0.084"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M25,1.25H75A23.75,23.75 0 0 1 75,48.75H25A23.75,23.75 0 0 1 25,1.25z"
+        android:strokeColor="@color/widget_ducker_shade_on"
+        android:strokeAlpha="0.062"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M25,1.75H75A23.25,23.25 0 0 1 75,48.25H25A23.25,23.25 0 0 1 25,1.75z"
+        android:strokeColor="@color/widget_ducker_shade_on"
+        android:strokeAlpha="0.043"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M25,2.25H75A22.75,22.75 0 0 1 75,47.75H25A22.75,22.75 0 0 1 25,2.25z"
+        android:strokeColor="@color/widget_ducker_shade_on"
+        android:strokeAlpha="0.028"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M25,2.75H75A22.25,22.25 0 0 1 75,47.25H25A22.25,22.25 0 0 1 25,2.75z"
+        android:strokeColor="@color/widget_ducker_shade_on"
+        android:strokeAlpha="0.015"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M25,3.25H75A21.75,21.75 0 0 1 75,46.75H25A21.75,21.75 0 0 1 25,3.25z"
+        android:strokeColor="@color/widget_ducker_shade_on"
+        android:strokeAlpha="0.007"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M25,3.75H75A21.25,21.25 0 0 1 75,46.25H25A21.25,21.25 0 0 1 25,3.75z"
+        android:strokeColor="@color/widget_ducker_shade_on"
+        android:strokeAlpha="0.002"
+        android:strokeWidth="0.6" />
+    <group>
+        <clip-path android:pathData="M25,0H75A25,25 0 0 1 75,50H25A25,25 0 0 1 25,0z" />
+        <path android:pathData="M50.00,25.00a25,25 0 1 0 50.00,0a25,25 0 1 0 -50.00,0z" android:fillAlpha="0.22">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:centerX="75"
+                    android:centerY="25"
+                    android:gradientRadius="25"
+                    android:type="radial">
+                    <item android:color="@color/widget_ducker_shade_on" android:offset="0.86" />
+                    <item android:color="@color/widget_ducker_shade_on_clear" android:offset="1" />
+                </gradient>
+            </aapt:attr>
+        </path>
+    </group>
+    <path
+        android:fillColor="@color/widget_ducker_bg"
+        android:pathData="M53.00,25.00a22,22 0 1 0 44.00,0a22,22 0 1 0 -44.00,0z" />
+    <group
+        android:translateX="65.10"
+        android:translateY="15.10"
+        android:scaleX="0.8250"
+        android:scaleY="0.8250">
+        <path
+            android:fillColor="@color/widget_ducker_fg"
+            android:pathData="M13,3h-2v10h2L13,3zM17.83,5.17l-1.42,1.42C17.99,7.86 19,9.81 19,12c0,3.87 -3.13,7 -7,7s-7,-3.13 -7,-7c0,-2.19 1.01,-4.14 2.58,-5.42L6.17,5.17C4.23,6.82 3,9.26 3,12c0,4.97 4.03,9 9,9s9,-4.03 9,-9c0,-2.74 -1.23,-5.18 -3.17,-6.83z" />
+    </group>
+</vector>

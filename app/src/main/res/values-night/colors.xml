@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="window_background">#FF0A0A0A</color>
+
+    <color name="widget_ducker_bg">#FF161616</color>
+    <color name="widget_ducker_fg">#FFF5F5F5</color>
+    <color name="widget_ducker_muted">#FFA3A3A3</color>
+    <color name="widget_ducker_pill">#FF262626</color>
+    <color name="widget_ducker_shade_on">#FF000000</color>
+    <color name="widget_ducker_shade_on_clear">#00000000</color>
+    <color name="widget_ducker_shade_off">#FFFFFFFF</color>
+    <color name="widget_ducker_shade_off_clear">#00FFFFFF</color>
+    <color name="widget_nothing_body">#FF202020</color>
+    <color name="widget_nothing_rim">#FF262626</color>
+    <color name="widget_nothing_knob_rim">#FF424242</color>
+    <color name="widget_nothing_track">#FF1C1C1C</color>
+    <color name="widget_nothing_grid">#FF4A4A4A</color>
+    <color name="widget_nothing_knob">#FF2E2E2E</color>
+    <color name="widget_nothing_glyph">#FFEDEDED</color>
+</resources>

@@ -31,8 +31,10 @@ type Proxy struct {
 }
 
 type ProxyGroup struct {
-	Type    string   `json:"type"`
-	Now     string   `json:"now"`
+	Type string `json:"type"`
+	Now  string `json:"now"`
+	// ducker: иконка группы из профиля. Ядро её знает, но наружу не отдавало.
+	Icon    string   `json:"icon"`
 	Proxies []*Proxy `json:"proxies"`
 }
 
@@ -60,7 +62,14 @@ func QueryProxyGroupNames(excludeNotSelectable bool) []string {
 		return []string{}
 	}
 
-	global := tunnel.Proxies()["GLOBAL"].Adapter().(outboundgroup.ProxyGroup)
+	proxy := tunnel.Proxies()["GLOBAL"]
+	if proxy == nil {
+		return []string{}
+	}
+	global, ok := proxy.Adapter().(outboundgroup.ProxyGroup)
+	if !ok || len(global.Providers()) == 0 {
+		return []string{}
+	}
 	proxies := global.Providers()[0].Proxies()
 	result := make([]string, 0, len(proxies)+1)
 
@@ -98,6 +107,11 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 		return nil
 	}
 
+	icon := ""
+	if withIcon, ok := p.Adapter().(interface{ Icon() string }); ok {
+		icon = withIcon.Icon()
+	}
+
 	proxies := convertProxies(g.Proxies(), uiSubtitlePattern)
 	// 	proxies := collectProviders(g.Providers(), uiSubtitlePattern)
 
@@ -127,6 +141,7 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 	return &ProxyGroup{
 		Type:    g.Type().String(),
 		Now:     g.Now(),
+		Icon:    icon,
 		Proxies: proxies,
 	}
 }
@@ -183,13 +198,6 @@ func convertProxies(proxies []C.Proxy, uiSubtitlePattern *regexp2.Regexp) []*Pro
 				}
 			}
 		}
-		testURL := "https://www.gstatic.com/generate_204"
-		for k := range p.ExtraDelayHistories() {
-			if len(k) > 0 {
-				testURL = k
-				break
-			}
-		}
 		_, isGroup := p.Adapter().(outboundgroup.ProxyGroup)
 
 		result = append(result, &Proxy{
@@ -197,11 +205,23 @@ func convertProxies(proxies []C.Proxy, uiSubtitlePattern *regexp2.Regexp) []*Pro
 			Title:    strings.TrimSpace(title),
 			Subtitle: strings.TrimSpace(subtitle),
 			Type:     p.Type().String(),
-			Delay:    int(p.LastDelayForTestUrl(testURL)),
+			Delay:    int(p.LastDelayForTestUrl(testURLOf(p))),
 			IsGroup:  isGroup,
 		})
 	}
 	return result
+}
+
+// testURLOf — адрес, по которому экран берёт задержку узла: первый из замеров групп,
+// иначе адрес ядра по умолчанию.
+func testURLOf(p C.Proxy) string {
+	for k := range p.ExtraDelayHistories() {
+		if len(k) > 0 {
+			return k
+		}
+	}
+
+	return C.DefaultTestURL
 }
 
 func collectProviders(providers []provider.ProxyProvider, uiSubtitlePattern *regexp2.Regexp) []*Proxy {

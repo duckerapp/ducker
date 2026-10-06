@@ -22,6 +22,14 @@
 
 -dontobfuscate
 
+# SnakeYAML: Android uses FIELD access, not the optional desktop JavaBeans path.
+# Config export loads with SafeConstructor and dumps only maps/lists/scalars.
+-dontwarn java.beans.BeanInfo
+-dontwarn java.beans.FeatureDescriptor
+-dontwarn java.beans.IntrospectionException
+-dontwarn java.beans.Introspector
+-dontwarn java.beans.PropertyDescriptor
+
 -assumenosideeffects class kotlin.jvm.internal.Intrinsics {
     public static void checkNotNull(...);
     public static void checkExpressionValueIsNotNull(...);

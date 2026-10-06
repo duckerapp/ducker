@@ -2,16 +2,23 @@ package app
 
 import (
 	"net"
+	"sync/atomic"
 	"syscall"
-
-	"cfa/native/platform"
 )
 
-var markSocketImpl func(fd int)
+var markSocketImpl func(fd int) error
 var querySocketUidImpl func(protocol int, source, target string) int
 
-func MarkSocket(fd int) {
-	markSocketImpl(fd)
+var tunRunning atomic.Bool
+
+// TunRunning — поднят ли туннель. Конфиг в ядре бывает загружен и без него: для замеров
+// узлов при выключенном VPN (D-63), и тогда его правилам нельзя доверять чужие запросы.
+func TunRunning() bool {
+	return tunRunning.Load()
+}
+
+func MarkSocket(fd int) error {
+	return markSocketImpl(fd)
 }
 
 func QuerySocketUid(source, target net.Addr) int {
@@ -26,16 +33,14 @@ func QuerySocketUid(source, target net.Addr) int {
 		return -1
 	}
 
-	if PlatformVersion() < 29 {
-		return platform.QuerySocketUidFromProcFs(source, target)
-	}
-
 	return querySocketUidImpl(protocol, source.String(), target.String())
 }
 
-func ApplyTunContext(markSocket func(fd int), querySocketUid func(int, string, string) int) {
+func ApplyTunContext(markSocket func(fd int) error, querySocketUid func(int, string, string) int) {
+	tunRunning.Store(markSocket != nil)
+
 	if markSocket == nil {
-		markSocket = func(fd int) {}
+		markSocket = func(fd int) error { return nil }
 	}
 
 	if querySocketUid == nil {

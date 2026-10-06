@@ -1,0 +1,1937 @@
+x-anchors:
+  reserved_ips: &reserved_ips
+    - 0.0.0.0/8
+    - 10.0.0.0/8
+    - 100.64.0.0/10
+    - 127.0.0.0/8
+    - 169.254.0.0/16
+    - 172.16.0.0/12
+    - 192.0.0.0/24
+    - 192.0.2.0/24
+    - 192.88.99.0/24
+    - 192.168.0.0/16
+    - 198.51.100.0/24
+    - 203.0.113.0/24
+    - 224.0.0.0/3
+    - ::/127
+    - fc00::/7
+    - fe80::/10
+    - ff00::/8
+
+  # --- 🇷🇺 Локальный Рунет (Напрямую) ---
+  # Ходит МИМО туннеля. Поэтому здесь только российские резолверы:
+  # китайский 223.5.5.5 отсюда убран — из РФ он всегда проигрывает гонку,
+  # но запрос всё равно уходит, а если выиграет — вернёт китайский CDN.
+  dns_ru: &dns_ru
+    - 77.88.8.8
+    - 77.88.8.1
+
+  # --- 🇷🇺 Резолвер выхода МИМО туннеля: домены узлов и «Без VPN» ---
+  # Для proxy-server-nameserver и direct-nameserver: dns_ru + system.
+  #
+  # system на Android = DNS текущей сети (роутер / оператор). FlClashX берёт
+  # его из LinkProperties сети без VPN (NetworkObserveModule.kt) и отдаёт
+  # ядру: Core.updateDns -> dns.UpdateSystemDNS (dns/patch_android.go).
+  # Ядро опрашивает все записи параллельно (dns/util.go, batchExchange) и
+  # берёт первый не-SERVFAIL. Выигрыш: в сети, где закрыт внешний UDP/53
+  # (гостевой, корпоративный Wi-Fi), домен ноды всё равно резолвится.
+  # Пока список пуст (до первого updateDns) или устарел после смены сети,
+  # system мгновенно отдаёт ошибку и гонку не тормозит.
+  #
+  # В dns_ru system НЕ добавлен: тот якорь стоит в ключах nameserver-policy,
+  # их поведение этой правкой не меняем.
+  dns_direct: &dns_direct
+    - system
+    - 77.88.8.8
+    - 77.88.8.1
+
+  # --- 🌐 Проксируемый DNS (Для заблокированного трафика) ---
+  # Тег #Основной профиль = запрос уходит ВНУТРЬ туннеля.
+  # Снаружи оператор видит только соединение с нодой, поэтому
+  # блокировки DoH и DoT в РФ на это не влияют вообще.
+  #
+  # ОДНА ЗАПИСЬ, И ИМЕННО tcp://. Почему:
+  #
+  # 1. udp:// ехал бы UDP-сессией через прокси. При only-tcp: true это
+  #    ОТДЕЛЬНОЕ соединение к ноде мимо мультиплекса (sing-mux/singmux.go),
+  #    а бюджет — не больше трёх коннектов, иначе ТСПУ выдаёт теневой бан
+  #    на 120 секунд. При only-tcp: false коннект не добавится, но UDP всё
+  #    равно едет поверх TCP-носителя (adapter/outbound/vless.go) — выигрыша нет.
+  #    tcp:// едет обычным стримом внутри h2mux при любом значении.
+  #
+  # 2. Второй слой TLS (https://) внутри уже зашифрованного туннеля
+  #    не даёт ничего, кроме лишнего хендшейка на каждое новое соединение.
+  #
+  # 3. Второй сервер не нужен: на ноде правило dns-hijack перехватывает
+  #    и 53/tcp, и 53/udp, A-запросы уходят во ВНУТРЕННИЙ резолвер ноды
+  #    с прогретым кэшем и тремя апстримами. То есть 1.1.1.1 здесь —
+  #    просто адрес назначения, до него запрос не доезжает. Дублировать
+  #    его вторым сервером значит удвоить стримы ради нуля.
+  #    Ядро опрашивает ВСЕ серверы группы одновременно (dns/util.go,
+  #    batchExchange), так что лишние записи стоят реальных денег.
+  dns_proxy: &dns_proxy
+    - tcp://1.1.1.1#Основной профиль
+
+  pr_http: &pr_http
+    type: http
+    interval: 259200
+    proxy: Основной профиль
+
+  rp_classical: &rp_classical
+    <<: *pr_http
+    behavior: classical
+    format: yaml
+
+  rp_domain: &rp_domain
+    <<: *pr_http
+    behavior: domain
+    format: mrs
+
+  rp_ipcidr: &rp_ipcidr
+    <<: *pr_http
+    behavior: ipcidr
+    format: mrs
+
+  # --- Общие настройки авто-групп ---
+  #  ТАЙМИНГИ ПОД МОБИЛЬНУЮ СЕТЬ РФ — почему именно такие.
+  #
+  #  interval — это ТОЛЬКО фоновое обновление. Реальный обрыв ловится
+  #  не им, а счётчиком неудачных подключений: max-failed-times отказов
+  #  подряд внутри окна timeout запускают внеочередную проверку
+  #  немедленно (adapter/outboundgroup/groupbase.go:283-297).
+  #  Поэтому частый interval не нужен — он только жжёт батарею,
+  #  дёргая проверку через каждый узел группы.
+  #
+  #  timeout 7000 — мобильный RTT в РФ регулярно скачет до 2-3 секунд
+  #  при слабом сигнале. При 5000 живой узел объявляется мёртвым
+  #  и группа начинает прыгать, обрывая соединения.
+  #
+  #  lazy включён по умолчанию (parser.go:53) и здесь не пишется:
+  #  пока группа не используется, проверки не идут вообще.
+  #
+  #  Меняешь тайминги ЗДЕСЬ — меняются в обеих группах сразу.
+  hc_auto: &hc_auto
+    icon: https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png
+    url: https://connectivitycheck.gstatic.com/generate_204
+    interval: 300
+    timeout: 7000
+    max-failed-times: 3
+    expected-status: 204
+    hidden: true
+    # Проверять узлы, пока ими никто не пользуется, незачем (D-85). Без этой строки
+    # ядро дозванивалось до каждого узла раз в пять минут круглые сутки: на подписке
+    # из двадцати одного узла это шесть тысяч рукопожатий в день — впустую разбуженный
+    # модем, расход батареи и трафика, нагрузка на провайдера.
+    #
+    # `lazy` в mihomo значит «пропустить проверку, если за интервал к группе никто
+    # не обращался» (adapter/provider/healthcheck.go:52). Пока трафик идёт, проверки
+    # идут как раньше: каждое соединение через группу отмечает её использованной
+    # (fallback.go -> findAliveProxy(true) -> Touch).
+    lazy: true
+
+  # Служебные псевдо-узлы не должны попадать в списки выбора.
+  no_service: &no_service "(?i)Без VPN|DIRECTv4"
+
+# Порта локального прокси (`mixed-port`) здесь нет намеренно (D-216): туннелю он не
+# нужен, а по открытому 127.0.0.1:7890 другие приложения узнают клиент mihomo и,
+# пущенные мимо VPN, адрес узла. Кому прокси нужен — допишет строку в редакторе.
+tcp-concurrent: true
+mode: rule
+log-level: error
+ipv6: true
+unified-delay: true
+
+# ЗАДАНО ЯВНО, ХОТЯ СОВПАДАЕТ С ДЕФОЛТОМ ЯДРА (config/config.go,
+# DefaultRawConfig). Полагаться на дефолт нельзя: он молча меняет поведение,
+# если однажды поменяется в ядре, — и здесь есть случай хуже, см. ниже.
+allow-lan: false          # дефолт false. Если порт прокси допишут руками,
+                          # значение true выставило бы его наружу в LAN.
+etag-support: true        # дефолт true. Делает обновление rule-provider'ов
+                          # условным (304) вместо полной перекачки раз в 3 дня.
+geo-auto-update: false    # дефолт false. Правил GEOIP/GEOSITE у нас нет,
+geo-update-interval: 24   # geoip.dat/geosite.dat качать незачем.
+
+# enable-process УДАЛЁН: такого ключа в текущем mihomo нет (структура
+# RawConfig, config/config.go), YAML-парсер молча его глотал. Актуальный —
+# find-process-mode.
+#
+# ⚠️ ЗАДАН ЯВНО, И ЭТО НЕ ПЕРЕСТРАХОВКА, А ИСПРАВЛЕНИЕ.
+# Дефолт ЯДРА действительно strict (component/process/find_process_mode.go,
+# FindProcessStrict = iota). Но до конфига он не доходит: FlClashX держит своё
+# значение — lib/models/clash_config.dart, @Default(FindProcessMode.always), —
+# а lib/state.dart:syncNetworkSettingsFromProvider читает find-process-mode
+# из профиля ТОЛЬКО ЕСЛИ КЛЮЧ ТАМ ЕСТЬ. Без этой строки остаётся always.
+#
+# Что стоит always: tunnel/tunnel.go:393 вызывает helper.FindProcess()
+# БЕЗУСЛОВНО на каждом соединении, до матчинга правил. Один вызов — это
+# JNI-апкол в JVM -> ConnectivityManager.getConnectionOwnerUid() (binder IPC)
+# -> packageManager.getPackagesForUid() (ещё один binder IPC), и всё это
+# под семафором на 4 разрешения, общим с protect()
+# (core/lib_android.go: semaphore.NewWeighted(4)). На слабом CPU это
+# сериализует установку новых соединений.
+#
+# strict делает резолв ленивым: только когда матчинг реально дошёл до
+# PROCESS-правила, и не больше одного раза на соединение (attemptProcessLookup
+# сбрасывается в false при первом вызове). Поэтому все PROCESS-правила
+# в этом файле сведены в один блок и опущены максимально низко.
+find-process-mode: strict
+
+# Быстрее замечать мёртвый носитель мультиплекса после сна ПК.
+# Дефолт (0) означает системный таймаут: на Linux это 7200 секунд простоя
+# до первой пробы — то есть практически никогда. С 30/10 ядро объявляет
+# пира мёртвым примерно за 2 минуты, и пул поднимает новый носитель.
+#
+# На Android НЕ РАБОТАЕТ: mihomo принудительно выключает там keepalive
+# независимо от конфига (component/keepalive/tcp_keepalive.go:35-41,
+# SetKeepAlive -> if runtime.GOOS == "android" { setDisableKeepAlive(true) }).
+# Телефон лечится только HTTP/2 PING'ом из h2mux — ещё одна причина
+# перевести мультиплекс на h2mux в шаблоне подписки.
+keep-alive-idle: 30
+keep-alive-interval: 10
+
+# ==========================================================================
+#  ВСТРОЕННЫЙ NTP — СТРАХОВКА REALITY ОТ КРИВЫХ ЧАСОВ УСТРОЙСТВА
+# ==========================================================================
+#  По умолчанию выключен (config/config.go, RawNTP{Enable: false}).
+#  Включаем осознанно, потому что REALITY завязан на время НАПРЯМУЮ:
+#
+#    component/tls/reality.go:44   utls.Config{ Time: ntp.Now, ... }
+#    component/tls/reality.go:71   binary.BigEndian.PutUint64(
+#                                      hello.SessionId, uint64(ntp.Now().Unix()))
+#    component/tls/reality.go:188  x509.VerifyOptions{ CurrentTime: ntp.Now() }
+#
+#  Метка времени зашивается ПРЯМО В ClientHello, и сервер отвергает хендшейк
+#  за пределами допустимого расхождения. На дешёвых устройствах с плавающими
+#  часами это выглядит как «подключился и сразу отвалился».
+#
+#  ntp.Now() = системное время + внутреннее смещение (ntp/time.go). Смещение
+#  заполняет этот сервис. Системные часы НЕ трогаем (write-to-system: false):
+#  на Android без root это всё равно невозможно.
+#
+#  Совместимо с правилом NETWORK,udp,REJECT ниже: при пустом dialer-proxy
+#  сервис использует dialer.NewDialer() (ntp/ntp/service.go:ReCreateNTPService)
+#  — прямой диал МИМО движка правил, а на Android поверх него ещё и
+#  DefaultSocketHook -> protect(), то есть сокет выходит мимо TUN.
+#
+#  Имя сервера резолвит proxy-server-nameserver, а НЕ nameserver-policy:
+#  диалер сервиса создан без своего резолвера, и тогда ядро берёт
+#  ProxyServerHostResolver (component/dialer/dialer.go, parseAddr). Там
+#  российский DNS, поэтому NTP работает с первой секунды, до подъёма туннеля.
+#  Строка pool.ntp.org в nameserver-policy нужна системному клиенту времени.
+ntp:
+  enable: true
+  # pool.ntp.org, а НЕ time.google.com: пул распределён по anycast и не
+  # зависит от достижимости Google из РФ. Оба имени есть и в fake-ip-filter,
+  # и в nameserver-policy, так что fake-IP системный клиент не получит.
+  server: pool.ntp.org
+  port: 123
+  interval: 30
+  write-to-system: false
+
+profile:
+  # ⚠️ FlClashX ПРИНУДИТЕЛЬНО ставит store-selected: false
+  # (lib/state.dart: rawConfig["profile"]["store-selected"] = false) — выбор
+  # группы он хранит сам, в selectedMap. Строку оставляем: в других
+  # Android-клиентах и на десктопе значение осмысленно.
+  store-selected: true
+  store-fake-ip: true
+
+sniffer:
+  enable: true
+  # ЗАДАНО ЯВНО, ХОТЯ СОВПАДАЕТ С ДЕФОЛТОМ (config/config.go:590-592).
+  # Полагаться на дефолт нельзя: он молча меняет маршрутизацию, если однажды
+  # поменяется в ядре.
+  #
+  # override-destination: true — после снифинга ядро подменяет назначение
+  # на распознанный домен и обнуляет DstIP. Для нашей схемы это ПРАВИЛЬНО:
+  # ноде уезжает домен, она резолвит его своим DoH и выбирает CDN рядом
+  # с собой, а не тот, что подсказал бы российский резолвер.
+  #
+  # parse-pure-ip: true — сниффер работает и для соединений, у которых домена
+  # нет вовсе (приложение пошло на голый IP). Именно это позволяет ловить
+  # системный DoH Windows по SNI, когда он коннектится на 8.8.8.8:443.
+  #
+  # force-dns-mapping: true — сниффер работает и для доменов из
+  # fake-ip-filter, получивших НАСТОЯЩИЙ IP (режим mapping). Соединения
+  # через fake-ip сниффер не трогает вовсе: домен у них уже известен
+  # (component/sniffer/dispatcher.go, shouldOverride).
+  override-destination: true
+  parse-pure-ip: true
+  force-dns-mapping: true
+  sniff:
+    HTTP:
+      ports:
+        - 80
+        - 8080-8880
+    TLS:
+      ports:
+        - 443
+        - 8443
+    QUIC:
+      ports:
+        - 443
+        - 8443
+  skip-dst-address:
+    # Тот же набор, что в reserved_ips: YAML не умеет сливать список из якоря
+    # с дополнением, поэтому перечислено заново.
+    - 0.0.0.0/8
+    - 10.0.0.0/8
+    - 100.64.0.0/10
+    - 127.0.0.0/8
+    - 169.254.0.0/16
+    - 172.16.0.0/12
+    - 192.0.0.0/24
+    - 192.0.2.0/24
+    - 192.88.99.0/24
+    - 192.168.0.0/16
+    - 198.51.100.0/24
+    - 203.0.113.0/24
+    - 224.0.0.0/3
+    - ::/127
+    - fc00::/7
+    - fe80::/10
+    - ff00::/8
+    # У MTProto нет SNI, поэтому TLS-сниффер на 443 обречён ждать данные и
+    # ошибаться на каждом соединении Телеграма, добавляя задержку к установке.
+    # Замерено 17.09.2026: 167 неудач снифера на соединениях Телеграма плюс
+    # таймаут чтения, при этом клиент перезванивает к тому же адресу каждые
+    # ~6 секунд (FACTS.md, F-73).
+    - rule-set:telegram_ips
+
+tun:
+  exclude-package:
+    [
+      air.ru.obi.mobile,
+      az.vtb.android,
+      biz.growapp.winline,
+      business.gid.hero,
+      business.gid.universe,
+      by.advasoft.android.troika.app,
+      centrida.neftmagistral,
+      chat.strelka,
+      club.chizhik,
+      club.skllzz.fitness,
+      com.allgoritm.youla,
+      com.apegroup.mcdonaldsrussia,
+      com.apteka.sklad,
+      com.asmo.infometeos,
+      com.avito.android,
+      com.bankffin.portfolio,
+      com.bastion,
+      com.bifit.rncbbeta,
+      com.binance.dev,
+      com.birzha_rt,
+      com.bogg.art.vkt,
+      com.carshering,
+      com.citymobil,
+      com.coolclever.app,
+      com.dartit.RTcabinet,
+      com.dartit.mobileagent,
+      com.dartit.rtcabinet,
+      com.deliveryclub,
+      com.discover.moscow.lite,
+      com.edadeal.android,
+      com.equeo.megafondraiv,
+      com.evrasiar,
+      com.gloriajeans.mobile,
+      com.gmeteos.infometeos,
+      com.gnivts.ausn,
+      com.gnivts.selfemployed,
+      com.goodok.mts,
+      com.gpn.azs,
+      com.grotem.match,
+      com.horosho.tips,
+      com.icemobile.lenta.prod,
+      com.idamob.tinkoff.android,
+      com.indygomobi.detifm,
+      com.indygomobi.relaxfm,
+      com.indygomobi.zenit,
+      com.invitro.app,
+      com.iwedia.ui.beeline.atv,
+      com.kazanexpress.ke_app,
+      com.keenetic.kn,
+      com.kms.free,
+      com.lamoda.lite,
+      com.lenta.employee,
+      com.lenta.lentochka_service,
+      com.leroymerlin.mobile,
+      com.logistic.sdek,
+      com.loyaltyplant.partner.subway,
+      com.magnit.delivery.courier,
+      com.match.club,
+      com.matchtv.rustore,
+      com.maxxt.recordradio,
+      com.mcd.superapp,
+      com.mcptt,
+      com.megafon.kk,
+      com.megafon.maps,
+      com.megafon.mcca.android.store,
+      com.megafon.rk,
+      com.mobium12580.app,
+      com.moex.finuslugi,
+      com.moscowsport,
+      com.mts.who_calls,
+      com.my.mygamesapp,
+      com.national.lottery,
+      com.navplatform.navigator.public,
+      com.notissimus.allinstruments.android,
+      com.octopod.russianpost.client.android,
+      com.onecwearable.keyboard.rustore,
+      com.orgp.spbpodorozhnik,
+      com.platfomni.gorzdrav,
+      com.pobeda.anniversary,
+      com.pogoda.infometeos,
+      com.premiumbonus.jamm.ramen,
+      com.programmisty.emiasapp,
+      com.punicapp.whoosh,
+      com.rostelecom.printservice,
+      com.ru.dixy,
+      com.rzd.eventsrzd,
+      com.salute.smarthome.prod,
+      com.sberauto.mobile,
+      com.sberbank.sberpravo,
+      com.sdkit.search.app,
+      com.spbtv.rosing,
+      com.svoi.bank,
+      com.taxsee.taxsee,
+      com.tdm.messenger,
+      com.teremok.keys,
+      com.tjuraniaapp,
+      com.tseh85,
+      com.uchi.app,
+      com.uip.gosuslugi2,
+      com.uma.musicvk,
+      com.vk.admin,
+      com.vk.calls,
+      com.vk.clips,
+      com.vk.im,
+      com.vk.love,
+      com.vk.mail,
+      com.vk.tv,
+      com.vk.vkvideo,
+      com.vkontakte.android,
+      com.vkusvill.courier,
+      com.vkusvill.vacancy,
+      com.wbextdelivery,
+      com.wbpoint.android.prod.release,
+      com.wbstream_app,
+      com.whsd.whsdapp,
+      com.wildberries.consultations,
+      com.wildberries.ru,
+      com.wildberries.wbkey,
+      com.wms_mm_point.mm_delivery_point,
+      com.yandex.aliceapp,
+      com.yandex.bank,
+      com.yandex.bluecollars,
+      com.yandex.browser,
+      com.yandex.browser.lite,
+      com.yandex.iot,
+      com.yandex.lavka,
+      com.yandex.mobile.drive,
+      com.yandex.mobile.realty,
+      com.yandex.plus.game.city,
+      com.yandex.searchapp,
+      com.yandex.shedevrus,
+      com.yandex.shedevrus2,
+      com.yandex.tasks.androidapp,
+      com.yandex.yamb,
+      com.zvooq.openplay,
+      es.hol.ing.zagsr,
+      games.my.cloud,
+      games.my.cloud.tv,
+      goldapple.ru.goldapple.customers,
+      gpm.tnt_premier,
+      im.dlg.dialogx,
+      im.dlg.enterprise,
+      intech.global.com.beeline,
+      io.github.dovecoteescapee.byedpi,
+      io.itforces.android.timetable,
+      level.travel,
+      live.vkplay.app,
+      logo.com.mbanking,
+      me.membrana.kids.parent.app,
+      megafon.transport.mobile,
+      net.metaquotes.metatrader4,
+      net.metaquotes.metatrader5,
+      one.premier.rustoretv,
+      org.orange.mobile,
+      org.rtk.cleaning,
+      otello.dgis.ru,
+      pro.arora.mobile.maradi,
+      pro.arora.mobile.pizza_milana,
+      pro.rocketTech.rocket.rocketapp,
+      pro.sber_zvuk,
+      ru.abrr.gas,
+      ru.aisa.android.ekpv2,
+      ru.akbars.mobile,
+      ru.alfabank.mobile.android,
+      ru.alfabank.oavdo.amc,
+      ru.alfadirect.app,
+      ru.alfastrah.app,
+      ru.aliexpress.buyer,
+      ru.altarix.mos.pgu,
+      ru.amina.moscow,
+      ru.auto.ara,
+      ru.aviasales,
+      ru.bankuralsib.mb.android,
+      ru.bcs.bcsbank,
+      ru.beeline.beebookreader,
+      ru.beeline.cloud,
+      ru.beeline.dol,
+      ru.beeline.messengerx,
+      ru.beeline.mwpsapp,
+      ru.beeline.pro,
+      ru.beeline.services,
+      ru.beeline.tve.android,
+      ru.beru.android,
+      ru.bkfon,
+      ru.bristol.bristol_app,
+      ru.bspb,
+      ru.burgerking,
+      ru.cardsmobile.mw3,
+      ru.cdek.courier,
+      ru.cdek.ek5,
+      ru.chitaigorod.mobile,
+      ru.cian.main,
+      ru.citilink,
+      ru.compass.tag,
+      ru.crptech.b2bmark,
+      ru.crptech.mark,
+      ru.dahl.messenger,
+      ru.datapax.mosobl,
+      ru.detmir.dmbonus,
+      ru.diftechsvc,
+      ru.dikidi,
+      ru.dit.smartstaff,
+      ru.dns.shop.android,
+      ru.dodopizza.app,
+      ru.domclick.mortgage,
+      ru.domopult.mosobleirc.android,
+      ru.drclinics.app.sovcom,
+      ru.dublgis.dgismobile,
+      ru.dublgis.dgismobile4preview,
+      ru.fanid,
+      ru.filit.mvideo.b2c,
+      ru.finassist,
+      ru.fns.billchecker,
+      ru.fns.billchecker.mobile.android,
+      ru.fns.lkfl,
+      ru.foodfox.client,
+      ru.ftc.tc,
+      ru.gazprombank.android.mobilebank.app,
+      ru.gazprompay.android,
+      ru.getpharma.eapteka,
+      ru.gibdd_pay.app,
+      ru.gid.app,
+      ru.gid.eventsapp,
+      ru.gid.most,
+      ru.gnivc.lkip,
+      ru.goods.marketplace,
+      ru.gosuslugi.auto,
+      ru.gosuslugi.culture,
+      ru.gosuslugi.goskey,
+      ru.gosuslugi.migrant,
+      ru.gosuslugi.pos,
+      ru.gosuslugi.pos.executor,
+      ru.gosuslugi.school,
+      ru.gosuslugi.volunteer,
+      ru.hh.android,
+      ru.hh.employer.android,
+      ru.ideast.championat,
+      ru.ideast.humor,
+      ru.ideast.nrj,
+      ru.ideast.romantika,
+      ru.ideast.ru101.rustore,
+      ru.imteleport.plp2,
+      ru.instamart,
+      ru.intech.lki,
+      ru.kari.android,
+      ru.kfc.kfc_delivery,
+      ru.kinopoisk,
+      ru.lenta.lentochka,
+      ru.leonardo.leonardoshop,
+      ru.leroymerlin.employee,
+      ru.leroymerlin.mobile,
+      ru.letobank.prometheus,
+      ru.lewis.dbo,
+      ru.lifepay.pos.alfapos,
+      ru.lifepay.pos.vtb,
+      ru.litres.android,
+      ru.litres.android.readfree,
+      ru.litres.androidtv,
+      ru.livelib.client,
+      ru.m2.squaremeter,
+      ru.m4bank.softpos.alfaru,
+      ru.m4bank.softpos.rshb,
+      ru.m4bank.softpos.vtbpos,
+      ru.magnit.hrtest.android,
+      ru.magnit.mesmag,
+      ru.magnit.tag,
+      ru.magnit.tms.armhde,
+      ru.magnit.vendorapp,
+      ru.mail.biz.avocado,
+      ru.mail.cloud,
+      ru.mail.horo.android,
+      ru.mail.intranet,
+      ru.mail.mailapp,
+      ru.mail.my,
+      ru.mail.search.electroscope,
+      ru.maxidom.ecomm,
+      ru.megafon.mlk,
+      ru.megafon.vn.client,
+      ru.megalabs.multifon,
+      ru.megamarket.marketplace,
+      ru.mes.dnevnik,
+      ru.mes.sputnik,
+      ru.mgfoms.pandora,
+      ru.mntk.dostavka.prod,
+      ru.more.play,
+      ru.mos.app,
+      ru.mos.ed,
+      ru.mos.gz,
+      ru.mos.myid,
+      ru.mos.ourcity,
+      ru.mos.polls,
+      ru.mos.um,
+      ru.mos.zaryadye,
+      ru.mosgorpass,
+      ru.mosmetro.metro,
+      ru.mosoblgaz,
+      ru.mosparking.appnew,
+      ru.mosreg.easuz.portal,
+      ru.mosreg.ekjp,
+      ru.mosreg.mingos.mdp.app,
+      ru.mosreg.mo112,
+      ru.mosreg.uslugi.mobile.beta,
+      ru.mts.bank,
+      ru.mts.books.droid,
+      ru.mts.live.app,
+      ru.mts.mtscode,
+      ru.mts.mtstv,
+      ru.mts.music.android,
+      ru.mts.mymts,
+      ru.mts.pay,
+      ru.mts.twomem,
+      ru.mts.vdome.resident,
+      ru.mvm.eldo,
+      ru.mybook,
+      ru.myspar,
+      ru.nalog.rmr.client,
+      ru.netbynet.app.personal_cabinet,
+      ru.netcraze.app,
+      ru.nspk.mir.loyalty,
+      ru.nspk.mirpay,
+      ru.nspk.sbpay,
+      ru.ntv.client,
+      ru.ntv.client.tv,
+      ru.ntv.today,
+      ru.ntvplus.service,
+      ru.ok.android,
+      ru.ok.dating,
+      ru.okbmei.gosservice,
+      ru.oneme.app,
+      ru.onlime.my.app,
+      ru.ostrovok.android,
+      ru.otpbank.mobile,
+      ru.ozon.app.android,
+      ru.ozon.chatzone,
+      ru.ozon.fintech.apvz,
+      ru.ozon.fintech.finance,
+      ru.ozon.fintech.sme,
+      ru.ozon.flex,
+      ru.ozon.fresh,
+      ru.ozon.hire,
+      ru.ozon.magistral,
+      ru.ozon.maple_app,
+      ru.ozon.ozon_pvz,
+      ru.ozon.profit,
+      ru.ozon.select,
+      ru.ozon.seller_app,
+      ru.ozon.tv,
+      ru.paribet,
+      ru.perekrestok.app,
+      ru.pichesky.rosneft,
+      ru.pikabu.android,
+      ru.plazius.cofix,
+      ru.plus.bookmate,
+      ru.profmedia.avtoradio,
+      ru.profmedia.likefm,
+      ru.pyaterochka.app.browser,
+      ru.rabota.app2,
+      ru.raiffeisennews,
+      ru.rambler.horoscopes.twa,
+      ru.rambler.mail,
+      ru.reksoft.okey,
+      ru.rgs.lk,
+      ru.ritmmedia.yappy,
+      ru.rolf.rolf,
+      ru.rosbank.android.beta,
+      ru.rostel,
+      ru.rostelecom.ideas,
+      ru.rostelecom.vatsmobilelk,
+      ru.rshb.dbo,
+      ru.rshb.dboul,
+      ru.rshb.digitalcoworkeroffice,
+      ru.rshb.ips_qr,
+      ru.rshb.privatebusiness,
+      ru.rshb.svoe_rodnoe,
+      ru.rshb.svoedom_android,
+      ru.rshb.svojfermer,
+      ru.rt.key,
+      ru.rt.life,
+      ru.rt.masterkey,
+      ru.rt.mb_installer,
+      ru.rt.mobileoffice,
+      ru.rt.ritm,
+      ru.rt.smarthome,
+      ru.rt.video.app.mobile,
+      ru.rt.video.app.mobile.b2b,
+      ru.rt.video.app.tv,
+      ru.rt.videocomfort,
+      ru.rt.wfm,
+      ru.rtdc.kakdela,
+      ru.russianhighways.mobile,
+      ru.russianpost.pechkin,
+      ru.rutube.RutubeKids,
+      ru.rutube.app,
+      ru.rutube.app.tv,
+      ru.rutube.studio,
+      ru.rzd.cargolk,
+      ru.rzd.newsdo.skills,
+      ru.rzd.pass,
+      ru.salute.b2b.prod,
+      ru.sbcs.store,
+      ru.sber.csradar,
+      ru.sber.telecom,
+      ru.sberbank.investor,
+      ru.sberbank.onlineencashment,
+      ru.sberbank.sberkids,
+      ru.sberbank.sbersign,
+      ru.sberbank_sbbol,
+      ru.sberbankmobile,
+      ru.sberins.insureapp.android,
+      ru.sbermegamarket.pro,
+      ru.serebryakovas.lukoilmobileapp,
+      ru.setka,
+      ru.sigma.gisgkh,
+      ru.sima_land.spb.market,
+      ru.smclinic.app.lk,
+      ru.smmd.superdelivery,
+      ru.sovcombank.dms,
+      ru.sovcombank.investor,
+      ru.sovcomcard.halva.v1,
+      ru.spb.dnevnik,
+      ru.spb.iac.dnevnikspb_new,
+      ru.spb.parking,
+      ru.sportmaster.app,
+      ru.start.androidmobile,
+      ru.stoloto.mobile,
+      ru.sunlight.sunlight,
+      ru.systtech.megafon.mobile,
+      ru.tander.magnit,
+      ru.tander.mobile_scout_flutter,
+      ru.tatneft.gasstations,
+      ru.taxovichkof.android,
+      ru.tbank.online,
+      ru.technokad.digitalkey,
+      ru.tele2.mytele2,
+      ru.tii.lkcomu,
+      ru.tinkoff.bnpl,
+      ru.tinkoff.invest.course,
+      ru.tinkoff.investing,
+      ru.tinkoff.magent,
+      ru.tinkoff.mvno,
+      ru.tinkoff.posterminal,
+      ru.tinkoff.sme,
+      ru.tntmusic.tv,
+      ru.tokyocity.tokyocity,
+      ru.troika.regional,
+      ru.tutu.etrains,
+      ru.tutu.tutu_emp,
+      ru.ues.users_personal_account,
+      ru.ufanet.myufanet,
+      ru.urentbike.app,
+      ru.usetech.velobike.v2,
+      ru.utk.dostavka,
+      ru.vk.hrtek,
+      ru.vk.store,
+      ru.vk.video,
+      ru.vkmusic.audio,
+      ru.vkpm.comedy,
+      ru.vkusvill,
+      ru.vseapteki,
+      ru.vtb.corporate.android.main_application,
+      ru.vtb.invest,
+      ru.vtb.smb,
+      ru.vtb24.mobilebanking.android,
+      ru.wb.courier,
+      ru.wb.go,
+      ru.wb.guru,
+      ru.wb.wband,
+      ru.wildberries.books,
+      ru.wildberries.manager,
+      ru.wildberries.team,
+      ru.wildberries.team2,
+      ru.wildberries.wbpayclient,
+      ru.winelab,
+      ru.wink.music,
+      ru.wink.music.tv,
+      ru.x5.foodru.rs,
+      ru.x5.key,
+      ru.x5.mfpnew,
+      ru.x5.mrm_android.personaldevice,
+      ru.x5.omni,
+      ru.x5.opermax.aura,
+      ru.x5.rooms,
+      ru.x5.wl.slata,
+      ru.x5.wrs2,
+      ru.x5.x5job,
+      ru.yandex.androidkeyboard,
+      ru.yandex.disk,
+      ru.yandex.games,
+      ru.yandex.key,
+      ru.yandex.mail,
+      ru.yandex.market,
+      ru.yandex.market.partner,
+      ru.yandex.metro,
+      ru.yandex.mobile.fmradio,
+      ru.yandex.mobile.gasstations,
+      ru.yandex.music,
+      ru.yandex.practicum.flutter_practicum,
+      ru.yandex.searchplugin,
+      ru.yandex.subtitles,
+      ru.yandex.taxi,
+      ru.yandex.taximeter,
+      ru.yandex.telemost,
+      ru.yandex.translate,
+      ru.yandex.travel,
+      ru.yandex.uber,
+      ru.yandex.weatherplugin,
+      ru.yandex.yandexmaps,
+      ru.yandex.yandexnavi,
+      ru.yandex_team.calendar_app,
+      ru.yoo.business,
+      ru.yoo.kassa,
+      ru.yoo.money,
+      ru.yoo.sdk.kassa.payments.example.release,
+      ru.yota.android,
+      ru.yozhka,
+      ru.zen.android,
+      ru.zhuck.webapp,
+      ru.zolotoy585.customer,
+      ruagro.start.tech,
+      su.azure.paymaster,
+      team.rtds.checkcontrol,
+      tech.clink.emias.emiasqrcode,
+      travel.ozon.mobile,
+      tv.lfstrm.smotreshka,
+      tv.ntvplus.app,
+      tv.ntvplus.app.tv,
+      wb.partners,
+      wildberries.business,
+      www.metro.com,
+      youdrive.today,
+    ]
+  enable: true
+  # ==========================================================================
+  #  ЧТО ИЗ ЭТОГО БЛОКА РЕАЛЬНО ДОХОДИТ ДО ЯДРА НА FlClashX
+  # ==========================================================================
+  #  FlClashX не отдаёт tun: в ядро целиком. core/tun/tun.go ПЕРЕСОБИРАЕТ
+  #  LC.Tun с нуля и передаёт только: Stack, DNSHijack, EndpointIndependentNat,
+  #  UDPTimeout, DisableICMPForwarding — плюс жёстко зашитый
+  #  Inet4Address = 172.19.0.1/30. Всё остальное отсюда до sing-tun не доезжает.
+  #
+  #  Ключи ниже НЕ УДАЛЕНЫ намеренно: в ClashMetaForAndroid и других клиентах,
+  #  отдающих tun: в ядро целиком, они работают. Здесь помечено, что есть что.
+  # ==========================================================================
+  #
+  #  stack — ✅ РАБОТАЕТ. Профиль выигрывает у настройки приложения, пока
+  #  appSetting.overrideNetworkSettings выключен (дефолт):
+  #  lib/state.dart:syncNetworkSettingsFromProvider читает tun.stack из профиля.
+  #  Ядро собрано с тегом with_gvisor (setup.dart:180 -> "with_gvisor,cmfa"),
+  #  так что доступны все три: system / gvisor / mixed.
+  #  system выбран за наименьший расход памяти — это важно на устройствах
+  #  Android Go с 2-3 ГБ ОЗУ. Если на конкретном устройстве плохо именно с UDP,
+  #  осмысленная альтернатива — mixed (system TCP + gvisor UDP).
+  #
+  #  С коммита ab405ba у ядра появился четвёртый стек — `mips` (D-86). На стенде
+  #  он выигрывает у system на многопоточном TCP и на форвардинге, но проигрывает
+  #  в один поток и по задержке, а на слабом железе разбухает по памяти. Замер
+  #  на телефоне (100 МБ через туннель, три круга на стек) разницы не показал
+  #  вовсе: на реальных 7–8 МБ/с оба стека простаивают. Поэтому умолчание прежнее,
+  #  а выбрать `mips` можно в настройках приложения — там же, где остальные три.
+  #
+  #  Про `gso: true`, который на стенде удваивал скорость: это лекарство от MTU 1500.
+  #  У нас MTU 9000 (TunService.TUN_MTU, проверено на устройстве: `tun0 mtu 9000`),
+  #  и ядро само отдаёт в туннель крупные сегменты — включать нечего.
+  stack: system
+  #  ❌ auto-route / auto-detect-interface — на FlClashX no-op: маршруты ставит
+  #  VpnService.Builder, а core/tun/tun.go эти поля не передаёт. Побочный
+  #  плюс: sing-tun из-за этого не поднимает NetworkUpdateMonitor
+  #  (listener/sing_tun/server.go:337), а значит не трогает netlink, который
+  #  Google запретил приложениям с Android 14.
+  auto-route: true
+  auto-detect-interface: true
+  #  ⚠️ dns-hijack — FlClashX ВСЕГДА перетирает этот ключ значением ["any:53"]
+  #  (lib/state.dart: rawConfig["tun"]["dns-hijack"] = realPatchConfig.tun.dnsHijack).
+  #  Потери нет: mihomo срезает схему (listener/sing_tun/server.go:280,
+  #  strings.Cut(d, "://")) и превращает any -> 0.0.0.0, а ShouldHijackDns
+  #  (listener/sing_tun/dns.go) матчит ЛЮБОЙ адрес на порту 53 и вызывается
+  #  и из NewConnection (TCP), и из NewPacket/NewPacketConnection (UDP).
+  #  То есть одна строка any:53 уже перехватывает и 53/tcp, и 53/udp.
+  #  tcp://any:53 оставлен для sing-box-совместимых клиентов, где схема значима.
+  dns-hijack:
+    - any:53
+    - tcp://any:53
+  #  ❌ strict-route / route-exclude-address — на FlClashX no-op, не передаются.
+  #  ВАЖНО НЕ ОБМАНУТЬСЯ: route-exclude-address НЕ выводит приватные сети
+  #  из туннеля. NetworkProps.routeMode по умолчанию RouteMode.config ->
+  #  routeAddress = [] -> builder.addRoute("0.0.0.0", 0). Весь IPv4 идёт в TUN.
+  #  Локалку спасает первое маршрутное правило в rules: RULE-SET,geoip-private,
+  #  Без VPN (выше него стоит только REJECT на порт 853).
+  strict-route: true
+  route-exclude-address: *reserved_ips
+  #  ЧЕГО ЗДЕСЬ НАМЕРЕННО НЕТ — разобрано по коду sing-tun v0.4.22
+  #  (версия из go.mod mihomo 1.19.30):
+  #
+  #  udp-timeout — ключ назван обманчиво. На stack: system он уходит в
+  #    stack_system.go:174 -> s.tcpNat = NewNat(s.ctx, s.udpTimeout), то есть
+  #    это таймаут ТАБЛИЦЫ ТРАНСЛЯЦИИ TCP (stack_system_nat.go: type TCPNat),
+  #    а не UDP. UDP в system-стеке (processIPv4UDP) его не использует вообще;
+  #    на gvisor поле кладётся в структуру и нигде не читается.
+  #    Запись обновляется только LookupBack, то есть ВХОДЯЩИМИ пакетами;
+  #    исходящий Lookup при попадании в кэш LastActive не трогает. А keepalive
+  #    на Android ядро выключает безусловно. Значит короткое значение убило бы
+  #    молчащие долгоживущие TCP-сокеты (push, WebSocket, long-poll).
+  #    Дефолт 5 минут (listener/sing/sing.go:32) — правильный, не трогаем.
+  #    Реальное время жизни UDP-сессии задаёт tunnel/tunnel.go:63
+  #    (udpTimeout = 60s) и это IDLE-таймаут: сбрасывается на каждом пакете
+  #    (tunnel/connection.go:163,177). Активный звонок или игра его не
+  #    достигают никогда, и из YAML он не настраивается.
+  #
+  #  endpoint-independent-nat — мёртвая опция. В sing-tun v0.4.22
+  #    EndpointIndependentNat встречается ровно один раз, в объявлении поля
+  #    StackOptions (stack.go:30), и ни один стек его не читает. Full-cone NAT
+  #    недоступен ни на одном стеке этой версии. Разрешённый нами UDP
+  #    (рефлекторы Telegram, Discord voice) — потоки клиент->сервер, которым
+  #    симметричного NAT достаточно.
+  #
+  #  disable-icmp-forwarding — оставлен дефолт false. ICMP НИКОГДА не идёт
+  #    через прокси: listener/sing_tun/prepare.go либо возвращает nil (и тогда
+  #    sing-tun сам отвечает синтетическим echo reply), либо открывает прямой
+  #    ICMP-сокет с логом "[ICMP] ... using DIRECT". Коннектов к ноде не
+  #    создаёт ни при каком значении. При true ЛЮБОЙ ping отвечал бы мгновенным
+  #    успехом, включая ping по IP ноды от поддержки, — это ломает диагностику.
+  #    СЛЕДСТВИЕ ДЛЯ ПОДДЕРЖКИ: ping НЕ является проверкой туннеля. По домену
+  #    он всегда получает фальшивый ответ (домен резолвится в fake-IP, и
+  #    skipPingForwardingByAddr -> resolver.IsFakeIP отсекает форвардинг),
+  #    по голому IP уходит напрямую мимо туннеля. Проверять только HTTP-пробой.
+
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  cache-algorithm: arc
+  # ЗАДАНО ЯВНО, ХОТЯ СОВПАДАЕТ С ДЕФОЛТОМ (config/config.go, RawDNS).
+  use-hosts: true
+  use-system-hosts: true
+  # Гонки fallback у нас нет и не должно быть: разделение РФ/мир делают
+  # nameserver-policy и правила, а не сравнение ответов. При пустом fallback
+  # блок fallback-filter инертен, поэтому его здесь и нет.
+  fallback: []
+  # 127.0.0.1, а не 0.0.0.0: при TUN внешняя привязка не нужна,
+  # а на публичном Wi-Fi открытый резолвер видно сканированием.
+  listen: 127.0.0.1:1053
+  prefer-h3: false
+  fake-ip-range: 198.18.0.1/16
+  # respect-rules НЕ включаем (config/config.go, parseDNS -> parseNameServer).
+  # Флаг вешает #RULES только на записи БЕЗ #proxy в nameserver/fallback/
+  # nameserver-policy; proxy-server- и direct-nameserver не трогает. nameserver
+  # у нас уже tcp://…#Основной профиль. Остаётся dns_ru в policy: 77.88.8.x
+  # лежит в geoip-ru -> «Без VPN», то есть ровно как сейчас, но с проходом
+  # правил на каждый DNS-диал, а пока geoip-ru не скачан — через MATCH в туннель.
+  #
+  # Outbound type: dns (dns-out) тоже не нужен: tun.dns-hijack any:53 (FlClashX
+  # пишет его всегда) ловит 53/tcp и 53/udp в sing-tun ДО движка правил
+  # (listener/sing_tun/dns.go, ShouldHijackDns) — правило DST-PORT,53 не
+  # сработает никогда.
+  respect-rules: false
+  # ЗАДАНО ЯВНО: от fake-ip-filter-mode зависит ВЕСЬ смысл списка ниже.
+  # blacklist (дефолт) = перечисленное НЕ получает fake-IP. whitelist
+  # перевернул бы список наизнанку и сломал маршрутизацию молча.
+  fake-ip-filter-mode: blacklist
+  fake-ip-ttl: 1
+  fake-ip-filter:
+    # --- Домены, которые ПУБЛИЧНЫЙ DNS резолвит в локальный адрес ---
+    # Классика fake-ip: имя вида 192-168-1-5.<id>.plex.direct отдаёт адрес
+    # твоей же локалки — так Plex выдаёт валидный TLS-сертификат на локальное
+    # соединение. С fake-ip клиент получает 198.18.x.x и локальное
+    # воспроизведение отваливается. Дальше реальный адрес ловит geoip-private.
+    - "+.plex.direct"
+    # Mijia — бренд умного дома Xiaomi, под общие суффиксы не подпадает.
+    # miot-spec.org нужен интеграции Xiaomi в Home Assistant.
+    - "+.mijia.tech"
+    - "+.miot-spec.org"
+    - "+.quickconnect.to"
+    # --- Локальные веб-морды роутеров ---
+    - "router.asus.com"
+    - "+.tplinkwifi.net"
+    - "+.routerlogin.net"
+    # --- Проверка связи и автообнаружение прокси ---
+    # Firefox проверяет капитивный портал сам, независимо от системы.
+    - "detectportal.firefox.com"
+    # wpad резолвится в локалке; с fake-ip браузер полезет за PAC-файлом
+    # на несуществующий адрес и подвиснет на таймауте.
+    - "wpad.*"
+    - rule-set:geosite-private
+    - "+.lan"
+    - "+.local"
+    - "*.stun.*"
+    - "stun.*"
+    # NTP. +.pool.ntp.org суффиксный, поэтому ловит и 2.android.pool.ntp.org —
+    # сервер AOSP по умолчанию. time.android.com добавлен для прошивок,
+    # которые берут время не из пула.
+    - "pool.ntp.org"
+    - "+.pool.ntp.org"
+    - "time.android.com"
+    - "time.google.com"
+    # Веб-морды и облака домашних роутеров: адрес должен быть настоящим,
+    # иначе устройство в локалке не найдётся.
+    - "+.keenetic.net"
+    - "+.keenetic.link"
+    - "+.mykeenetic.net"
+    - "+.miwifi.com"
+    - "+.yeelight.com"
+    - "+.yeelink.com"
+    - "+.xiaomi.com"
+    - "+.mi.com"
+    - "+.miot.com"
+    - "+.tp-link.com"
+    - "connectivitycheck.gstatic.com"
+    - "+.progress.me"
+    - "+.progressme.ru"
+    - "+.edvibe.com"
+    - "+.calls.okcdn.ru"
+    - "+.home.arpa"
+    - "+.connectivitycheck.android.com"
+    - "+.clients3.google.com"
+    - "+.mtalk.google.com"
+    - "+.fcm.googleapis.com"
+    - "+.fcm-xmpp.googleapis.com"
+    - "+.hicloud.com"
+    - "+.dbankcloud.com"
+    # Узлы операторов для Wi-Fi Calling: шлюз ePDG (epdg.epc.mncXXX.mcc250…),
+    # у МегаФона ещё xcap.ims и bsf, у МТС aes. Страховка для прошивок с IMS
+    # от Qualcomm/MediaTek (MIUI, ColorOS, OxygenOS): как они резолвят шлюз
+    # при VPN — не проверить. AOSP IWLAN (Pixel) и так ходит мимо туннеля:
+    # registerSystemDefaultNetworkCallback + DnsResolver.query(network) от
+    # android.uid.system. Маршрут и DNS — через custom-direct.
+    - "+.pub.3gppnetwork.org"
+  # Нужен только чтобы резолвить ДОМЕННЫЕ ИМЕНА DNS-серверов.
+  # Все наши серверы заданы адресами, так что одной строки хватает.
+  default-nameserver:
+    - 77.88.8.8
+  nameserver: *dns_proxy
+  # Домен ноды резолвится напрямую: российский DNS + DNS текущей сети.
+  # Ключевая строка всей отказоустойчивости: чтобы поднять туннель,
+  # туннель не нужен.
+  proxy-server-nameserver: *dns_direct
+  # Резолв хоста для выхода «Без VPN». Без ключа это основной резолвер
+  # (hub/executor/executor.go, updateDNS), и домены директа вне RU-политики —
+  # проп-фирмы, PROCESS-приложения, «Google Поиск» -> Без VPN — резолвились
+  # ЧЕРЕЗ туннель. DIRECT диалит именно Host (adapter/outbound/direct.go,
+  # RemoteAddress), а Host восстанавливается и для реальных IP
+  # (dns/middleware.go, withMapping активен и в fake-ip). Туннель умер —
+  # умирал и прямой трафик, плюс ответ был привязан к ноде.
+  direct-nameserver: *dns_direct
+  # ОБЯЗАТЕЛЬНО true: без policy +.lan, geosite-private и прочие имена
+  # с system ушли бы в Яндекс -> NXDOMAIN -> морда роутера не откроется.
+  # С true policy проверяется первой, direct-nameserver — для остального.
+  direct-nameserver-follow-policy: true
+  nameserver-policy:
+    "rule-set:geosite-private":
+      - system
+    # Рекламные домены. В fake-ip на A/AAAA/HTTPS отвечает withFakeIP
+    # (dns/middleware.go) ДО policy, поэтому rcode://success срабатывает
+    # только на прочих типах (TXT, MX, SRV…). Рекламу режет правило
+    # RULE-SET,ads-all,REJECT ниже; ключ оставлен ради остальных типов.
+  # "rule-set:ads-all": rcode://success   # ⛔ ОТКЛЮЧЕНО 18.09.2026
+    # +.routerlogin.net — локальное имя роутера Netgear, в private.list есть
+    # только routerlogin.com. Резолвить обязан сам роутер: policy тут
+    # first-match-wins по порядку (dns/resolver.go:271), а этот ключ выше
+    # ключа с custom-direct, поэтому system побеждает dns_ru.
+    "+.lan,+.local,+.home.arpa,+.routerlogin.net":
+      - system
+    "rule-set:youtube,category-ban-ru,whatsapp_domains,telegram_domains,discord_domains,meta_domains,instagram,instagram_ads,twitter_domains,google-play": *dns_proxy
+    "rule-set:geosite-ru,custom-direct,torrent-trackers,tiktok,ru-direct-inline": *dns_ru
+    "+.fcm.googleapis.com,+.fcm-xmpp.googleapis.com,+.mtalk.google.com": *dns_ru
+    # NTP — российским резолвером и НАПРЯМУЮ. Так встроенный ntp: выше и
+    # системная синхронизация времени работают с первой секунды, не дожидаясь
+    # поднятого туннеля. Часы — предусловие REALITY, см. комментарий у ntp:.
+    "time.google.com,+.pool.ntp.org,time.android.com,time.apple.com": *dns_ru
+
+proxy-groups:
+# ЗАЧЕМ У КАЖДОЙ ГРУППЫ ЯВНЫЙ url. Если ключ опустить, ядро подставляет
+# C.DefaultTestURL (constant/adapters.go:64), но Selector.MarshalJSON
+# (adapter/outboundgroup/selector.go:63) в этом случае СОЗНАТЕЛЬНО отдаёт
+# в API пустой "testUrl" — чтобы панель использовала свою настройку.
+# Панель, которая вернёт эту пустую строку обратно в ?url=, получит отказ:
+# urlToMetadata("") падает на "scheme not Support" (adapter/adapter.go),
+# и /group/{name}/delay отвечает 504 «all proxies timeout». Пинга нет.
+# Явный URL снимает всю эту цепочку.
+#
+# interval у select-групп НЕ ставим намеренно. parser.go:169 не подставляет
+# ему дефолт («select don't need auto health check»), а HealthCheck.auto()
+# при interval=0 не запускает цикл вовсе. Проверка остаётся по требованию,
+# и мы не тратим коннекты к ноде — их и так лимит 3 из-за ТСПУ.
+
+  # ==========================================
+  # ГЛАВНОЕ МЕНЮ (видимое)
+  # ==========================================
+  - name: Основной профиль
+    type: select
+    url: https://connectivitycheck.gstatic.com/generate_204
+    expected-status: 204
+    # Страховка для бейджа пинга в строке этой группы. Панель показывает
+    # пинг ВЫБРАННОГО участника (now), а своя history у группы не заполняется
+    # никогда — только у тех, кого она проверяет. Без этой строки при выборе
+    # ⚡ AUTO (а он первый, то есть дефолтный) в строке был бы прочерк:
+    # ⚡ AUTO больше никуда не входит, поэтому своей history у него нет.
+    # Проверено на живом ядре.
+    #
+    # 1800, а НЕ 300, как у остальных групп: панель подставляет в proxies:
+    # весь список узлов, и health-check пойдёт по всем — ровно дублируя
+    # работу ⚡ AUTO. Бейджу свежесть в пять минут не нужна, а нагрузка
+    # на ноду делится на шесть. lazy: true снимает проверку, когда группой
+    # никто не пользуется; первый замер всё равно делается сразу при старте.
+    interval: 1800
+    lazy: true
+    exclude-filter: *no_service
+    include-all-proxies: true
+    proxies:
+      - ⚡ AUTO
+
+  - name: Без VPN
+    icon: https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Direct.png
+    type: select
+    url: https://connectivitycheck.gstatic.com/generate_204
+    expected-status: 204
+    # interval здесь НЕ для самой группы, а ДЛЯ ЕЁ УЧАСТНИКОВ: своя history
+    # у группы не заполняется никогда, заполняется history тех, кого она
+    # проверяет (проверено на живом ядре). Панель показывает в строке пинг
+    # выбранного участника — без этой строки там прочерк.
+    # Проверяется ТОЛЬКО собственный список proxies: (parser.go отдаёт в
+    # NewCompatibleProvider именно его). Узлы, приехавшие через use: или
+    # из панели, сюда не попадают — у них свой health-check провайдера.
+    interval: 300
+    hidden: true
+    proxies:
+      - DIRECTv4
+
+  # ==========================================
+  # СКРЫТЫЕ АВТОМАТИЗАТОРЫ
+  # ==========================================
+  # Настройки проверки здоровья — в якоре hc_auto наверху файла.
+  - name: ⚡ AUTO
+    <<: *hc_auto
+    type: fallback
+    url: https://connectivitycheck.gstatic.com/generate_204
+    expected-status: 204
+    include-all-proxies: true
+    exclude-filter: *no_service
+
+  # Группы для конкретных сервисов
+  #
+  # Группы YouTube здесь больше нет (D-81). Она умела ровно одно: отправить
+  # YouTube в тот же «Основной профиль», куда он и так попадал, — и при этом
+  # занимала строку на экране выбора узла. Само правило маршрутизации осталось
+  # и стоит там же: без него YouTube ловится списком geoip-ru (кеши Google
+  # стоят у российских операторов) и уходит мимо туннеля.
+  - name: "Google Поиск"
+    icon: https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png
+    type: select
+    url: https://connectivitycheck.gstatic.com/generate_204
+    expected-status: 204
+    # interval здесь НЕ для самой группы, а ДЛЯ ЕЁ УЧАСТНИКОВ: своя history
+    # у группы не заполняется никогда, заполняется history тех, кого она
+    # проверяет (проверено на живом ядре). Панель показывает в строке пинг
+    # выбранного участника — без этой строки там прочерк.
+    # Проверяется ТОЛЬКО собственный список proxies: (parser.go отдаёт в
+    # NewCompatibleProvider именно его). Узлы, приехавшие через use: или
+    # из панели, сюда не попадают — у них свой health-check провайдера.
+    interval: 300
+    proxies:
+      - Основной профиль
+      - Без VPN
+
+rule-providers:
+  # ==========================================================================
+  #  БЛОКИРОВКА РЕКЛАМЫ — СПИСОК zxc-rv, ЗАТОЧЕННЫЙ ПОД РФ
+  # ==========================================================================
+  #  Короткая история, чтобы не наступить второй раз. Сначала этот провайдер
+  #  перевели на список MetaCubeX ради экономии памяти. Аудит показал, что
+  #  тот режет не только рекламу: в нём лежат graph.whatsapp.com,
+  #  graph.whatsapp.net, graph.instagram.com и graph-fallback.instagram.com —
+  #  рабочие API-эндпоинты. Побочно это глушило половину правила
+  #  RULE-SET,instagram_ads,Основной профиль, заведённого чтобы НЕ ломать ленту.
+  #
+  #  Проверка декодером mrs показала, что дефект был свойством ИМЕННО списка
+  #  MetaCubeX, а не блокировки рекламы. У zxc-rv (227 375 записей) пересечения
+  #  с сервисными наборами только по честной рекламе и телеметрии
+  #  (ads.youtube.com, analytics.facebook.com, pixel.facebook.com,
+  #  ads-twitter.com, analytics.tiktok.com) и по тайпсквотам-фишингу
+  #  (instagrem.com, facebgook.com, lnstagram-help.com) — их блокировать
+  #  как раз правильно. У WhatsApp, Telegram, Discord и Google Play — ноль.
+  #
+  #  Цена: 1898.5 КБ на диске -> 3458.4 КБ резидентно (mrs сжат zstd и в RAM
+  #  разворачивается примерно вдвое). Это 5-10% от RSS ядра. На слабых
+  #  устройствах вклад в LMK есть, но причиной проблем на Infinix был
+  #  find-process-mode: always, а не этот список.
+  #
+  #  ⚠️ Всё ниже отключено 18.09.2026. Имя ads-all связывает четыре места:
+  #  провайдер здесь, ключ nameserver-policy, правило в rules и зеркало
+  #  в sub-rules.quic. Включать — только все четыре сразу.
+  #
+  #  Закомментированная строка — международный список MetaCubeX. Включать
+  #  только вместе с allowlist на graph.* эндпоинты, иначе см. выше.
+  # ⛔ ОТКЛЮЧЕНО 18.09.2026. Блокировка рекламы убрана целиком: список резал рабочие
+  #    хосты сервисов (api.whatsapp.net, i.instagram.com, cs.avito.ru), а стоял выше
+  #    правил маршрутизации, поэтому WhatsApp, Instagram и Авито ломались (F-76).
+  #    Вернуть — раскомментировать здесь, правило в rules, зеркало в sub-rules.quic
+  #    и политику DNS.
+  # ads-all:
+  # <<: *rp_domain
+  # #url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ads-all.mrs
+  # url: https://github.com/zxc-rv/ad-filter/releases/latest/download/adlist.mrs
+  # path: ./ads_all.mrs
+  # ================= Локальная сеть =================
+  geosite-private:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/private.mrs
+    path: ./geosite-private.mrs
+  geoip-private:
+    <<: *rp_ipcidr
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/private.mrs
+    path: ./geoip-private.mrs
+  # ================= Торренты =================
+  torrent-trackers:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/legiz-ru/mihomo-rule-sets@main/other/torrent-trackers.mrs
+    path: ./rule-sets/torrent-trackers.mrs
+  # ==========================================================================
+  #  ТОРРЕНТЫ — ТРИ РАЗНЫХ СПИСКА, ТРИ РАЗНЫХ РЕШЕНИЯ
+  # ==========================================================================
+  #  torrent-clients  (classical, PROCESS-NAME) -> НАПРЯМУЮ.
+  #    112 записей. Вопреки первому впечатлению это НЕ Windows-only список:
+  #    22 записи с .exe, часть — имена процессов macOS/Linux, и 39 записей —
+  #    пакеты Android: org.proninyaroslav.libretorrent, com.utorrent.client,
+  #    hu.tagsoft.ttorrent.lite, com.delphicoder.flud, intelligems.torrdroid,
+  #    com.biglybt.android.client, ru.yourok.torrserve, com.bitcomet.android,
+  #    org.equeim.tremotesf, mobi.zona и т. д. На Android работает.
+  #    Стоит В НИЖНЕМ PROCESS-БЛОКЕ: правило PROCESS-based, а значит платит
+  #    резолвом процесса, и поднимать его выше нельзя.
+  #
+  #  torrent-trackers (domain)   -> НАПРЯМУЮ. Анонсы и DHT-бутстрап: пиринг
+  #    через ноду не нужен никому, а по бюджету коннектов он смертелен.
+  #
+  #  torrent-websites (domain)   -> В ТУННЕЛЬ. Это сайты-каталоги (rutracker
+  #    и подобные), их режет РКН. Именно за ними человек и включает VPN.
+  #
+  #  ⚠️ Раздача через туннель НЕ включается: пиры и DHT ловятся правилом
+  #  torrent-clients напрямую, и оно стоит ВЫШЕ NETWORK,udp,REJECT, поэтому
+  #  UDP торрента остаётся живым на прямом канале.
+  torrent-clients:
+    <<: *rp_classical
+    url: https://cdn.jsdelivr.net/gh/legiz-ru/mihomo-rule-sets@main/other/torrent-clients.yaml
+    path: ./rule-sets/torrent-clients.yaml
+  # ЗАГОТОВКА ДЛЯ РУЧНОГО ПОПОЛНЕНИЯ. Клиенты, которых НЕТ в списке legiz.
+  # Без такой строки торрент-приложение падает в MATCH,Основной профиль —
+  # то есть ВСЕ ЕГО ПИРЫ едут через ноду. Это худший из возможных исходов:
+  # и бюджет коннектов, и вопросы к хостеру.
+  #
+  # type: inline — работает с первой секунды, скачивать нечего.
+  # behavior: classical — только он понимает PROCESS-NAME.
+  #
+  # ⚠️ ИМЯ ПАКЕТА С ОПЕЧАТКОЙ НЕ ДАЁТ ОШИБКИ — правило просто молча никогда
+  # не сработает. Брать имена только с устройства: в FlClashX экран
+  # управления доступом показывает package name каждого приложения.
+  #
+  # Проверено, что этих в legiz-списке нет. Ниже — только те, в чьих именах
+  # я уверен; остальное дописывать по факту с устройств.
+  #
+  # ✅ ru.yourok.torrserve (TorrServe MatriX) в legiz УЖЕ ЕСТЬ — не дублировать.
+  #
+  # НЕ ДОБАВЛЯТЬ СЮДА КАТАЛОГИ. Lampa (top.rootu.lampa), NUM (ru.yourok.num),
+  # Stremio — это витрины, а не клиенты. Им нужен туннель, и они его уже
+  # получают через MATCH. Уведёшь их сюда — поломаешь выдачу.
+  #
+  # ИСКЛЮЧЕНИЕ: лаунчер со ВСТРОЕННЫМ TorrServer (некоторые сборки Lampa,
+  # прошивки вроде Prisma) — это один процесс, который делает и то, и другое.
+  # Его сюда добавлять МОЖНО и нужно: RULE-SET,torrent-websites стоит ВЫШЕ
+  # этого правила, поэтому каталог всё равно уйдёт в туннель, а пиры — прямо.
+  torrent-clients-extra:
+    type: inline
+    behavior: classical
+    payload:
+      - PROCESS-NAME,com.frostwire.android      # FrostWire
+      - PROCESS-NAME,com.vuze.android.remote    # Vuze / BiglyBT Remote
+  torrent-websites:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/legiz-ru/mihomo-rule-sets@main/other/torrent-websites.mrs
+    path: ./rule-sets/torrent-websites.mrs
+  # ================= Соцсети и Мессенджеры =================
+  whatsapp_domains:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/whatsapp.mrs
+    path: ./rule-sets/whatsapp_domains.mrs
+  meta_ips:
+    <<: *rp_ipcidr
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/facebook.mrs
+    path: ./rule-sets/meta_ips.mrs
+  meta_domains:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/facebook.mrs
+    path: ./rule-sets/meta_domains.mrs
+  telegram_domains:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/telegram.mrs
+    path: ./rule-sets/telegram_domains.mrs
+  telegram_ips:
+    <<: *rp_ipcidr
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/telegram.mrs
+    path: ./rule-sets/telegram_ips.mrs
+  telegram_additional_ips:
+    <<: *rp_classical
+    url: https://cdn.jsdelivr.net/gh/Davoyan/mihomo-rule-sets@main/domains/additional-telegram-ips.yaml
+    # расширение .yaml, а не .mrs — формат здесь classical
+    path: ./rule-sets/telegram_additional_ips.yaml
+  discord_domains:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/discord.mrs
+    path: ./rule-sets/discord_domains.mrs
+  discord_voiceips:
+    <<: *rp_ipcidr
+    url: https://cdn.jsdelivr.net/gh/legiz-ru/mihomo-rule-sets@main/other/discord-voice-ip-list.mrs
+    path: ./rule-sets/discord_voiceips.mrs
+  cloudflare_ips:
+    <<: *rp_ipcidr
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudflare.mrs
+    path: ./rule-sets/cloudflare_ips.mrs
+  instagram:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/instagram.mrs
+    path: ./rule-sets/instagram.mrs
+  instagram_ads:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/instagram@ads.mrs
+    path: ./rule-sets/instagram_ads.mrs
+  tiktok:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tiktok.mrs
+    path: ./rule-sets/tiktok.mrs
+  twitter_domains:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/twitter.mrs
+    path: ./rule-sets/twitter_domains.mrs
+  twitter_ips:
+    <<: *rp_ipcidr
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/twitter.mrs
+    path: ./rule-sets/twitter_ips.mrs
+  # ================= Медиа и Стриминг =================
+  youtube:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/youtube.mrs
+    path: ./geosite-youtube.mrs
+  # ================= Экосистемы =================
+  google-play:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google-play.mrs
+    path: ./rule-sets/google-play.mrs
+  # ================= RU Сегмент =================
+  category-ban-ru:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/legiz-ru/mihomo-rule-sets@main/other/category-ban-ru.mrs
+    path: ./category-ban-ru.mrs
+  ru-app-list:
+    <<: *rp_classical
+    url: https://cdn.jsdelivr.net/gh/legiz-ru/mihomo-rule-sets@main/other/ru-app-list.yaml
+    path: ./rule-sets/ru-app-list.yaml
+  geosite-ru:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/Davoyan/mihomo-rule-sets@main/rules/category-ru.mrs
+    path: ./rule-sets/geosite-ru.mrs
+  geoip-ru:
+    <<: *rp_ipcidr
+    #url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/ru.mrs
+    url: https://cdn.jsdelivr.net/gh/Davoyan/mihomo-rule-sets@main/ip-for-ru/lists/ips-for-ru.mrs
+    path: ./geoip_ru_dav.mrs
+  # Подстраховка на первые минуты после установки.
+  # Живёт прямо в конфиге (type: inline), скачивать нечего — работает
+  # с первой секунды, пока geosite-ru ещё не дотянулся.
+  # Стоит В ПРАВИЛАХ НИЗКО, прямо перед geosite-ru: все правила
+  # сервисов выше него продолжают выигрывать, включая category-ban-ru.
+  # behavior: classical — только он понимает DOMAIN-SUFFIX и DOMAIN-KEYWORD.
+  ru-direct-inline:
+    type: inline
+    behavior: classical
+    payload:
+      - DOMAIN-SUFFIX,yastatic.net
+      - DOMAIN-SUFFIX,yandex.net
+      - DOMAIN-SUFFIX,yandex.kz
+      - DOMAIN-SUFFIX,yandex.com
+      - DOMAIN-SUFFIX,yadi.sk
+      - DOMAIN-SUFFIX,mycdn.me
+      - DOMAIN-SUFFIX,jivosite.com
+      - DOMAIN-SUFFIX,vk.com
+      - DOMAIN-SUFFIX,kudago.com
+      - DOMAIN-SUFFIX,kinescope.io
+      - DOMAIN-SUFFIX,redheadsound.studio
+      - DOMAIN-SUFFIX,plplayer.online
+      - DOMAIN-SUFFIX,lomont.site
+      - DOMAIN-SUFFIX,remanga.org
+      - DOMAIN-SUFFIX,shopstory.live
+      - DOMAIN-KEYWORD,avito
+      - DOMAIN-KEYWORD,miradres
+      - DOMAIN-KEYWORD,2gis
+      - DOMAIN-KEYWORD,diginetica
+      - DOMAIN-KEYWORD,kinescopecdn
+      - DOMAIN-KEYWORD,kaspersky
+      - DOMAIN-KEYWORD,stepik
+      - DOMAIN-KEYWORD,likee
+      - DOMAIN-KEYWORD,yappy
+      - DOMAIN-KEYWORD,pikabu
+      - DOMAIN-KEYWORD,okko
+      - DOMAIN-KEYWORD,kion
+      - DOMAIN-KEYWORD,ozon
+      - DOMAIN-KEYWORD,wildberries
+      - DOMAIN-KEYWORD,aliexpress
+      # --- Спорные, вынесены отдельно, включай осознанно ---
+      # wink   — подстрока: ловит любой домен со «wink» внутри (twinkle.com)
+      # premier — ловит premierleague.com, premierinn.com и прочее зарубежное
+      # - DOMAIN-KEYWORD,wink
+      # - DOMAIN-KEYWORD,premier
+      #
+      # Зарубежные сервисы, которые сами блокируют российские адреса.
+      # Направив их напрямую, ты их и выключишь. Проверь каждый на себе.
+      # - DOMAIN-KEYWORD,shutterstock
+      # - DOMAIN-KEYWORD,researchgate
+      # - DOMAIN-KEYWORD,springer
+      # - DOMAIN-SUFFIX,avira.com
+
+  # ================= Обход DNS мимо mihomo =================
+  # Приложения и браузеры со СВОИМ шифрованным DNS уносят резолв
+  # за пределы ядра: fake-ip не работает, разделение RU/мир ломается,
+  # трафик уезжает не туда. С августа 2026 это ещё и просто не работает —
+  # операторы РФ рвут DoH/DoT к Google и Cloudflare на этапе TLS.
+  # Пользователь видит «интернет не работает при включённом VPN».
+  #
+  # Просить сорок человек лезть в настройки бесполезно. Вместо этого
+  # роняем такие попытки БЫСТРО: приложение получает отказ и штатно
+  # откатывается на обычный DNS через 53 -> сюда, в mihomo.
+  #
+  # Куда смотреть пользователю, если он всё же хочет выключить руками:
+  #   Android:  Настройки -> Сеть -> Частный DNS -> Автоматически/Выкл
+  #   Chrome:   Настройки -> Конфиденциальность -> Использовать
+  #             безопасный DNS -> выключить
+  #   Firefox:  Настройки -> DNS через HTTPS -> Выкл
+  #
+  # Синтаксис: "+.foo" ловит и сам foo, и все поддомены, и НЕ ловит
+  # notfoo или foo.evil.com — проверено на component/trie (Insert
+  # раскладывает "+." в два узла: сам домен и wildcard-поддомены).
+  # Поэтому отдельная строка вида "dns.google" рядом с "+.dns.google"
+  # не нужна.
+  #
+  # РАБОТАЕТ ДАЖЕ КОГДА КЛИЕНТ ИДЁТ ПО IP. Windows 11 «Шифрованный DNS»
+  # коннектится на 8.8.8.8:443 или 1.1.1.1:443 напрямую, домена
+  # в назначении нет. Но сниффер TLS достаёт SNI, кладёт его
+  # в metadata.SniffHost (component/sniffer/dispatcher.go:170 — БЕЗУСЛОВНО,
+  # независимо от override-destination), а все доменные правила матчатся
+  # через metadata.RuleHost(), которое предпочитает SniffHost
+  # (constant/metadata.go:270). Порт 443 у нас сниффается, значит ловится.
+  #
+  # DoH поверх HTTP/3 режут первые строки sub-rules.quic — ДО geosite-ru.
+  # Без них российские DoH из geosite-ru (dns.comss.one, xbox-dns.ru,
+  # dns.astracat.ru, dns.geohide.ru) уходили бы по HTTP/3 напрямую.
+  # ECH мог бы спрятать SNI, но для него нужна HTTPS-запись (qType 65),
+  # а нода отдаёт на неё пустой NOERROR. Круг замкнут.
+  doh-bypass:
+    type: inline
+    behavior: domain
+    payload:
+      - "+.dns.google"
+      - "+.cloudflare-dns.com"
+      - "one.one.one.one"
+      - "+.dns.quad9.net"
+      - "+.adguard-dns.com"
+      - "+.dns.nextdns.io"
+      - "+.doh.opendns.com"
+      - "+.dns.controld.com"
+      - "+.doh.cleanbrowsing.org"
+      - "+.dns.sb"
+      - "+.doh.mullvad.net"
+      # --- Российские сервисы. Их РКН НЕ блокирует, и в этом вся беда: ---
+      # пользователь не увидит ошибки, а разделение RU/мир у него молча
+      # сломается — резолв уйдёт мимо ядра, fake-ip перестанет работать,
+      # трафик поедет не туда. У xbox-dns вдобавок своя подмена адресов
+      # для «разблокировки», и поверх нашего туннеля это двойная
+      # маршрутизация с непредсказуемым результатом.
+      # Под VPN оба избыточны: он уже разблокирует всё, ради чего их ставят.
+      - "+.comss.one"        # DoH https://dns.comss.one/dns-query, DoT, DoQ
+      - "+.xbox-dns.ru"      # DoH https://xbox-dns.ru/dns-query, DoT xbox-dns.ru
+
+  # Официальный список DoH/DoT-эндпоинтов из meta-rules-dat. Проверено:
+  # 126 записей — 123 точных хоста + ровно три суффикса (+.opendns.com,
+  # +.cloudflare-dns.com, +.nextdns.io). Доменов общего назначения нет,
+  # так что REJECT по нему безопасен.
+  #
+  # Он ДОПОЛНЯЕТ инлайн doh-bypass выше, а не заменяет его: в category-doh
+  # нет +.dns.controld.com и doh.mullvad.net, а наши записи с "+." шире
+  # точных хостов из списка. Со своей стороны category-doh закрывает то,
+  # чего нет у нас: dns.astracat.ru, dns.geohide.ru, dns.mafioznik.xyz,
+  # dnsguard.pub, *.cloudflare-gateway.com, doh.360.cn, *.doh.sb и DoT
+  # Яндекса (common/safe/family.dot.dns.yandex.net).
+  category-doh:
+    <<: *rp_domain
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-doh.mrs
+    path: ./rule-sets/category-doh.mrs
+
+  # Десять определялок IP одним набором вместо десяти отдельных правил.
+  # В behavior: domain простая запись = точное совпадение, то есть семантика
+  # ровно та же, что у DOMAIN,... Пускаем в прокси, чтобы пользователь видел
+  # адрес ноды, а не свой.
+  ip-checkers:
+    type: inline
+    behavior: domain
+    payload:
+      - flclashx.app
+      - ipwho.is
+      - api.myip.com
+      - ipapi.co
+      - ident.me
+      - ip-api.com
+      - ipinfo.io
+      - api.ip.sb
+      - 2ip.io
+      - 2ipcore.com
+      # Дописано 22.09.2026 (D-81). Этих в списке не было, и они уходили мимо
+      # туннеля: домен не подходит ни под одно правило выше, а ниже его ловит
+      # geoip-ru. Человек открывал определялку, видел свой домашний адрес
+      # и решал, что VPN не работает. Проверено на устройстве: api.ipify.org
+      # и ifconfig.me отдавали адрес провайдера при поднятом туннеле.
+      - api.ipify.org
+      - ipify.org
+      - ifconfig.me
+      - ifconfig.co
+      - icanhazip.com
+      - myip.wtf
+      - wtfismyip.com
+      - checkip.amazonaws.com
+      - ipecho.net
+      - whatismyipaddress.com
+
+  custom-direct:
+    type: inline
+    behavior: domain
+    payload:
+      - "+.yastatic.net"
+      - "+.yandex.com"
+      - "+.calls.okcdn.ru"
+      - "+.gosuslugi.ru"
+      - "+.connectivitycheck.gstatic.com"
+      - "+.mtalk.google.com"
+      - "+.pushtrs.push.hicloud.com"
+      - "+.pushtrs1.push.hicloud.com"
+      - "+.token-drcn.push.dbankcloud.com"
+      - "+.intercom.io"
+      - "+.intercomcdn.com"
+      - "+.cloudstori.com"
+      - "+.progress.me"
+      - "+.progressme.ru"
+      - "+.edvibe.com"
+      # Умный дом. Домены уже были в fake-ip-filter (то есть получали реальный
+      # адрес), но ни одно правило не отправляло их напрямую — и они уезжали
+      # в туннель через MATCH. Из-за этого приложения вроде Mi Home ходят
+      # в облако через зарубежный узел и отдают туннельный адрес при установке
+      # P2P, отчего камеры открываются нестабильно и с плохим качеством.
+      - "+.xiaomi.com"
+      - "+.mi.com"
+      - "+.miot.com"
+      - "+.miwifi.com"
+      # Проверки связи и капитивного портала — ТОЛЬКО НАПРЯМУЮ.
+      # Их смысл в том, чтобы проверить НИЖНЮЮ сеть. Через туннель они
+      # рапортуют «интернет есть» всегда, пока жив туннель, и система
+      # перестаёт замечать капитивный портал в отеле или кафе.
+      # Домены уже были в fake-ip-filter, но маршрута в direct не имели
+      # и уезжали в туннель — видно в логах: ping.archlinux.org и
+      # detectportal.firefox.com шли через Франкфурт.
+      - "+.detectportal.firefox.com"
+      - "+.connectivitycheck.android.com"
+      - "+.clients3.google.com"
+      # Узлы операторов для Wi-Fi Calling (пара к записи в fake-ip-filter):
+      # если IKE/IPsec зайдёт в TUN, оператор должен видеть российский адрес.
+      - "+.pub.3gppnetwork.org"
+      - "+.mijia.tech"
+      - "+.miot-spec.org"
+      - "+.yeelight.com"
+      - "+.yeelink.com"
+      - "+.tp-link.com"
+      # Роутеры и NAS с удалённым доступом. Лежали в fake-ip-filter (то есть
+      # получали реальный адрес), но ни одно правило не гнало их в директ —
+      # уезжали в MATCH, в туннель. Тот же класс дефекта, что был с Mi Home:
+      # облако видит адрес ноды и NAT-проброс к домашнему устройству ломается.
+      - "+.quickconnect.to"
+      - "+.routerlogin.net"
+      - "+.keenetic.net"
+      - "+.keenetic.link"
+      - "+.mykeenetic.net"
+      - "+.hicloud.com"
+      - "+.dbankcloud.com"
+      - "ip.mail.ru"
+      - "ipv4-internet.yandex.net"
+      - "ipv6-internet.yandex.net"
+sub-rules:
+  # ЗЕРКАЛО основного списка для UDP/443, порядок тот же.
+  #
+  # REJECT-строки основного списка (DoH, реклама) повторять ОБЯЗАТЕЛЬНО
+  # и СТРОГО ВЫШЕ geosite-ru: калитка QUIC стоит в rules выше их, а в
+  # geosite-ru целые зоны ru, su, by, рф, yandex. Без этих строк 3290
+  # доменов ads-all (mc.yandex.ru, an.yandex.ru, ads.adfox.ru,
+  # top-fwz1.mail.ru), ещё 29 из ru-direct-inline (ads.vk.com,
+  # appmetrica.yandex.net) и российские DoH (dns.comss.one, xbox-dns.ru)
+  # шли по HTTP/3 НАПРЯМУЮ, мимо блокировки.
+  #
+  # ПРЯМЫЕ правила зеркалить не обязательно: здесь нет torrent-trackers,
+  # tiktok, проп-фирм — несовпавшее уходит в MATCH,REJECT, то есть такой
+  # адрес просто теряет HTTP/3 и откатывается на TCP. Ошибка безобидная.
+  #
+  # ru-app-list отсюда УБРАН: он PROCESS-based, то есть заставлял бы ядро
+  # резолвить процесс на КАЖДОЙ UDP/443-сессии — ради приложений, которые
+  # и так вынесены из туннеля через tun.exclude-package.
+  quic:
+    - RULE-SET,doh-bypass,REJECT
+    - RULE-SET,category-doh,REJECT
+    - RULE-SET,custom-direct,Без VPN
+    # Ниже custom-direct, как в основном списке: ручные исключения из
+    # рекламного списка обязаны работать и по HTTP/3.
+    # - RULE-SET,ads-all,REJECT   # ⛔ ОТКЛЮЧЕНО 18.09.2026
+    # Заблокированные в РФ режем ПЕРВЫМИ, до строки рунета: в основном
+    # списке они уходят в туннель, а туннельный QUIC нам не нужен.
+    # Без этой строки geosite-ru (там сплошной +.ru) накрыл бы их и пустил
+    # QUIC напрямую — браузер попробовал бы H3, получил тишину от ТСПУ
+    # и затупил, причём из-за кэша Alt-Svc не один раз.
+    - RULE-SET,category-ban-ru,REJECT
+    - RULE-SET,ru-direct-inline,Без VPN
+    - RULE-SET,geosite-ru,Без VPN
+    - RULE-SET,geoip-ru,Без VPN,no-resolve
+    - MATCH,REJECT
+
+rules:
+  # ==========================================================================
+  #  ЛОКАЛЬНАЯ СЕТЬ — ПЕРВОЙ ИЗ МАРШРУТНЫХ, СРАЗУ ЗА REJECT НА 853
+  # ==========================================================================
+  #  Стоит выше всех глобальных правил, включая блок QUIC. Иначе
+  #  запрет UDP/443 накрывает и устройства в твоей же локалке.
+  #  Здесь же живут fe80::/ULA, поэтому обнаружение устройств
+  #  по IPv6 продолжает работать несмотря на REJECT ::/0 ниже.
+  # ==========================================================================
+  #  ⚠️ ПОРЯДОК ВАЖЕН: это правило обязано стоять раньше geoip-private. В обратном
+  #  порядке она перехватит DoT на 172.19.0.2:853 и Android зациклит повторы.
+  #  Явный REJECT, а не REJECT-DROP: отказ приходит сразу, и повторы прекращаются.
+  - DST-PORT,853,REJECT
+  - RULE-SET,geoip-private,Без VPN,no-resolve
+  - RULE-SET,geosite-private,Без VPN
+
+  # ==========================================================================
+  #  🧱 QUIC РЕЖЕТСЯ ТОЛЬКО НА ТУННЕЛЬНОМ ПУТИ
+  # ==========================================================================
+  #  ПРЯМОЙ QUIC СОХРАНЯЕТСЯ. Список внутри sub-rules.quic отправляет
+  #  российские адреса в «Без VPN», и HTTP/3 у них продолжает работать.
+  #  Режется только то, что иначе уехало бы в туннель.
+  #
+  #  (Здесь раньше стоял блок «QUIC режется везде — и зарубежный,
+  #  и российский». Он противоречил фактическому sub-rules.quic и удалён.)
+  #
+  #  Почему туннельный QUIC не нужен: двойной congestion control поверх
+  #  TCP-носителя; при only-tcp: true ещё и отдельный коннект к ноде на
+  #  каждый UDP-поток (бюджет ТСПУ — три), при false — HOL в общей несущей;
+  #  мимо splice.
+  #  К прямому каналу не относится ни один довод, а на слабом LTE QUIC
+  #  заметно лучше переживает потери, чем TCP.
+  #
+  #  Как это выглядит для приложения: REJECT для UDP — это ТИХИЙ чёрный
+  #  ящик, а не отказ. adapter/outbound/reject.go: nopPacketConn.WriteTo
+  #  молча возвращает успех, ReadFrom отдаёт io.EOF. ICMP unreachable
+  #  не шлётся. Браузер ждёт таймаута QUIC-хендшейка и откатывается на TCP —
+  #  ровно как при блокировке ТСПУ. REJECT и REJECT-DROP для UDP
+  #  практически неразличимы.
+  #
+  #  ---- КАК СДЕЛАТЬ ПО УМУ, ЕСЛИ ПОНАДОБИТСЯ ----
+  #
+  #  Чтобы пустить QUIC отдельным сервисам, ставь ИСКЛЮЧЕНИЯ ВЫШЕ
+  #  этого правила — первое совпадение выигрывает. Например:
+  #
+  #    - AND,((RULE-SET,telegram_ips),(NETWORK,udp),(DST-PORT,443)),Основной профиль
+  #    - AND,((RULE-SET,discord_domains),(NETWORK,udp),(DST-PORT,443)),Основной профиль
+  #    - AND,((RULE-SET,geosite-ru),(NETWORK,udp),(DST-PORT,443)),Без VPN
+  #
+  #  ⚠️ ВАЖНО: на нодах в Xray стоит зеркальное правило
+  #       {"ruleTag": "block-quic", "port": 443, "network": "udp",
+  #        "outboundTag": "BLOCK"}
+  #  Оно режет UDP/443 уже НА СЕРВЕРЕ. Поэтому исключение, добавленное
+  #  только здесь, работать не будет: пакет дойдёт до ноды и умрёт там.
+  #  Любое исключение надо заводить В ДВУХ МЕСТАХ — здесь и в маршрутизации
+  #  ноды, выше правила block-quic (там оно называется allow-udp443-telegram).
+  #  Серверное правило при этом не убирать: оно страхует клиентов
+  #  на других приложениях и старых конфигах, у которых этой строки нет.
+  #  Без него такой юзер пустит QUIC в туннель: при only-tcp: true это
+  #  коннект на каждый поток и теневой бан ТСПУ на 120 секунд, при false —
+  #  двойной congestion control и HOL в общей несущей.
+  # ==========================================================================
+  #  ПОРЯДОК УСЛОВИЙ ВНУТРИ AND — НЕ КОСМЕТИКА.
+  #  Под-правила проверяются по очереди до первого несовпадения
+  #  (rules/logic/logic.go, case C.AND). Если поставить RULE-SET первым,
+  #  ipcidr-сет будет проверяться на КАЖДОМ соединении, а без no-resolve
+  #  он ещё и дёрнет настоящий DNS-запрос: при fake-ip ядро обнуляет DstIP
+  #  (tunnel/tunnel.go:296), и helper.ResolveIP() уходит в сеть.
+  #  Дешёвые условия первыми, no-resolve обязателен.
+
+  #  QUIC режем ТОЛЬКО на туннельном пути. Прямой трафик его сохраняет.
+  #
+  #  Все три довода за блокировку относятся исключительно к туннелю:
+  #  двойной congestion control поверх TCP-носителя; при only-tcp: true
+  #  отдельный коннект к ноде на каждый UDP-поток (бюджет ТСПУ — три), при
+  #  false — HOL в общей несущей; мимо splice. К прямому каналу не относится
+  #  ни один, а на слабом LTE QUIC заметно лучше переживает потери, чем TCP.
+  #
+  #  Список внутри ЗЕРКАЛИТ основной блок — тогда QUIC и TCP принимают
+  #  одинаковое решение. Забыть там ПРЯМОЕ правило безобидно: адрес потеряет
+  #  HTTP/3 и откатится на TCP. Забыть REJECT (DoH, реклама) — НЕТ: калитка
+  #  стоит выше них, и geosite-ru внутри пустит такой домен по HTTP/3 напрямую.
+  #
+  #  MATCH,REJECT в конце ОБЯЗАТЕЛЕН: без него несовпавшее соединение
+  #  проваливается обратно в основной список (rules/logic/logic.go:179)
+  #  и уезжает в туннель — ровно то, что мы предотвращаем.
+  #  ГОЛОС TELEGRAM ПО UDP/443 БОЛЬШЕ НЕ ПРОПУСКАЕТСЯ. Раньше здесь стояло
+  #  исключение (telegram_ips и telegram_additional_ips -> туннель), теперь
+  #  звонки уходят в общий блок QUIC и получают REJECT, то есть сваливаются
+  #  на TCP-ретрансляцию. Качество звонков хуже, зато:
+  #    - UDP/443 в туннель не идёт ни от одного сервиса, а при only-tcp: true
+  #      каждая UDP-сессия открывала бы отдельный коннект к ноде;
+  #    - снимается несимметричность: исключение стояло ВЫШЕ реджекта ::/0,
+  #      поэтому UDP Телеграма по IPv6 проходил, а TCP по IPv6 резался.
+  #  Зеркало на ноде (allow-udp443-telegram выше block-quic) осталось, но
+  #  теперь ничего не ловит — вреда нет, при случае убрать.
+  - SUB-RULE,(AND,((NETWORK,udp),(DST-PORT,443))),quic
+
+  - IP-CIDR,::/0,REJECT,no-resolve
+
+  # ==========================================================================
+  #  🔒 ЗАКРЫВАЕМ ОБХОД DNS МИМО ЯДРА
+  # ==========================================================================
+  #  853 — это DoT и DoQ. Сюда ходит Android Private DNS и часть клиентов.
+  #  dns-hijack в tun ловит только 53, поэтому 853 проходил бы мимо fake-ip
+  #  и мимо всего разделения RU/мир. С августа 2026 он вдобавок просто рвётся
+  #  операторами РФ, и пользователь видит «нет интернета» при включённом VPN.
+  #  Быстрый REJECT -> система откатывается на 53 -> сюда.
+  #
+  #  Стоит НИЖЕ правил локальной сети, чтобы не задеть DoT на домашнем
+  #  роутере, и НИЖЕ QUIC-блока, чтобы порядок оставался читаемым.
+  #
+  #  ⚠️ ЧТО ЭТО ДЕЛАЕТ С ANDROID PRIVATE DNS — ЗНАТЬ ОБЯЗАТЕЛЬНО.
+  #  Private DNS применяется И К VPN-СЕТИ: в AOSP гейт
+  #  isPrivateDnsValidationRequired() требует INTERNET, NOT_RESTRICTED,
+  #  TRUSTED и СПЕЦИАЛЬНО НЕ требует NET_CAPABILITY_NOT_VPN (коммит
+  #  «Support strict mode private DNS on VPNs that provide Internet»).
+  #
+  #    • Частный DNS = «Автоматически» → Android пробует 853 на DNS-сервере
+  #      сети, получает здесь мгновенный отказ и штатно откатывается
+  #      на чистый 53 → в dns-hijack. Пользователь ничего не замечает. ✅
+  #    • Частный DNS = «Имя хоста провайдера» (strict) → отката в AOSP
+  #      НЕ ПРЕДУСМОТРЕНО. Сеть помечается PRIVATE_DNS_BROKEN, DNS
+  #      у приложений не работает: «нет интернета» при включённом VPN. ❌
+  #
+  #  Конфигом это не лечится (см. TUNED-CHANGES.md). Лечится на устройстве:
+  #  Настройки → Сеть и интернет → Частный DNS → Автоматически/Выключено.
+  #  Заметьте: в strict-режиме у клиента в РФ DNS сломан и БЕЗ нашего VPN —
+  #  853 наружу режет оператор.
+  #  ⚠️ Само правило перенесено в начало rules: там оно и срабатывает.
+  #  Проверено 17.09.2026: пока оно стояло здесь, geoip-private перехватывал
+  #  DoT на адрес виртуального DNS раньше, запрос уходил в «Без VPN», ядро
+  #  блокировало дозвон на собственный адрес туннеля, и Android повторял
+  #  попытку 901 раз за 9 секунд (FACTS.md, F-73). То есть конфигом это
+  #  как раз лечится — порядком правил.
+  - RULE-SET,doh-bypass,REJECT
+  - RULE-SET,category-doh,REJECT
+
+  # ==========================================================================
+  #  ⏱ NTP — НАПРЯМУЮ, И ЭТО ОБЯЗАТЕЛЬНО ВЫШЕ NETWORK,udp,REJECT
+  # ==========================================================================
+  #  Домены пула уже есть в fake-ip-filter, но fake-ip-filter НЕ маршрутизирует.
+  #  Без этих строк системная синхронизация времени падала бы в MATCH и ехала
+  #  в туннель по UDP/123, а после catch-all ниже — просто умирала бы.
+  #
+  #  Часы — предусловие REALITY: component/tls/reality.go:71 зашивает
+  #  ntp.Now().Unix() прямо в SessionId ClientHello, и сервер отвергает
+  #  хендшейк за пределами допустимого расхождения. Уехавшие часы выглядят
+  #  как «подключился и сразу отвалился».
+  #
+  #  Диапазоны UID у VpnService покрывают и системный uid 1000, поэтому
+  #  системный SNTP действительно проходит через TUN и эти правила его ловят.
+  #  Вторая, независимая страховка — блок ntp: в начале файла (внутреннее
+  #  время самого ядра).
+  - DOMAIN-SUFFIX,pool.ntp.org,Без VPN
+  - DOMAIN,time.android.com,Без VPN
+  - DOMAIN,time.google.com,Без VPN
+  - DST-PORT,123,Без VPN
+
+  - OR,((DST-PORT,5228-5230),(DOMAIN-KEYWORD,mtalk),(DOMAIN-SUFFIX,fcm.googleapis.com),(DOMAIN-SUFFIX,fcm-xmpp.googleapis.com)),Без VPN
+  # Ручной список прямых исключений (Intercom, progress.me и прочее).
+  # Стоит высоко намеренно: это единственный список, который переопределяет
+  # автоматические наборы ниже, и решение здесь всегда за человеком.
+  - RULE-SET,custom-direct,Без VPN
+  # - RULE-SET,ads-all,REJECT   # ⛔ ОТКЛЮЧЕНО 18.09.2026
+  # Трекеры и DHT — напрямую. Клиенты (PROCESS-NAME) ниже, в PROCESS-блоке.
+  - RULE-SET,torrent-trackers,Без VPN
+  - RULE-SET,tiktok,Без VPN
+  # Проп-фирмы — НАПРЯМУЮ, мимо VPN (так задумано: нужен российский IP).
+  # Кабинет, регистрация, KYC и заявки на выплату должны идти с реального
+  # адреса: он совпадает с заявленной страной проживания и подтверждает KYC.
+  # Разрешение FundingPips на туннель выдано ТОЛЬКО на MT5, не на кабинет.
+  # Только DOMAIN-KEYWORD: он покрывает и сам домен, и все поддомены.
+  # DOMAIN-KEYWORD это strings.Contains(RuleHost(), keyword)
+  # (rules/common/domain_keyword.go), поэтому парные DOMAIN-SUFFIX,
+  # стоявшие здесь раньше, были недостижимы — keyword ловил то же самое
+  # с тем же таргетом.
+  - DOMAIN-KEYWORD,fundingpips,Без VPN
+  - DOMAIN-KEYWORD,fundednext,Без VPN
+  # Виджет живого чата на сайтах обеих фирм. Сторонний сервис, но агент
+  # поддержки видит тот IP, с которого пришёл чат — пусть совпадает с сайтом.
+  - DOMAIN-SUFFIX,chatbot.com,Без VPN
+
+  # ✈️ ВСЁ, ЧТО НИЖЕ — ИДЕТ ЧЕРЕЗ VPN ✈️
+  - RULE-SET,telegram_domains,Основной профиль
+  - RULE-SET,telegram_ips,Основной профиль,no-resolve
+  - RULE-SET,telegram_additional_ips,Основной профиль,no-resolve
+  - RULE-SET,youtube,Основной профиль
+  - RULE-SET,whatsapp_domains,Основной профиль
+  - RULE-SET,meta_domains,Основной профиль
+  - RULE-SET,meta_ips,Основной профиль,no-resolve
+  - RULE-SET,instagram,Основной профиль
+  - RULE-SET,instagram_ads,Основной профиль
+  - RULE-SET,twitter_domains,Основной профиль
+  - RULE-SET,twitter_ips,Основной профиль,no-resolve
+  - RULE-SET,google-play,Основной профиль
+  - DOMAIN-SUFFIX,habr.com,Основной профиль
+  - DOMAIN-SUFFIX,happ.su,Основной профиль
+  - RULE-SET,category-ban-ru,Основной профиль
+  # Сайты-каталоги торрентов (rutracker и подобные) режет РКН — в туннель.
+  # Стоит ВЫШЕ torrent-clients: если сам клиент полезет на такой сайт за
+  # .torrent-файлом, пусть идёт через туннель, иначе получит блокировку.
+  - RULE-SET,torrent-websites,Основной профиль
+  # Только поиск, а не вся экосистема Google.
+  # DOMAIN-SUFFIX,google.com ловил бы ещё почту, диск и Meet — и при
+  # переключении группы на «Без VPN» они уходили бы напрямую вместе
+  # с поиском. Здесь переключается ровно выдача: нужен российский
+  # Google, а не немецкий.
+  - DOMAIN,www.google.com,Google Поиск
+  - DOMAIN,google.com,Google Поиск
+  - DOMAIN-SUFFIX,google.ru,Google Поиск
+  # Discord: голос идёт на высокие порты, под блок UDP/443 не попадает
+  # Порядок условий внутри AND: под-правила проверяются по очереди
+  # до первого несовпадения (rules/logic/logic.go, case C.AND).
+  # RULE-SET первым щупал бы ipcidr-сет на КАЖДОМ соединении, а без
+  # no-resolve ещё и дёргал бы настоящий DNS-запрос: при fake-ip ядро
+  # обнуляет DstIP (tunnel/tunnel.go:296), и helper.ResolveIP() уходит
+  # в сеть. Дешёвые условия первыми, no-resolve обязателен.
+  # Два диапазона в одной строке: 19200-19500 — управляющий канал Discord,
+  # 50000-65535 — сам голос. Разделитель ВНУТРИ правила только "/": запятая
+  # там занята под разделитель полей (rules/common/base.go:ParseRulePayload).
+  # Строка разбирается на диапазоны один раз при загрузке конфига
+  # (common/utils/ranges.go:newIntRanges, до 28 диапазонов), на матче это
+  # просто скан среза. Слитая форма ДЕШЕВЛЕ двух отдельных: на любом
+  # TCP-соединении условие NETWORK,udp отсекает один раз вместо двух.
+  - AND,((NETWORK,udp),(DST-PORT,19200-19500/50000-65535),(RULE-SET,cloudflare_ips,no-resolve)),Основной профиль
+  - AND,((NETWORK,udp),(DST-PORT,50000-65535),(RULE-SET,discord_voiceips,no-resolve)),Основной профиль
+  - RULE-SET,discord_domains,Основной профиль
+
+  - RULE-SET,ip-checkers,Основной профиль
+
+  # ==========================================================================
+  #  🔎 ЕДИНСТВЕННЫЙ БЛОК PROCESS-ПРАВИЛ — И ОН ЗДЕСЬ НЕ СЛУЧАЙНО
+  # ==========================================================================
+  #  При find-process-mode: strict ядро дёргает резолв процесса только когда
+  #  матчинг ДОШЁЛ до PROCESS-правила. Значит цена блока = его позиция:
+  #  всё, что поймано доменными и IP-правилами выше, резолв не оплачивает.
+  #  Один резолв — это JNI-апкол + два binder IPC под семафором на 4.
+  #  ДОБАВЛЯЯ СЮДА ПРАВИЛА, НЕ ПОДНИМАЙ БЛОК ВЫШЕ.
+  #
+  #  Верхняя граница подвижна, нижняя — НЕТ: блок обязан стоять ВЫШЕ
+  #  ru-direct-inline / geosite-ru / geoip-ru, иначе российские домены увели бы
+  #  WhatsApp и терминал в direct.
+  #
+  #  PROCESS-NAME на Android требует версии 10+ (API 29): FlVpnService
+  #  резолвит uid через ConnectivityManager.getConnectionOwnerUid, который
+  #  появился именно там. Package visibility (Android 11+) закрыта
+  #  разрешением QUERY_ALL_PACKAGES в манифесте FlClashX.
+  # Торрент-клиенты — НАПРЯМУЮ. Пиры и DHT через ноду не пускаем: это и
+  # бюджет коннектов, и претензии к хостеру. Правило стоит выше
+  # NETWORK,udp,REJECT, поэтому UDP торрента на прямом канале живёт.
+  - RULE-SET,torrent-clients,Без VPN
+  - RULE-SET,torrent-clients-extra,Без VPN
+  - PROCESS-NAME,com.whatsapp,Основной профиль
+  - PROCESS-NAME,com.tradingview.tradingviewapp,Основной профиль
+  #  ru-app-list — СТРАХОВКА ПО IP, И ТОЛЬКО. Это НЕ эквивалент
+  #  tun.exclude-package и не заменяет его:
+  #    • правило чинит только исходящий адрес — трафик всё равно входит в TUN,
+  #      приложение остаётся привязано к VPN-сети, и getActiveNetwork()
+  #      у него отдаёт сеть с TRANSPORT_VPN;
+  #    • exclude-package убирает UID из UID-диапазонов VpnService, и по доке
+  #      Android такие приложения «use system networking as if the VPN wasn't
+  #      running» — getActiveNetwork() возвращает Wi-Fi/Cellular
+  #      с NET_CAPABILITY_NOT_VPN.
+  #  Против встроенных определялок VPN работает ТОЛЬКО второе, поэтому
+  #  список из 526 пакетов в tun.exclude-package — основной механизм,
+  #  а эта строка нужна лишь для устаревших сборок клиента и для пакетов,
+  #  которых в exclude-списке нет.
+  - RULE-SET,ru-app-list,Без VPN
+
+  # Встроенный список — работает сразу после установки, пока
+  # geosite-ru ещё качается. Стоит ровно перед ним, чтобы поведение
+  # с прогретым кэшем и без него совпадало.
+  - RULE-SET,ru-direct-inline,Без VPN
+  - RULE-SET,geosite-ru,Без VPN #domen базы
+  - RULE-SET,geoip-ru,Без VPN,no-resolve #ip базы
+  # ==========================================================================
+  #  ПОЧЕМУ ЗДЕСЬ НЕТ CATCH-ALL ПО UDP
+  # ==========================================================================
+  #  Строка NETWORK,udp,<...> перед MATCH тут была и убрана намеренно.
+  #  Непойманный UDP (игра вне списков, браузерный WebRTC, P2P умного дома)
+  #  уходит в туннель через MATCH — медленно, но работает. Так же устроены
+  #  профили windows, arch и ios: catch-all нет нигде.
+  #
+  #  REJECT здесь ломал мобильные игры на не-443 UDP, а «Без VPN» отправлял бы
+  #  весь непойманный UDP напрямую, чего не хотим.
+  #
+  #  Цена текущего решения, зафиксированная явно: такая UDP-сессия едет
+  #  UDP-over-TCP (adapter/outbound/vless.go: ListenPacketContext диалит TCP),
+  #  то есть с лагом. При only-tcp: true в мультиплексе она ещё и открывает
+  #  ОТДЕЛЬНЫЙ коннект к ноде: 2 несущие + N сессий, при N >= 2 — теневой
+  #  бан ТСПУ. При only-tcp: false сессия идёт стримом в несущей и коннектов
+  #  не добавляет. Основной объём UDP это не затрагивает — QUIC на 443
+  #  разбирается сильно выше в sub-rules.quic, а DNS перехватывается
+  #  в sing-tun ещё до движка правил.
+  #
+  #  РУНЕТ СЮДА НЕ ДОХОДИЛ И НЕ ДОХОДИТ: ru-direct-inline, geosite-ru
+  #  и geoip-ru -> «Без VPN» стоят выше и решают любой российский домен
+  #  или IP, хоть TCP, хоть UDP.
+
+  # Остаток трафика (пойдет в прокси)
+  - MATCH,Основной профиль
+# Узлы сюда подставляет само приложение, когда по ссылке подписки пришёл
+# не конфиг, а список ссылок протоколов (D-19). Записи ниже — служебные,
+# на них ссылаются группы.
+proxies:
+  - name: "DIRECTv4"
+    type: direct
+    udp: true
+    ip-version: ipv4

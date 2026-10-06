@@ -12,18 +12,9 @@
 
     <application>
         <service
-            android:name=".ClashService"
-            android:exported="false"
-            android:label="@string/clash_meta_for_android"
-            android:process=":background"
-            android:foregroundServiceType="specialUse">
-            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="explanation_for_special_use"/>
-        </service>
-        <service
             android:name=".TunService"
             android:exported="false"
-            android:label="@string/clash_meta_for_android"
+            android:label="@string/brand_name"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:process=":background"
             android:foregroundServiceType="specialUse">
@@ -38,6 +29,10 @@
             android:exported="false"
             android:process=":background" />
         <service
+            android:name=".TunGuard"
+            android:exported="false"
+            android:process=":background" />
+        <service
             android:name=".ProfileWorker"
             android:exported="false"
             android:process=":background"
@@ -46,17 +41,6 @@
                 android:value="explanation_for_special_use"/>
         </service>
 
-        <provider
-            android:name=".FilesProvider"
-            android:authorities="${applicationId}.files"
-            android:exported="true"
-            android:grantUriPermissions="true"
-            android:permission="android.permission.MANAGE_DOCUMENTS"
-            android:process=":background">
-            <intent-filter>
-                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
-            </intent-filter>
-        </provider>
         <provider
             android:name=".StatusProvider"
             android:authorities="${applicationId}.status"
@@ -80,9 +64,23 @@
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
+            <!-- Проверка срока подписки после каждого её изменения (D-149). -->
             <intent-filter>
-                <action android:name="{applicationId}.intent.action.PROFILE_REQUEST_UPDATE" />
+                <action android:name="${applicationId}.intent.action.PROFILE_CHANGED" />
+            </intent-filter>
+            <!-- Будильники автообновления подписки и проверки срока. Адресованы классу и доходили
+                 без фильтров, но новые версии Android сверяют с фильтрами и такие сообщения
+                 (аудит, perf 7.1, F-209). -->
+            <intent-filter>
+                <action android:name="${applicationId}.intent.action.REQUEST_UPDATE" />
                 <data android:scheme="uuid" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="app.ducker.android.service.EXPIRY_CHECK" />
+            </intent-filter>
+            <!-- «Подробный журнал» выключается сам через сутки (D-224). -->
+            <intent-filter>
+                <action android:name="app.ducker.android.service.VERBOSE_LOG_CHECK" />
             </intent-filter>
         </receiver>
     </application>

@@ -2,10 +2,9 @@ package com.github.kr328.clash.common
 
 import android.app.Application
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import com.github.kr328.clash.common.util.backgroundScope
 
-object Global : CoroutineScope by CoroutineScope(Dispatchers.IO) {
+object Global : CoroutineScope by backgroundScope("Global") {
     val application: Application
         get() = application_
 
@@ -13,9 +12,5 @@ object Global : CoroutineScope by CoroutineScope(Dispatchers.IO) {
 
     fun init(application: Application) {
         this.application_ = application
-    }
-
-    fun destroy() {
-        cancel()
     }
 }

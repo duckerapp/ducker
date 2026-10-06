@@ -1,1 +1,1 @@
-A rule-based tunnel
+Simple mihomo client: VPN by subscription in one tap, server picker, no tracking

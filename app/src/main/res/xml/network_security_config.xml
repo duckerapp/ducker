@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<network-security-config xmlns:tools="http://schemas.android.com/tools"
-    tools:ignore="AcceptsUserCertificates">
+<network-security-config>
+    <!-- Только системные сертификаты. Поставленным на телефон руками или профилем организации
+         не доверяем: ими можно подменить картинки провайдера, а позже — ответ о новой версии
+         (аудит 2.10). Ядро это не касается: у него свои корневые сертификаты. -->
     <base-config>
         <trust-anchors>
             <certificates src="system" />
-            <certificates src="user" />
         </trust-anchors>
     </base-config>
+    <!-- ducker: панель zashboard отдаёт само ядро по http на петлевом адресе (D-33).
+         Наружу это ничего не открывает — адрес недоступен с других устройств. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
 </network-security-config>

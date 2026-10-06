@@ -1,8 +1,11 @@
 plugins {
-    kotlin("android")
     id("kotlinx-serialization")
     id("com.android.library")
     id("com.google.devtools.ksp")
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -21,11 +24,12 @@ dependencies {
     implementation(libs.rikkax.multiprocess)
 }
 
-afterEvaluate {
-    android {
-        libraryVariants.forEach {
-            sourceSets[it.name].kotlin.srcDir(buildDir.resolve("generated/ksp/${it.name}/kotlin"))
-            sourceSets[it.name].java.srcDir(buildDir.resolve("generated/ksp/${it.name}/java"))
-        }
-    }
+// Прежде здесь вручную подкладывались сгенерированные KSP исходники: старая пара
+// AGP и KSP сама этого не делала. Теперь делает, а старый способ (`libraryVariants`)
+// в AGP 9 удалён вместе со всем прежним Variant API (D-84).
+
+// ducker: проверка арифметики маршрутов (D-56) — только на JVM, в APK не попадает
+dependencies {
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlin.test.junit)
 }

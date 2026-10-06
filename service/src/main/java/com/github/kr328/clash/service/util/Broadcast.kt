@@ -13,6 +13,11 @@ fun Context.sendBroadcastSelf(intent: Intent) {
     )
 }
 
+/** Человек выбрал другой узел — уведомление в шторке должно назвать новый. */
+fun Context.sendSelectorChanged() {
+    sendBroadcastSelf(Intent(Intents.ACTION_SELECTOR_CHANGED))
+}
+
 fun Context.sendProfileChanged(uuid: UUID) {
     val intent = Intent(Intents.ACTION_PROFILE_CHANGED)
         .putExtra(Intents.EXTRA_UUID, uuid.toString())

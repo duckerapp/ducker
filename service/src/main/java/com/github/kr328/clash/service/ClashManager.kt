@@ -1,53 +1,211 @@
 package com.github.kr328.clash.service
 
+import com.github.kr328.clash.service.store.UserRulesStore
+import kotlinx.coroutines.sync.withLock
+import com.github.kr328.clash.service.clash.module.configLoadLock
 import android.content.Context
+import com.github.kr328.clash.common.util.backgroundScope
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.core.Clash
+import com.github.kr328.clash.core.bridge.Bridge
 import com.github.kr328.clash.core.model.*
+import com.github.kr328.clash.service.data.ImportedDao
 import com.github.kr328.clash.service.data.Selection
 import com.github.kr328.clash.service.data.SelectionDao
 import com.github.kr328.clash.service.remote.IClashManager
 import com.github.kr328.clash.service.remote.ILogObserver
 import com.github.kr328.clash.service.store.ServiceStore
+import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.sendOverrideChanged
+import com.github.kr328.clash.service.util.sendSelectorChanged
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 
 class ClashManager(private val context: Context) : IClashManager,
-    CoroutineScope by CoroutineScope(Dispatchers.IO) {
+    CoroutineScope by backgroundScope("ClashManager") {
     private val store = ServiceStore(context)
     private var logReceiver: ReceiveChannel<LogMessage>? = null
 
+    /** Профиль и время его файла, уже загруженные ради замера. */
+    private var previewLoaded: Pair<java.util.UUID, Long>? = null
+
+    /**
+     * Интерфейс ушёл — профиль, загруженный ради показа узлов ([loadForPreview]), из ядра убираем.
+     * Иначе при выключенном VPN процесс службы оставался с загруженным профилем и его таймерами:
+     * проверки групп, NTP, обновления провайдеров (аудит, perf 1.3, F-208).
+     */
+    fun unloadPreview() {
+        // Замок занят — конфиг грузит туннель, и ядро уже его.
+        if (!configLoadLock.tryLock()) return
+
+        try {
+            if (previewLoaded == null || StatusProvider.serviceRunning) return
+
+            Clash.reset()
+
+            previewLoaded = null
+        } finally {
+            configLoadLock.unlock()
+        }
+    }
+
     override fun queryTunnelState(): TunnelState {
         return Clash.queryTunnelState()
+    }
+
+    override fun queryCoreVersion(): String {
+        return Bridge.nativeCoreVersion().replace("_", "-")
     }
 
     override fun queryTrafficTotal(): Long {
         return Clash.queryTrafficTotal()
     }
 
+    override fun queryTrafficNow(): Long {
+        return Clash.queryTrafficNow()
+    }
+
     override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
         return Clash.queryGroupNames(excludeNotSelectable)
+    }
+
+    override suspend fun queryProfileGroups(): List<ProfileGroup> {
+        val active = store.activeProfile ?: return emptyList()
+
+        val selected = SelectionDao().querySelections(active).associate { it.proxy to it.selected }
+
+        return Clash.queryProfileGroups(
+            context.importedDir.resolve(active.toString()).absolutePath
+        ).map { group ->
+            // Ядро про сохранённый выбор не знает: в файле профиля его нет.
+            group.copy(now = selected[group.name] ?: group.proxies.firstOrNull().orEmpty())
+        }
+    }
+
+    override suspend fun queryProfileNetwork(uuid: java.util.UUID?): ProfileNetwork {
+        val profile = uuid ?: store.activeProfile ?: return ProfileNetwork()
+
+        return Clash.queryProfileNetwork(
+            context.importedDir.resolve(profile.toString()).absolutePath
+        )
+    }
+
+    /**
+     * Замер узлов при выключенном туннеле (D-63).
+     *
+     * Ядру для этого нужен разобранный конфиг: имена групп и участники живут в нём.
+     * Туннель при этом не поднимается, а сессионный оверрайд глушит всё, что слушает
+     * порты, и DNS ядра: от ядра нужны только исходящие соединения до узлов.
+     *
+     * Загружаем не чаще, чем надо: повторный вызов на том же профиле ничего не делает.
+     */
+    override suspend fun loadForPreview(): Boolean = configLoadLock.withLock {
+        // Туннель уже поднят — конфиг в ядре и так настоящий, трогать нельзя.
+        // Признак именно `serviceRunning`: поле с именем профиля после остановки
+        // остаётся заполненным, оно только для показа. Проверка — под замком загрузки
+        // (D-110): иначе замер мог наложить свои правки поверх конфига туннеля.
+        if (StatusProvider.serviceRunning) return@withLock true
+
+        val active = store.activeProfile ?: return@withLock false
+        val imported = ImportedDao().queryByUUID(active) ?: return@withLock false
+
+        val dir = context.importedDir.resolve(active.toString())
+        val stamp = active to dir.resolve("config.yaml").lastModified()
+
+        // Одной отметки мало: после остановки туннеля ядро выгружает профиль, а отметка
+        // остаётся, и список узлов молча становился пустым. Верим ей, только пока ядро
+        // и правда отвечает группами.
+        if (stamp == previewLoaded && Clash.queryGroupNames(false).isNotEmpty()) return@withLock true
+
+        runCatching {
+            val override = Clash.queryOverride(Clash.OverrideSlot.Session)
+
+            override.mixedPort = 0
+            override.httpPort = 0
+            override.socksPort = 0
+            override.redirectPort = 0
+            override.tproxyPort = 0
+            override.listeners = emptyList()
+            override.allowLan = false
+            override.dns.enable = false
+
+            Clash.patchOverride(Clash.OverrideSlot.Session, override)
+
+            Clash.setAgeSecretKey(imported.ageSecretKey?.takeIf { it.isNotBlank() })
+            Clash.setUserRules(UserRulesStore(context).raw(active))
+            Clash.load(dir).await()
+
+            // Выбор узла показываем тот же, что применится при запуске.
+            SelectionDao().querySelections(active).forEach {
+                Clash.patchSelector(it.proxy, it.selected)
+            }
+
+            keepGlobalOffDirect(active)
+
+            previewLoaded = stamp
+
+            true
+        }.getOrElse {
+            Log.w("Load profile for preview: $it", it)
+
+            false
+        }
+    }
+
+    override fun setLogLevel(level: LogMessage.Level) {
+        Clash.setLogLevel(level)
+    }
+
+    override fun patchStoredSelector(group: String, name: String) {
+        val active = store.activeProfile ?: return
+
+        SelectionDao().setSelected(Selection(active, group, name))
     }
 
     override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
         return Clash.queryGroup(name, proxySort)
     }
 
-    override fun queryConfiguration(): UiConfiguration {
-        return Clash.queryConfiguration()
-    }
-
     override fun queryProviders(): ProviderList {
         return ProviderList(Clash.queryProviders())
     }
 
+    /**
+     * Раньше режим менялся через оверрайд с рассылкой, и служба заново грузила весь конфиг:
+     * секунды, перемер всех узлов, а чип на экране ждал этого. Теперь ядро переключается
+     * на лету, а оверрайд без рассылки нужен, чтобы выбор пережил следующую загрузку —
+     * например, обновление подписки. Под замком загрузки: иначе она могла прочитать
+     * оверрайд до записи и вернуть прежний режим.
+     */
+    override suspend fun setMode(mode: TunnelState.Mode) = configLoadLock.withLock {
+        val override = Clash.queryOverride(Clash.OverrideSlot.Session)
+
+        override.mode = mode
+
+        Clash.patchOverride(Clash.OverrideSlot.Session, override)
+
+        Clash.setTunnelMode(mode)
+
+        store.activeProfile?.let { keepGlobalOffDirect(it) }
+
+        Unit
+    }
+
+    override fun validateConfig(path: String): String = Clash.validateConfig(path)
+
     override fun queryOverride(slot: Clash.OverrideSlot): ConfigurationOverride {
+        // Постоянный оверрайд читают настройки ради тумблера журнала — сверяем его срок (D-224).
+        if (slot == Clash.OverrideSlot.Persist) VerboseLog.check(context)
+
         return Clash.queryOverride(slot)
     }
 
     override fun patchSelector(group: String, name: String): Boolean {
         return Clash.patchSelector(group, name).also {
+            if (it) {
+                context.sendSelectorChanged()
+            }
+
             val current = store.activeProfile ?: return@also
 
             if (it) {
@@ -61,11 +219,18 @@ class ClashManager(private val context: Context) : IClashManager,
     override fun patchOverride(slot: Clash.OverrideSlot, configuration: ConfigurationOverride) {
         Clash.patchOverride(slot, configuration)
 
+        // Журнал включили — отсюда идут его сутки, выключили — будильник снимается (D-224).
+        if (slot == Clash.OverrideSlot.Persist) VerboseLog.check(context)
+
         context.sendOverrideChanged()
     }
 
     override fun clearOverride(slot: Clash.OverrideSlot) {
         Clash.clearOverride(slot)
+    }
+
+    override fun probeProxy(name: String): ProbeResult {
+        return Clash.probeProxy(name)
     }
 
     override suspend fun healthCheck(group: String) {
@@ -109,3 +274,28 @@ class ClashManager(private val context: Context) : IClashManager,
         }
     }
 }
+
+/**
+ * Группу GLOBAL, которую провайдер не описал, ядро собирает само, и первым в ней — а значит,
+ * выбранным — стоит DIRECT (F-125). В режиме Global весь трафик тогда шёл мимо прокси. Если
+ * выбран встроенный выход и человек его сам не выбирал, ставим первый настоящий узел (D-136).
+ * Выбор не запоминаем: при следующей загрузке он получится тот же. Сбой здесь загрузку
+ * профиля не ломает — остаётся выбор ядра.
+ */
+internal suspend fun keepGlobalOffDirect(profile: java.util.UUID) = runCatching {
+    if (Clash.queryTunnelState().mode != TunnelState.Mode.Global) return@runCatching
+    if (SelectionDao().querySelections(profile).any { it.proxy == GLOBAL }) return@runCatching
+
+    val global = Clash.queryGroup(GLOBAL, ProxySort.Default)
+
+    if (global.proxies.firstOrNull { it.name == global.now }?.type !in BUILTIN_PROXY_TYPES) return@runCatching
+
+    val first = global.proxies.firstOrNull { it.type !in BUILTIN_PROXY_TYPES } ?: return@runCatching
+
+    Clash.patchSelector(GLOBAL, first.name)
+}.onFailure { Log.w("Keep GLOBAL off DIRECT: $it", it) }
+
+private const val GLOBAL = "GLOBAL"
+
+/** Встроенные выходы ядра: имена типов из `constant/adapters.go` mihomo. */
+val BUILTIN_PROXY_TYPES = setOf("Direct", "Reject", "RejectDrop", "Compatible", "Pass", "PassRule", "Dns")

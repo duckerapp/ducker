@@ -22,32 +22,45 @@ JavaVM *global_java_vm() {
 }
 
 char *jni_get_string(JNIEnv *env, jstring str) {
+    if (str == NULL) return NULL;
     jbyteArray array = (*env)->CallObjectMethod(env, str, m_get_bytes);
+    if ((*env)->ExceptionCheck(env) || array == NULL) return NULL;
     int length = (*env)->GetArrayLength(env, array);
-
     char *content = (char *) malloc(length + 1);
-
+    if (content == NULL) {
+        (*env)->DeleteLocalRef(env, array);
+        return NULL;
+    }
     (*env)->GetByteArrayRegion(env, array, 0, length, (jbyte *) content);
-
+    (*env)->DeleteLocalRef(env, array);
+    if ((*env)->ExceptionCheck(env)) {
+        free(content);
+        return NULL;
+    }
     content[length] = 0;
-
     return content;
 }
 
 jstring jni_new_string(JNIEnv *env, const char *str) {
+    // A recovered synchronous Go panic has already raised ClashException.
+    if (str == NULL || (*env)->ExceptionCheck(env)) return NULL;
     int length = strlen(str);
     jbyteArray array = (*env)->NewByteArray(env, length);
-
+    if ((*env)->ExceptionCheck(env) || array == NULL) return NULL;
     (*env)->SetByteArrayRegion(env, array, 0, length, (const jbyte *) str);
-
-    return (jstring) (*env)->NewObject(env, c_string, m_new_string, array);
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->DeleteLocalRef(env, array);
+        return NULL;
+    }
+    jstring result = (jstring) (*env)->NewObject(env, c_string, m_new_string, array);
+    (*env)->DeleteLocalRef(env, array);
+    return result;
 }
 
 int jni_catch_exception(JNIEnv *env) {
     int result = (*env)->ExceptionCheck(env);
 
     if (result) {
-        (*env)->ExceptionDescribe(env);
         (*env)->ExceptionClear(env);
     }
 

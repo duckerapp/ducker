@@ -14,8 +14,26 @@ import (
 	"github.com/metacubex/mihomo/tunnel"
 )
 
-func Start(fd int, stack, gateway, portal, dns string) (io.Closer, error) {
-	log.Debugln("TUN: fd = %d, stack = %s, gateway = %s, portal = %s, dns = %s", fd, stack, gateway, portal, dns)
+// Алгоритмы TCP, которые знает стек `mips` (`tun.congestion-controller`).
+// ponytail: список повторяет реестр mipstack; появится там новый алгоритм — дописать сюда,
+// до тех пор он заменяется умолчанием с предупреждением.
+var congestionControllers = map[string]bool{"cubic": true, "reno": true, "bbr": true, "bbr3": true}
+
+// congestionController пропускает в ядро только известное значение: на незнакомом стек `mips`
+// отказывается собирать туннель целиком, а с умолчанием (cubic) он работает всегда.
+func congestionController(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "" || congestionControllers[value] {
+		return value
+	}
+
+	log.Warnln("TUN: unknown congestion-controller %q, using the default", value)
+
+	return ""
+}
+
+func Start(fd int, stack, congestion, gateway, portal, dns string) (io.Closer, error) {
+	log.Debugln("TUN: fd = %d, stack = %s, congestion = %s, gateway = %s, portal = %s, dns = %s", fd, stack, congestion, gateway, portal, dns)
 
 	tunStack, ok := C.StackTypeMapping[strings.ToLower(stack)]
 	if !ok {
@@ -31,7 +49,7 @@ func Start(fd int, stack, gateway, portal, dns string) (io.Closer, error) {
 		}
 		prefix, err := netip.ParsePrefix(gatewayStr)
 		if err != nil {
-			log.Errorln("TUN:", err)
+			log.Errorln("TUN: %v", err)
 			return nil, err
 		}
 
@@ -62,6 +80,8 @@ func Start(fd int, stack, gateway, portal, dns string) (io.Closer, error) {
 		Inet6Address:        prefix6,
 		MTU:                 9000, // private const val TUN_MTU = 9000 in TunService.kt
 		FileDescriptor:      fd,
+
+		CongestionController: congestionController(congestion), // читает только стек mips
 	}
 
 	tunOptions, _ := json.Marshal(options)
@@ -69,7 +89,7 @@ func Start(fd int, stack, gateway, portal, dns string) (io.Closer, error) {
 
 	listener, err := sing_tun.New(options, tunnel.Tunnel)
 	if err != nil {
-		log.Errorln("TUN:", err)
+		log.Errorln("TUN: %v", err)
 		return nil, err
 	}
 

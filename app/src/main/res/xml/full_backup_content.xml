@@ -1,18 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Правила резервного копирования для Android 11 и ниже (для 12+ — backup_rules.xml).
+
+    Профили и база данных НЕ копируются сознательно: в них лежит ссылка подписки,
+    а это секрет — у кого она есть, у того и доступ, — и скачанный конфиг с адресами
+    и ключами узлов. Резервная копия уезжает в Google Drive, то есть за пределы
+    устройства. Настройки интерфейса копировать не жалко.
+-->
 <full-backup-content>
     <include
         domain="sharedpref"
         path="." />
-    <include
-        domain="database"
-        path="." />
-    <include
-        domain="file"
-        path="imported" />
-    <include
-        domain="file"
-        path="pending" />
-    <include
-        domain="file"
-        path="clash/override.json" />
 </full-backup-content>

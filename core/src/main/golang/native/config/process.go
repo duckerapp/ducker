@@ -25,6 +25,7 @@ var processors = []processor{
 	patchTun,
 	patchListeners,
 	patchProviders,
+	patchUserRules, // ducker: свои правила человека — перед правилами провайдера (D-123)
 	validConfig,
 }
 
@@ -48,11 +49,14 @@ func patchExternalController(cfg *config.RawConfig, _ string) error {
 	return nil
 }
 
-func patchGeneral(cfg *config.RawConfig, profileDir string) error {
+func patchGeneral(cfg *config.RawConfig, _ string) error {
 	cfg.Interface = ""
 	cfg.RoutingMark = 0
 	if cfg.ExternalController != "" || cfg.ExternalControllerTLS != "" {
-		cfg.ExternalUI = profileDir + "/ui"
+		// ducker: панель лежит в своём каталоге рядом с домом ядра, а не в каталоге
+		// профиля (D-33). Так она не зависит от профиля и переживает его обновление,
+		// при котором каталог профиля пересоздаётся целиком.
+		cfg.ExternalUI = "dashboard"
 	}
 
 	return nil
@@ -65,7 +69,14 @@ func patchProfile(cfg *config.RawConfig, _ string) error {
 	return nil
 }
 
-func patchDns(cfg *config.RawConfig, _ string) error {
+func patchDns(cfg *config.RawConfig, profileDir string) error {
+	// Провайдер мог отключить DNS ядра сознательно — тогда не трогаем раздел вообще
+	// (инвариант 1). Отличить это от отсутствия раздела по RawConfig нельзя, см.
+	// dnsExplicitlyDisabled.
+	if dnsExplicitlyDisabled(rawDocument(profileDir)) {
+		return nil
+	}
+
 	if !cfg.DNS.Enable {
 		cfg.DNS = config.DefaultRawConfig().DNS
 		cfg.DNS.Enable = true

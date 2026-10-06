@@ -1,4 +1,12 @@
 [submodule "clash-foss"]
 	path = core/src/foss/golang/clash
-	url = https://github.com/MetaCubeX/mihomo
-	branch = Alpha
+	url = https://github.com/duckerapp/mihomo
+	branch = ducker
+[submodule "utls"]
+	path = core/src/foss/golang/utls
+	url = https://github.com/duckerapp/utls
+	branch = ducker
+[submodule "sing-mux"]
+	path = core/src/foss/golang/sing-mux
+	url = https://github.com/duckerapp/sing-mux
+	branch = ducker

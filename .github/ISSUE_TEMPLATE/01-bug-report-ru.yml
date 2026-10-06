@@ -1,0 +1,81 @@
+name: "Ошибка"
+description: "Что-то работает не так, как должно"
+title: "[Ошибка] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо, что сообщаете!
+
+        **Не вставляйте сюда** ссылку подписки, файл конфига, ключи, адреса узлов и идентификатор
+        устройства: по ним любой получит доступ к вашему VPN. Вопросы про сам сервис (оплата,
+        скорость конкретного сервера) — к вашему провайдеру.
+  - type: textarea
+    id: what
+    attributes:
+      label: "Что случилось"
+      description: "Коротко и по делу: что вы видите."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Как повторить"
+      description: "По шагам: что нажимали, в каком порядке."
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Что ожидали"
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: "Версия ducker и ядра"
+      description: "Настройки → внизу экрана. Например: Приложение 0.4.24, Ядро mihomo 1.19.31 (…)"
+    validations:
+      required: true
+  - type: textarea
+    id: device
+    attributes:
+      label: "Телефон"
+      value: |
+        - Производитель и модель:
+        - Прошивка (MIUI, HyperOS, ColorOS, One UI…):
+        - Версия Android:
+    validations:
+      required: true
+  - type: dropdown
+    id: subscription
+    attributes:
+      label: "Откуда подписка"
+      options:
+        - "Ссылка от провайдера"
+        - "Свой файл конфига"
+        - "Не знаю"
+    validations:
+      required: false
+  - type: textarea
+    id: log
+    attributes:
+      label: "Журнал"
+      description: |
+        Повторите проблему, затем **Настройки → Журнал → Отправить** и прикрепите файл сюда.
+        Адреса узлов, ключи и идентификатор из журнала вырезаются сами, но домены сайтов остаются —
+        просмотрите файл перед отправкой.
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: "Проверка"
+      options:
+        - label: "Я не вставлял сюда ссылку подписки, конфиг, ключи и адреса узлов"
+          required: true

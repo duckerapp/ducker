@@ -58,6 +58,20 @@ func Parse(rawConfig *config.RawConfig) (*config.Config, error) {
 	return cfg, nil
 }
 
+// ValidateConfig разбирает конфиг из каталога так же, как загрузка, но ничего не применяет
+// и не качает (D-124): ошибка YAML приходит с номером строки, ошибка содержимого — с именем
+// узла или группы. Провайдеры не скачиваются — их проверит загрузка.
+func ValidateConfig(path string) error {
+	rawCfg, err := UnmarshalAndPatch(path)
+	if err != nil {
+		return err
+	}
+
+	_, err = Parse(rawCfg)
+
+	return err
+}
+
 func Load(path string) error {
 	rawCfg, err := UnmarshalAndPatch(path)
 	if err != nil {

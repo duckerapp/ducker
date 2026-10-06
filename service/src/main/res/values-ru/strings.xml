@@ -2,20 +2,50 @@
     <!-- from https://github.com/shadowsocks/shadowsocks-android/blob/master/core/src/main/res/values/strings.xml -->
     <string name="clash_notification_content" translatable="false">"%1$s↑\t%2$s↓"</string>
 
-    <string name="clash_service_status_channel">Статус Clash</string>
-    <string name="profile_service_status">Статус сервиса профиля</string>
-    <string name="profile_process_status">Статус обработки профиля</string>
-    <string name="profile_process_result">Результат обработки профиля</string>
-    <string name="update_successfully">Успешно обновлено</string>
-    <string name="update_failure">Не удалось обновить</string>
-    <string name="format_update_complete">Обновление %s завершено</string>
-    <string name="format_update_failure">Обновление %1$s: %2$s</string>
+    <string name="clash_service_status_channel">Состояние VPN</string>
+    <string name="profile_service_status">Обновление подписок</string>
+    <string name="profile_process_status">Ход обновления подписок</string>
+    <string name="profile_process_result">Итоги обновления подписок</string>
+    <string name="update_successfully">Подписка обновлена</string>
+    <string name="update_failure">Подписка не обновилась</string>
+    <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="subscription_http_status">Сервер подписки: ошибка %1$d</string>
+    <string name="subscription_http_not_found">По этой ссылке подписки нет (ошибка %1$d). Проверьте ссылку или спросите провайдера</string>
+    <string name="subscription_http_denied">Доступ закрыт (ошибка %1$d). Возможно, подписка отключена — спросите провайдера</string>
+    <string name="subscription_http_busy">Слишком много запросов (ошибка %1$d). Попробуйте через несколько минут</string>
+    <string name="subscription_http_server">Сервер подписки сейчас не работает (ошибка %1$d). Попробуйте позже</string>
+    <string name="disconnect">Отключить</string>
     <string name="running">Работает</string>
-    <string name="loading">Загружается</string>
-    <string name="clash_meta_for_android">Clash Meta для Android</string>
-    <string name="profiles_and_providers">Профили и провайдеры</string>
-    <string name="configuration_yaml">Configuration.yaml</string>
-    <string name="provider_files">Файлы провайдера</string>
-    <string name="profile_updater">Обновление профиля</string>
-    <string name="profile_updating">Профиль обновляется</string>
+    <string name="loading">Запуск…</string>
+    <string name="profile_updater">Обновляю подписки</string>
+    <string name="profile_updating">Обновляю подписку</string>
+    <!-- Конец подписки (D-149) -->
+    <string name="expiry_channel">Конец подписки</string>
+    <plurals name="expiry_title">
+        <item quantity="one">Подписка закончится через %d день</item>
+        <item quantity="few">Подписка закончится через %d дня</item>
+        <item quantity="many">Подписка закончится через %d дней</item>
+        <item quantity="other">Подписка закончится через %d дня</item>
+    </plurals>
+    <string name="expiry_text">«%1$s» действует до %2$s. Продлите, чтобы VPN продолжал работать.</string>
+    <string name="expiry_renew">Продлить</string>
+    <string name="subscription_profile_too_large">Подписка слишком большая (больше 16 МБ). Сообщите провайдеру</string>
+    <string name="subscription_provider_too_large">Список правил или узлов в подписке слишком большой (больше 64 МБ). Сообщите провайдеру</string>
+    <string name="subscription_download_failed">Не удалось скачать подписку. Проверьте интернет и попробуйте ещё раз</string>
+    <!-- Неудачи словами (D-227): строки таблицы `util/Failure.kt` -->
+    <string name="subscription_redirects">Ссылка подписки без конца переадресует на другие адреса. Сообщите провайдеру</string>
+    <string name="subscription_bad_link">Ссылка должна начинаться с https://</string>
+    <string name="subscription_not_links">Это не ссылка на подписку и не список узлов. Вставьте ссылку от провайдера</string>
+    <string name="subscription_no_servers">В подписке нет ни одного узла. Сообщите провайдеру</string>
+    <string name="subscription_bad_config">По ссылке пришла не подписка, или в её конфиге ошибка. Проверьте ссылку или сообщите провайдеру</string>
+    <string name="subscription_limit_devices">Достигнут лимит устройств</string>
+    <string name="subscription_limit_hwid">Провайдер требует идентификатор устройства</string>
+    <string name="subscription_limit_other">Подписка недоступна для этого устройства</string>
+    <string name="vpn_config_failed">Конфиг подписки не загрузился. Обновите подписку; не поможет — сообщите провайдеру</string>
+    <string name="config_reload_failed">VPN работает на прежних настройках. Проверьте свои правила и правки конфига</string>
+    <string name="vpn_no_profile">Подписка не выбрана. Откройте ducker и выберите подписку</string>
+    <string name="vpn_rejected">Android не дал включить VPN. Включите его кнопкой в приложении; не поможет — проверьте в настройках, не выбран ли постоянным другой VPN</string>
+    <string name="failure_try_again">Попробуйте ещё раз</string>
+    <string name="vpn_failure_channel">Сбои VPN</string>
+    <string name="vpn_failure_title">VPN не включился</string>
 </resources>

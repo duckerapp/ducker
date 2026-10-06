@@ -16,11 +16,19 @@ data class FetchStatus(
     val subTotal: Long? = null,
     val subExpire: Long? = null,
     val subUpdateInterval: Long? = null,
+    /**
+     * Заголовки ответа подписки: название профиля, объявление, ссылки провайдера,
+     * состояние лимита устройств, брендинг `ducker-*`. Приходят одним статусом
+     * [Action.SubscriptionHeaders] сразу после загрузки, до проверки конфига —
+     * иначе при отказе панели причина не доедет (FACTS.md, F-19).
+     */
+    val headers: Map<String, String>? = null,
 ) : Parcelable {
     enum class Action {
         FetchConfiguration,
         FetchProviders,
         SubscriptionInfo,
+        SubscriptionHeaders,
         Verifying,
     }
 

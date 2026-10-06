@@ -1,0 +1,154 @@
+/*
+ * Вид как у приложения (D-65): чёрно-белый, цветом ничего не обозначается.
+ * Цвета — из app/src/main/java/com/github/kr328/clash/ui/theme/Theme.kt:
+ * светлая тема — чернила #101010 на фоне #F2F2F2, карточки белые;
+ * тёмная — белое на #0A0A0A, поверхности #161616.
+ */
+
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #f2f2f2;
+  --md-primary-fg-color--light: #ffffff;
+  --md-primary-fg-color--dark: #e4e4e4;
+  --md-primary-bg-color: #101010;
+  --md-primary-bg-color--light: #6e6e6e;
+  --md-accent-fg-color: #101010;
+  --md-accent-fg-color--transparent: rgba(16, 16, 16, 0.08);
+  --md-typeset-a-color: #101010;
+  --md-default-bg-color: #ffffff;
+  --md-footer-bg-color: #101010;
+  --md-footer-bg-color--dark: #0a0a0a;
+  --md-footer-fg-color: #f5f5f5;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-hue: 0;
+  --md-primary-fg-color: #0a0a0a;
+  --md-primary-fg-color--light: #161616;
+  --md-primary-fg-color--dark: #000000;
+  --md-primary-bg-color: #f5f5f5;
+  --md-primary-bg-color--light: #a3a3a3;
+  --md-accent-fg-color: #ffffff;
+  --md-accent-fg-color--transparent: rgba(255, 255, 255, 0.1);
+  --md-typeset-a-color: #f5f5f5;
+  --md-default-bg-color: #0a0a0a;
+  --md-default-fg-color: rgba(245, 245, 245, 0.92);
+  --md-code-bg-color: #161616;
+  --md-footer-bg-color: #161616;
+  --md-footer-bg-color--dark: #000000;
+  --md-footer-fg-color: #f5f5f5;
+}
+
+/* Шапка и вкладки — как фон приложения, отделены волосяной линией вместо тени. */
+.md-header,
+.md-tabs {
+  box-shadow: none;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* Марка: прописными, жирно, с разрядкой 0.14em — как Wordmark на главной приложения. */
+.md-header__topic:first-child {
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+/* Ссылки отличаются подчёркиванием, а не цветом. */
+.md-typeset a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+.md-typeset a.headerlink,
+.md-typeset .md-button {
+  text-decoration: none;
+}
+
+/* Заголовки — чернилами, иерархию держат вес и размер, а не бледность. */
+.md-typeset h1 {
+  color: var(--md-default-fg-color);
+  font-weight: 700;
+}
+.md-typeset h1.ducker-title {
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  margin-bottom: 0.6em;
+}
+
+/* Поиск в шапке — серая плашка, как поле ввода в приложении. */
+@media screen and (min-width: 60em) {
+  .md-search__form,
+  .md-search__input {
+    background-color: var(--md-default-fg-color--lightest);
+  }
+  .md-search__form:hover {
+    background-color: var(--md-default-fg-color--lighter);
+  }
+}
+.md-search__input {
+  color: var(--md-default-fg-color);
+}
+.md-search__input::placeholder,
+.md-search__icon {
+  color: var(--md-default-fg-color--light);
+}
+
+/* Кнопки: обычная — волосяная рамка, главная — сплошная заливка,
+   как выбранное состояние в приложении. */
+.md-typeset .md-button {
+  color: var(--md-default-fg-color);
+  border-color: var(--md-default-fg-color--light);
+}
+.md-typeset .md-button:hover,
+.md-typeset .md-button:focus {
+  color: var(--md-default-bg-color);
+  background-color: var(--md-default-fg-color);
+  border-color: var(--md-default-fg-color);
+}
+.md-typeset .md-button--primary {
+  background-color: var(--md-primary-bg-color);
+  border-color: var(--md-primary-bg-color);
+  color: var(--md-default-bg-color);
+}
+
+/* Карточки разделов на главной — белые с волосяной рамкой, без тени. */
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid > .card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.8rem;
+  box-shadow: none;
+}
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--md-default-fg-color--light);
+  box-shadow: none;
+}
+
+/* Утка на главной: своя под каждую тему, как логотип в приложении. */
+.ducker-mark {
+  width: 7rem;
+  height: 7rem;
+  border-radius: 1.6rem;
+}
+[data-md-color-scheme="slate"] .ducker-mark--light,
+[data-md-color-scheme="default"] .ducker-mark--dark {
+  display: none;
+}
+
+/* Admonition без цветовых акцентов: все типы — в серой гамме. */
+.md-typeset .admonition,
+.md-typeset details {
+  border-color: var(--md-default-fg-color--light) !important;
+  box-shadow: none;
+}
+.md-typeset .admonition-title,
+.md-typeset summary {
+  background-color: var(--md-accent-fg-color--transparent) !important;
+}
+.md-typeset .admonition-title::before,
+.md-typeset summary::before {
+  background-color: var(--md-default-fg-color) !important;
+}
+
+/* Имена заголовков и ключей в первом столбце таблиц не переносим посреди слова. */
+.md-typeset td:first-child code {
+  white-space: nowrap;
+}

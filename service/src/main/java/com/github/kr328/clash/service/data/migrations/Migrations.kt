@@ -13,5 +13,3 @@ private val MIGRATION_1_2 = object : Migration(1, 2) {
 val MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_1_2,
 )
-
-val LEGACY_MIGRATION = ::migrationFromLegacy
