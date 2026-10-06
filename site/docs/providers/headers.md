@@ -2,7 +2,8 @@
 
 Провайдер может настроить вид приложения заголовками ответа на запрос подписки.
 В Remnawave они задаются в настройках ответа подписки (`customResponseHeaders`),
-править код панели не нужно.
+править код панели не нужно. Как отдавать их только ducker — на странице
+[«Подписка для ducker»](start.md#отдельный-ответ-для-ducker-в-remnawave).
 
 | Заголовок | Значение | Что делает |
 |---|---|---|
@@ -27,4 +28,6 @@
 
 Кроме `ducker-*`, приложение понимает общепринятые заголовки подписки: `profile-title`,
 `profile-update-interval`, `profile-web-page-url`, `support-url`, `announce`,
-`subscription-userinfo`, `subscription-refill-date` и `x-hwid-*`.
+`subscription-userinfo`, `subscription-refill-date` и `x-hwid-*`. Что делает каждый — на странице
+[«Подписка для ducker»](start.md#заголовки-ответа); заголовки `x-hwid-*` — на странице
+[«Устройства и лимит»](devices.md).

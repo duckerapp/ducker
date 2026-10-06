@@ -1,16 +1,11 @@
 name: Site
 
-# Сайт документации (этап 17, D-197): собирается из site/ и выкладывается на GitHub Pages.
+# Сайт документации: собирается из site/ и выкладывается на GitHub Pages.
 #
-# ЛЕЖИТ НЕ НА МЕСТЕ: место файла — .github/workflows/pages.yaml. Облачная сессия не может
-# пушить в .github/workflows (у её токена нет права workflow), перенести — с основной машины:
-#   git mv site/pages.yaml .github/workflows/pages.yaml
-#
-# Пока выключен: бесплатный GitHub публикует Pages только у открытых репозиториев (Q-32).
-# Включить в день открытия:
+# Пока запускается только вручную (Actions → Site → Run workflow): бесплатный GitHub публикует
+# Pages только у открытых репозиториев. Включить после открытия:
 #   1. Settings → Pages → Source: GitHub Actions.
 #   2. Раскомментировать push ниже — сайт будет обновляться сам после каждого слияния в main.
-# До этого workflow можно запустить только вручную (Actions → Site → Run workflow).
 on:
   workflow_dispatch:
   # push:
@@ -20,6 +15,7 @@ on:
   #     - "site/**"
   #     - "docs/FAQ.md"
   #     - "docs/CREDITS.md"
+  #     - "docs/images/ru/**"
   #     - "PRIVACY_POLICY.md"
   #     - "CONTRIBUTING.md"
   #     - "SECURITY.md"

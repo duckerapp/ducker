@@ -1,9 +1,8 @@
-# Сайт документации ducker (этап 17, D-197). Собирается из этой папки:
+# Сайт документации ducker. Собирается из этой папки:
 #   pip install -r requirements.txt && mkdocs build --strict
-# Рабочие записи проекта лежат в ../docs и на сайт не попадают.
 
 site_name: DUCKER
-site_description: Открытый клиент mihomo для Android
+site_description: Открытый клиент mihomo для Android и Android TV
 site_url: https://duckerapp.github.io/ducker/
 site_dir: build
 
@@ -45,8 +44,8 @@ theme:
     - search.highlight
 
 hooks:
-  # FAQ, приватность, CONTRIBUTING, SECURITY и благодарности берутся из документов
-  # репозитория при каждой сборке (D-197).
+  # FAQ, приватность, CONTRIBUTING, SECURITY, благодарности и снимки экрана берутся из
+  # документов репозитория при каждой сборке.
   - hooks/sources.py
 
 # Битая ссылка или якорь — ошибка сборки при --strict.
@@ -92,11 +91,13 @@ nav:
       - Вопросы и ответы: users/faq.md
       - Приватность: users/privacy.md
   - Провайдерам:
+      - Подписка для ducker: providers/start.md
       - Заголовки ducker-*: providers/headers.md
+      - Устройства и лимит: providers/devices.md
+      - Встроенный шаблон: providers/template.md
   - Помочь проекту:
       - Как помочь: help/contributing.md
       - Уязвимости: help/security.md
-  - Поддержать:
-      - Донаты: support/donate.md
-      - Написать разработчику: support/contact.md
+  - Сообщество:
+      - Сообщество и связь: support/contact.md
       - Благодарности: support/credits.md
