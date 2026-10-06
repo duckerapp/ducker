@@ -986,6 +986,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                 probeViewModel.refresh()
                             },
                             onDashboard = { startActivity(DashboardActivity::class.intent) },
+                            onLink = { open(it) },
                             onAllowBackground = { requestBackgroundWork() },
                             onVendor = { openVendor(it) },
                             hwid = subscriptionsState.hwid,

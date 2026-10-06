@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Insights
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.VpnLock
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.BugReport
@@ -113,6 +115,10 @@ data class SettingsState(
     val backgroundAllowed: Boolean = true,
 )
 
+/** Канал с выпусками и чат сообщества — строки в разделе «Помощь». */
+private const val CHANNEL = "https://t.me/ducker_mihomo"
+private const val COMMUNITY = "https://t.me/ducker_community"
+
 /**
  * Свои настройки (этап 5).
  *
@@ -147,6 +153,7 @@ fun SettingsScreen(
     onLogs: () -> Unit,
     onProbe: () -> Unit,
     onDashboard: () -> Unit,
+    onLink: (String) -> Unit,
     onAllowBackground: () -> Unit,
     /** Экран оболочки; `null` — страница приложения. */
     onVendor: (Shortcut?) -> Unit,
@@ -436,6 +443,24 @@ fun SettingsScreen(
                 subtitle = stringResource(R.string.dashboard_hint),
                 onClick = onDashboard,
                 icon = Icons.Default.Insights,
+            )
+        }
+
+        item {
+            LinkRow(
+                title = stringResource(R.string.channel),
+                subtitle = stringResource(R.string.channel_hint),
+                onClick = { onLink(CHANNEL) },
+                icon = Icons.AutoMirrored.Filled.Send,
+            )
+        }
+
+        item {
+            LinkRow(
+                title = stringResource(R.string.community),
+                subtitle = stringResource(R.string.community_hint),
+                onClick = { onLink(COMMUNITY) },
+                icon = Icons.Default.Forum,
             )
         }
 
