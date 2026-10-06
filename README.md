@@ -184,8 +184,8 @@ ducker also understands the common subscription headers: `profile-title`,
 
 **Device limit.** With each subscription request ducker sends a stable device ID in `x-hwid`
 together with `x-device-os`, `x-ver-os` and `x-device-model`, so a panel can count devices. The
-user sees this ID in **Settings → Device ID** and can turn it off. The ID is never sent over plain
-HTTP or to public file hostings.
+user sees this ID in **Settings → Device ID** and can turn it off. The ID is sent over HTTPS
+only.
 
 **One-tap install.** `ducker://install-config?url=<subscription link>` opens the Add subscription
 dialog with the link filled in; the user confirms before anything is downloaded.

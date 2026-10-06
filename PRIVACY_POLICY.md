@@ -28,15 +28,16 @@
 
 Ссылка `ducker://install-config` (также `clash://` и `clashmeta://`) сначала показывает
 источник и спрашивает подтверждение. До «Добавить» профиль не скачивается; отмена
-не создаёт подписку. По HTTP данные устройства не передаются. Для HTTPS они также
-не передаются известным публичным хостингам: GitHub/GitHub Pages, jsDelivr, GitLab,
-Bitbucket, Codeberg, Pastebin/paste.ee/Hastebin/Githack, Google Drive/Docs, Dropbox,
-Cloudflare Pages/Workers, Netlify и Vercel (включая поддомены их публичных доменов).
-User-Agent сохраняется. HTTP оставляет ссылку и профиль доступными сети — перед
-добавлением или изменением такой ссылки приложение предупреждает об этом.
-При перенаправлении на другой источник (хост или порт) данные устройства, авторизация,
-cookies и Referer не пересылаются и не возвращаются в следующих переходах цепочки.
-Перенаправление HTTPS → HTTP отклоняется; провайдеру нужна рабочая ссылка HTTPS.
+не создаёт подписку.
+
+Данные устройства передаются только по HTTPS; по ссылке `http://` уходит один User-Agent. HTTP
+оставляет ссылку и профиль доступными сети — перед добавлением или изменением такой ссылки
+приложение предупреждает об этом. Куда ведёт ссылка, решает провайдер: списка «разрешённых»
+адресов в приложении нет.
+
+Если сервер провайдера переадресует запрос на другой адрес, приложение идёт за переадресацией
+(не больше десяти раз), и данные устройства идут следом — пока вся цепочка шла по HTTPS. После
+первого адреса `http://` они больше не отправляются, даже если дальше снова HTTPS.
 
 **2. Картинки из подписки.** Иконки групп и логотип провайдера загружаются по адресам, которые
 указал сам провайдер.
@@ -54,6 +55,11 @@ cookies и Referer не пересылаются и не возвращаютс�
 
 **5. По вашему нажатию.** Ссылки на страницу провайдера, поддержку, оплату и релизы ducker
 открываются в браузере только тогда, когда вы сами на них нажали.
+
+**6. На ваш телевизор — только по вашему действию.** Когда вы сканируете в ducker QR-код с экрана
+телевизора и подтверждаете отправку, телефон передаёт ссылку подписки на этот телевизор по
+домашней сети. Ссылка зашифрована одноразовым ключом из этого QR-кода. Телевизор слушает сеть,
+только пока код на экране.
 
 ## Что хранится на телефоне
 
@@ -110,13 +116,13 @@ developer. The project has no server of its own.
    the device id (the per-app `ANDROID_ID` or a random id created once), `Android`, the Android
    version, and the phone's manufacturer and model. The provider also sees your IP address.
    External install-config links require confirmation before any profile download or creation.
-   Device headers are omitted over HTTP and for known public hosting domains: GitHub/Pages,
-   jsDelivr, GitLab, Bitbucket, Codeberg, Pastebin/paste.ee/Hastebin/Githack, Google Drive/Docs,
-   Dropbox, Cloudflare Pages/Workers, Netlify and Vercel, including their subdomains.
-   User-Agent is preserved. HTTP links and profiles remain visible to the network; the app
-   warns about this when adding or editing an HTTP link.
-   Redirects to another host or port remove device headers, authorization, cookies and
-   Referer for the rest of the redirect chain. HTTPS to HTTP redirects are refused.
+   Device data is sent over HTTPS only; an `http://` link gets nothing but the User-Agent. HTTP
+   links and profiles remain visible to the network; the app warns about this when adding or
+   editing an HTTP link. Where the link leads is the provider's choice: the app has no list of
+   "allowed" addresses.
+   If the provider's server redirects the request, the app follows (up to ten times) and the
+   device data goes along while the whole chain has been HTTPS. After the first `http://`
+   address it is no longer sent, even if HTTPS follows.
 2. **Images** referenced by the subscription (group icons, provider logo), from addresses set by
    the provider.
 3. **Your traffic** goes through the provider's servers while the VPN is on, as with any VPN.
@@ -125,6 +131,9 @@ developer. The project has no server of its own.
    the profile enables it (the built-in template uses `pool.ntp.org`), and rule sets or address
    databases the profile refers to.
 5. **Links you tap** (provider page, support, payment, ducker releases) open in your browser.
+6. **Your TV, only when you ask.** When you scan the QR code shown by ducker on a TV and confirm,
+   the phone sends the subscription link to that TV over your home network, encrypted with a
+   one-time key from that QR code. The TV listens on the network only while the code is shown.
 
 **Stored on the device only:** subscriptions and configs, settings and your rules, latency results,
 the service log (two rotating 256 KB files), crash records (two files up to 64 KB per process),

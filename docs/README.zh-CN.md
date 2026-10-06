@@ -172,8 +172,7 @@ ducker 还支持常见的订阅响应头：`profile-title`、`profile-update-int
 
 **设备数量限制。** 每次请求订阅时，ducker 会在 `x-hwid` 中发送稳定的设备 ID，同时发送
 `x-device-os`、`x-ver-os` 和 `x-device-model`，面板可以据此统计设备。用户可以在
-**Settings → Device ID** 中看到这个 ID 并将其关闭。通过明文 HTTP 或向公共文件托管站请求时，
-不会发送设备 ID。
+**Settings → Device ID** 中看到这个 ID 并将其关闭。设备 ID 只通过 HTTPS 发送。
 
 **一键导入。** `ducker://install-config?url=<订阅链接>` 会打开已填好链接的添加订阅窗口；用户确认
 之前不会下载任何内容。
