@@ -1,47 +1,246 @@
-# ducker
+<div align="center">
 
-Клиент [mihomo](https://github.com/MetaCubeX/mihomo) для Android: подключение по подписке,
-выбор узла, честные задержки — и ничего лишнего на экране.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/duck-dark.png">
+  <img src="docs/images/duck-light.png" width="112" alt="ducker icon">
+</picture>
 
-Сделан на основе [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid):
-ядро и служба оттуда, интерфейс свой.
+<br>
 
-## Чем отличается от родителя
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/wordmark-dark.svg">
+  <img src="docs/images/wordmark-light.svg" height="76" alt="DUCKER">
+</picture>
 
-- **Экран под одну задачу.** Главная: включить, посмотреть узел, срок подписки и остаток трафика.
-  Всё остальное — на соседних вкладках, которые листаются пальцем.
-- **Подписка, а не конфиг.** Провайдер может прислать не готовый конфиг mihomo,
-  а просто список узлов — приложение подставит их во встроенный профиль
-  с маршрутизацией под Россию: заблокированное идёт через узел, российское напрямую.
-- **Брендинг провайдера.** Название, логотип, объявление, ссылки на поддержку и оплату
-  приходят заголовками ответа вместе с подпиской.
-- **Идентификатор устройства.** Провайдер, который считает устройства, получает
-  устойчивый идентификатор — и человек видит в приложении, какой именно.
-- **Чёрно-белый вид** и тёмная тема, которая накатывает волной от кнопки.
+<br>
 
-## Установка
+**An open mihomo client for Android and Android TV.**<br>
+One button, honest status, nothing extra on the screen.
 
-Скачать apk из [релизов](https://github.com/duckerapp/ducker/releases) и открыть на телефоне.
-Android попросит разрешить установку из этого источника — это нормально для приложений
-не из Play.
+**English** · [Русский](docs/README.ru.md) · [简体中文](docs/README.zh-CN.md) · [فارسی](docs/README.fa.md)
 
-Какой файл брать:
+[![Release](https://img.shields.io/github/v/release/duckerapp/ducker?style=flat-square&label=release&labelColor=000&color=2b2b2b)](https://github.com/duckerapp/ducker/releases)
+[![License](https://img.shields.io/badge/license-GPL--3.0-2b2b2b?style=flat-square&labelColor=000)](LICENSE)
+[![Android](https://img.shields.io/badge/Android-10%2B-2b2b2b?style=flat-square&labelColor=000)](#install)
+[![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
 
-- `arm64-v8a` — любой телефон свежее 2017 года;
-- `armeabi-v7a` — старый телефон, если первый не ставится.
+[Install](#install) · [Features](#features) · [Screenshots](#screenshots) · [Android TV](#android-tv) · [For providers](#for-providers) · [FAQ](docs/FAQ.md) · [Community](#community)
 
-Минимальная версия Android — 10.
+<br>
 
-Дальше: «Подписки» → «+» → вставить ссылку от провайдера. Или открыть ссылку вида
-`ducker://install-config?url=…` прямо из письма или чата.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/en/hero-dark.png">
+  <img src="docs/images/en/hero-light.png" width="840" alt="ducker on a TV and on a phone: the Home screen with the power button, the current node and the subscription">
+</picture>
 
-Если что-то не получается — [вопросы и ответы](docs/FAQ.md): как добавить подписку, что делать,
-если VPN сам отключается или нет интернета, как прислать журнал.
+</div>
 
-## Сборка из исходников
+## What it is
 
-Нужны JDK 21, Android SDK (platform 37, NDK 29.0.14206865), Go 1.26 или новее и git.
-Подробнее — в [CONTRIBUTING.md](CONTRIBUTING.md).
+ducker connects your phone or TV to a VPN through the [mihomo](https://github.com/MetaCubeX/mihomo)
+core. You add a subscription from your provider, press one button and, if you want, pick a server.
+
+It is a fork of [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid): the VPN
+service and the core bindings come from there, the interface is written from scratch in Jetpack
+Compose. Free, no ads, no analytics, GPL-3.0.
+
+## Features
+
+**Every day**
+
+- **One screen for one job.** Home shows the power button, the current node with its delay, when
+  the subscription ends and how much traffic is left. Everything else is a swipe away.
+- **Honest status.** Right after the tunnel comes up ducker checks that traffic really goes
+  through the node. If it doesn't, a card says so and offers to switch to the fastest node.
+- **Errors in plain words.** When the VPN stops or a subscription fails to update, you see why and
+  what to do, not an error code.
+- **Subscriptions your way.** A link, a QR code or a file. Full mihomo configs work as they are;
+  plain lists of `vless://`, `vmess://`, `ss://`, `trojan://` and similar links are placed into a
+  built-in profile with routing for Russia: blocked sites go through the node, Russian ones go
+  directly.
+- **Nodes.** Groups from your config, delay check, favorites, search, sorting by delay, and a
+  node test that shows loss, minimum, average and maximum delay.
+- **Light and dark.** A black-and-white look in both themes; switching runs as a wave across the
+  screen.
+
+**When you need more**
+
+- **Apps.** Choose which apps go through the VPN and which bypass it.
+- **My rules.** Send a website, an app, an address, a category or a whole country through the VPN,
+  past it, or block it — without touching YAML.
+- **Config editor.** Edit the profile on the device; the core checks it before it is applied. The
+  profile is used as is: ducker never rewrites config keys silently.
+- **Quick access.** Home screen widgets, a Quick Settings tile, launcher shortcuts, and optional
+  [control from Tasker and similar apps](#control-from-other-apps).
+- **Stays up.** Autostart after a reboot or an app update, and step-by-step help with the battery
+  savers of Xiaomi, Samsung, Huawei, OPPO, vivo and Tecno phones that like to kill VPN apps.
+- **Privacy extras.** Hide ducker from recent apps or disguise its icon as a calculator.
+- **Languages.** English and Russian; Simplified Chinese and Persian are planned.
+
+**Under the hood**
+
+- **mihomo v1.19.32**, built from source with current uTLS fingerprints.
+- **Community patches for the core:** an Xray-compatible mux (mux.cool with UDP and XUDP), REALITY
+  in step with Xray (ML-KEM, ML-DSA-65) with a fallback for older servers, and a provider that
+  skips a broken node instead of failing completely. Authors and sources are listed in
+  [docs/CREDITS.md](docs/CREDITS.md).
+- **Built-in [zashboard](https://github.com/Zephyruso/zashboard)** for diagnostics. It is bundled
+  with the app and served locally by the core; nothing is downloaded at run time.
+- **Measured on a budget phone.** On a Redmi Note 9S (2020, Android 12) the app cold-starts in
+  about 0.4 s with the VPN running, and the VPN keeps working when Android unloads the interface.
+
+## Screenshots
+
+<p align="center">
+  <a href="docs/images/en/phone-home.png"><img src="docs/images/en/phone-home.png" width="24%" alt="Home: the power button, the current node, the subscription term and traffic"></a>
+  <a href="docs/images/en/phone-proxies.png"><img src="docs/images/en/phone-proxies.png" width="24%" alt="Proxies: a group of nodes with delays"></a>
+  <a href="docs/images/en/phone-subscriptions.png"><img src="docs/images/en/phone-subscriptions.png" width="24%" alt="Subscriptions: a subscription card with its term and traffic"></a>
+  <a href="docs/images/en/phone-settings.png"><img src="docs/images/en/phone-settings.png" width="24%" alt="Settings: background work, apps, Quick Settings tile, autostart"></a>
+</p>
+
+<p align="center"><sub>Home · Proxies · Subscriptions · Settings. The provider and its servers on the screenshots are made up.</sub></p>
+
+## Android TV
+
+The same APK runs on Android TV and Google TV.
+
+- **Made for the remote.** A dock on the left, a glowing frame around the focused element, the
+  main screens — Home, Proxies, Subscriptions — work with the D-pad.
+- **No typing a link with the remote.** The TV shows a QR code; scan it in ducker on your phone
+  (Subscriptions → **+** → Scan QR) and the subscription is sent to the TV over your home network.
+  The link travels encrypted (AES-256-GCM) with a one-time key that exists only inside that QR
+  code, and the TV listens only while the code is on the screen.
+- **Still in progress.** TV support is new. Some screens opened from Settings are not yet
+  comfortable with a remote, and so far it has been tested mostly in the emulator — reports from
+  real TVs are very welcome.
+
+<p align="center">
+  <a href="docs/images/en/tv-proxies.png"><img src="docs/images/en/tv-proxies.png" width="49%" alt="Android TV: the Proxies screen with the focus frame on a node"></a>
+  <a href="docs/images/en/tv-add.png"><img src="docs/images/en/tv-add.png" width="49%" alt="Android TV: adding a subscription by scanning a QR code with the phone"></a>
+</p>
+
+## Install
+
+1. Download the APK from [Releases](https://github.com/duckerapp/ducker/releases):
+   - `arm64-v8a` — almost any phone made after 2017;
+   - `armeabi-v7a` — older phones and many TVs; take it if the first one does not install.
+2. Open the file. Android will ask to allow installation from this source — that is normal for
+   apps from outside Google Play.
+3. Add a subscription: **Subscriptions → + →** paste the link from your provider, scan its QR code
+   or pick a file. A link like `ducker://install-config?url=…` opens the same dialog straight from
+   a chat or an email.
+4. Press the power button on **Home** and allow Android's VPN request.
+
+Android 10 or newer. Each release comes with `SHA256SUMS` for the APK files.
+
+Something does not work? [Questions and answers](docs/FAQ.md): how to add a subscription, what to
+do if the VPN turns itself off or there is no internet, how to send a log. The FAQ is in Russian
+with a short English part at the end.
+
+## For providers
+
+ducker works with any regular mihomo subscription. On top of that, a provider can make the app
+look like its own with response headers of the subscription request. In
+[Remnawave](https://github.com/remnawave/panel) they are set in the subscription response settings
+(`customResponseHeaders`); the panel code does not need changes.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/en/brand-dark.png">
+    <img src="docs/images/en/brand-light.png" width="280" alt="Home with a provider's name, logo and announcement">
+  </picture>
+</p>
+
+- **`ducker-brand-name: <text>`** — the provider's name in the Home header instead of DUCKER.
+  Also shown in the notification and on the Quick Settings tile.
+- **`ducker-brand-logo: <image>`** — the logo next to the name on Home and on the subscription
+  card. An `https://…` link or the image itself as `data:…;base64,…`; PNG, JPEG, WebP or SVG. If
+  it fails to load, the ducker icon is shown.
+- **`ducker-buy-url: <link>`** — the **Renew** button on the subscription card when less than
+  three days or 10 % of traffic are left, or the term is over. The same link is used in the
+  expiry notification. Without the header, `profile-web-page-url` is used.
+- **`ducker-global: off`** — hides the Global/Rules switch on the Proxies tab; the mode stays as
+  set in the config.
+- **`ducker-local-proxy: off`** — the tunnel starts with the config's local ports closed
+  (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`) and without `listeners`, so
+  other apps on the phone cannot find a proxy on `127.0.0.1`. The config itself is not rewritten.
+  A header cannot open a port.
+- **`ducker-override-user: on | off`** — reserved for settings that the provider sets with
+  headers. The app reads it, but it has no effect yet.
+
+General rules:
+
+- Header names are case-insensitive.
+- Text with non-ASCII characters or line breaks is passed as `base64:<…>` (UTF-8), the way
+  Remnawave sends `announce`.
+- A single dash `-` means "not set": the panel does not allow saving an empty header, and a dash
+  lets you remove your own.
+- Headers change only the look and behavior listed above. They have no access to anything
+  security-related: the core API secret, logs or the app update address.
+
+ducker also understands the common subscription headers: `profile-title`,
+`profile-update-interval`, `profile-web-page-url`, `support-url`, `announce`,
+`subscription-userinfo`, `subscription-refill-date`.
+
+**Device limit.** With each subscription request ducker sends a stable device ID in `x-hwid`
+together with `x-device-os`, `x-ver-os` and `x-device-model`, so a panel can count devices. The
+user sees this ID in **Settings → Device ID** and can turn it off. The ID is never sent over plain
+HTTP or to public file hostings.
+
+**One-tap install.** `ducker://install-config?url=<subscription link>` opens the Add subscription
+dialog with the link filled in; the user confirms before anything is downloaded.
+
+## Privacy and security
+
+- **Nothing is collected.** No analytics, no ads, no crash reports sent to the developer. The
+  project has no server of its own.
+- **What goes to the network:** the subscription request to your provider, images the
+  subscription refers to, and your traffic through the provider's servers. The full list is in
+  the [privacy policy](PRIVACY_POLICY.md).
+- **The core API** listens only on `127.0.0.1` and is protected by a random secret created at
+  install time.
+- **Logs stay on the device** until you export them yourself. Node addresses, keys and the device
+  ID are removed first.
+- **Only system certificates are trusted.** A certificate installed on the phone by hand cannot
+  replace the provider's images or update answers.
+- **Control from other apps is off** until you turn it on.
+
+Found a vulnerability? Please report it privately: [SECURITY.md](SECURITY.md).
+
+## How the project is made
+
+ducker is made by one person together with an AI assistant. The code is written by
+Claude, an AI model made by Anthropic; the owner decides what to build. Every change is built,
+tested and checked on real devices before it is released, and anyone can repeat the build from
+this repository.
+
+Encryption and protocols are not ours: they come from the mihomo core. Our changes to it are 21
+commits on top of v1.19.32, 13 of them community patches for the Xray-compatible mux and REALITY.
+They are public in the [duckerapp/mihomo](https://github.com/duckerapp/mihomo) fork, branch `ducker`.
+
+## Control from other apps
+
+For Tasker, shortcuts and similar tools. Turn on **Settings → Control from other apps** first: it
+is off by default, also after updating an existing installation. The permission applies to every
+app that is able to send these commands. ducker's own widgets, tile and shortcuts work without it.
+
+| Action | Intent |
+|---|---|
+| turn on | `am start -a app.ducker.android.action.START_CLASH` |
+| turn off | `am start -a app.ducker.android.action.STOP_CLASH` |
+| toggle | `am start -a app.ducker.android.action.TOGGLE_CLASH` |
+| add a subscription | `ducker://install-config?url=<link>` |
+
+## What's next
+
+- Android TV: the remaining screens for the remote and a first-run screen with a QR code.
+- Simplified Chinese and Persian, including a right-to-left layout.
+- A notification about a new version inside the app.
+- Linux and Windows clients are planned as a separate project; there are no dates yet.
+
+## Build
+
+You need JDK 21, the Android SDK (platform 37, NDK 29.0.14206865), Go 1.26 or newer, and git.
 
 ```
 git clone --recurse-submodules https://github.com/duckerapp/ducker.git
@@ -49,98 +248,32 @@ cd ducker
 ./gradlew :app:assembleMetaRelease
 ```
 
-Без `--recurse-submodules` не соберётся: ядро подключено подмодулем.
+It will not build without `--recurse-submodules`: the core is a submodule. The result is signed
+with the debug key; your own key is set in `signing.properties` in the repository root
+(`keystore.path`, `keystore.password`, `key.alias`, `key.password`). `./scripts/smoke.sh` checks
+the build on a connected phone.
 
-Собранное подписывается отладочным ключом. Свой ключ подключается файлом
-`signing.properties` в корне: поля `keystore.path`, `keystore.password`, `key.alias`,
-`key.password`.
+Details are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Проверка собранного — `./scripts/smoke.sh`.
+## Credits
 
-## Управление снаружи
+- [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo) — the core;
+- [MetaCubeX/ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid) — the VPN
+  service, the build and everything under the interface;
+- [Zephyruso/zashboard](https://github.com/Zephyruso/zashboard) — the built-in web panel;
+- the authors of the community core patches and of the ideas we borrowed — all named in
+  [docs/CREDITS.md](docs/CREDITS.md).
 
-Приложение понимает интенты — удобно для Tasker и ярлыков:
+## Community
 
-Для внешних START/STOP/TOGGLE включите «Настройки → Управление из других приложений».
-По умолчанию доступ выключен, в том числе после обновления существующей установки.
-Разрешение действует для всех приложений, способных отправить эти команды.
-Встроенные виджеты, плитка и ярлыки работают независимо от него; импорт подписки
-по ссылке по-прежнему требует подтверждения.
+- [Telegram channel](https://t.me/ducker_mihomo) — releases and news;
+- [Telegram chat](https://t.me/ducker_community) — questions and discussion;
+- [Issues](https://github.com/duckerapp/ducker/issues) — bugs and ideas;
+- [CONTRIBUTING.md](CONTRIBUTING.md) — how to report a bug, build the app and send a change.
 
-| Действие | Интент |
-|---|---|
-| включить | `am start -a app.ducker.android.action.START_CLASH` |
-| выключить | `am start -a app.ducker.android.action.STOP_CLASH` |
-| переключить | `am start -a app.ducker.android.action.TOGGLE_CLASH` |
-| добавить подписку | `ducker://install-config?url=<ссылка>` |
+The project is run by one person, so help matters: bug reports, testing on your phone or TV,
+and translations — especially from native speakers of Chinese and Persian.
 
-## Заголовки для провайдера
+## License
 
-Провайдер может настроить вид приложения заголовками ответа на запрос подписки.
-В Remnawave они задаются в настройках ответа подписки (`customResponseHeaders`),
-править код панели не нужно.
-
-| Заголовок | Значение | Что делает |
-|---|---|---|
-| `ducker-brand-name` | текст | Название провайдера в шапке главной вместо надписи DUCKER. Оно же — в шторке и на плитке быстрых настроек. |
-| `ducker-brand-logo` | ссылка `https://…` на картинку или сама картинка строкой `data:…;base64,…`: PNG, JPEG, WebP или SVG | Логотип слева от названия на главной и у подписки на вкладке «Подписки». Не загрузился — стоит значок ducker. |
-| `ducker-buy-url` | ссылка | Кнопка «Продлить» на карточке подписки, когда до конца меньше трёх дней, срок вышел или осталось меньше 10 % трафика; та же ссылка — в уведомлении о скором конце подписки. Без заголовка берётся `profile-web-page-url`. |
-| `ducker-global` | `off` | Прячет переключатель Global/Rules на вкладке «Прокси»; режим остаётся тем, что задан в конфиге. Без заголовка или с другим значением переключатель есть. |
-| `ducker-local-proxy` | `off` | Туннель поднимается с закрытыми локальными портами конфига (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`) и без раздела `listeners`: другие приложения на телефоне не находят прокси на `127.0.0.1`. Сам конфиг не переписывается. Открыть порт заголовком нельзя; без заголовка или с другим значением конфиг применяется как есть. |
-| `ducker-override-user` | `on` или `off` | Зарезервирован под настройки, которые провайдер задаёт заголовками. Сейчас приложение его читает, но ни на что он не влияет. |
-
-Общие правила:
-
-- Регистр в имени заголовка не важен.
-- Текст с кириллицей или переводом строки передаётся как `base64:<…>` (UTF-8) —
-  так же, как Remnawave отдаёт `announce`.
-- Значение из одного прочерка `-` значит «не задано». Панель не даёт сохранить пустой
-  заголовок, а прочерком можно убрать свой — например, чтобы в шапке осталась надпись DUCKER.
-- Заголовки меняют только вид и поведение из списка выше. К безопасности — секрету API
-  ядра, журналам, адресу обновлений приложения — у них доступа нет.
-
-Кроме `ducker-*`, приложение понимает общепринятые заголовки подписки: `profile-title`,
-`profile-update-interval`, `profile-web-page-url`, `support-url`, `announce`,
-`subscription-userinfo`, `subscription-refill-date` и `x-hwid-*`.
-
-## Благодарности
-
-- [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo) — ядро;
-- [MetaCubeX/ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid) —
-  служба, сборка и всё, что под интерфейсом;
-- [Zephyruso/zashboard](https://github.com/Zephyruso/zashboard) — веб-панель,
-  встроенная в приложение.
-
-Подробнее о заимствованиях — [docs/CREDITS.md](docs/CREDITS.md).
-
-## Документы
-
-- [docs/FAQ.md](docs/FAQ.md) — вопросы и ответы для тех, кто пользуется приложением;
-- [CONTRIBUTING.md](CONTRIBUTING.md) — как сообщить об ошибке, собрать и прислать изменение;
-- [PRIVACY_POLICY.md](PRIVACY_POLICY.md) — что приложение отправляет в сеть и что хранит;
-- [SECURITY.md](SECURITY.md) — как сообщить об уязвимости.
-
-## Лицензия
-
-GPL-3.0, как у родительского проекта. Текст — в файле [LICENSE](LICENSE).
-
----
-
-## In English
-
-ducker is an Android client for [mihomo](https://github.com/MetaCubeX/mihomo), forked from
-[Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) with its own Compose UI.
-Add a subscription, press one button, pick a server — the rest is on neighbouring tabs.
-
-- Works with mihomo configs and with plain lists of `vless://`, `vmess://` and similar links.
-- Provider branding and behaviour via `ducker-*` subscription headers (see the table above).
-- No analytics, no ads, no crash reports sent anywhere: [PRIVACY_POLICY.md](PRIVACY_POLICY.md).
-- Android 10+. Download APKs from [Releases](https://github.com/duckerapp/ducker/releases):
-  `arm64-v8a` for most phones, `armeabi-v7a` for old ones.
-- Help for users: [docs/FAQ.md](docs/FAQ.md) — in Russian, with a short English part at the end.
-- Build: JDK 21, Android SDK platform 37, NDK 29.0.14206865, Go 1.26+,
-  `git clone --recurse-submodules` and `./gradlew :app:assembleMetaRelease`.
-- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security: [SECURITY.md](SECURITY.md).
-  Project docs are in Russian.
-
-License: GPL-3.0.
+[GPL-3.0](LICENSE), the same as the parent project.
