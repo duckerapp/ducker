@@ -24,7 +24,7 @@
 [![Android](https://img.shields.io/badge/Android-10%2B-2b2b2b?style=flat-square&labelColor=000)](#install)
 [![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
 
-[نصب](#install) · [امکانات](#features) · [تصاویر](#screenshots) · [Android TV](#android-tv) · [برای ارائه‌دهندگان](#providers) · [پرسش و پاسخ](FAQ.md) · [انجمن](#community)
+[نصب](#install) · [تصاویر](#screenshots) · [امکانات](#features) · [Android TV](#android-tv) · [برای ارائه‌دهندگان](#providers) · [پرسش و پاسخ](FAQ.md) · [انجمن](#community)
 
 <br>
 
@@ -50,6 +50,19 @@ ducker گوشی یا تلویزیون شما را از طریق هستهٔ [miho
 این برنامه فورکی از [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) است:
 سرویس VPN و اتصال به هسته از آنجا آمده و رابط کاربری از نو با Jetpack Compose نوشته شده است.
 رایگان، بدون تبلیغ، بدون آمارگیری، با مجوز GPL-3.0.
+
+<a id="screenshots"></a>
+
+## تصاویر
+
+<p align="center">
+  <a href="images/en/phone-home.png"><img src="images/en/phone-home.png" width="24%" alt="صفحهٔ اصلی: دکمهٔ روشن و خاموش، نود فعلی، مدت اشتراک و حجم"></a>
+  <a href="images/en/phone-proxies.png"><img src="images/en/phone-proxies.png" width="24%" alt="Proxies: گروهی از نودها با تأخیرشان"></a>
+  <a href="images/en/phone-subscriptions.png"><img src="images/en/phone-subscriptions.png" width="24%" alt="Subscriptions: کارت اشتراک با مدت و حجم"></a>
+  <a href="images/en/phone-settings.png"><img src="images/en/phone-settings.png" width="24%" alt="Settings: کار در پس‌زمینه، برنامه‌ها، کاشی تنظیمات سریع، شروع خودکار"></a>
+</p>
+
+<p align="center"><sub>Home · Proxies · Subscriptions · Settings — ارائه‌دهنده و سرورهای داخل تصاویر ساختگی‌اند.</sub></p>
 
 <a id="features"></a>
 
@@ -99,19 +112,6 @@ ducker گوشی یا تلویزیون شما را از طریق هستهٔ [miho
 - **سنجیده‌شده روی گوشی ارزان.** روی Redmi Note 9S (سال ۲۰۲۰، Android 12) برنامه با VPN روشن در
   حدود ۰٫۴ ثانیه بالا می‌آید و وقتی Android رابط کاربری را از حافظه خارج می‌کند، VPN به کار ادامه
   می‌دهد.
-
-<a id="screenshots"></a>
-
-## تصاویر
-
-<p align="center">
-  <a href="images/en/phone-home.png"><img src="images/en/phone-home.png" width="24%" alt="صفحهٔ اصلی: دکمهٔ روشن و خاموش، نود فعلی، مدت اشتراک و حجم"></a>
-  <a href="images/en/phone-proxies.png"><img src="images/en/phone-proxies.png" width="24%" alt="Proxies: گروهی از نودها با تأخیرشان"></a>
-  <a href="images/en/phone-subscriptions.png"><img src="images/en/phone-subscriptions.png" width="24%" alt="Subscriptions: کارت اشتراک با مدت و حجم"></a>
-  <a href="images/en/phone-settings.png"><img src="images/en/phone-settings.png" width="24%" alt="Settings: کار در پس‌زمینه، برنامه‌ها، کاشی تنظیمات سریع، شروع خودکار"></a>
-</p>
-
-<p align="center"><sub>Home · Proxies · Subscriptions · Settings — ارائه‌دهنده و سرورهای داخل تصاویر ساختگی‌اند.</sub></p>
 
 <a id="android-tv"></a>
 

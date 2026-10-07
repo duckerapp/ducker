@@ -24,7 +24,7 @@
 [![Android](https://img.shields.io/badge/Android-10%2B-2b2b2b?style=flat-square&labelColor=000)](#установка)
 [![Telegram](https://img.shields.io/badge/Telegram-%D0%BA%D0%B0%D0%BD%D0%B0%D0%BB-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
 
-[Установка](#установка) · [Возможности](#возможности) · [Снимки](#снимки-экрана) · [Android TV](#android-tv) · [Провайдерам](#провайдерам) · [Вопросы и ответы](FAQ.ru.md) · [Сообщество](#сообщество)
+[Установка](#установка) · [Снимки](#снимки-экрана) · [Возможности](#возможности) · [Android TV](#android-tv) · [Провайдерам](#провайдерам) · [Вопросы и ответы](FAQ.ru.md) · [Сообщество](#сообщество)
 
 <br>
 
@@ -44,6 +44,17 @@ ducker подключает телефон или телевизор к VPN че
 Это форк [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid): служба VPN и
 связка с ядром — оттуда, интерфейс написан заново на Jetpack Compose. Бесплатно, без рекламы и
 аналитики, лицензия GPL-3.0.
+
+## Снимки экрана
+
+<p align="center">
+  <a href="images/ru/phone-home.png"><img src="images/ru/phone-home.png" width="24%" alt="Главная: кнопка включения, текущий узел, срок подписки и трафик"></a>
+  <a href="images/ru/phone-proxies.png"><img src="images/ru/phone-proxies.png" width="24%" alt="Прокси: группа узлов с задержками"></a>
+  <a href="images/ru/phone-subscriptions.png"><img src="images/ru/phone-subscriptions.png" width="24%" alt="Подписки: карточка подписки со сроком и трафиком"></a>
+  <a href="images/ru/phone-settings.png"><img src="images/ru/phone-settings.png" width="24%" alt="Настройки: работа в фоне, приложения, плитка в шторке, автозапуск"></a>
+</p>
+
+<p align="center"><sub>Главная · Прокси · Подписки · Настройки. Провайдер и его серверы на снимках выдуманы.</sub></p>
 
 ## Возможности
 
@@ -91,17 +102,6 @@ ducker подключает телефон или телевизор к VPN че
 - **Проверено на недорогом телефоне.** На Redmi Note 9S (2020 год, Android 12) приложение
   запускается примерно за 0,4 секунды при работающем VPN, а VPN продолжает работать, когда
   Android выгружает интерфейс.
-
-## Снимки экрана
-
-<p align="center">
-  <a href="images/ru/phone-home.png"><img src="images/ru/phone-home.png" width="24%" alt="Главная: кнопка включения, текущий узел, срок подписки и трафик"></a>
-  <a href="images/ru/phone-proxies.png"><img src="images/ru/phone-proxies.png" width="24%" alt="Прокси: группа узлов с задержками"></a>
-  <a href="images/ru/phone-subscriptions.png"><img src="images/ru/phone-subscriptions.png" width="24%" alt="Подписки: карточка подписки со сроком и трафиком"></a>
-  <a href="images/ru/phone-settings.png"><img src="images/ru/phone-settings.png" width="24%" alt="Настройки: работа в фоне, приложения, плитка в шторке, автозапуск"></a>
-</p>
-
-<p align="center"><sub>Главная · Прокси · Подписки · Настройки. Провайдер и его серверы на снимках выдуманы.</sub></p>
 
 ## Android TV
 

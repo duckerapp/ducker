@@ -24,7 +24,7 @@
 [![Android](https://img.shields.io/badge/Android-10%2B-2b2b2b?style=flat-square&labelColor=000)](#安装)
 [![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
 
-[安装](#安装) · [功能](#功能) · [截图](#截图) · [Android TV](#android-tv) · [给服务商](#给服务商) · [常见问题](FAQ.md) · [社区](#社区)
+[安装](#安装) · [截图](#截图) · [功能](#功能) · [Android TV](#android-tv) · [给服务商](#给服务商) · [常见问题](FAQ.md) · [社区](#社区)
 
 <br>
 
@@ -46,6 +46,17 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
 它是 [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) 的分支：VPN
 服务和内核绑定来自上游，界面用 Jetpack Compose 重新编写。免费，无广告，无统计，采用 GPL-3.0
 许可证。
+
+## 截图
+
+<p align="center">
+  <a href="images/en/phone-home.png"><img src="images/en/phone-home.png" width="24%" alt="主页：电源按钮、当前节点、订阅期限和流量"></a>
+  <a href="images/en/phone-proxies.png"><img src="images/en/phone-proxies.png" width="24%" alt="Proxies：带延迟的节点分组"></a>
+  <a href="images/en/phone-subscriptions.png"><img src="images/en/phone-subscriptions.png" width="24%" alt="Subscriptions：显示期限和流量的订阅卡片"></a>
+  <a href="images/en/phone-settings.png"><img src="images/en/phone-settings.png" width="24%" alt="Settings：后台运行、应用、快捷设置磁贴、自动启动"></a>
+</p>
+
+<p align="center"><sub>Home · Proxies · Subscriptions · Settings。截图中的服务商及其服务器均为虚构。</sub></p>
 
 ## 功能
 
@@ -87,17 +98,6 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
   在本机提供，运行时不会从网络下载任何内容。
 - **在低价手机上实测。** 在 Redmi Note 9S（2020 年，Android 12）上，VPN 运行时应用冷启动约
   0.4 秒；Android 回收界面进程后，VPN 仍继续工作。
-
-## 截图
-
-<p align="center">
-  <a href="images/en/phone-home.png"><img src="images/en/phone-home.png" width="24%" alt="主页：电源按钮、当前节点、订阅期限和流量"></a>
-  <a href="images/en/phone-proxies.png"><img src="images/en/phone-proxies.png" width="24%" alt="Proxies：带延迟的节点分组"></a>
-  <a href="images/en/phone-subscriptions.png"><img src="images/en/phone-subscriptions.png" width="24%" alt="Subscriptions：显示期限和流量的订阅卡片"></a>
-  <a href="images/en/phone-settings.png"><img src="images/en/phone-settings.png" width="24%" alt="Settings：后台运行、应用、快捷设置磁贴、自动启动"></a>
-</p>
-
-<p align="center"><sub>Home · Proxies · Subscriptions · Settings。截图中的服务商及其服务器均为虚构。</sub></p>
 
 ## Android TV
 
