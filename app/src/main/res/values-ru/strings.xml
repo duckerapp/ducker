@@ -337,6 +337,8 @@
     <string name="channel_hint">Новые версии и новости проекта</string>
     <string name="community">Чат сообщества</string>
     <string name="community_hint">Вопросы и обсуждение с другими пользователями</string>
+    <string name="mail">Почта</string>
+    <string name="mail_copied">Адрес скопирован</string>
     <string name="stack_from_profile_value">как в профиле: %s</string>
     <string name="rules_title">Мои правила</string>
     <string name="rules_hint">Для «%s». Проверяются раньше правил провайдера: решает первое совпадение. Сохраняются при обновлении подписки</string>

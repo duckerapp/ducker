@@ -137,6 +137,7 @@ import com.github.kr328.clash.ui.home.BackgroundStep
 import com.github.kr328.clash.ui.home.BackgroundSheet
 import com.github.kr328.clash.ui.home.BackgroundNotice
 import com.github.kr328.clash.ui.home.VpnSheet
+import com.github.kr328.clash.ui.settings.MAIL
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.lifecycle.Lifecycle
 import com.github.kr328.clash.util.requestBackgroundWork
@@ -988,6 +989,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             },
                             onDashboard = { startActivity(DashboardActivity::class.intent) },
                             onLink = { open(it) },
+                            onMail = { mail() },
                             onAllowBackground = { requestBackgroundWork() },
                             onVendor = { openVendor(it) },
                             hwid = subscriptionsState.hwid,
@@ -1660,6 +1662,12 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
     private fun open(url: String) {
         val destination = providerLink(url) ?: return
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(destination))) }
+    }
+
+    /** Письмо — в почтовое приложение; нет его (телевизор) — адрес в буфер обмена. */
+    private fun mail() {
+        runCatching { startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$MAIL"))) }
+            .onFailure { copyReport(MAIL, R.string.mail_copied) }
     }
 
     override fun onServiceRecreated() = refreshAll()

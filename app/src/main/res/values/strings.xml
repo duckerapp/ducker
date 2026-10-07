@@ -345,6 +345,8 @@
     <string name="channel_hint">New versions and project news</string>
     <string name="community">Community chat</string>
     <string name="community_hint">Questions and discussion with other users</string>
+    <string name="mail">Email</string>
+    <string name="mail_copied">Address copied</string>
     <string name="stack_from_profile_value">from profile: %s</string>
     <string name="rules_title">My rules</string>
     <string name="rules_hint">For “%s”. Checked before the provider\'s rules; the first match decides. Kept across subscription updates</string>

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.BugReport
@@ -119,6 +120,9 @@ data class SettingsState(
 private const val CHANNEL = "https://t.me/ducker_mihomo"
 private const val COMMUNITY = "https://t.me/ducker_community"
 
+/** Почта проекта — там же, для тех, кому Telegram не подходит. */
+const val MAIL = "duckermihomo@proton.me"
+
 /**
  * Свои настройки (этап 5).
  *
@@ -154,6 +158,7 @@ fun SettingsScreen(
     onProbe: () -> Unit,
     onDashboard: () -> Unit,
     onLink: (String) -> Unit,
+    onMail: () -> Unit,
     onAllowBackground: () -> Unit,
     /** Экран оболочки; `null` — страница приложения. */
     onVendor: (Shortcut?) -> Unit,
@@ -461,6 +466,15 @@ fun SettingsScreen(
                 subtitle = stringResource(R.string.community_hint),
                 onClick = { onLink(COMMUNITY) },
                 icon = Icons.Default.Forum,
+            )
+        }
+
+        item {
+            LinkRow(
+                title = stringResource(R.string.mail),
+                subtitle = MAIL,
+                onClick = onMail,
+                icon = Icons.Default.Email,
             )
         }
 
