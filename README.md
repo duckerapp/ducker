@@ -279,6 +279,7 @@ Details are in [CONTRIBUTING.md](CONTRIBUTING.md); where things live in the code
 - [Telegram channel](https://t.me/ducker_mihomo) — releases and news;
 - [Telegram chat](https://t.me/ducker_community) — questions and discussion;
 - [Issues](https://github.com/duckerapp/ducker/issues) — bugs and ideas;
+- [duckermihomo@proton.me](mailto:duckermihomo@proton.me) — email, if Telegram and GitHub do not suit you;
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to report a bug, build the app and send a change.
 
 The project is run by one person, so help matters: bug reports, testing on your phone or TV,

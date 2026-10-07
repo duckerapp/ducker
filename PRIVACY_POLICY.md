@@ -101,7 +101,8 @@
 
 ## Вопросы
 
-Через [Issues](../../issues) репозитория. Уязвимости — по правилам [SECURITY.md](SECURITY.md).
+Через [Issues](../../issues) репозитория или письмом на [duckermihomo@proton.me](mailto:duckermihomo@proton.me).
+Уязвимости — по правилам [SECURITY.md](SECURITY.md).
 
 ---
 
@@ -149,4 +150,5 @@ the prepared report; nothing is sent automatically.
 (to choose apps that bypass the VPN, kept on the device); background work and start after reboot.
 `INTERACT_ACROSS_USERS` is declared but can only be granted manually via adb.
 
-Questions: repository [Issues](../../issues). Security reports: [SECURITY.md](SECURITY.md).
+Questions: repository [Issues](../../issues) or email [duckermihomo@proton.me](mailto:duckermihomo@proton.me).
+Security reports: [SECURITY.md](SECURITY.md).

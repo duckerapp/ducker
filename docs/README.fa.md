@@ -307,6 +307,7 @@ cd ducker
 - [کانال Telegram](https://t.me/ducker_mihomo) — نسخه‌ها و خبرها؛
 - [گروه Telegram](https://t.me/ducker_community) — پرسش و گفت‌وگو؛
 - [Issues](https://github.com/duckerapp/ducker/issues) — خطاها و ایده‌ها؛
+- [duckermihomo@proton.me](mailto:duckermihomo@proton.me) — ایمیل، اگر Telegram و GitHub برایتان مناسب نیست؛
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — چگونه خطا گزارش کنیم، برنامه را بسازیم و تغییر بفرستیم.
 
 پروژه را یک نفر اداره می‌کند، پس هر کمکی مهم است: گزارش خطا، آزمایش روی گوشی یا تلویزیون خودتان،
