@@ -55,6 +55,12 @@ Compose. Free, no ads, no analytics, GPL-3.0.
 
 <p align="center"><sub>Home · Proxies · Subscriptions · Settings. The provider and its servers on the screenshots are made up.</sub></p>
 
+<p align="center">
+  <img src="docs/images/en/theme-wave.gif" width="240" alt="Switching the theme on Home: the dark theme spreads from the button as a wave, then the light one comes back">
+</p>
+
+<p align="center"><sub>Switching between light and dark runs as a wave across the screen.</sub></p>
+
 ## Features
 
 **Every day**

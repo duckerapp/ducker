@@ -64,6 +64,12 @@ ducker گوشی یا تلویزیون شما را از طریق هستهٔ [miho
 
 <p align="center"><sub>Home · Proxies · Subscriptions · Settings — ارائه‌دهنده و سرورهای داخل تصاویر ساختگی‌اند.</sub></p>
 
+<p align="center">
+  <img src="images/en/theme-wave.gif" width="240" alt="تغییر تم در صفحهٔ اصلی: تم تیره مثل موجی از دکمه پخش می‌شود و سپس تم روشن برمی‌گردد">
+</p>
+
+<p align="center"><sub>تغییر تم مثل موجی روی صفحه پخش می‌شود.</sub></p>
+
 <a id="features"></a>
 
 ## امکانات

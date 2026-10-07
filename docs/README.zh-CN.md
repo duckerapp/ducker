@@ -58,6 +58,12 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
 
 <p align="center"><sub>Home · Proxies · Subscriptions · Settings。截图中的服务商及其服务器均为虚构。</sub></p>
 
+<p align="center">
+  <img src="images/en/theme-wave.gif" width="240" alt="在主页切换主题：深色主题从按钮处像波纹一样扩散，随后切回浅色主题">
+</p>
+
+<p align="center"><sub>切换浅色与深色主题时，波纹会在屏幕上扩散。</sub></p>
+
 ## 功能
 
 **日常使用**
