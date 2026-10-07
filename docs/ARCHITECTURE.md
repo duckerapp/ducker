@@ -70,7 +70,7 @@ published by `.github/workflows/pages.yaml`.
   - `subscriptions` — profile dialogs, sharing as a QR code, reordering, and the phone-to-TV
     transfer (`TvTransfer`: the QR payload, encryption, receiving and sending);
   - `settings`; `config` — the YAML editor; `rules` — My rules; `apps` — per-app access;
-    `logs`; `probe` — the node test.
+    `logs`; `probe` — the node test; `update` — the app update sheet.
 - **`ui/components/`** — `DuckerScaffold` (the tab dock), `Tv` (the TV layout, the focus frame and
   D-pad navigation helpers), `DuckerSheet` (bottom sheets), `DuckerIcons`, `BounceOverscroll`.
   `ui/theme/` — `Theme` and `ThemeReveal` (the wave on theme change).
@@ -79,6 +79,11 @@ published by `.github/workflows/pages.yaml`.
 - **`util/`** — `Clash.kt` (`startClashService()`), `Disguise.kt` (the calculator icon),
   `NodeFailure.kt` (why a node did not answer, in words).
 - **`widget/Widgets.kt`** — home screen widgets.
+- **`update/`** — updating the app from inside the app: `Feed` (the `update.json` format and the
+  choice of a release for this phone), `Download` (mirrors in order, resuming, SHA-256),
+  `Updater` (the state the screens read; check, download, signature check, `PackageInstaller`
+  session), `UpdateJob` (the twice-a-day check), `UpdateReceiver`, `UpdateNotice`. The sheet is
+  `ui/update/UpdateSheet`. Releases are published with `scripts/publish.sh`.
 
 ## `:service` — `S`
 
@@ -162,4 +167,6 @@ commit and fails on a shallow clone.
   app starts, the tunnel comes up and traffic goes through the node.
 - `scripts/release.sh` — raises the version, builds signed APKs, checks the signature and writes
   checksums.
+- `scripts/publish.sh` — uploads a built release to GitHub and the GitLab mirror and records it
+  in `update.json`: first for the beta channel, then, with `--stable`, for everyone.
 - `scripts/baseline-profile.sh` — rebuilds the baseline profile on an emulator.

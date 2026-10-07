@@ -7,7 +7,8 @@
 - ducker не собирает статистику, не показывает рекламу и не отправляет разработчику ни журналы,
   ни отчёты об ошибках. Своего сервера, куда что-то уходило бы, у проекта нет.
 - В сеть уходит только то, без чего VPN не работает: запрос подписки провайдеру, ваш трафик
-  через его серверы и служебные запросы ядра по настройкам профиля. Подробно — ниже.
+  через его серверы и служебные запросы ядра по настройкам профиля. И ещё одно — проверка, не
+  вышла ли новая версия ducker. Подробно — ниже.
 - Всё остальное хранится только на телефоне и удаляется вместе с приложением.
 
 ## Что уходит в сеть и кому
@@ -60,6 +61,14 @@
 телевизора и подтверждаете отправку, телефон передаёт ссылку подписки на этот телевизор по
 домашней сети. Ссылка зашифрована одноразовым ключом из этого QR-кода. Телевизор слушает сеть,
 только пока код на экране.
+
+**7. Проверка новой версии ducker.** Примерно дважды в день и при открытии приложение скачивает
+файл `update.json` из репозитория проекта на GitHub, а если тот не ответил — с зеркала на GitLab.
+О вас и о телефоне в запросе ничего нет: только строка `User-Agent` вида
+`ducker/<версия приложения>`. Саму новую версию приложение скачивает с тех же сайтов и только
+тогда, когда вы нажали «Обновить». Как и любой сервер, GitHub и GitLab видят ваш IP-адрес — или
+адрес узла провайдера, если VPN включён. Перед установкой приложение сверяет контрольную сумму
+файла и его подпись: чужой файл оно не поставит.
 
 ## Что хранится на телефоне
 
@@ -135,6 +144,13 @@ developer. The project has no server of its own.
 6. **Your TV, only when you ask.** When you scan the QR code shown by ducker on a TV and confirm,
    the phone sends the subscription link to that TV over your home network, encrypted with a
    one-time key from that QR code. The TV listens on the network only while the code is shown.
+7. **Checking for a new ducker version.** About twice a day and when you open the app, it
+   downloads the `update.json` file from the project repository on GitHub or, if that does not
+   answer, from the mirror on GitLab. The request says nothing about you or the phone: only a
+   `User-Agent` of the form `ducker/<app version>`. The new version itself is downloaded from the
+   same sites, and only when you tap **Update**. Like any server, GitHub and GitLab see your IP
+   address — or the address of the provider's server while the VPN is on. Before installing, the
+   app checks the file's checksum and signature: it will not install a file that is not ours.
 
 **Stored on the device only:** subscriptions and configs, settings and your rules, latency results,
 the service log (two rotating 256 KB files), crash records (two files up to 64 KB per process),
