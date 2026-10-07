@@ -10,6 +10,7 @@ Features:
 • Stable device id for providers that count devices, and a switch to stop sending it.
 • Choose apps that bypass the VPN; your own rules on top of the provider's.
 • Home screen widgets, a quick settings tile and intents for Tasker.
+• Android TV: the same app, controlled with the remote; a subscription is sent from the phone by QR code.
 • Light, dark and pure black themes.
 
 Privacy: no analytics, no ads, no crash reports sent anywhere. Logs stay on the phone unless you share them yourself, and server addresses and keys are removed first.
