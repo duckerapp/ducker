@@ -14,7 +14,7 @@
 
 <br>
 
-**An open mihomo client for Android and Android TV.**<br>
+**An open VPN client for Android and Android TV, built on the mihomo core.**<br>
 One button, honest status, nothing extra on the screen.
 
 **English** · [Русский](docs/README.ru.md) · [简体中文](docs/README.zh-CN.md) · [فارسی](docs/README.fa.md)
@@ -24,7 +24,7 @@ One button, honest status, nothing extra on the screen.
 [![Android](https://img.shields.io/badge/Android-10%2B-2b2b2b?style=flat-square&labelColor=000)](#install)
 [![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
 
-[Install](#install) · [Features](#features) · [Screenshots](#screenshots) · [Android TV](#android-tv) · [For providers](#for-providers) · [FAQ](docs/FAQ.md) · [Community](#community)
+[Install](#install) · [Screenshots](#screenshots) · [Features](#features) · [Android TV](#android-tv) · [For providers](#for-providers) · [FAQ](docs/FAQ.md) · [Community](#community)
 
 <br>
 
@@ -43,6 +43,23 @@ core. You add a subscription from your provider, press one button and, if you wa
 It is a fork of [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid): the VPN
 service and the core bindings come from there, the interface is written from scratch in Jetpack
 Compose. Free, no ads, no analytics, GPL-3.0.
+
+## Screenshots
+
+<p align="center">
+  <a href="docs/images/en/phone-home.png"><img src="docs/images/en/phone-home.png" width="24%" alt="Home: the power button, the current node, the subscription term and traffic"></a>
+  <a href="docs/images/en/phone-proxies.png"><img src="docs/images/en/phone-proxies.png" width="24%" alt="Proxies: a group of nodes with delays"></a>
+  <a href="docs/images/en/phone-subscriptions.png"><img src="docs/images/en/phone-subscriptions.png" width="24%" alt="Subscriptions: a subscription card with its term and traffic"></a>
+  <a href="docs/images/en/phone-settings.png"><img src="docs/images/en/phone-settings.png" width="24%" alt="Settings: background work, apps, Quick Settings tile, autostart"></a>
+</p>
+
+<p align="center"><sub>Home · Proxies · Subscriptions · Settings. The provider and its servers on the screenshots are made up.</sub></p>
+
+<p align="center">
+  <img src="docs/images/en/theme-wave.gif" width="240" alt="Switching the theme on Home: the dark theme spreads from the button as a wave, then the light one comes back">
+</p>
+
+<p align="center"><sub>Switching between light and dark runs as a wave across the screen.</sub></p>
 
 ## Features
 
@@ -88,17 +105,6 @@ Compose. Free, no ads, no analytics, GPL-3.0.
   with the app and served locally by the core; nothing is downloaded at run time.
 - **Measured on a budget phone.** On a Redmi Note 9S (2020, Android 12) the app cold-starts in
   about 0.4 s with the VPN running, and the VPN keeps working when Android unloads the interface.
-
-## Screenshots
-
-<p align="center">
-  <a href="docs/images/en/phone-home.png"><img src="docs/images/en/phone-home.png" width="24%" alt="Home: the power button, the current node, the subscription term and traffic"></a>
-  <a href="docs/images/en/phone-proxies.png"><img src="docs/images/en/phone-proxies.png" width="24%" alt="Proxies: a group of nodes with delays"></a>
-  <a href="docs/images/en/phone-subscriptions.png"><img src="docs/images/en/phone-subscriptions.png" width="24%" alt="Subscriptions: a subscription card with its term and traffic"></a>
-  <a href="docs/images/en/phone-settings.png"><img src="docs/images/en/phone-settings.png" width="24%" alt="Settings: background work, apps, Quick Settings tile, autostart"></a>
-</p>
-
-<p align="center"><sub>Home · Proxies · Subscriptions · Settings. The provider and its servers on the screenshots are made up.</sub></p>
 
 ## Android TV
 

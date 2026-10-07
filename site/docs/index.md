@@ -10,8 +10,9 @@ hide:
 ![](assets/ducker_mark_dark.png){ .ducker-mark .ducker-mark--light }
 ![](assets/ducker_mark_light.png){ .ducker-mark .ducker-mark--dark }
 
-Открытый клиент [mihomo](https://github.com/MetaCubeX/mihomo) для Android и Android TV:
-одна кнопка, честное состояние — и ничего лишнего на экране.
+Открытый VPN-клиент для Android и Android TV на ядре
+[mihomo](https://github.com/MetaCubeX/mihomo): одна кнопка, честное состояние — и ничего лишнего
+на экране.
 
 Без рекламы, без аналитики, без отчётов разработчику. Этот сайт тоже ничего никуда не шлёт.
 

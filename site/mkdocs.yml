@@ -2,7 +2,7 @@
 #   pip install -r requirements.txt && mkdocs build --strict
 
 site_name: DUCKER
-site_description: Открытый клиент mihomo для Android и Android TV
+site_description: Открытый VPN-клиент для Android и Android TV на ядре mihomo
 site_url: https://duckerapp.github.io/ducker/
 site_dir: build
 
