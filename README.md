@@ -14,7 +14,7 @@
 
 <br>
 
-**An open mihomo client for Android and Android TV.**<br>
+**An open VPN client for Android and Android TV, built on the mihomo core.**<br>
 One button, honest status, nothing extra on the screen.
 
 **English** · [Русский](docs/README.ru.md) · [简体中文](docs/README.zh-CN.md) · [فارسی](docs/README.fa.md)

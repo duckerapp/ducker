@@ -1,1 +1,1 @@
-Simple mihomo client: VPN by subscription in one tap, server picker, no tracking
+Simple VPN client on the mihomo core: one tap, server picker, no tracking

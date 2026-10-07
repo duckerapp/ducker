@@ -14,7 +14,7 @@
 
 <br>
 
-**适用于 Android 和 Android TV 的开源 mihomo 客户端。**<br>
+**适用于 Android 和 Android TV 的开源 VPN 客户端，基于 mihomo 内核。**<br>
 一个按钮，如实的状态，屏幕上没有多余的东西。
 
 [English](../README.md) · [Русский](README.ru.md) · **简体中文** · [فارسی](README.fa.md)

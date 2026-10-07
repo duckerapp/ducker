@@ -14,7 +14,7 @@
 
 <br>
 
-**Открытый клиент mihomo для Android и Android TV.**<br>
+**Открытый VPN-клиент для Android и Android TV на ядре mihomo.**<br>
 Одна кнопка, честное состояние, ничего лишнего на экране.
 
 [English](../README.md) · **Русский** · [简体中文](README.zh-CN.md) · [فارسی](README.fa.md)

@@ -14,7 +14,7 @@
 
 <br>
 
-**کلاینت متن‌باز mihomo برای Android و Android TV**<br>
+**کلاینت متن‌باز VPN برای Android و Android TV، بر پایهٔ هستهٔ mihomo**<br>
 یک دکمه، وضعیت واقعی، و هیچ چیز اضافه‌ای روی صفحه.
 
 [English](../README.md) · [Русский](README.ru.md) · [简体中文](README.zh-CN.md) · **فارسی**
