@@ -2,8 +2,12 @@
 
 What changed in each version of ducker. [Русская версия](docs/CHANGELOG.ru.md).
 
-Versions up to 0.4.31 were built for testers before the repository was opened; they are listed here
+The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
+
+## 0.4.32 — 2026-10-07
+
+- Settings → Help: links to the Telegram channel and the community chat.
 
 ## 0.4.31 — 2026-10-06
 
