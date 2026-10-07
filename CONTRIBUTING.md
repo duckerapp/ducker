@@ -13,7 +13,8 @@ its own interface. The project is run by one person, so small, clear changes wor
   cannot be found.
 - An idea — using the feature template. Describe the problem it solves, not only how it should
   look.
-- A question — in the [Telegram chat](https://t.me/ducker_community).
+- A question — in the [Telegram chat](https://t.me/ducker_community) or by email:
+  [duckermihomo@proton.me](mailto:duckermihomo@proton.me).
 - **A vulnerability** — not in public Issues, but as described in [SECURITY.md](SECURITY.md).
 
 **Never post** in Issues or pull requests: a subscription link, a config file, keys, node

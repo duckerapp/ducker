@@ -8,7 +8,8 @@
 помогает тем, кто захочет ею воспользоваться.
 
 Напишите закрыто: на странице репозитория **Security → Report a vulnerability**. Сообщение увидит
-только владелец проекта.
+только владелец проекта. Если так не получается — письмом на
+[duckermihomo@proton.me](mailto:duckermihomo@proton.me).
 
 Что приложить:
 - что именно уязвимо и чем это грозит пользователю;
@@ -42,7 +43,8 @@
 ## Reporting a vulnerability
 
 **Please do not open a public Issue.** Report privately via **Security → Report a vulnerability**
-on the repository page. Include what is affected, how to reproduce it (steps, ducker version, device,
+on the repository page; if that is not possible, write to
+[duckermihomo@proton.me](mailto:duckermihomo@proton.me). Include what is affected, how to reproduce it (steps, ducker version, device,
 Android version) and, if possible, a log — **without real subscription links, keys or server
 addresses**.
 

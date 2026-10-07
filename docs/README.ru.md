@@ -282,6 +282,7 @@ cd ducker
 - [Канал в Telegram](https://t.me/ducker_mihomo) — выпуски и новости;
 - [Чат в Telegram](https://t.me/ducker_community) — вопросы и обсуждение;
 - [Issues](https://github.com/duckerapp/ducker/issues) — ошибки и идеи;
+- [duckermihomo@proton.me](mailto:duckermihomo@proton.me) — почта, если Telegram и GitHub не подходят;
 - [CONTRIBUTING.ru.md](CONTRIBUTING.ru.md) — как сообщить об ошибке, собрать приложение и прислать
   изменение.
 

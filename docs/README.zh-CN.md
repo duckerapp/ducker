@@ -257,6 +257,7 @@ cd ducker
 - [Telegram 频道](https://t.me/ducker_mihomo) —— 版本发布和新闻；
 - [Telegram 群组](https://t.me/ducker_community) —— 提问和讨论；
 - [Issues](https://github.com/duckerapp/ducker/issues) —— 错误报告和建议；
+- [duckermihomo@proton.me](mailto:duckermihomo@proton.me) —— 邮箱，不方便用 Telegram 和 GitHub 时可以写信；
 - [CONTRIBUTING.md](../CONTRIBUTING.md) —— 如何报告错误、构建应用和提交改动。
 
 项目由一个人维护，所以每一份帮助都很重要：错误报告、在你的手机或电视上测试，以及翻译——尤其
