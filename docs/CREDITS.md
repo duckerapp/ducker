@@ -14,16 +14,16 @@
 
 | Что | Источник | Идея или код |
 |-----|----------|--------------|
-| Хранение заголовков провайдера файлом в каталоге профиля и подмешивание их полями в `Profile` | Prizrak-Box-android, ветка `prizrak`, коммит `5237799` (`service/.../ProfileProcessor.kt:1427-1543`, `ProfileManager.kt:268-320`) | идея (D-32) |
-| Форма решения «ссылки + шаблон → config.yaml» одним экспортом в Go | там же, `core/src/main/golang/native/convert.go:19-88` | идея (D-34), код свой, поверх `ConvertsV2Ray` |
-| HWID из `ANDROID_ID` без хеширования и набор сопутствующих заголовков устройства | там же, `ProfileProcessor.kt:216-234`; FlClashX, коммит `dc77f6f`, `lib/utils/device_info_service.dart:112-151` | идея (D-31) |
-| Открытие внешних ссылок на телевизоре через QR вместо браузера | Prizrak-Box-android, `app/.../util/UrlOpening.kt:33-48` | идея, к этапу 6 |
-| Импорт подписки на телевизоре через локальную веб-страницу | там же, `app/.../tv/TvImportServer.kt`, `app/src/main/assets/tv_import_web.html` | идея, к этапу 6 |
-| Режим применения настроек от провайдера «только при добавлении / при каждом обновлении» | FlClashX, `lib/controller.dart:302-319` | идея (D-16), поведение при отсутствии заголовка у нас другое |
-| Экран HWID в настройках | Prizrak-Box-android, диалоги HWID | идея (D-25) |
-| Мультиплекс Xray (mux.cool) с UDP и XUDP; REALITY, совместимый с Xray (ML-KEM, ML-DSA-65) | jesus (Jolymmiles), через legiz-ru/Prizrak-Core, ветка `v1-19-31`: 13 коммитов от `2197a3ca` до `9090c2c0`; в апстриме — MetaCubeX/mihomo#2980 | код (D-130), в нашей ветке ядра `ducker` с исходными авторами |
-| Пропуск битого узла в провайдере вместо отказа всего провайдера | legiz-ru/Prizrak-Core `e265e713` (порт из Medium1992/mihomo-proxy-ros) | код (D-130) |
-| Подпись ML-DSA-65 для REALITY в uTLS | jesus, через legiz-ru/prizrak-utls `80ad7038` | код (D-130), в нашем форке `duckerapp/utls`, ветка `ducker`, с исходным автором (D-132) |
+| Хранение заголовков провайдера файлом в каталоге профиля и подмешивание их полями в `Profile` | Prizrak-Box-android, ветка `prizrak`, коммит `5237799` (`service/.../ProfileProcessor.kt:1427-1543`, `ProfileManager.kt:268-320`) | идея |
+| Форма решения «ссылки + шаблон → config.yaml» одним экспортом в Go | там же, `core/src/main/golang/native/convert.go:19-88` | идея, код свой, поверх `ConvertsV2Ray` |
+| HWID из `ANDROID_ID` без хеширования и набор сопутствующих заголовков устройства | там же, `ProfileProcessor.kt:216-234`; FlClashX, коммит `dc77f6f`, `lib/utils/device_info_service.dart:112-151` | идея |
+| Открытие внешних ссылок на телевизоре через QR вместо браузера | Prizrak-Box-android, `app/.../util/UrlOpening.kt:33-48` | идея |
+| Импорт подписки на телевизоре через локальную веб-страницу | там же, `app/.../tv/TvImportServer.kt`, `app/src/main/assets/tv_import_web.html` | идея |
+| Режим применения настроек от провайдера «только при добавлении / при каждом обновлении» | FlClashX, `lib/controller.dart:302-319` | идея, поведение при отсутствии заголовка у нас другое |
+| Экран HWID в настройках | Prizrak-Box-android, диалоги HWID | идея |
+| Мультиплекс Xray (mux.cool) с UDP и XUDP; REALITY, совместимый с Xray (ML-KEM, ML-DSA-65) | jesus (Jolymmiles), через legiz-ru/Prizrak-Core, ветка `v1-19-31`: 13 коммитов от `2197a3ca` до `9090c2c0`; в апстриме — MetaCubeX/mihomo#2980 | код, в нашей ветке ядра `ducker` с исходными авторами |
+| Пропуск битого узла в провайдере вместо отказа всего провайдера | legiz-ru/Prizrak-Core `e265e713` (порт из Medium1992/mihomo-proxy-ros) | код |
+| Подпись ML-DSA-65 для REALITY в uTLS | jesus, через legiz-ru/prizrak-utls `80ad7038` | код, в нашем форке `duckerapp/utls`, ветка `ducker`, с исходным автором |
 
 ## Как оформлять заимствование
 1. **Код:** сохранить заголовок лицензии, в сообщении коммита указать источник

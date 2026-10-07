@@ -283,7 +283,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 SettingsStore.THEME_LIGHT -> false
                 SettingsStore.THEME_DARK -> true
                 // Телевизор смотрят в полутьме — там тёмная, что бы ни сообщала система, пока
-                // владелец не решит иначе по итогам проверок (Q-22).
+                // проверки на настоящих телевизорах не покажут иного.
                 else -> tv || isSystemInDarkTheme()
             }
 

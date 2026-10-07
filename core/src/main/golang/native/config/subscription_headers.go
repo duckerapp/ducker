@@ -52,7 +52,7 @@ func SetRequestHeaders(jsonHeaders string) error {
 // buildRequestHeader собирает заголовки запроса. Заголовки устройства добавляются
 // ТОЛЬКО к запросу подписки: через ту же функцию качаются провайдеры правил с чужих
 // адресов (jsdelivr, github), и отправлять туда идентификатор устройства нельзя —
-// инвариант 3 в PLAN.md.
+// правило 3 в docs/ARCHITECTURE.md.
 func buildRequestHeader(subscription bool, address, fallbackUA string) http.Header {
 	header := http.Header{}
 
