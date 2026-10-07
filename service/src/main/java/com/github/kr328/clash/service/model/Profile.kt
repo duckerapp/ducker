@@ -50,6 +50,7 @@ data class Profile(
     val hwidReason: String = "",
     val usedTemplate: Boolean = false,
     val lastError: String = "",
+    val templateFromConfig: Boolean = false,
 ) : Parcelable {
     enum class Type {
         File, Url, External

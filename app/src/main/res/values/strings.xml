@@ -22,6 +22,9 @@
     <string name="update">Update</string>
 
     <string name="template_used">The provider sent only a list of nodes, so ducker uses its built-in settings. That\'s fine — nothing to do.</string>
+    <string name="template_config">The provider’s config has an error, so ducker took the nodes from it and runs on its built-in settings. Tell your provider: once they fix it, their config comes back with the next subscription update.</string>
+    <string name="template_config_copy">Copy the error</string>
+    <string name="error_copied">Error copied</string>
     <string name="lockdown_offline">“Block connections without VPN” is on in Android settings, so apps that bypass the VPN have no internet. If you need them, turn this setting off.</string>
     <string name="vpn_settings">VPN settings</string>
 

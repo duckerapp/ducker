@@ -224,6 +224,8 @@ fun HomeScreen(
     updateFailed: Boolean = false,
     /** Шапка с маркой, темой и настройками. На телевизоре она в колонке дока (D-161). */
     header: Boolean = true,
+    /** «Скопировать ошибку» на карточке о конфиге провайдера с ошибкой (D-246). */
+    onCopyError: (String) -> Unit = {},
 ) {
     // Подписок нет — показывать нечего, кроме одного действия: добавить. Приветствие
     // по центру, а саму кнопку даёт панель внизу, ставшая одной кнопкой (D-98). Смена —
@@ -254,6 +256,7 @@ fun HomeScreen(
                 updating = updating,
                 updateFailed = updateFailed,
                 header = header,
+                onCopyError = onCopyError,
                 modifier = modifier,
             )
         }
@@ -335,6 +338,7 @@ private fun HomeRegular(
     updating: Boolean,
     updateFailed: Boolean,
     header: Boolean,
+    onCopyError: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val profile = state.profile
@@ -392,12 +396,20 @@ private fun HomeRegular(
             InfoCard(profile.announce)
         }
 
-        // Сообщение без текста ошибки ядра (D-81). Ошибка там всегда одна и та же —
-        // «это не конфиг mihomo», — потому что встроенный профиль включается ровно
-        // тогда, когда провайдер прислал список ссылок. Показывать человеку разбор
-        // YAML и советовать «покажите провайдеру» не за что: ничего не сломалось.
+        // Список ссылок — сообщение без текста ошибки ядра (D-81): ошибка там всегда одна и
+        // та же, «это не конфиг mihomo», и советовать «покажите провайдеру» не за что —
+        // ничего не сломалось. Другое дело, когда шаблон включён из-за ошибки в конфиге
+        // провайдера (D-246): тут ошибка настоящая, и её стоит переслать.
         if (profile != null && profile.usedTemplate) {
-            InfoCard(stringResource(R.string.template_used), Icons.Default.Info)
+            if (profile.templateFromConfig) {
+                InfoCard(
+                    stringResource(R.string.template_config),
+                    Icons.Default.WarningAmber,
+                    action = stringResource(R.string.template_config_copy) to { onCopyError(profile.lastError) },
+                )
+            } else {
+                InfoCard(stringResource(R.string.template_used), Icons.Default.Info)
+            }
         }
 
         // Банк «сломался» ровно после включения блокировки в настройках Android — связать

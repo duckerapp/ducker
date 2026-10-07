@@ -11,4 +11,6 @@ import kotlinx.serialization.Serializable
 data class ConvertResult(
     val yaml: String = "",
     val error: String = "",
+    /** Узлы взяты не из ссылок, а из конфига mihomo, который ядро не приняло. */
+    val fromConfig: Boolean = false,
 )

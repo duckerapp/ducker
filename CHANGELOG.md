@@ -7,6 +7,10 @@ for history. APK files are on the [Releases](https://github.com/duckerapp/ducker
 
 ## 0.4.32 — 2026-10-07
 
+- A new subscription whose config has a mistake by the provider is no longer refused: ducker
+  takes the nodes from it, runs on its built-in settings and shows a card on Home with the error
+  to pass on to the provider. Once the provider fixes it, their config comes back with the next
+  update. A subscription that already works keeps its previous config, as before.
 - Settings → Help: links to the Telegram channel and the community chat.
 
 ## 0.4.31 — 2026-10-06

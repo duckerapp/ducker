@@ -66,7 +66,8 @@ object ProfileProcessor {
                 Clash.setAgeSecretKey(snapshot.ageSecretKey?.takeIf { it.isNotBlank() })
 
                 val force = snapshot.type != Profile.Type.File
-                val subscriptionInfo = fetchProfile(context, snapshot.source, force, callback)
+                val subscriptionInfo =
+                    fetchProfile(context, snapshot.source, force, callback, brokenConfigAllowed(context, snapshot.uuid, snapshot.type))
 
                 profileLock.withLock {
                     if (PendingDao().queryByUUID(snapshot.uuid) == snapshot) {
@@ -126,7 +127,7 @@ object ProfileProcessor {
                 Clash.setAgeSecretKey(snapshot.ageSecretKey?.takeIf { it.isNotBlank() })
 
                 val subscriptionInfo = try {
-                    fetchProfile(context, snapshot.source, true, callback)
+                    fetchProfile(context, snapshot.source, true, callback, brokenConfigAllowed(context, snapshot.uuid, snapshot.type))
                 } catch (e: HwidBlockedException) {
                     // Профиль остаётся прежним, но отметку об отказе нужно сохранить рядом
                     // с ним: иначе человек видит только то, что «ничего не изменилось»,
@@ -171,6 +172,23 @@ object ProfileProcessor {
             }
         }
 
+    /**
+     * Можно ли вместо конфига провайдера с ошибкой взять встроенный шаблон с его узлами (D-246).
+     *
+     * Да — пока рабочего конфига провайдера у подписки нет: её добавляют впервые или она и так
+     * стоит на шаблоне по той же причине. У подписки, которая работает на конфиге провайдера,
+     * остаётся он: в нём его маршрутизация, а неудачное обновление её не трогает.
+     *
+     * Только для подписок по ссылке. Свой файл конфига человек правит сам, и ему нужна ошибка,
+     * а не подмена его настроек нашими.
+     */
+    private suspend fun brokenConfigAllowed(context: Context, uuid: UUID, type: Profile.Type): Boolean {
+        if (type != Profile.Type.Url) return false
+        if (ImportedDao().queryByUUID(uuid) == null) return true
+
+        return ProviderInfo.read(context.importedDir.resolve(uuid.toString())).templateFromConfig
+    }
+
     private fun markHwidBlocked(context: Context, uuid: UUID, failure: HwidBlockedException) {
         val dir = context.importedDir.resolve(uuid.toString())
         val current = ProviderInfo.read(dir)
@@ -195,6 +213,7 @@ object ProfileProcessor {
         source: String,
         force: Boolean,
         callback: IFetchObserver?,
+        brokenConfigAllowed: Boolean,
     ): FetchStatus? {
         var subscriptionInfo: FetchStatus? = null
         var provider: ProviderInfo? = null
@@ -252,11 +271,15 @@ object ProfileProcessor {
             // объясняет `Failure` там, где ошибку показывают (D-227).
             if (Failure.of(failure.message).kind.download) throw failure
 
-            val reason = applyTemplateFallback(context, source, failure, callback)
+            val fromConfig = applyTemplateFallback(context, source, failure, callback, brokenConfigAllowed)
 
             ProviderInfo.write(
                 context.processingDir,
-                (provider ?: ProviderInfo()).copy(usedTemplate = true, lastError = reason),
+                (provider ?: ProviderInfo()).copy(
+                    usedTemplate = true,
+                    lastError = failure.message.orEmpty(),
+                    templateFromConfig = fromConfig,
+                ),
             )
         }
 
@@ -271,14 +294,18 @@ object ProfileProcessor {
      * получившийся конфиг тем же ядром (загрузки не будет: файл на месте, force = false).
      * Не получилось — отдаём исходную ошибку ядра, она понятнее, чем «не разобралось».
      *
-     * @return текст ошибки ядра, если шаблон пригодился; null, если профиль обычный.
+     * Если это не ссылки, а конфиг с ошибкой, узлы берутся из него — но только когда
+     * [brokenConfigAllowed] (D-246); иначе та же исходная ошибка, и прежний профиль цел.
+     *
+     * @return true, если узлы взяты из конфига с ошибкой, а не из ссылок.
      */
     private suspend fun applyTemplateFallback(
         context: Context,
         source: String,
         original: Exception,
         callback: IFetchObserver?,
-    ): String {
+        brokenConfigAllowed: Boolean,
+    ): Boolean {
         val config = context.processingDir.resolve("config.yaml")
         val raw = runCatching { config.readText() }.getOrNull()
 
@@ -296,19 +323,25 @@ object ProfileProcessor {
             Clash.convertAndApplyTemplate(raw, template, directHost)
         }.getOrElse { throw original }
 
-        config.writeText(converted)
+        if (converted.fromConfig && !brokenConfigAllowed) throw original
+
+        config.writeText(converted.yaml)
 
         var cb = callback
 
-        Clash.fetchAndValid(context.processingDir, source, false) {
-            try {
-                cb?.updateStatus(it)
-            } catch (e: Exception) {
-                cb = null
-            }
-        }.await()
+        // Шаблон с узлами из конфига провайдера тоже может не пройти проверку — тогда человеку
+        // нужна ошибка провайдера, а не наша.
+        runCatching {
+            Clash.fetchAndValid(context.processingDir, source, false) {
+                try {
+                    cb?.updateStatus(it)
+                } catch (e: Exception) {
+                    cb = null
+                }
+            }.await()
+        }.getOrElse { throw if (converted.fromConfig) original else it }
 
-        return original.message.orEmpty()
+        return converted.fromConfig
     }
 
     suspend fun delete(context: Context, uuid: UUID) {

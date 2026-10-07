@@ -28,7 +28,7 @@ const links = "vless://11111111-2222-3333-4444-555555555555@example.com:443?type
 	"trojan://secret@example.org:8443?sni=example.org#Amsterdam\n"
 
 func TestApplyTemplateAddsNodesKeepingTemplate(t *testing.T) {
-	out, err := ApplyTemplate(links, template, "")
+	out, _, err := ApplyTemplate(links, template, "")
 	if err != nil {
 		t.Fatalf("конвертация не прошла: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestBase64SubscriptionIsAccepted(t *testing.T) {
 	// Подписки часто отдаются в base64 — ConvertsV2Ray распознаёт это сам (F-23).
 	encoded := "dmxlc3M6Ly8xMTExMTExMS0yMjIyLTMzMzMtNDQ0NC01NTU1NTU1NTU1NTVAZXhhbXBsZS5jb206NDQzP3R5cGU9dGNwJnNlY3VyaXR5PXRscyZzbmk9ZXhhbXBsZS5jb20jTm9kZQ=="
 
-	out, err := ApplyTemplate(encoded, template, "")
+	out, _, err := ApplyTemplate(encoded, template, "")
 	if err != nil {
 		t.Fatalf("base64-подписка не разобралась: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestBase64SubscriptionIsAccepted(t *testing.T) {
 
 func TestDirectHostRuleGoesFirst(t *testing.T) {
 	// Иначе при мёртвых узлах подписку не обновить — а именно тогда это и нужно (F-53).
-	out, err := ApplyTemplate(links, template, "sub.example.net")
+	out, _, err := ApplyTemplate(links, template, "sub.example.net")
 	if err != nil {
 		t.Fatalf("конвертация не прошла: %v", err)
 	}
@@ -112,7 +112,7 @@ func TestNodesWithoutNameGetOne(t *testing.T) {
 	const noName = "vless://11111111-2222-3333-4444-555555555555@example.com:443?type=tcp&security=tls&sni=example.com\n" +
 		"vless://11111111-2222-3333-4444-555555555556@example.com:443?type=tcp&security=tls&sni=example.com\n"
 
-	out, err := ApplyTemplate(noName, template, "")
+	out, _, err := ApplyTemplate(noName, template, "")
 	if err != nil {
 		t.Fatalf("конвертация не прошла: %v", err)
 	}
@@ -139,7 +139,79 @@ func TestNodesWithoutNameGetOne(t *testing.T) {
 }
 
 func TestGarbageIsRejected(t *testing.T) {
-	if _, err := ApplyTemplate("совершенно не ссылки", template, ""); err == nil {
+	if _, _, err := ApplyTemplate("совершенно не ссылки", template, ""); err == nil {
 		t.Fatal("мусор должен отвергаться, иначе получится пустой конфиг без узлов")
+	}
+}
+
+// Конфиг провайдера с ошибкой в правиле: ядро его не примет, но узлы в нём целы.
+const brokenConfig = `
+mode: rule
+proxies:
+  - {name: "Франкфурт", type: ss, server: example.com, port: 8388, cipher: aes-128-gcm, password: secret}
+  - {name: "Amsterdam", type: trojan, server: example.org, port: 8443, password: secret}
+  - {type: ss, server: nameless.example, port: 1}
+  - {name: "Опечатка в шифре", type: ss, server: example.net, port: 8388, cipher: no-such-cipher, password: secret}
+proxy-groups:
+  - {name: Main, type: select, proxies: ["Франкфурт", "Amsterdam"]}
+rules:
+  - MATCH,NoSuchGroup
+`
+
+func TestBrokenConfigGivesItsNodes(t *testing.T) {
+	out, fromConfig, err := ApplyTemplate(brokenConfig, template, "sub.example.net")
+	if err != nil {
+		t.Fatalf("конфиг с целыми узлами должен дать шаблон с этими узлами: %v", err)
+	}
+
+	if !fromConfig {
+		t.Fatal("служба должна узнать, что узлы взяты из конфига: от этого зависит, пускать ли шаблон")
+	}
+
+	var document struct {
+		Proxies []map[string]any `yaml:"proxies"`
+		Rules   []string         `yaml:"rules"`
+	}
+	if err := yaml.Unmarshal([]byte(out), &document); err != nil {
+		t.Fatal(err)
+	}
+
+	names := []string{}
+	for _, proxy := range document.Proxies {
+		names = append(names, proxy["name"].(string))
+	}
+
+	// Служебный узел шаблона и два узла провайдера. Запись без имени и узел, который ядро
+	// собрать не может, не берутся: остальные из-за них пропадать не должны.
+	if strings.Join(names, ",") != "DIRECTv4,Франкфурт,Amsterdam" {
+		t.Fatalf("узлы: %v", names)
+	}
+
+	// Правила — шаблона, а не провайдера: в них-то и была ошибка.
+	if strings.Contains(out, "NoSuchGroup") {
+		t.Fatal("в готовый конфиг попало правило провайдера")
+	}
+
+	if len(document.Rules) == 0 || document.Rules[0] != "DOMAIN,sub.example.net,DIRECT" {
+		t.Fatalf("первое правило: %v", document.Rules)
+	}
+}
+
+func TestLinksAreNotTakenForConfig(t *testing.T) {
+	if _, fromConfig, err := ApplyTemplate(links, template, ""); err != nil || fromConfig {
+		t.Fatalf("список ссылок — не конфиг: fromConfig=%v, err=%v", fromConfig, err)
+	}
+}
+
+func TestConfigWithoutNodesIsRejected(t *testing.T) {
+	for name, content := range map[string]string{
+		"без узлов":       "mode: rule\nproxies: []\nrules:\n  - MATCH,DIRECT\n",
+		"страница ошибки": "<html><body><h1>502 Bad Gateway</h1></body></html>",
+		"битый YAML":      "proxies:\n  - {name: [broken\nrules: !!!\n",
+		"пусто":           "",
+	} {
+		if _, _, err := ApplyTemplate(content, template, ""); err == nil {
+			t.Fatalf("%s: должно отвергаться, узлов взять неоткуда", name)
+		}
 	}
 }

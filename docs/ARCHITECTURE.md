@@ -150,7 +150,9 @@ commit and fails on a shallow clone.
   `ClashRuntime` → `TunModule` → `Clash.startTun` → `nativeStartTun` → `G/tun.go`.
 - **A subscription:** `SubscriptionsViewModel` → `IProfileManager` → `ProfileManager` →
   `ProfileProcessor` → `Clash.fetchAndValid` → `nativeFetchAndValid`. If the answer is a list of
-  links rather than YAML — `convertAndApplyTemplate` with `template.yaml`.
+  links rather than YAML — `convertAndApplyTemplate` with `template.yaml`; the same call takes the
+  nodes out of a config the core rejected, when the subscription has no working provider config
+  yet.
 - **My rules:** `RulesScreen` → `UserRulesStore` → on load `ConfigurationModule` or `ClashManager`
   → `Clash.setUserRules` → `G/config/rules.go`.
 

@@ -46,6 +46,12 @@ data class ProviderInfo(
      */
     val usedTemplate: Boolean = false,
     val lastError: String = "",
+    /**
+     * Шаблон включён не потому, что пришёл список ссылок, а потому, что в конфиге провайдера
+     * ошибка: узлы взяты из него (D-246). Тогда [lastError] — текст ошибки ядра, и человеку
+     * его показывают, чтобы переслал провайдеру.
+     */
+    val templateFromConfig: Boolean = false,
 ) {
     companion object {
         private const val FILE_NAME = "provider.json"

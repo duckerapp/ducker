@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/common/convert"
 	"github.com/metacubex/mihomo/common/yaml"
 )
@@ -29,6 +30,55 @@ func Convert(content string) ([]map[string]any, error) {
 	proxies, err := convert.ConvertsV2Ray([]byte(strings.TrimSpace(content)))
 	if err != nil {
 		return nil, err
+	}
+
+	if len(proxies) == 0 {
+		return nil, ErrNotConvertible
+	}
+
+	nameProxies(proxies)
+
+	return proxies, nil
+}
+
+// ConvertConfig достаёт узлы из конфига mihomo, который ядро не приняло.
+//
+// Случай один: провайдер ошибся в конфиге — в правиле, в группе, — а человек добавляет
+// подписку впервые, и рабочего конфига у него ещё нет. Раздел `proxies` в таком конфиге
+// обычно цел, и встроенный шаблон с этими узлами лучше отказа. Пускать ли сюда, решает
+// служба: у подписки, которая уже работает на конфиге провайдера, остаётся он.
+//
+// Узел, который ядро собрать не может, пропускается — так же, как ядро пропускает битый
+// узел в провайдере: одна опечатка в шифре не должна стоить человеку остальных узлов.
+//
+// Узлы из `proxy-providers` не берём: это ссылки на другие файлы, а не сами узлы.
+func ConvertConfig(content string) ([]map[string]any, error) {
+	var document struct {
+		Proxies []map[string]any `yaml:"proxies"`
+	}
+
+	if err := yaml.Unmarshal([]byte(content), &document); err != nil {
+		return nil, err
+	}
+
+	proxies := make([]map[string]any, 0, len(document.Proxies))
+
+	for _, proxy := range document.Proxies {
+		name, _ := proxy["name"].(string)
+		kind, _ := proxy["type"].(string)
+
+		if strings.TrimSpace(name) == "" || strings.TrimSpace(kind) == "" {
+			continue
+		}
+
+		built, err := adapter.ParseProxy(proxy)
+		if err != nil {
+			continue
+		}
+
+		_ = built.Close()
+
+		proxies = append(proxies, proxy)
 	}
 
 	if len(proxies) == 0 {
@@ -100,15 +150,26 @@ func withDirectHost(rules any, host string) []any {
 // записи вроде `DIRECT`, на которые ссылаются группы. Остальное содержимое шаблона
 // не трогается — группы наполняются нативными ключами ядра (`include-all-proxies`),
 // см. D-29.
-func ApplyTemplate(content, template, directHost string) (string, error) {
+//
+// Второе значение — откуда узлы: true, если это были не ссылки, а конфиг mihomo
+// (см. ConvertConfig). Об отказе всегда говорит ошибка разбора ссылок: она про то, что
+// прислал провайдер, а не про нашу вторую попытку.
+func ApplyTemplate(content, template, directHost string) (string, bool, error) {
+	fromConfig := false
+
 	proxies, err := Convert(content)
 	if err != nil {
-		return "", err
+		fromFile, configErr := ConvertConfig(content)
+		if configErr != nil {
+			return "", false, err
+		}
+
+		proxies, fromConfig = fromFile, true
 	}
 
 	var document map[string]any
 	if err := yaml.Unmarshal([]byte(template), &document); err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	if document == nil {
@@ -133,8 +194,8 @@ func ApplyTemplate(content, template, directHost string) (string, error) {
 
 	out, err := yaml.Marshal(document)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
-	return string(out), nil
+	return string(out), fromConfig, nil
 }

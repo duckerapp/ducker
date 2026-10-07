@@ -327,7 +327,7 @@ object Clash {
         content: String,
         template: String,
         directHost: String = "",
-    ): String {
+    ): ConvertResult {
         val result = Json.Default.decodeFromString(
             ConvertResult.serializer(),
             Bridge.nativeConvertAndApplyTemplate(content, template, directHost),
@@ -337,7 +337,7 @@ object Clash {
             throw ClashException(result.error)
         }
 
-        return result.yaml
+        return result
     }
 
     fun setSubscriptionHeaders(headers: Map<String, String>) {

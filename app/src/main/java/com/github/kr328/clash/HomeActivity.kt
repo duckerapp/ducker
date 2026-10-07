@@ -874,6 +874,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                             runCatching { startActivity(Intent(Settings.ACTION_VPN_SETTINGS)) }
                                         },
                                         onDismissStop = { viewModel.dismissStop(this@HomeActivity) },
+                                        onCopyError = { copyReport(it, R.string.error_copied) },
                                         onChooseSubscription = {
                                             tvTarget = 2
                                             paging?.cancel()
@@ -1603,12 +1604,12 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         }
     }
 
-    private fun copyReport(text: String) {
+    private fun copyReport(text: String, done: Int = R.string.probe_copied) {
         val clipboard = getSystemService(ClipboardManager::class.java)
 
         clipboard?.setPrimaryClip(ClipData.newPlainText("ducker", text))
 
-        Toast.makeText(this, R.string.probe_copied, Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, done, Toast.LENGTH_SHORT).show()
     }
 
     /**

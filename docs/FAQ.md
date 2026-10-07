@@ -65,6 +65,12 @@ First get a subscription link (it starts with `https://`), a QR code or a file f
    Android will now ask about VPN: press "Continue" and allow the connection in the Android
    dialog. Android shows this dialog for any VPN. When everything is ready, Home says "Protected".
 
+If a card "The provider’s config has an error…" appears on Home after adding, there is nothing
+you need to do: the VPN works. The provider made a mistake in the subscription settings, so ducker
+took the servers from it and set up the rest itself. Press "Copy the error" and send it to your
+provider: once they fix it, their settings come back with the next subscription update and the
+card disappears.
+
 A subscription added from server links (`vless://…` and similar) or from a file with a ready
 config does not update itself: its card says "Own config · no updates". If your provider has an
 `https://…` subscription link, it is better to add that.

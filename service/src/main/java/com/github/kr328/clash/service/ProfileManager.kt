@@ -5,6 +5,7 @@ import android.content.Context
 import com.github.kr328.clash.common.util.backgroundScope
 import com.github.kr328.clash.service.data.Database
 import com.github.kr328.clash.core.Clash
+import com.github.kr328.clash.core.bridge.ClashException
 import com.github.kr328.clash.service.data.ImportedDao
 import com.github.kr328.clash.service.data.Pending
 import com.github.kr328.clash.service.data.PendingDao
@@ -24,6 +25,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.FileNotFoundException
 import java.util.*
+
+/** Тот же текст, что у ядра (`convert/convert.go`): по нему `Failure` узнаёт «это не ссылки». */
+private const val NOT_LINKS = "содержимое не похоже на список ссылок протоколов"
 
 class ProfileManager(private val context: Context) : IProfileManager,
     CoroutineScope by backgroundScope("ProfileManager") {
@@ -73,7 +77,13 @@ class ProfileManager(private val context: Context) : IProfileManager,
 
         // Конвертируем до создания профиля: если пришёл мусор, не остаётся висящей записи,
         // а человек видит ошибку ядра.
-        val config = Clash.convertAndApplyTemplate(content, template)
+        val converted = Clash.convertAndApplyTemplate(content, template)
+
+        // Сюда вставляют ссылки. Конфиг целиком добавляют файлом, и подменять его шаблоном
+        // незачем — отказ тот же, что и раньше.
+        if (converted.fromConfig) throw ClashException(NOT_LINKS)
+
+        val config = converted.yaml
 
         val uuid = create(Profile.Type.File, name)
 
@@ -252,6 +262,7 @@ class ProfileManager(private val context: Context) : IProfileManager,
             hwidReason = provider.hwidReason,
             usedTemplate = provider.usedTemplate,
             lastError = provider.lastError,
+            templateFromConfig = provider.templateFromConfig,
         )
     }
 

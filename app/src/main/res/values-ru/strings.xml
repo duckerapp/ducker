@@ -15,6 +15,9 @@
     <string name="update">Обновить</string>
 
     <string name="template_used">Провайдер прислал только список узлов, поэтому ducker использует свои настройки. Так и задумано — делать ничего не нужно.</string>
+    <string name="template_config">В конфиге провайдера ошибка, поэтому ducker взял из него узлы и работает на своих настройках. Сообщите провайдеру: когда он исправит, его конфиг вернётся при следующем обновлении подписки.</string>
+    <string name="template_config_copy">Скопировать ошибку</string>
+    <string name="error_copied">Ошибка скопирована</string>
     <string name="lockdown_offline">В настройках Android включено «Блокировать соединения без VPN»: приложения, которые идут мимо VPN, остаются без интернета. Если они нужны, выключите блокировку.</string>
     <string name="vpn_settings">Настройки VPN</string>
 
