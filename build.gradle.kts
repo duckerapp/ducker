@@ -131,6 +131,14 @@ subprojects {
 
                 resValue("string", "release_name", "v$versionName")
                 resValue("integer", "release_code", "$versionCode")
+
+                // Где лежит update.json: GitHub, за ним зеркало на GitLab — приложение идёт по
+                // списку. Проверить обновление без выкладки, с компьютера:
+                // -Pducker.update.urls=http://127.0.0.1:8765/update.json и adb reverse tcp:8765 tcp:8765.
+                val updateUrls = providers.gradleProperty("ducker.update.urls").orNull
+                    ?: ("https://raw.githubusercontent.com/duckerapp/ducker/main/update.json," +
+                        "https://gitlab.com/duckerx/ducker/-/raw/main/update.json")
+                buildConfigField("String", "UPDATE_URLS", "\"$updateUrls\"")
             }
 
             productFlavors {

@@ -138,6 +138,8 @@ import com.github.kr328.clash.ui.home.BackgroundSheet
 import com.github.kr328.clash.ui.home.BackgroundNotice
 import com.github.kr328.clash.ui.home.VpnSheet
 import com.github.kr328.clash.ui.settings.MAIL
+import com.github.kr328.clash.ui.update.UpdateSheet
+import com.github.kr328.clash.update.Updater
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.lifecycle.Lifecycle
 import com.github.kr328.clash.util.requestBackgroundWork
@@ -184,6 +186,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
     /** Кнопка «Подключиться» нажата без подписки — открыть вкладку подписок с окном добавления. */
     private val needSubscription = mutableStateOf(false)
+
+    /** Открыли уведомлением о новой версии — показать панель обновления. */
+    private val updateRequest = mutableStateOf(false)
 
     /** Запрос разрешения VPN ждёт, пока панель перед ним не отпустят (`askVpn`). */
     private val vpnRequest = mutableStateOf<Intent?>(null)
@@ -425,6 +430,34 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 val probeState by probeViewModel.state.collectAsState()
                 val appsState by appsViewModel.state.collectAsState()
                 val logsState by logsViewModel.state.collectAsState()
+
+                // Обновление приложения: панель живёт в композиции, пока уезжает вниз.
+                val updateState by Updater.state.collectAsState()
+                var updateOpen by remember { mutableStateOf(false) }
+                var updateShown by remember { mutableStateOf(false) }
+                val openUpdate = {
+                    updateOpen = true
+                    updateShown = true
+                }
+
+                // Из уведомления: что именно вышло, приложение после запуска узнаёт не сразу.
+                LaunchedEffect(updateRequest.value, updateState.release) {
+                    if (updateRequest.value && updateState.release != null) {
+                        updateRequest.value = false
+                        openUpdate()
+                    }
+                }
+
+                // Android просит подтвердить установку. Его окно может открыть только окно
+                // приложения — поэтому отсюда, а не из приёмника, и когда приложение на экране.
+                LaunchedEffect(updateState.confirm, resumes.intValue) {
+                    val confirm = updateState.confirm ?: return@LaunchedEffect
+
+                    if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                        Updater.confirmShown()
+                        runCatching { startActivity(confirm) }
+                    }
+                }
 
                 // Работа в фоне (D-109). Панель живёт в композиции и после закрытия, пока
                 // уезжает вниз, — как панели подписок.
@@ -876,6 +909,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         },
                                         onDismissStop = { viewModel.dismissStop(this@HomeActivity) },
                                         onCopyError = { copyReport(it, R.string.error_copied) },
+                                        update = updateState.release?.version,
+                                        onUpdate = openUpdate,
                                         onChooseSubscription = {
                                             tvTarget = 2
                                             paging?.cancel()
@@ -990,6 +1025,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onDashboard = { startActivity(DashboardActivity::class.intent) },
                             onLink = { open(it) },
                             onMail = { mail() },
+                            update = updateState,
+                            onUpdate = {
+                                if (updateState.release != null) openUpdate() else Updater.check(manual = true)
+                            },
+                            onBetaUpdates = { settingsViewModel.setBetaUpdates(this@HomeActivity, it) },
                             onAllowBackground = { requestBackgroundWork() },
                             onVendor = { openVendor(it) },
                             hwid = subscriptionsState.hwid,
@@ -1297,6 +1337,41 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     )
                 }
 
+                val updateRelease = updateState.release
+
+                // «Установка из этого источника» ещё не разрешена — сначала экран Android с этим
+                // тумблером, и уже потом установщик. Иначе тот сам уводит в настройки, а после
+                // возврата считает, что человек отказался: «Обновить» пришлось бы жать дважды.
+                var updateAwaitsPermission by remember { mutableStateOf(false) }
+
+                LaunchedEffect(resumes.intValue) {
+                    if (updateAwaitsPermission) {
+                        updateAwaitsPermission = false
+
+                        if (packageManager.canRequestPackageInstalls()) Updater.install()
+                    }
+                }
+
+                if (updateShown && updateRelease != null) {
+                    UpdateSheet(
+                        open = updateOpen,
+                        release = updateRelease,
+                        state = updateState,
+                        vpn = state.running,
+                        permitted = remember(resumes.intValue) { packageManager.canRequestPackageInstalls() },
+                        onInstall = {
+                            // Экрана с тумблером у системы нет — пусть спрашивает установщик.
+                            if (packageManager.canRequestPackageInstalls() || !askInstallPermission()) {
+                                Updater.install()
+                            } else {
+                                updateAwaitsPermission = true
+                            }
+                        },
+                        onDismiss = { updateOpen = false },
+                        onClosed = { updateShown = false },
+                    )
+                }
+
             }
         }
 
@@ -1325,9 +1400,15 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
      * Что открыли снаружи. Ссылка со страницы провайдера (`ducker://install-config?url=…`, а также
      * `clash://` и `clashmeta://`) — в панель «+», как если бы её вставили руками: имя, выбор и
      * ошибки — те же, а скачивается она только по «Добавить» (D-211). `.yaml` из файлового
-     * менеджера — в редактор конфига (D-124).
+     * менеджера — в редактор конфига (D-124). Уведомление о новой версии — в панель обновления.
      */
     private fun openExternal(intent: Intent?) {
+        if (intent?.action == Updater.ACTION_SHOW) {
+            updateRequest.value = true
+
+            return
+        }
+
         val uri = intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data ?: return
 
         if (uri.scheme in LINK_SCHEMES && uri.host == "install-config") {
@@ -1361,6 +1442,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         viewModel.startTrafficPolling(this@HomeActivity)
 
         viewModel.refresh(this@HomeActivity)
+
+        // Новая версия приложения: что знали в прошлый раз — сразу, проверка — если давно не было.
+        Updater.opened()
     }
 
     override fun onResume() {
@@ -1663,6 +1747,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         val destination = providerLink(url) ?: return
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(destination))) }
     }
+
+    /** Экран Android «Установка неизвестных приложений» для ducker. Открылся ли. */
+    private fun askInstallPermission(): Boolean = runCatching {
+        startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+    }.isSuccess
 
     /** Письмо — в почтовое приложение; нет его (телевизор) — адрес в буфер обмена. */
     private fun mail() {

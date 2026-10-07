@@ -35,6 +35,11 @@ class SettingsStore(context: Context) {
         get() = prefs.getBoolean(KEY_EXTERNAL_CONTROL, false)
         set(value) = prefs.edit().putBoolean(KEY_EXTERNAL_CONTROL, value).apply()
 
+    /** Получать выпуски на несколько дней раньше остальных. */
+    var betaUpdates: Boolean
+        get() = prefs.getBoolean(KEY_BETA, false)
+        set(value) = prefs.edit().putBoolean(KEY_BETA, value).apply()
+
     /** Не показывать приложение в списке недавних. */
     var hideFromRecents: Boolean
         get() = prefs.getBoolean(KEY_HIDE_RECENTS, false)
@@ -69,6 +74,7 @@ class SettingsStore(context: Context) {
         private const val KEY_HIDE_RECENTS = "hide_from_recents"
         private const val KEY_EXTERNAL_CONTROL = "allow_external_control"
         private const val KEY_FAVORITES = "favorite_nodes"
+        private const val KEY_BETA = "beta_updates"
 
         const val THEME_SYSTEM = "system"
         const val THEME_LIGHT = "light"

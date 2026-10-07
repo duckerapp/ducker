@@ -14,6 +14,7 @@ import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.LogMessage
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.SubscriptionHeaders
+import com.github.kr328.clash.update.Updater
 import com.github.kr328.clash.util.backgroundAllowed
 import com.github.kr328.clash.util.disguised
 import com.github.kr328.clash.util.setDisguised
@@ -85,6 +86,7 @@ class SettingsViewModel : ViewModel() {
                     stack = service.tunStackMode,
                     trafficNotification = service.dynamicNotification,
                     hideRecents = ours.hideFromRecents,
+                    betaUpdates = ours.betaUpdates,
                     disguise = context.disguised,
                     // Автозапуск — это состояние компонента, отдельного хранилища у него
                     // нет: включённый приёмник и есть настройка.
@@ -163,6 +165,17 @@ class SettingsViewModel : ViewModel() {
         service(context) { it.dynamicNotification = value }
 
     fun setHideRecents(context: Context, value: Boolean) = edit(context) { it.hideFromRecents = value }
+
+    /** Канал сменился — что предлагать, решается заново, а следом идёт свежая проверка. */
+    fun setBetaUpdates(context: Context, value: Boolean) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { SettingsStore(context).betaUpdates = value }
+
+            refresh(context)
+
+            Updater.check()
+        }
+    }
 
     fun setDisguise(context: Context, value: Boolean) {
         viewModelScope.launch {

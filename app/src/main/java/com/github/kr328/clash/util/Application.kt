@@ -26,6 +26,10 @@ object ApplicationObserver {
     val createdActivities: Set<Activity>
         get() = _createdActivities
 
+    /** Окно приложения сейчас на экране. */
+    val visible: Boolean
+        get() = appVisible
+
     private val activityObserver = object : Application.ActivityLifecycleCallbacks {
         @Synchronized
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {

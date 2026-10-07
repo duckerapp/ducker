@@ -80,6 +80,7 @@ import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.Icons
@@ -226,6 +227,9 @@ fun HomeScreen(
     header: Boolean = true,
     /** «Скопировать ошибку» на карточке о конфиге провайдера с ошибкой (D-246). */
     onCopyError: (String) -> Unit = {},
+    /** Вышла новая версия приложения — её номер; `null` — ставить нечего. */
+    update: String? = null,
+    onUpdate: () -> Unit = {},
 ) {
     // Подписок нет — показывать нечего, кроме одного действия: добавить. Приветствие
     // по центру, а саму кнопку даёт панель внизу, ставшая одной кнопкой (D-98). Смена —
@@ -257,6 +261,8 @@ fun HomeScreen(
                 updateFailed = updateFailed,
                 header = header,
                 onCopyError = onCopyError,
+                update = update,
+                onUpdate = onUpdate,
                 modifier = modifier,
             )
         }
@@ -339,6 +345,8 @@ private fun HomeRegular(
     updateFailed: Boolean,
     header: Boolean,
     onCopyError: (String) -> Unit,
+    update: String?,
+    onUpdate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val profile = state.profile
@@ -467,6 +475,16 @@ private fun HomeRegular(
         // видит «Подключено» и считает, что сломалось приложение (D-58).
         if (state.linkOk == false) {
             LinkFailedCard(state, onCheckLink, onOpenProxies, onFastest)
+        }
+
+        // Новая версия приложения: карточка висит, пока её не поставят, — обновление по
+        // умолчанию решает человек, и напоминание должно быть на виду.
+        if (update != null) {
+            InfoCard(
+                stringResource(R.string.app_update_card, update),
+                Icons.Default.SystemUpdate,
+                action = stringResource(R.string.update) to onUpdate,
+            )
         }
 
         if (profile != null || state.running) {

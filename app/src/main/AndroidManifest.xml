@@ -23,6 +23,10 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Окно «Разрешить работу в фоне?» после первого подключения (D-106). -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Обновление из самого приложения: ducker ставит только собственную новую версию.
+         Второе разрешение — чтобы Android 12+ не показывал системное окно при каждом обновлении. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
     <!-- Workaround for Android 17+ cross profile loopback networking restrictions.
          This permission allows CMFA to connect to loopback addresses and ports bound
@@ -349,6 +353,20 @@
                  был без VPN. С приоритетом ducker — в начале очереди. -->
             <intent-filter android:priority="999">
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Обновление приложения: проверка новой версии по расписанию системы и приёмник —
+             «приложение заменено» и ответ установщика. Оба только для системы. -->
+        <service
+            android:name=".update.UpdateJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <receiver
+            android:name=".update.UpdateReceiver"
+            android:exported="false">
+            <intent-filter>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>

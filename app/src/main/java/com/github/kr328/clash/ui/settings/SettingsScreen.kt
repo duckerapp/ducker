@@ -36,6 +36,9 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.SystemUpdate
+import com.github.kr328.clash.update.UpdateState
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.BugReport
@@ -114,6 +117,8 @@ data class SettingsState(
     val trafficNotification: Boolean = false,
     /** Android не усыпляет ducker: он в исключениях экономии батареи (D-106). */
     val backgroundAllowed: Boolean = true,
+    /** Получать выпуски на несколько дней раньше остальных. */
+    val betaUpdates: Boolean = false,
 )
 
 /** Канал с выпусками и чат сообщества — строки в разделе «Помощь». */
@@ -159,6 +164,11 @@ fun SettingsScreen(
     onDashboard: () -> Unit,
     onLink: (String) -> Unit,
     onMail: () -> Unit,
+    /** Новая версия приложения: что известно и идёт ли проверка. */
+    update: UpdateState,
+    /** Есть что ставить — открыть панель обновления, иначе проверить. */
+    onUpdate: () -> Unit,
+    onBetaUpdates: (Boolean) -> Unit,
     onAllowBackground: () -> Unit,
     /** Экран оболочки; `null` — страница приложения. */
     onVendor: (Shortcut?) -> Unit,
@@ -475,6 +485,33 @@ fun SettingsScreen(
                 subtitle = MAIL,
                 onClick = onMail,
                 icon = Icons.Default.Email,
+            )
+        }
+
+        item { SectionTitle(stringResource(R.string.section_updates)) }
+
+        item {
+            LinkRow(
+                title = stringResource(R.string.app_update_check),
+                subtitle = when {
+                    update.checking -> stringResource(R.string.app_update_checking)
+                    update.release != null -> stringResource(R.string.app_update_available, update.release.version)
+                    update.checked == false -> stringResource(R.string.app_update_check_failed)
+                    update.checked == true -> stringResource(R.string.app_update_latest)
+                    else -> stringResource(R.string.app_update_check_hint)
+                },
+                onClick = onUpdate,
+                icon = Icons.Default.SystemUpdate,
+            )
+        }
+
+        item {
+            SwitchRow(
+                title = stringResource(R.string.app_update_beta),
+                subtitle = stringResource(R.string.app_update_beta_hint),
+                checked = state.betaUpdates,
+                onChange = onBetaUpdates,
+                icon = Icons.Default.Science,
             )
         }
 
