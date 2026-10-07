@@ -13,11 +13,11 @@ on:
   #     - main
   #   paths:
   #     - "site/**"
-  #     - "docs/FAQ.md"
+  #     - "docs/FAQ.ru.md"
+  #     - "docs/CONTRIBUTING.ru.md"
   #     - "docs/CREDITS.md"
   #     - "docs/images/ru/**"
   #     - "PRIVACY_POLICY.md"
-  #     - "CONTRIBUTING.md"
   #     - "SECURITY.md"
   #     - ".github/workflows/pages.yaml"
 

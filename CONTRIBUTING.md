@@ -1,30 +1,33 @@
-# Как помочь проекту
+# How to help
 
-Спасибо, что заглянули. ducker — клиент [mihomo](https://github.com/MetaCubeX/mihomo) для Android,
-форк [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) со своим интерфейсом.
-Проект ведёт один человек, поэтому лучше всего работают небольшие понятные изменения.
+**English** · [Русский](docs/CONTRIBUTING.ru.md)
 
-*English summary is at the end.*
+Thank you for looking in. ducker is a [mihomo](https://github.com/MetaCubeX/mihomo) client for
+Android, a fork of [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) with
+its own interface. The project is run by one person, so small, clear changes work best.
 
-## Сообщить об ошибке или предложить идею
+## Report a bug or suggest an idea
 
-- Ошибка — через [Issues](../../issues), по шаблону «Ошибка». Журнал из приложения
-  (**Настройки → Журнал → Отправить**) почти всегда нужен: без него причину не найти.
-- Идея — по шаблону «Идея». Опишите, какую задачу она решает, а не только как должна выглядеть.
-- Вопрос — в [чат в Telegram](https://t.me/ducker_community).
-- **Уязвимость** — не в открытые Issues, а по правилам из [SECURITY.md](SECURITY.md).
+- A bug — through [Issues](https://github.com/duckerapp/ducker/issues), using the bug template. The
+  log from the app (**Settings → Log → Send**) is almost always needed: without it the cause
+  cannot be found.
+- An idea — using the feature template. Describe the problem it solves, not only how it should
+  look.
+- A question — in the [Telegram chat](https://t.me/ducker_community).
+- **A vulnerability** — not in public Issues, but as described in [SECURITY.md](SECURITY.md).
 
-**Никогда не присылайте** ни в Issues, ни в запросы на слияние: ссылку подписки, файл конфига,
-ключи, адреса узлов, идентификатор устройства. По ним любой получит доступ к вашему VPN.
-Журнал из приложения эти данные вырезает сам, но просмотрите его перед отправкой: домены
-сайтов, которые вы открывали, в нём остаются.
+**Never post** in Issues or pull requests: a subscription link, a config file, keys, node
+addresses or a device ID. Anyone who has them gets access to your VPN. The log from the app
+removes this data itself, but look through it before sending: the domains of the sites you opened
+stay in it.
 
-## Собрать из исходников
+## Build from source
 
-Нужны:
+You need:
+
 - JDK 21;
-- Android SDK: platform 37, NDK **29.0.14206865** (версия зафиксирована), CMake из SDK;
-- Go 1.26 или новее (CI собирает на Go 1.26 от MetaCubeX с патчами из `.github/patch`);
+- the Android SDK: platform 37, NDK **29.0.14206865** (the version is pinned), CMake from the SDK;
+- Go 1.26 or newer (CI builds with Go 1.26 from MetaCubeX with the patches from `.github/patch`);
 - git.
 
 ```
@@ -33,60 +36,43 @@ cd ducker
 ./gradlew :app:assembleMetaRelease
 ```
 
-Без `--recurse-submodules` не соберётся: ядро и форки `utls` и `sing-mux` подключены подмодулями.
-Без своего ключа подписи APK подписывается отладочным ключом. Свой ключ подключается файлом
-`signing.properties` в корне — формат описан в `build.gradle.kts`.
+It will not build without `--recurse-submodules`: the core and the `utls` and `sing-mux` forks
+are submodules. Without your own signing key the APK is signed with the debug key. Your key is
+set in `signing.properties` in the repository root; the format is described in
+`build.gradle.kts`.
 
-Проверки, которые запускает CI:
+The checks that CI runs:
 
 ```
 ./gradlew :app:testMetaDebugUnitTest
 ./gradlew :core:externalNativeBuildMetaRelease
 ```
 
-## Как устроен проект
+## How the project is organised
 
-Где что лежит — в [карте кода](docs/ARCHITECTURE.md): процессы, модули, главные цепочки вызовов и
-порядок обновления ядра. Она на английском; комментарии в коде и эта страница — на русском.
+Where things live is described in the [code map](docs/ARCHITECTURE.md): processes, modules, the
+main call chains and how the core is updated. Code comments are in Russian.
 
-Пометки вида `D-45` и `F-49` в комментариях — номера записей рабочего журнала решений и фактов.
-Сам журнал не опубликован: если нужна причина, по которой сделано так, а не иначе, спросите в
-задаче (issue) — ответим по существу.
+Marks like `D-45` and `F-49` in comments are entry numbers in the working journal of decisions and
+facts. The journal itself is not published: if you need the reason why something is done the way
+it is, ask in an issue and you will get a straight answer.
 
-## Запрос на слияние
+## Pull requests
 
-1. **Одна задача — один запрос.** Чем меньше изменение, тем быстрее его посмотрят.
-2. **Напишите, что и зачем** — и как проверяли: телефон, версия Android, что именно нажимали.
-   Изменение без проверки на устройстве не принимается.
-3. **Стиль кода** — как в соседних файлах: Kotlin в официальном стиле (профиль в
-   `.idea/codeStyles`), комментарии объясняют «почему», а не «что».
-4. **Строки интерфейса** — только в ресурсах, на двух языках: `values/strings.xml` и
+1. **One task — one pull request.** The smaller the change, the sooner it is reviewed.
+2. **Say what and why** — and how you tested it: the phone, the Android version, what exactly you
+   pressed. A change that was not checked on a device is not accepted.
+3. **Code style** — as in the neighbouring files: Kotlin in the official style (the profile is in
+   `.idea/codeStyles`); comments explain "why", not "what".
+4. **Interface strings** — only in resources, in two languages: `values/strings.xml` and
    `values-ru/strings.xml`.
-5. **Модули `core`, `service`, `common`** трогайте, только если без этого никак, и объясните
-   в описании, почему. Правки ядра mihomo идут в форк [duckerapp/mihomo](https://github.com/duckerapp/mihomo),
-   ветка `ducker`.
-6. **Взяли чужой код или идею** — назовите источник по правилам [docs/CREDITS.md](docs/CREDITS.md).
+5. **The `core`, `service` and `common` modules** — touch them only when there is no other way,
+   and explain why in the description. Changes to the mihomo core go to the
+   [duckerapp/mihomo](https://github.com/duckerapp/mihomo) fork, branch `ducker`.
+6. **Borrowed someone's code or idea?** Name the source as described in
+   [docs/CREDITS.md](docs/CREDITS.md).
 
-## Лицензия
+## License
 
-Проект распространяется под GPL-3.0 (см. [LICENSE](LICENSE)). Отправляя изменение, вы соглашаетесь,
-что оно тоже будет распространяться под GPL-3.0.
-
----
-
-## English summary
-
-ducker is an Android client for mihomo, forked from Clash Meta for Android with its own Compose UI.
-
-- **Bugs and ideas:** open an Issue using the English templates. Attach the app log
-  (Settings → Log → Send).
-- **Security issues:** see [SECURITY.md](SECURITY.md); do not file them as public Issues.
-- **Never post** subscription links, config files, keys, server addresses or device IDs.
-- **Build:** JDK 21, Android SDK platform 37, NDK 29.0.14206865, Go 1.26+, then
-  `git clone --recurse-submodules` and `./gradlew :app:assembleMetaRelease`.
-- **Code map:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — processes, modules, main call
-  chains and how the core is updated.
-- **Pull requests:** one change per PR, describe what and why, and how you tested it on a device.
-  Code comments, the FAQ and this guide are in Russian; the README, the changelog and the code map
-  are in English. Contributions are accepted under GPL-3.0.
-- **Questions:** the [Telegram chat](https://t.me/ducker_community).
+The project is distributed under GPL-3.0 (see [LICENSE](LICENSE)). By sending a change you agree
+that it will be distributed under GPL-3.0 too.

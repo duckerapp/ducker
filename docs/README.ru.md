@@ -24,7 +24,7 @@
 [![Android](https://img.shields.io/badge/Android-10%2B-2b2b2b?style=flat-square&labelColor=000)](#установка)
 [![Telegram](https://img.shields.io/badge/Telegram-%D0%BA%D0%B0%D0%BD%D0%B0%D0%BB-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
 
-[Установка](#установка) · [Возможности](#возможности) · [Снимки](#снимки-экрана) · [Android TV](#android-tv) · [Провайдерам](#провайдерам) · [Вопросы и ответы](FAQ.md) · [Сообщество](#сообщество)
+[Установка](#установка) · [Возможности](#возможности) · [Снимки](#снимки-экрана) · [Android TV](#android-tv) · [Провайдерам](#провайдерам) · [Вопросы и ответы](FAQ.ru.md) · [Сообщество](#сообщество)
 
 <br>
 
@@ -137,7 +137,7 @@ ducker подключает телефон или телевизор к VPN че
 Нужен Android 10 или новее. К каждому выпуску приложен файл `SHA256SUMS` с контрольными суммами
 APK.
 
-Что-то не получается? [Вопросы и ответы](FAQ.md): как добавить подписку, что делать, если VPN
+Что-то не получается? [Вопросы и ответы](FAQ.ru.md): как добавить подписку, что делать, если VPN
 сам отключается или нет интернета, как прислать журнал.
 
 ## Провайдерам
@@ -260,7 +260,7 @@ cd ducker
 (`keystore.path`, `keystore.password`, `key.alias`, `key.password`). `./scripts/smoke.sh`
 проверяет сборку на подключённом телефоне.
 
-Подробности — в [CONTRIBUTING.md](../CONTRIBUTING.md); где что лежит в коде — в
+Подробности — в [CONTRIBUTING.ru.md](CONTRIBUTING.ru.md); где что лежит в коде — в
 [карте кода](ARCHITECTURE.md) (на английском).
 
 ## Благодарности
@@ -276,7 +276,7 @@ cd ducker
 - [Канал в Telegram](https://t.me/ducker_mihomo) — выпуски и новости;
 - [Чат в Telegram](https://t.me/ducker_community) — вопросы и обсуждение;
 - [Issues](https://github.com/duckerapp/ducker/issues) — ошибки и идеи;
-- [CONTRIBUTING.md](../CONTRIBUTING.md) — как сообщить об ошибке, собрать приложение и прислать
+- [CONTRIBUTING.ru.md](CONTRIBUTING.ru.md) — как сообщить об ошибке, собрать приложение и прислать
   изменение.
 
 Проект ведёт один человек, поэтому помощь важна: сообщения об ошибках, проверка на своём

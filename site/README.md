@@ -19,8 +19,8 @@ mkdocs serve              # http://127.0.0.1:8000, пересобирается 
 - `docs/` — страницы, которые есть только на сайте: главная, установка, раздел для
   провайдеров, сообщество и связь.
 - FAQ, приватность, «Как помочь», «Уязвимости», «Благодарности» здесь **не лежат**: при
-  сборке их берёт `hooks/sources.py` из `docs/FAQ.md`, `PRIVACY_POLICY.md`, `CONTRIBUTING.md`,
-  `SECURITY.md` и `docs/CREDITS.md`. Править — исходники; сайт подтянет сам.
+  сборке их берёт `hooks/sources.py` из `docs/FAQ.ru.md`, `PRIVACY_POLICY.md`,
+  `docs/CONTRIBUTING.ru.md`, `SECURITY.md` и `docs/CREDITS.md`. Править — исходники; сайт подтянет сам.
 - Снимки экрана — те же, что в `README`: `hooks/sources.py` берёт их из `docs/images/ru` и
   кладёт в `assets/shots`.
 - `docs/assets/ducker.css` — чёрно-белая палитра приложения, марка DUCKER.

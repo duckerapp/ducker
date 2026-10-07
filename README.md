@@ -134,8 +134,7 @@ The same APK runs on Android TV and Google TV.
 Android 10 or newer. Each release comes with `SHA256SUMS` for the APK files.
 
 Something does not work? [Questions and answers](docs/FAQ.md): how to add a subscription, what to
-do if the VPN turns itself off or there is no internet, how to send a log. The FAQ is in Russian
-with a short English part at the end.
+do if the VPN turns itself off or there is no internet, how to send a log.
 
 ## For providers
 

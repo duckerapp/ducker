@@ -1,360 +1,324 @@
-# Вопросы и ответы
+# Questions and answers
 
-Справка для тех, кто пользуется ducker, а в VPN не разбирается. Кнопки и пункты названы так же,
-как в приложении.
+**English** · [Русский](FAQ.ru.md)
 
-*A short English version is at the end: [In English](#in-english).*
+Help for people who use ducker and are not VPN experts. Buttons and items are named exactly as
+in the app.
 
-<!-- Для тех, кто правит справку. Названия кнопок — из app/src/main/res/values-ru/strings.xml
-     (английские — из values/strings.xml). Шаги по производителям — строки background_steps_*,
-     а какие из них показать, приложение решает по марке и версии Android в
-     app/src/main/java/com/github/kr328/clash/util/Background.kt. Поменялась строка в
-     приложении — поменяйте и здесь. -->
+<!-- For those who edit this page. It is edited together with the Russian version, FAQ.ru.md.
+     Button names come from app/src/main/res/values/strings.xml (Russian ones from
+     values-ru/strings.xml). The steps for phone makers are the background_steps_* strings; which
+     of them to show, the app decides by brand and Android version in
+     app/src/main/java/com/github/kr328/clash/util/Background.kt. If a string changes in the app,
+     change it here too. -->
 
-- [Что такое VPN, подписка и сервер](#что-такое-vpn-подписка-и-сервер)
-- [Как добавить подписку](#как-добавить-подписку)
-- [VPN сам отключается](#vpn-сам-отключается)
-- [VPN не включился](#vpn-не-включился)
-- [Не обновляется подписка](#не-обновляется-подписка)
-- [Нет интернета при включённом VPN](#нет-интернета-при-включённом-vpn)
-- [Приложение ругается на VPN](#приложение-ругается-на-vpn)
-- [Как прислать журнал](#как-прислать-журнал)
-- [Чего не присылать никогда](#чего-не-присылать-никогда)
+- [What a VPN, a subscription and a server are](#what-a-vpn-a-subscription-and-a-server-are)
+- [How to add a subscription](#how-to-add-a-subscription)
+- [The VPN turns itself off](#the-vpn-turns-itself-off)
+- [The VPN did not start](#the-vpn-did-not-start)
+- [The subscription does not update](#the-subscription-does-not-update)
+- [No internet with the VPN on](#no-internet-with-the-vpn-on)
+- [An app complains about the VPN](#an-app-complains-about-the-vpn)
+- [How to send a log](#how-to-send-a-log)
+- [What never to send](#what-never-to-send)
 
-## Что такое VPN, подписка и сервер
+## What a VPN, a subscription and a server are
 
-**VPN** — защищённый канал от телефона до сервера. Приложения ходят в интернет не напрямую,
-а через этот сервер: сайты видят его, а не вас, и открывается то, что закрыто в вашей сети.
+**A VPN** is a protected channel from your phone to a server. Apps reach the internet not
+directly but through that server: sites see it instead of you, and what is closed in your network
+opens.
 
-**Сервер** — компьютер провайдера, обычно в другой стране. В ducker серверы называются
-**узлами** и собраны на вкладке «Прокси». Их обычно несколько: если один не работает или
-медленный, выберите другой. Число рядом с сервером — задержка в миллисекундах (мс): чем
-меньше, тем быстрее он отвечает. «нет ответа» — сервер сейчас недоступен из этой сети.
+**A server** is the provider's computer, usually in another country. In ducker servers are called
+**nodes** and live on the Proxies tab. There are usually several: if one does not work or is slow,
+choose another. The number next to a server is its delay in milliseconds (ms): the smaller, the
+faster it answers. "no answer" means the server cannot be reached from this network right now.
 
-**Подписка** — ваш доступ к серверам. Её даёт провайдер — сервис, у которого вы её купили
-или получили: он присылает ссылку, QR-код или файл. По ссылке ducker сам скачивает список
-серверов и настройки, а потом сам их обновляет. Срок подписки и остаток трафика видны на главной.
+**A subscription** is your access to the servers. It comes from a provider — the service where
+you bought or received it — as a link, a QR code or a file. Using the link, ducker downloads the
+list of servers and the settings itself and later updates them itself. The subscription term and
+the traffic left are shown on Home.
 
-ducker — только программа для подключения. Доступ он не продаёт: без подписки от провайдера
-подключаться некуда.
+ducker is only a program for connecting. It does not sell access: without a subscription from a
+provider there is nowhere to connect to.
 
-**Global и Rules** — переключатель на вкладке «Прокси», если провайдер его оставил. Rules —
-как настроил провайдер: обычно российские сайты идут напрямую, остальное — через сервер.
-Global — всё через сервер. Не уверены — оставьте Rules.
+**Global and Rules** — a switch on the Proxies tab, if the provider left it there. Rules means "as
+the provider set it up": usually local sites go directly and the rest through the server. Global
+means everything through the server. If unsure, leave Rules.
 
-## Как добавить подписку
+## How to add a subscription
 
-Сначала получите у провайдера ссылку на подписку (она начинается с `https://`), QR-код или файл.
+First get a subscription link (it starts with `https://`), a QR code or a file from your provider.
 
-1. Откройте ducker. Пока подписок нет, внизу одна кнопка — «Добавить подписку». Если подписки
-   уже есть — вкладка «Подписки», кнопка «+» внизу посередине, над вкладками.
-2. Откроется окно «Добавить подписку». Выберите способ:
-   - **Ссылкой.** Скопируйте ссылку из письма или чата, в окне нажмите «Вставить», затем
-     «Добавить». Подойдут и ссылки серверов вида `vless://…`.
-   - **QR-кодом.** «Сканировать QR» — и наведите камеру на код. Если код пришёл картинкой или
-     снимком экрана, в окне камеры нажмите «Из галереи» и выберите его. Темно — «Фонарик».
-   - **Файлом.** «Файл» — и выберите файл от провайдера. Если в нём ссылки, они появятся в поле:
-     нажмите «Добавить». Если это готовые настройки, подписка добавится сразу.
-3. Подождите: провайдер отдаёт настройки, это может занять до минуты.
-4. На главной нажмите большую круглую кнопку со значком питания. В первый раз ducker
-   предупредит, что сейчас Android спросит про VPN: нажмите «Продолжить» и в окне Android
-   разрешите подключение. Такое окно Android показывает для любого VPN. Когда всё готово,
-   на главной написано «Защищено».
+1. Open ducker. While there are no subscriptions, there is one button at the bottom — "Add
+   subscription". If you already have subscriptions — the Subscriptions tab, the "+" button at
+   the bottom centre, above the tabs.
+2. The "Add subscription" sheet opens. Choose how:
+   - **A link.** Copy the link from the email or chat, press "Paste" in the sheet, then "Add".
+     Server links like `vless://…` work too.
+   - **A QR code.** "Scan QR" — and point the camera at the code. If the code came as a picture
+     or a screenshot, press "From gallery" in the camera window and pick it. Dark around —
+     "Flashlight".
+   - **A file.** "File" — and choose the file from your provider. If it contains links, they
+     appear in the field: press "Add". If it is a ready config, the subscription is added at once.
+3. Wait: the provider is sending the settings, this may take up to a minute.
+4. On Home press the big round button with the power sign. The first time ducker warns that
+   Android will now ask about VPN: press "Continue" and allow the connection in the Android
+   dialog. Android shows this dialog for any VPN. When everything is ready, Home says "Protected".
 
-Подписка, добавленная ссылками серверов (`vless://…` и подобными) или файлом с готовыми
-настройками, сама не обновляется: на её карточке написано «Свой конфиг · без обновлений».
-Если у провайдера есть ссылка на подписку `https://…`, лучше добавить её.
+A subscription added from server links (`vless://…` and similar) or from a file with a ready
+config does not update itself: its card says "Own config · no updates". If your provider has an
+`https://…` subscription link, it is better to add that.
 
-**Перенести подписку на другой телефон** или настроить её родственнику. На телефоне, где
-подписка уже есть: вкладка «Подписки» → значок QR-кода на карточке подписки (у неактивной
-подписки — «…» → «Поделиться QR-кодом»). На другом телефоне: «+» → «Сканировать QR». Подойдёт
-и снимок экрана с кодом — через «Из галереи». Показывайте код только своим устройствам:
-по нему подпиской может пользоваться кто угодно.
+**Move a subscription to another phone** or set it up for a relative. On the phone that already
+has the subscription: the Subscriptions tab → the QR icon on the subscription card (for an
+inactive subscription — "⋯" → "Share as QR code"). On the other phone: "+" → "Scan QR". A
+screenshot of the code works too — through "From gallery". Show the code only to your own
+devices: anyone who has it can use your subscription.
 
-## VPN сам отключается
+## The VPN turns itself off
 
-Чтобы беречь батарею, Android и оболочки телефонов усыпляют и закрывают приложения, которые
-работают в фоне, — и VPN выключается вместе с ducker. Настраивается один раз, за пару минут.
+To save battery, Android and phone makers' software put background apps to sleep and close
+them — and the VPN goes off together with ducker. This is set up once and takes a couple of
+minutes.
 
-1. **Разрешите работу в фоне.** На главной нажмите ⚙ «Настройки» (вверху справа) → раздел
-   «Подключение» → карточка «Работа в фоне» → «Разрешить» и подтвердите в окне Android.
-   Когда всё в порядке, в карточке написано: «Android не усыпляет ducker: VPN держится и при
-   выключенном экране». То же предлагает карточка на главной с кнопкой «Разрешить».
-2. **Настройте оболочку телефона.** Xiaomi, Redmi, POCO, Huawei, Honor, vivo, iQOO, OPPO,
-   realme, OnePlus, Samsung, Tecno, Infinix и itel закрывают приложения сами, даже когда
-   Android разрешил. Коснитесь карточки «Работа в фоне»: ducker покажет шаги именно для вашего
-   телефона и кнопку, которая открывает нужные настройки. Те же шаги — ниже. На главной
-   об этом напоминает карточка с кнопкой «Настроить».
-3. **Не смахивайте ducker из списка недавних приложений.** Лучше закрепите его там замком —
-   как именно, написано в шагах для вашего телефона.
-4. **Включите «Постоянный VPN»**, чтобы VPN поднимался сразу после включения телефона:
-   «Настройки» → «Постоянный VPN» → в открывшихся настройках VPN нажмите ⚙ у ducker и включите
-   постоянный VPN. Переключатель «Автозапуск» в настройках ducker тоже поднимает VPN после
-   перезагрузки, но позже — на слабых телефонах через минуту-две.
+1. **Allow background work.** On Home press ⚙ Settings (top right) → the "Connection" section →
+   the "Background work" card → "Allow", and confirm in the Android dialog. When everything is
+   fine, the card says: "Android won't put ducker to sleep, so the VPN keeps working with the
+   screen off." The card on Home with the "Allow" button offers the same.
+2. **Set up your phone maker's software.** Xiaomi, Redmi, POCO, Huawei, Honor, vivo, iQOO, OPPO,
+   realme, OnePlus, Samsung, Tecno, Infinix and itel close apps on their own even when Android
+   has allowed them. Tap the "Background work" card: ducker shows the steps for your phone and a
+   button that opens the right settings. The same steps are below. A card on Home with the "Set
+   up" button reminds you about it.
+3. **Do not swipe ducker away from recent apps.** Better lock it there — how exactly is written
+   in the steps for your phone.
+4. **Turn on "Always-on VPN"** so that the VPN comes up as soon as the phone boots: Settings →
+   "Always-on VPN" → in the VPN settings that open, press ⚙ next to ducker and turn on always-on
+   VPN. The "Autostart" switch in ducker's settings also brings the VPN up after a restart, but
+   later — on slow phones in a minute or two.
 
-Если VPN выключился, когда вы включили другое VPN-приложение, — так устроен Android: одновременно
-работает только один VPN.
+If the VPN went off when you turned on another VPN app — that is how Android works: only one VPN
+runs at a time.
 
-### Шаги для вашего телефона
+### Steps for your phone
 
-Их же показывает ducker в карточке «Работа в фоне». Версию Android можно посмотреть в настройках
-телефона, в разделе «О телефоне».
+ducker shows the same steps in the "Background work" card. The Android version is in the phone's
+settings, in "About phone".
 
 <details>
-<summary>Xiaomi, Redmi и POCO</summary>
+<summary>Xiaomi, Redmi and POCO</summary>
 
-Нажмите «Автозапуск MIUI» и включите ducker в списке. Затем «Батарея: без ограничений» — выберите
-«Нет ограничений». И закрепите ducker в недавних приложениях: потяните его карточку вниз или
-удерживайте её и нажмите на замок.
+Tap "MIUI autostart" and turn ducker on in the list. Then "Battery: no restrictions" and choose
+No restrictions. And lock ducker in recent apps: pull its card down, or long-press it and tap the
+lock.
 
-Кнопки «Автозапуск MIUI» и «Батарея: без ограничений» — в карточке «Работа в фоне» в настройках
-ducker.
+The "MIUI autostart" and "Battery: no restrictions" buttons are in the "Background work" card in
+ducker's settings.
 
 </details>
 
 <details>
-<summary>Huawei и Honor</summary>
+<summary>Huawei and Honor</summary>
 
-Откройте «Диспетчер телефона → Запуск приложений» (на Huawei — «Настройки → Батарея → Запуск
-приложений»), найдите ducker, выключите автоматическое управление и включите все три
-переключателя. Затем закрепите ducker в недавних приложениях.
-
-</details>
-
-<details>
-<summary>vivo и iQOO</summary>
-
-**Android 13 и новее.** В настройках ducker откройте «Батарея» и разрешите работу в фоне без
-ограничений, затем в «Приложения → Автозапуск» включите ducker. Закрепите ducker в недавних
-приложениях.
-
-**Android 12 и старше.** В «Настройки → Батарея → Потребление энергии в фоне» разрешите ducker
-работать в фоне, затем в «Приложения → Автозапуск» (на старых версиях — i Manager → Автозапуск)
-включите ducker. Закрепите ducker в недавних приложениях.
-
-Страницу ducker в настройках телефона открывает кнопка «Открыть настройки ducker» в карточке
-«Работа в фоне».
+Open Phone Manager → App launch (on Huawei: Settings → Battery → App launch), find ducker, turn
+off automatic management and turn on all three switches. Then lock ducker in recent apps.
 
 </details>
 
 <details>
-<summary>OPPO, realme и OnePlus</summary>
+<summary>vivo and iQOO</summary>
 
-**Android 12 и новее.** В настройках ducker откройте «Использование батареи» и разрешите фоновую
-активность: на новых версиях выберите «Разрешить фоновую активность» вместо «Умного режима», на
-прежних включите этот переключатель и «Разрешить автозапуск». Затем закрепите ducker в недавних
-приложениях (замок).
+**Android 13 and newer.** In ducker's app settings open Battery and allow unrestricted background
+use, then enable ducker in Apps → Autostart. Lock ducker in recent apps.
 
-**OnePlus на Android 11 и старше.** В «Настройки → Батарея → Оптимизация батареи» выберите для
-ducker «Не оптимизировать», а в дополнительных настройках там же выключите расширенную
-оптимизацию. Затем закрепите ducker в недавних приложениях (замок): OnePlus иногда сам
-возвращает оптимизацию.
+**Android 12 and older.** In Settings → Battery → Background power consumption allow ducker to
+run in the background, then enable ducker in Apps → Autostart (on older versions: i Manager →
+Autostart). Lock ducker in recent apps.
 
-**OPPO и realme на Android 11 и старше.** В настройках ducker откройте «Использование батареи»
-или «Энергосбережение» и разрешите работу в фоне и автозапуск. Затем закрепите ducker в недавних
-приложениях (замок).
+ducker's page in the phone settings is opened by the "Open ducker settings" button in the
+"Background work" card.
 
-Страницу ducker в настройках телефона открывает кнопка «Открыть настройки ducker» в карточке
-«Работа в фоне».
+</details>
+
+<details>
+<summary>OPPO, realme and OnePlus</summary>
+
+**Android 12 and newer.** In ducker's app settings open Battery usage and allow background
+activity: on newer versions choose Allow background activity instead of Smart mode, on earlier
+ones turn on that switch and Allow auto launch. Then lock ducker in recent apps.
+
+**OnePlus on Android 11 and older.** In Settings → Battery → Battery optimization choose Don't
+optimize for ducker, and turn off Advanced optimization in the extra settings there. Then lock
+ducker in recent apps: OnePlus sometimes turns optimization back on by itself.
+
+**OPPO and realme on Android 11 and older.** In ducker's app settings open Battery usage or Power
+saver and allow background running and auto launch. Then lock ducker in recent apps.
+
+ducker's page in the phone settings is opened by the "Open ducker settings" button in the
+"Background work" card.
 
 </details>
 
 <details>
 <summary>Samsung</summary>
 
-**Android 12 и новее.** В настройках ducker откройте «Батарея» и выберите «Без ограничений» —
-если вы разрешили ducker работу в фоне в его окне, это уже сделано. Затем в «Батарея →
-Ограничения использования в фоне» проверьте, что ducker нет среди спящих и глубоко спящих
-приложений.
+**Android 12 and newer.** In ducker's app settings open Battery and choose Unrestricted — if you
+allowed background work in ducker's prompt, this is already done. Then in Battery → Background
+usage limits make sure ducker is not among sleeping or deep sleeping apps.
 
-**Android 11 и старше.** В настройках ducker откройте «Батарея» и выключите оптимизацию расхода
-и перевод в спящий режим. Затем в «Обслуживание устройства → Батарея» уберите ducker из спящих
-приложений и выключите перевод неиспользуемых приложений в спящий режим.
+**Android 11 and older.** In ducker's app settings open Battery and turn off battery optimization
+and putting the app to sleep. Then in Device care → Battery remove ducker from sleeping apps and
+turn off putting unused apps to sleep.
 
-Страницу ducker в настройках телефона открывает кнопка «Открыть настройки ducker» в карточке
-«Работа в фоне».
+ducker's page in the phone settings is opened by the "Open ducker settings" button in the
+"Background work" card.
 
 </details>
 
 <details>
-<summary>Tecno, Infinix и itel</summary>
+<summary>Tecno, Infinix and itel</summary>
 
-**Android 12 и новее.** В настройках ducker откройте «Батарея», включите «Разрешить работу в
-фоне» и выберите «Без ограничений». Затем в «Управлении приложениями» откройте «Автозапуск» и
-включите ducker. Закрепите ducker в недавних приложениях (замок): смахивание на этих телефонах
-останавливает VPN.
+**Android 12 and newer.** In ducker's app settings open Battery, turn on Allow background
+activity and choose Unrestricted. Then in App management open Auto-start and enable ducker. Lock
+ducker in recent apps: on these phones swiping it away stops the VPN.
 
-**Android 11 и старше.** Откройте Phone Master → «Автозапуск» и разрешите ducker, затем в
-«Настройки → Батарея» отключите энергосбережение для приложений. Закрепите ducker в недавних
-приложениях (замок).
+**Android 11 and older.** Open Phone Master → Auto-start and allow ducker, then turn off power
+saving for apps in Settings → Battery. Lock ducker in recent apps.
 
-Страницу ducker в настройках телефона открывает кнопка «Открыть настройки ducker» в карточке
-«Работа в фоне».
+ducker's page in the phone settings is opened by the "Open ducker settings" button in the
+"Background work" card.
 
 </details>
 
-## VPN не включился
+## The VPN did not start
 
-Если VPN не удалось включить, на главной появится красная карточка «VPN не включился»: в ней
-причина, что с этим делать и нужная кнопка — «Обновить», «Поддержка» или «Настройки VPN».
-Включали плиткой из шторки или виджетом, не открывая приложение, — то же самое придёт
-уведомлением; нажмите на него. Карточка исчезнет сама, когда VPN включится.
+If the VPN could not be turned on, a red card "VPN didn’t start" appears on Home: it gives the
+reason, what to do about it and the right button — "Update", "Support" or "VPN settings". If you
+turned the VPN on with the Quick Settings tile or a widget without opening the app, the same
+arrives as a notification; tap it. The card disappears by itself when the VPN comes up.
 
-## Не обновляется подписка
+## The subscription does not update
 
-Подписка, добавленная ссылкой, обновляется сама — обычно раз в 8 часов. Как часто, видно и
-меняется так: «Подписки» → «Изменить» → «Автообновление».
+A subscription added by a link updates itself — usually every 8 hours. How often is shown and
+changed here: Subscriptions → "Edit" → "Auto-update".
 
-1. **Обновите вручную:** «Подписки» → «Обновить» на карточке подписки. Итог появится прямо
-   на кнопке: «Обновлено» или «Не удалось». После удачного обновления подписка снова обновляется
-   сама по расписанию.
-2. **Прочитайте причину.** При ошибке появится «Не удалось обновить «…»», а под ним — почему
-   и кнопка с тем, что поможет: «Обновить», «Изменить» или «Поддержка».
-3. **Выключите VPN и обновите ещё раз.** Пока VPN включён, запрос подписки обычно идёт через
-   сервер; если серверы не отвечают, обновиться нельзя. Без VPN запрос идёт напрямую.
-4. **«Достигнут лимит устройств»** — провайдер считает устройства, и лимит исчерпан. Отвяжите
-   старое устройство у провайдера (в личном кабинете или боте) или напишите ему кнопкой
-   «Поддержка», затем нажмите «Обновить». Проверьте и «Настройки» → «Идентификатор
-   устройства»: он должен быть включён. Без него провайдер, который считает устройства,
-   подписку не отдаст.
-5. **«Не загрузилась»** — провайдер не ответил или ссылка неверна. Если провайдер прислал новую
-   ссылку: «Изменить» → вставьте её в поле «Ссылка» → «Сохранить».
-6. **«Закончилась»** — срок подписки вышел. Продлите её кнопкой «Продлить» (если провайдер её
-   добавил) или у провайдера, потом нажмите «Обновить».
-7. **«Свой конфиг · без обновлений»** — подписку добавили ссылками серверов или файлом с
-   настройками, обновлять её неоткуда. Попросите у провайдера ссылку на подписку `https://…`
-   и добавьте её.
-8. **«Конфиг правили вручную»** — обновление заменит ваши правки настройками провайдера. Если
-   правки не нужны, нажмите «Обновить всё равно».
+1. **Update by hand:** Subscriptions → "Update" on the subscription card. The result appears
+   right on the button: "Updated" or "Failed". After a successful update the subscription goes
+   back to updating itself on schedule.
+2. **Read the reason.** On an error you see "Could not update “…”", and below it — why, and a
+   button with what will help: "Update", "Edit" or "Support".
+3. **Turn the VPN off and update again.** While the VPN is on, the subscription request usually
+   goes through a server; if the servers do not answer, updating is impossible. Without the VPN
+   the request goes directly.
+4. **"Device limit reached"** — the provider counts devices and the limit is used up. Remove an
+   old device at the provider (in your account or bot) or write to them with the "Support"
+   button, then press "Update". Also check Settings → "Device ID": it must be on. Without it a
+   provider that counts devices will not hand out the subscription.
+5. **"Not loaded"** — the provider did not answer or the link is wrong. If the provider sent a
+   new link: "Edit" → paste it into the "Link" field → "Save".
+6. **"Expired"** — the subscription term is over. Renew it with the "Renew" button (if the
+   provider added it) or at the provider, then press "Update".
+7. **"Own config · no updates"** — the subscription was added from server links or from a file
+   with a config, so there is nowhere to update it from. Ask your provider for an `https://…`
+   subscription link and add that.
+8. **"The config was edited by hand"** — an update will replace your edits with the provider's
+   settings. If you do not need the edits, press "Update anyway".
 
-## Нет интернета при включённом VPN
+## No internet with the VPN on
 
-Сначала посмотрите на главную: о самых частых причинах ducker сообщает там сам.
+First look at Home: ducker reports the most common causes there itself.
 
-- **«Узел не отвечает»** — VPN включён, но сервер недоступен. Нажмите «Переключиться на самый
-  быстрый» или «Выбрать другой узел». Если написано «Не ответил ни один узел», эта сеть
-  блокирует серверы: попробуйте другую сеть — Wi-Fi или мобильную.
-- **«Закончилась»** или мало трафика на карточке подписки — продлите подписку.
-- **«Достигнут лимит устройств»** — см. пункт 4 [выше](#не-обновляется-подписка).
-- **«Блокировать соединения без VPN»** — в настройках Android включена блокировка, и
-  приложения, которые идут мимо VPN, остаются без интернета совсем. Если они нужны, нажмите
-  «Настройки VPN» и выключите блокировку.
+- **"The node is not answering"** — the VPN is on, but the server cannot be reached. Press
+  "Switch to the fastest" or "Choose another node". If it says "No node answered", this network
+  blocks the servers: try another network — Wi-Fi or mobile data.
+- **"Expired"** or little traffic left on the subscription card — renew the subscription.
+- **"Device limit reached"** — see item 4 [above](#the-subscription-does-not-update).
+- **"Block connections without VPN"** — the block is turned on in Android settings, and apps that
+  bypass the VPN have no internet at all. If you need them, press "VPN settings" and turn the
+  block off.
 
-Если таких карточек нет:
+If there are no such cards:
 
-1. Выключите и снова включите VPN большой кнопкой на главной.
-2. Обновите подписку: «Подписки» → «Обновить». Провайдер мог сменить серверы.
-3. На вкладке «Прокси» нажмите «Проверить» и коснитесь сервера, у которого число, а не
-   «нет ответа».
-4. Попробуйте другую сеть: Wi-Fi вместо мобильной или наоборот.
-5. Проверьте, что дата и время на телефоне ставятся автоматически: с неверным временем
-   защищённое соединение с сервером может не устанавливаться.
-6. Если вы включали «IPv6» («Настройки» → «Сеть и туннель»), выключите: он нужен, только если
-   провайдер его поддерживает.
-7. Не работает одно приложение, а остальные работают — откройте «Настройки» → «Приложения» и
-   проверьте, идёт ли оно через VPN. Некоторые приложения, например банки, провайдер может
-   нарочно пускать мимо VPN.
-8. Не помогло — [пришлите журнал](#как-прислать-журнал) в поддержку провайдера.
+1. Turn the VPN off and on again with the big button on Home.
+2. Update the subscription: Subscriptions → "Update". The provider may have changed the servers.
+3. On the Proxies tab press "Check" and tap a server that shows a number rather than "no answer".
+4. Try another network: Wi-Fi instead of mobile data, or the other way round.
+5. Make sure the date and time on the phone are set automatically: with a wrong time a protected
+   connection to the server may fail to establish.
+6. If you turned on "IPv6" (Settings → "Network and tunnel"), turn it off: it is needed only if
+   the provider supports it.
+7. One app does not work while the others do — open Settings → "Apps" and check whether it goes
+   through the VPN. A provider may deliberately send some apps, banks for example, past the VPN.
+8. Did not help — [send a log](#how-to-send-a-log) to your provider's support.
 
-## Приложение ругается на VPN
+## An app complains about the VPN
 
-Некоторые приложения — банки, госуслуги, маркетплейсы — при включённом VPN пишут, что работать
-не будут, или просто не открываются. Такие приложения можно пустить мимо VPN, не выключая его
-для остальных.
+Some apps — banks, government services, marketplaces — say they will not work with a VPN on, or
+simply do not open. Such apps can be sent past the VPN without turning it off for everything else.
 
-1. «Настройки» → «Подключение» → «Приложения».
-2. Сверху выберите «Без VPN» — отмеченные приложения пойдут мимо VPN.
-3. Найдите приложение поиском («Поиск по названию или пакету») и отметьте его.
-4. Вернитесь назад. Если VPN включён, ducker сам перезапустит его, чтобы выбор заработал:
-   список приложений применяется только при включении VPN.
+1. Settings → "Connection" → "Apps".
+2. At the top choose "Bypass VPN" — the checked apps will go past the VPN.
+3. Find the app with the search ("Search by name or package") and check it.
+4. Go back. If the VPN is on, ducker restarts it itself so that the choice takes effect: the app
+   list is applied only when the VPN is turned on.
 
-Часть приложений провайдер уже выводит мимо VPN сам: они стоят в списке сверху с замком и
-подписью «без VPN», снять их нельзя — так банки и госуслуги работают при включённом VPN.
+The provider already sends some apps past the VPN itself: they are at the top of the list with a
+lock and the label "no VPN", and cannot be unchecked — this is how banks and government services
+work with the VPN on.
 
-Если в настройках Android включено «Блокировать соединения без VPN», приложения, которые идут
-мимо VPN, остаются **без интернета совсем** — ducker предупредит об этом на главной. Нужны такие
-приложения — нажмите там «Настройки VPN» и выключите блокировку.
+If "Block connections without VPN" is turned on in Android settings, apps that bypass the VPN have
+**no internet at all** — ducker warns about this on Home. If you need such apps, press "VPN
+settings" there and turn the block off.
 
-Выбор «Через VPN» устроен наоборот: через VPN пойдут только отмеченные, остальные — мимо.
-Пока ничего не отмечено, через VPN идут все.
+The "Via VPN" choice works the other way round: only the checked apps go through the VPN, the
+rest go past it. While nothing is checked, all apps go through the VPN.
 
-<!-- Откуда: строки access_control, apps_mode_*, apps_profile_exclude, apps_locked_direct,
-     lockdown_offline; экран ui/apps/AppsScreen.kt; перезапуск после изменения —
-     HomeActivity.applyAppFilter (список задаётся при создании туннеля); список провайдера
-     снять нельзя; без интернета в режиме блокировки — проверено замером на телефоне. -->
+<!-- Sources: the strings access_control, apps_mode_*, apps_profile_exclude, apps_locked_direct,
+     lockdown_offline; the screen ui/apps/AppsScreen.kt; the restart after a change —
+     HomeActivity.applyAppFilter (the list is set when the tunnel is created); the provider's
+     list cannot be unchecked; no internet in lockdown mode — measured on a phone. -->
 
-## Как прислать журнал
+## How to send a log
 
-Журнал — запись того, что происходило с ducker и VPN. По нему поддержка находит причину.
+The log is a record of what happened to ducker and the VPN. Support uses it to find the cause.
 
-1. Сразу после сбоя откройте ⚙ «Настройки» → раздел «Помощь» → «Журнал».
-2. Если сбой можно повторить, включите «Подробный журнал», повторите, а потом выключите его:
-   подробный журнал расходует батарею. Забудете — через сутки он выключится сам.
-3. Нажмите «Отправить» и выберите мессенджер или почту. Можно и «Скопировать» — и вставить
-   в сообщение, или «Сохранить» — в файл.
+1. Right after the failure open ⚙ Settings → the "Help" section → "Log".
+2. If the failure can be repeated, turn on "Detailed log", repeat it, and then turn the detailed
+   log off: it uses battery. If you forget, it turns itself off in a day.
+3. Press "Send" and choose a messenger or email. You can also "Copy" it and paste it into a
+   message, or "Save" it to a file.
 
-Сам ducker ничего никуда не отправляет: журнал уходит, только когда вы нажмёте одну из этих
-кнопок, и только туда, куда выберете.
+ducker itself sends nothing anywhere: the log leaves the phone only when you press one of these
+buttons, and only to where you choose.
 
-Куда: в поддержку провайдера — кнопка «Поддержка» на главной, если провайдер её добавил.
-Ошибку в самом приложении — разработчикам ducker, как написано
-в [CONTRIBUTING.md](../CONTRIBUTING.md).
+Where to send it: to your provider's support — the "Support" button on Home, if the provider
+added it. A bug in the app itself — to the ducker developers, as described in
+[CONTRIBUTING.md](../CONTRIBUTING.md).
 
-Что внутри: модель телефона и версия Android, настройки батареи, тип сети, почему Android
-закрывал приложение и записи ducker за последние часы — даже если экран «Журнал» в это время
-был закрыт. Адреса серверов, пароли и ключи, ключ из ссылки подписки и идентификатор устройства
-ducker прячет сам. **Адреса сайтов, которые вы открывали, остаются**: по ним разбирают, что
-шло через VPN, а что — мимо. Если не хотите их показывать, просмотрите журнал перед отправкой.
+What is inside: the phone model and Android version, battery settings, the network type, why
+Android closed the app, and ducker's records for the last hours — even if the Log screen was
+closed at the time. ducker hides server addresses, passwords and keys, the key from the
+subscription link and the device ID itself. **The addresses of the sites you opened stay**: they
+are used to work out what went through the VPN and what went past it. If you do not want to show
+them, look through the log before sending.
 
-**Экран «Сбой в приложении».** Если ducker закрылся с ошибкой и показал этот экран, скопируйте отчёт и
-пришлите его лично — провайдеру или разработчику, но не в общий чат: этот отчёт ducker пока
-не вычищает.
+**The "The app crashed" screen.** If ducker closed with an error and showed this screen, copy the
+report and send it to support. Server addresses, keys and the device ID are removed from it the
+same way as from the log.
 
-<!-- Абзац про экран падения убрать, когда он начнёт чистить текст. -->
+## What never to send
 
-## Чего не присылать никогда
+To no one — not to support, not to chats, not to GitHub:
 
-Никому — ни в поддержку, ни в чаты, ни на GitHub:
+- **Your subscription link and its QR code** — including a screenshot of the "Share as QR code"
+  screen. Anyone who has them can use your subscription.
+- **Server links** like `vless://`, `trojan://`, `ss://` — they contain passwords.
+- **The config** — the subscription's settings file or a screenshot of the "Config" screen: it
+  holds server addresses and passwords. If support asks for the config, send a copy without
+  them: Subscriptions → "Edit" → "Config" → "Save as" → "As a file without servers". The copy has
+  no servers, passwords or subscription links; groups, rules and DNS are in place. Look through
+  the file before sending.
+- **A screenshot of the log.** On the screen the log is shown in full: ducker cleans it only on
+  "Send", "Copy" and "Save".
 
-- **Ссылку на подписку и её QR-код** — в том числе снимок экрана «Поделиться QR-кодом». По ним
-  вашей подпиской может пользоваться кто угодно.
-- **Ссылки серверов** вида `vless://`, `trojan://`, `ss://` — в них пароли.
-- **Конфиг** — файл настроек подписки или снимок экрана «Конфиг»: в нём адреса серверов и пароли.
-  Если поддержка просит конфиг, отправьте копию без них: «Подписки» → «Изменить» → «Конфиг» →
-  «Сохранить как» → «Файлом без серверов». В копии нет серверов, паролей и ссылок подписок;
-  группы, правила и DNS на месте. Перед отправкой проглядите файл.
-- **Снимок экрана журнала.** На экране журнал виден целиком: ducker чистит его только при
-  «Отправить», «Скопировать» и «Сохранить».
-
-**Идентификатор устройства** — только поддержке своего провайдера, если она сама попросит.
-
----
-
-## In English
-
-A short version for English speakers. Button names are as in the English app.
-
-- **What it is.** ducker only connects you; access (the *subscription*) comes from your VPN
-  provider as a link, a QR code or a file. Servers are called *nodes* and live on the *Proxies* tab.
-- **Add a subscription.** *Add subscription* on first launch, later *Subscriptions* → **+**.
-  Then *Paste*, *Scan QR* (*From gallery* for a screenshot) or *File*, and *Add*. On *Home*, tap
-  the big power button and allow Android's VPN request.
-- **The VPN turns itself off.** *Settings* → *Background work* → *Allow*. On Xiaomi, Huawei/Honor,
-  vivo, OPPO/realme/OnePlus, Samsung and Tecno/Infinix/itel, tap that card for the steps for your
-  phone, and pin ducker in recent apps. Only one VPN app can run at a time.
-- **The subscription does not update.** *Subscriptions* → *Update* and read the reason if it
-  fails. Turn the VPN off and try again. *Device limit reached* — remove an old device at your
-  provider. *Not loaded* — check the link in *Edit*.
-- **No internet with the VPN on.** Check the cards on *Home*: *The node is not answering* →
-  *Switch to the fastest* or *Choose another node*; *Expired* → *Renew*. Reconnect, update the
-  subscription, try another network (Wi-Fi or mobile data), make sure the phone sets its time
-  automatically.
-- **An app complains about the VPN** (banking and similar). *Settings* → *Connection* → *Apps* →
-  *Bypass VPN*, check that app and go back; ducker restarts the VPN itself. With Android's
-  "Block connections without VPN" on, such apps get no internet at all.
-- **Send a log.** *Settings* → *Log* → *Send*. Node addresses, keys and the device id are hidden
-  on export; the domains you opened stay.
-- **Never send** your subscription link or its QR code, `vless://`-style links, your config (if
-  asked for one: *Edit* → *Config* → *Save as* → *As a file without servers*) or screenshots of
-  the log screen. The file without servers is a diagnostic copy; check group names and domain
-  rules for personal information before sharing.
+**The device ID** — only to your own provider's support, and only if they ask for it.

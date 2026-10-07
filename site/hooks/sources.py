@@ -1,13 +1,14 @@
 """
 Страницы сайта из документов репозитория.
 
-FAQ, политика приватности, CONTRIBUTING, SECURITY и благодарности живут в корне и в docs/ —
-их читают на GitHub и на них ссылается приложение. На сайт они попадают отсюда, при каждой
-сборке, а не копией: поправили исходник — сайт обновится сам.
+FAQ, политика приватности, руководство для помогающих, SECURITY и благодарности живут в корне и
+в docs/ — их читают на GitHub. На сайт они попадают отсюда, при каждой сборке, а не копией:
+поправили исходник — сайт обновится сам. Сайт русский, поэтому берутся русские файлы
+(docs/FAQ.ru.md, docs/CONTRIBUTING.ru.md) и русские части двуязычных.
 
-По дороге убирается то, что сайту не нужно: английские части (у сайта будет своя английская
-версия), HTML-комментарии для тех, кто правит текст, ручное оглавление FAQ.
-Относительные ссылки переписываются на страницы сайта или на GitHub.
+По дороге убирается то, что сайту не нужно: английские части двуязычных файлов (у сайта будет
+своя английская версия), строка выбора языка, HTML-комментарии для тех, кто правит текст, ручное
+оглавление FAQ. Относительные ссылки переписываются на страницы сайта или на GitHub.
 
 Снимки экрана — те же, что в README: берутся из docs/images/ru и попадают в assets/shots.
 
@@ -24,11 +25,18 @@ ROOT = Path(__file__).resolve().parents[2]
 GH = "https://github.com/duckerapp/ducker"
 
 
-def _read(rel: str, stop: str) -> str:
+def _read(rel: str, stop: str = "") -> str:
+    """Русский текст файла. stop — заголовок, с которого в двуязычном файле начинается английская часть."""
     text = (ROOT / rel).read_text(encoding="utf-8")
-    if stop not in text:
-        raise ValueError(f"{rel}: не найден раздел «{stop.strip()}», с которого начинается английская часть")
-    text = text.split(stop)[0]
+    if stop:
+        if stop not in text:
+            raise ValueError(f"{rel}: не найден раздел «{stop.strip()}», с которого начинается английская часть")
+        text = text.split(stop)[0]
+    else:
+        # У файла есть английский близнец: вверху строка выбора языка, сайту она не нужна.
+        text, n = re.subn(r"^\[English\]\([^)]*\) · \*\*Русский\*\*\n", "", text, count=1, flags=re.M)
+        if n != 1:
+            raise ValueError(f"{rel}: не найдена строка выбора языка")
     text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
     text = re.sub(r"^\*[^\n]*English[^\n]*\*$", "", text, flags=re.M)
     text = re.sub(r"\n{3,}", "\n\n", text).rstrip()
@@ -45,13 +53,13 @@ def _sub(rel: str, text: str, old: str, new: str) -> str:
 
 
 def _faq() -> str:
-    rel = "docs/FAQ.md"
-    t = _read(rel, "\n## In English")
+    rel = "docs/FAQ.ru.md"
+    t = _read(rel)
     # Ручное оглавление — у Material своё, справа.
     t, n = re.subn(r"\n(?:- \[[^\n]*\]\(#[^)]*\)\n)+", "\n", t, count=1)
     if n != 1:
         raise ValueError(f"{rel}: не найдено оглавление в начале")
-    t = _sub(rel, t, "в [CONTRIBUTING.md](../CONTRIBUTING.md)", "на странице [«Как помочь»](../help/contributing.md)")
+    t = _sub(rel, t, "в [руководстве для помогающих](CONTRIBUTING.ru.md)", "на странице [«Как помочь»](../help/contributing.md)")
     return t
 
 
@@ -70,15 +78,14 @@ def _privacy() -> str:
 
 
 def _contributing() -> str:
-    rel = "CONTRIBUTING.md"
-    t = _read(rel, "\n## English summary")
+    rel = "docs/CONTRIBUTING.ru.md"
+    t = _read(rel)
     t = _sub(rel, t, "# Как помочь проекту", "# Как помочь")
-    t = _sub(rel, t, "[Issues](../../issues)", f"[Issues]({GH}/issues)")
-    t = _sub(rel, t, "по правилам из [SECURITY.md](SECURITY.md)", "как описано на странице [«Уязвимости»](security.md)")
-    t = _sub(rel, t, "по правилам [docs/CREDITS.md](docs/CREDITS.md)", "как описано на странице [«Благодарности»](../support/credits.md)")
-    t = _sub(rel, t, "[LICENSE](LICENSE)", f"[LICENSE]({GH}/blob/main/LICENSE)")
-    # Рабочие документы проекта на сайт не выносим — ведём на GitHub.
-    t = re.sub(r"\]\(docs/([A-Z-]+\.md)\)", rf"]({GH}/blob/main/docs/\1)", t)
+    t = _sub(rel, t, "по правилам из [SECURITY.md](../SECURITY.md)", "как описано на странице [«Уязвимости»](security.md)")
+    t = _sub(rel, t, "по правилам [CREDITS.md](CREDITS.md)", "как описано на странице [«Благодарности»](../support/credits.md)")
+    t = _sub(rel, t, "[LICENSE](../LICENSE)", f"[LICENSE]({GH}/blob/main/LICENSE)")
+    # Остальные документы из docs/ на сайт не выносим — ведём на GitHub.
+    t = re.sub(r"\]\(([A-Z-]+\.md)\)", rf"]({GH}/blob/main/docs/\1)", t)
     return t
 
 
@@ -103,9 +110,9 @@ def _credits() -> str:
 
 
 PAGES = {
-    "users/faq.md": ("docs/FAQ.md", _faq),
+    "users/faq.md": ("docs/FAQ.ru.md", _faq),
     "users/privacy.md": ("PRIVACY_POLICY.md", _privacy),
-    "help/contributing.md": ("CONTRIBUTING.md", _contributing),
+    "help/contributing.md": ("docs/CONTRIBUTING.ru.md", _contributing),
     "help/security.md": ("SECURITY.md", _security),
     "support/credits.md": ("docs/CREDITS.md", _credits),
 }

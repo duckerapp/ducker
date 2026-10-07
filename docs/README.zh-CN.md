@@ -128,8 +128,7 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
 
 需要 Android 10 或更高版本。每个发布版本都附带 APK 的 `SHA256SUMS` 校验文件。
 
-遇到问题？请看[常见问题](FAQ.md)：如何添加订阅、VPN 自动断开或没有网络时怎么办、如何发送日志。
-常见问题为俄文，末尾有简短的英文部分。
+遇到问题？请看[常见问题](FAQ.md)（英文）：如何添加订阅、VPN 自动断开或没有网络时怎么办、如何发送日志。
 
 ## 给服务商
 
@@ -236,7 +235,7 @@ cd ducker
 的 `signing.properties` 中设置（`keystore.path`、`keystore.password`、`key.alias`、
 `key.password`）。`./scripts/smoke.sh` 会在已连接的手机上检查构建结果。
 
-详情见 [CONTRIBUTING.md](../CONTRIBUTING.md)（俄文，附英文摘要）；代码结构见
+详情见 [CONTRIBUTING.md](../CONTRIBUTING.md)（英文）；代码结构见
 [代码地图](ARCHITECTURE.md)（英文）。
 
 ## 致谢
