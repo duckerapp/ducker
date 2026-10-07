@@ -11,6 +11,7 @@
 - Ошибка — через [Issues](../../issues), по шаблону «Ошибка». Журнал из приложения
   (**Настройки → Журнал → Отправить**) почти всегда нужен: без него причину не найти.
 - Идея — по шаблону «Идея». Опишите, какую задачу она решает, а не только как должна выглядеть.
+- Вопрос — в [чат в Telegram](https://t.me/ducker_community).
 - **Уязвимость** — не в открытые Issues, а по правилам из [SECURITY.md](SECURITY.md).
 
 **Никогда не присылайте** ни в Issues, ни в запросы на слияние: ссылку подписки, файл конфига,
@@ -45,7 +46,8 @@ cd ducker
 
 ## Как устроен проект
 
-Документы и комментарии в коде — на русском.
+Где что лежит — в [карте кода](docs/ARCHITECTURE.md): процессы, модули, главные цепочки вызовов и
+порядок обновления ядра. Она на английском; комментарии в коде и эта страница — на русском.
 
 Пометки вида `D-45` и `F-49` в комментариях — номера записей рабочего журнала решений и фактов.
 Сам журнал не опубликован: если нужна причина, по которой сделано так, а не иначе, спросите в
@@ -82,5 +84,9 @@ ducker is an Android client for mihomo, forked from Clash Meta for Android with 
 - **Never post** subscription links, config files, keys, server addresses or device IDs.
 - **Build:** JDK 21, Android SDK platform 37, NDK 29.0.14206865, Go 1.26+, then
   `git clone --recurse-submodules` and `./gradlew :app:assembleMetaRelease`.
+- **Code map:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — processes, modules, main call
+  chains and how the core is updated.
 - **Pull requests:** one change per PR, describe what and why, and how you tested it on a device.
-  Project docs and code comments are in Russian. Contributions are accepted under GPL-3.0.
+  Code comments, the FAQ and this guide are in Russian; the README, the changelog and the code map
+  are in English. Contributions are accepted under GPL-3.0.
+- **Questions:** the [Telegram chat](https://t.me/ducker_community).

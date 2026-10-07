@@ -218,7 +218,9 @@ Anthropic; что делать, решает владелец проекта. К
 
 Шифрование и протоколы — не наши: они приходят из ядра mihomo. Наши правки к нему — 21 коммит
 поверх v1.19.32, из них 13 — правки сообщества для мультиплексора, совместимого с Xray, и
-REALITY. Они открыты в форке [duckerapp/mihomo](https://github.com/duckerapp/mihomo), ветка `ducker`.
+REALITY. Они открыты в форке [duckerapp/mihomo](https://github.com/duckerapp/mihomo), ветка `ducker`; ещё четыре
+коммита — в двух малых форках, [duckerapp/utls](https://github.com/duckerapp/utls) и
+[duckerapp/sing-mux](https://github.com/duckerapp/sing-mux).
 
 ## Управление из других приложений
 
@@ -258,7 +260,8 @@ cd ducker
 (`keystore.path`, `keystore.password`, `key.alias`, `key.password`). `./scripts/smoke.sh`
 проверяет сборку на подключённом телефоне.
 
-Подробности — в [CONTRIBUTING.md](../CONTRIBUTING.md).
+Подробности — в [CONTRIBUTING.md](../CONTRIBUTING.md); где что лежит в коде — в
+[карте кода](ARCHITECTURE.md) (на английском).
 
 ## Благодарности
 

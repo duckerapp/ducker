@@ -196,7 +196,9 @@ ducker 由一个人和 AI 助手共同开发。代码由 Anthropic 的 AI 模型
 
 加密和协议不是我们写的：它们来自 mihomo 内核。我们对内核的改动是在 v1.19.32 之上的 21 个提交，
 其中 13 个是社区为 Xray 兼容的多路复用和 REALITY 编写的补丁。它们公开在
-[duckerapp/mihomo](https://github.com/duckerapp/mihomo) 分支仓库的 `ducker` 分支中。
+[duckerapp/mihomo](https://github.com/duckerapp/mihomo) 分支仓库的 `ducker` 分支中；另有四个提交位于两个较小的
+分支仓库 [duckerapp/utls](https://github.com/duckerapp/utls) 和
+[duckerapp/sing-mux](https://github.com/duckerapp/sing-mux)。
 
 ## 由其他应用控制
 
@@ -234,7 +236,8 @@ cd ducker
 的 `signing.properties` 中设置（`keystore.path`、`keystore.password`、`key.alias`、
 `key.password`）。`./scripts/smoke.sh` 会在已连接的手机上检查构建结果。
 
-详情见 [CONTRIBUTING.md](../CONTRIBUTING.md)（俄文，附英文摘要）。
+详情见 [CONTRIBUTING.md](../CONTRIBUTING.md)（俄文，附英文摘要）；代码结构见
+[代码地图](ARCHITECTURE.md)（英文）。
 
 ## 致谢
 

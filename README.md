@@ -216,7 +216,9 @@ this repository.
 
 Encryption and protocols are not ours: they come from the mihomo core. Our changes to it are 21
 commits on top of v1.19.32, 13 of them community patches for the Xray-compatible mux and REALITY.
-They are public in the [duckerapp/mihomo](https://github.com/duckerapp/mihomo) fork, branch `ducker`.
+They are public in the [duckerapp/mihomo](https://github.com/duckerapp/mihomo) fork, branch `ducker`;
+two smaller forks, [duckerapp/utls](https://github.com/duckerapp/utls) and
+[duckerapp/sing-mux](https://github.com/duckerapp/sing-mux), carry four more commits.
 
 ## Control from other apps
 
@@ -255,7 +257,8 @@ with the debug key; your own key is set in `signing.properties` in the repositor
 (`keystore.path`, `keystore.password`, `key.alias`, `key.password`). `./scripts/smoke.sh` checks
 the build on a connected phone.
 
-Details are in [CONTRIBUTING.md](CONTRIBUTING.md).
+Details are in [CONTRIBUTING.md](CONTRIBUTING.md); where things live in the code — in the
+[code map](docs/ARCHITECTURE.md).
 
 ## Credits
 

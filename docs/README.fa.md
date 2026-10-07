@@ -234,7 +234,8 @@ Anthropic، می‌نویسد و اینکه چه چیزی ساخته شود را
 
 رمزنگاری و پروتکل‌ها کار ما نیست: از هستهٔ mihomo می‌آیند. تغییرات ما در هسته ۲۱ کامیت روی
 v1.19.32 است که ۱۳ تای آن وصله‌های جامعهٔ کاربری برای مالتی‌پلکس سازگار با Xray و REALITY است.
-این تغییرات در فورک [duckerapp/mihomo](https://github.com/duckerapp/mihomo)، شاخهٔ `ducker`، عمومی است.
+این تغییرات در فورک [duckerapp/mihomo](https://github.com/duckerapp/mihomo)، شاخهٔ `ducker`، عمومی است؛ چهار کامیت دیگر در دو فورک کوچک‌تر،
+[duckerapp/utls](https://github.com/duckerapp/utls) و [duckerapp/sing-mux](https://github.com/duckerapp/sing-mux)، قرار دارد.
 
 <a id="control"></a>
 
@@ -281,7 +282,8 @@ cd ducker
 `keystore.password`، `key.alias`، `key.password`). اسکریپت `./scripts/smoke.sh` ساخت را روی گوشی
 متصل بررسی می‌کند.
 
-جزئیات در [CONTRIBUTING.md](../CONTRIBUTING.md) است (به روسی، با خلاصهٔ انگلیسی).
+جزئیات در [CONTRIBUTING.md](../CONTRIBUTING.md) است (به روسی، با خلاصهٔ انگلیسی)؛ ساختار کد در
+[نقشهٔ کد](ARCHITECTURE.md) آمده است (به انگلیسی).
 
 ## قدردانی
 
