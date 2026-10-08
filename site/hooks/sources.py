@@ -1,19 +1,9 @@
-"""
-Страницы сайта из документов репозитория.
+"""Build site pages from the English repository documents and screenshots.
 
-FAQ, политика приватности, руководство для помогающих, SECURITY и благодарности живут в корне и
-в docs/ — их читают на GitHub. На сайт они попадают отсюда, при каждой сборке, а не копией:
-поправили исходник — сайт обновится сам. Сайт русский, поэтому берутся русские файлы
-(docs/FAQ.ru.md, docs/CONTRIBUTING.ru.md) и русские части двуязычных.
-
-По дороге убирается то, что сайту не нужно: английские части двуязычных файлов (у сайта будет
-своя английская версия), строка выбора языка, HTML-комментарии для тех, кто правит текст, ручное
-оглавление FAQ. Относительные ссылки переписываются на страницы сайта или на GitHub.
-
-Снимки экрана — те же, что в README: берутся из docs/images/ru и попадают в assets/shots.
-
-Каждая замена обязана найти свой текст. Если исходник переписали и замена промахнулась,
-сборка падает с именем файла — иначе на сайте молча осталась бы битая ссылка.
+FAQ, privacy, contributing, security, and credits remain single-source documents.
+Rewrite their repository links for the site and remove the language chooser,
+editor comments, and the FAQ's manual contents list. Required replacements fail
+the build if their source text changes, rather than leaving a broken link.
 """
 
 import re
@@ -25,100 +15,70 @@ ROOT = Path(__file__).resolve().parents[2]
 GH = "https://github.com/duckerapp/ducker"
 
 
-def _read(rel: str, stop: str = "") -> str:
-    """Русский текст файла. stop — заголовок, с которого в двуязычном файле начинается английская часть."""
+def _read(rel: str) -> str:
     text = (ROOT / rel).read_text(encoding="utf-8")
-    if stop:
-        if stop not in text:
-            raise ValueError(f"{rel}: не найден раздел «{stop.strip()}», с которого начинается английская часть")
-        text = text.split(stop)[0]
-    else:
-        # У файла есть английский близнец: вверху строка выбора языка, сайту она не нужна.
-        text, n = re.subn(r"^\[English\]\([^)]*\) · \*\*Русский\*\*\n", "", text, count=1, flags=re.M)
-        if n != 1:
-            raise ValueError(f"{rel}: не найдена строка выбора языка")
+    text = re.sub(r"^\*\*English\*\* · [^\n]*\n", "", text, count=1, flags=re.M)
+    text = re.sub(r"^\[Русский\]\([^)]*\)\n", "", text, count=1, flags=re.M)
     text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
-    text = re.sub(r"^\*[^\n]*English[^\n]*\*$", "", text, flags=re.M)
-    text = re.sub(r"\n{3,}", "\n\n", text).rstrip()
-    # Разделитель «---» перед английской частью остаётся висеть в конце.
-    if text.endswith("---"):
-        text = text[:-3].rstrip()
-    return text + "\n"
+    return re.sub(r"\n{3,}", "\n\n", text).strip() + "\n"
 
 
 def _sub(rel: str, text: str, old: str, new: str) -> str:
     if old not in text:
-        raise ValueError(f"{rel}: не найден текст для замены: {old!r}")
+        raise ValueError(f"{rel}: required source text not found: {old!r}")
     return text.replace(old, new)
 
 
 def _faq() -> str:
-    rel = "docs/FAQ.ru.md"
-    t = _read(rel)
-    # Ручное оглавление — у Material своё, справа.
-    t, n = re.subn(r"\n(?:- \[[^\n]*\]\(#[^)]*\)\n)+", "\n", t, count=1)
-    if n != 1:
-        raise ValueError(f"{rel}: не найдено оглавление в начале")
-    t = _sub(rel, t, "в [руководстве для помогающих](CONTRIBUTING.ru.md)", "на странице [«Как помочь»](../help/contributing.md)")
-    return t
+    rel = "docs/FAQ.md"
+    text = _read(rel)
+    text, count = re.subn(r"\n(?:- \[[^\n]*\]\(#[^)]*\)\n)+", "\n", text, count=1)
+    if count != 1:
+        raise ValueError(f"{rel}: manual contents list not found")
+    return _sub(rel, text, "[CONTRIBUTING.md](../CONTRIBUTING.md)",
+                "[Contributing](../help/contributing.md)")
 
 
 def _privacy() -> str:
     rel = "PRIVACY_POLICY.md"
-    t = _read(rel, "\n# ducker privacy policy")
-    t = _sub(rel, t, "# Политика конфиденциальности ducker", "# Приватность")
-    t = _sub(rel, t, "[Issues](../../issues)", f"[Issues]({GH}/issues)")
-    t = _sub(rel, t, "по правилам [SECURITY.md](SECURITY.md)", "как описано на странице [«Уязвимости»](../help/security.md)")
-    t = _sub(
-        rel, t,
-        "История изменений — в истории этого файла в репозитории.",
-        f"История изменений — в [истории файла]({GH}/commits/main/PRIVACY_POLICY.md) в репозитории.",
-    )
-    return t
+    text = _sub(rel, _read(rel), "# ducker privacy policy", "# Privacy")
+    text = _sub(rel, text, "[Issues](../../issues)", f"[Issues]({GH}/issues)")
+    text = _sub(rel, text, "[SECURITY.md](SECURITY.md)", "[Security](../help/security.md)")
+    return _sub(rel, text, "this file's repository history",
+                f"[this file's repository history]({GH}/commits/main/PRIVACY_POLICY.md)")
 
 
 def _contributing() -> str:
-    rel = "docs/CONTRIBUTING.ru.md"
-    t = _read(rel)
-    t = _sub(rel, t, "# Как помочь проекту", "# Как помочь")
-    t = _sub(rel, t, "по правилам из [SECURITY.md](../SECURITY.md)", "как описано на странице [«Уязвимости»](security.md)")
-    t = _sub(rel, t, "по правилам [CREDITS.md](CREDITS.md)", "как описано на странице [«Благодарности»](../support/credits.md)")
-    t = _sub(rel, t, "[LICENSE](../LICENSE)", f"[LICENSE]({GH}/blob/main/LICENSE)")
-    # Остальные документы из docs/ на сайт не выносим — ведём на GitHub.
-    t = re.sub(r"\]\(([A-Z-]+\.md)\)", rf"]({GH}/blob/main/docs/\1)", t)
-    return t
+    rel = "CONTRIBUTING.md"
+    text = _read(rel)
+    text = _sub(rel, text, "[SECURITY.md](SECURITY.md)", "[Security](security.md)")
+    text = _sub(rel, text, "[code map](docs/ARCHITECTURE.md)",
+                f"[code map]({GH}/blob/main/docs/ARCHITECTURE.md)")
+    text = _sub(rel, text, "[docs/CREDITS.md](docs/CREDITS.md)",
+                "[Credits](../support/credits.md)")
+    return _sub(rel, text, "[LICENSE](LICENSE)", f"[LICENSE]({GH}/blob/main/LICENSE)")
 
 
 def _security() -> str:
     rel = "SECURITY.md"
-    t = _read(rel, "\n# Security")
-    t = _sub(rel, t, "# Безопасность", "# Уязвимости")
-    t = _sub(
-        rel, t,
-        "**Security → Report a vulnerability**. ",
-        f"**Security → Report a vulnerability** ([открыть форму]({GH}/security/advisories/new)). ",
-    )
-    return t
+    return _sub(rel, _read(rel), "**Security → Report a vulnerability**",
+                f"**Security → Report a vulnerability** ([open the form]({GH}/security/advisories/new))")
 
 
 def _credits() -> str:
     rel = "docs/CREDITS.md"
-    t = (ROOT / rel).read_text(encoding="utf-8")
-    t = _sub(rel, t, "# Авторство и заимствования", "# Благодарности")
-    t = _sub(rel, t, "Файл поддерживается в актуальном состоянии и попадает в README репозитория.\n", "")
-    return t
+    return _sub(rel, _read(rel), "This file is kept up to date and linked from the\nrepository README.\n", "")
 
 
 PAGES = {
-    "users/faq.md": ("docs/FAQ.ru.md", _faq),
+    "users/faq.md": ("docs/FAQ.md", _faq),
     "users/privacy.md": ("PRIVACY_POLICY.md", _privacy),
-    "help/contributing.md": ("docs/CONTRIBUTING.ru.md", _contributing),
+    "help/contributing.md": ("CONTRIBUTING.md", _contributing),
     "help/security.md": ("SECURITY.md", _security),
     "support/credits.md": ("docs/CREDITS.md", _credits),
 }
 
-
-SHOTS = ROOT / "docs/images/ru"
+SHOTS = ROOT / "docs/images/en"
 
 
 def on_files(files, config):
@@ -126,14 +86,13 @@ def on_files(files, config):
         files.append(File.generated(config, uri, content=build()))
     shots = sorted(SHOTS.glob("*.png"))
     if not shots:
-        raise ValueError(f"{SHOTS}: нет снимков экрана")
+        raise ValueError(f"{SHOTS}: no screenshots found")
     for shot in shots:
         files.append(File.generated(config, f"assets/shots/{shot.name}", abs_src_path=str(shot)))
     return files
 
 
 def on_serve(server, config, builder):
-    # mkdocs serve пересобирает сайт и при правке исходников в корне и в docs/.
-    for src, _ in PAGES.values():
-        server.watch(str(ROOT / src))
+    for source, _ in PAGES.values():
+        server.watch(str(ROOT / source))
     return server

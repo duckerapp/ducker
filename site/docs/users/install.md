@@ -1,44 +1,43 @@
-# Установка
+# Installation
 
-Скачайте apk из [релизов](https://github.com/duckerapp/ducker/releases) и откройте его на
-телефоне или телевизоре. Android попросит разрешить установку из этого источника — это нормально
-для приложений не из Play.
+Download an APK from [releases](https://github.com/duckerapp/ducker/releases) and open it on
+your phone or TV. Android will ask you to allow installation from this source; this is
+normal for apps outside Play.
 
-Какой файл брать:
+Which file to choose:
 
-- `arm64-v8a` — почти любой телефон новее 2017 года;
-- `armeabi-v7a` — старые телефоны и многие телевизоры; берите, если первый не ставится.
+- `arm64-v8a`: almost any phone newer than 2017;
+- `armeabi-v7a`: older phones and many TVs; use it if the first APK will not install.
 
-Нужен Android 10 или новее. К каждому выпуску приложен файл `SHA256SUMS` с контрольными суммами
-apk.
+Android 10 or later is required. Every release includes `SHA256SUMS` with the APK checksums.
 
-## Первая подписка
+## Your first subscription
 
-«Подписки» → «+» → вставьте ссылку от провайдера. Или откройте ссылку вида
-`ducker://install-config?url=…` прямо из письма или чата.
+Open **Subscriptions → +** and paste the provider's URL, or open a
+`ducker://install-config?url=…` link directly from an email or chat.
 
-Подробно, со всеми способами — ссылкой, QR-кодом и файлом, — в разделе
-[Как добавить подписку](faq.md#как-добавить-подписку).
+All methods — URL, QR code, and file — are described under
+[How to add a subscription](faq.md#how-to-add-a-subscription).
 
-## На телевизоре
+## On a TV
 
-Тот же apk работает на Android TV и Google TV. Набирать ссылку пультом не нужно: нажмите на
-телевизоре «+» — появится QR-код. Отсканируйте его в ducker на телефоне («Подписки» → «+» →
-«Сканировать QR») и подтвердите отправку: подписка уйдёт на телевизор по домашней сети,
-зашифрованной. Телефон и телевизор должны быть в одной домашней сети.
+The same APK works on Android TV and Google TV. You do not need to type the URL with a remote:
+press **+** on the TV to show a QR code. Scan it in ducker on your phone
+(**Subscriptions → + → Scan QR**) and confirm sending. The subscription is sent to the TV
+encrypted over the home network. The phone and TV must be on the same home network.
 
-## Управление снаружи
+## External control
 
-Приложение понимает интенты — удобно для Tasker и ярлыков:
+The app accepts intents, which are useful for Tasker and shortcuts.
 
-Для внешних START/STOP/TOGGLE включите «Настройки → Управление из других приложений».
-По умолчанию доступ выключен, включая существующие установки. Разрешение действует
-для всех приложений, способных отправить эти команды. Встроенные виджеты, плитка
-и ярлыки работают независимо от него; импорт по ссылке требует подтверждения.
+For external START/STOP/TOGGLE, enable **Settings → Control from other apps**.
+Access is disabled by default, including on existing installations. Permission applies to
+all apps able to send these commands. Built-in widgets, the tile, and shortcuts work
+independently of this permission; importing through a URL requires confirmation.
 
-| Действие | Интент |
+| Action | Intent |
 |---|---|
-| включить | `am start -a app.ducker.android.action.START_CLASH` |
-| выключить | `am start -a app.ducker.android.action.STOP_CLASH` |
-| переключить | `am start -a app.ducker.android.action.TOGGLE_CLASH` |
-| добавить подписку | `ducker://install-config?url=<ссылка>` |
+| start | `am start -a app.ducker.android.action.START_CLASH` |
+| stop | `am start -a app.ducker.android.action.STOP_CLASH` |
+| toggle | `am start -a app.ducker.android.action.TOGGLE_CLASH` |
+| add a subscription | `ducker://install-config?url=<subscription-url>` |

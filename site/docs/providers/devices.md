@@ -1,50 +1,49 @@
-# Устройства и лимит
+# Devices and limits
 
-## Что отправляет приложение
+## What the app sends
 
-С каждым запросом подписки по HTTPS ducker отправляет четыре заголовка:
+Every HTTPS subscription request from ducker includes four headers:
 
-| Заголовок | Значение |
+| Header | Value |
 |---|---|
-| `x-hwid` | идентификатор устройства |
+| `x-hwid` | device id |
 | `x-device-os` | `Android` |
-| `x-ver-os` | версия Android |
-| `x-device-model` | производитель и модель |
+| `x-ver-os` | Android version |
+| `x-device-model` | manufacturer and model |
 
-По ссылке `http://` эти заголовки не отправляются: такую ссылку видит сеть по пути. Если ваш
-сервер переадресует запрос, данные устройства идут следом, пока вся цепочка шла по HTTPS.
+These headers are not sent to an `http://` URL, which is visible to the network along the
+route. If your server redirects the request, device data follows while the entire chain
+has remained HTTPS.
 
-## Откуда идентификатор
+## Where the id comes from
 
-Это `ANDROID_ID` — Android выдаёт его отдельно каждому приложению. Отсюда два следствия:
+It is `ANDROID_ID`, which Android assigns separately to each app. This has two consequences:
 
-- тот же телефон в другом клиенте — это другой идентификатор. Человек, который перешёл на ducker
-  с другого приложения, займёт в панели новое место; при лимите в одно устройство старое нужно
-  отвязать;
-- после удаления и новой установки ducker идентификатор обычно остаётся прежним.
+- The same phone has a different id in another client. A user switching to ducker occupies
+  a new device slot in the panel; with a one-device limit, the old device must be unlinked.
+- Uninstalling and reinstalling ducker usually leaves the id unchanged.
 
-Человек видит свой идентификатор в «Настройки» → «Идентификатор устройства» — оттуда его удобно
-продиктовать поддержке.
+Users can see their id under **Settings → Device ID** and read it out to support.
 
-## Выключатель
+## The switch
 
-Там же стоит переключатель отправки идентификатора. Он выключает все четыре заголовка сразу.
-ducker прямо предупреждает: если провайдер считает устройства, без идентификатора подписка может
-перестать приходить.
+The same section has a switch for sending the id. It disables all four headers at once.
+ducker explicitly warns that a provider which counts devices may stop returning the
+subscription if no id is supplied.
 
-## Когда лимит достигнут
+## When the limit is reached
 
-Панель сообщает об отказе заголовком ответа:
+The panel signals rejection with a response header:
 
-| Заголовок ответа | Что видит человек |
+| Response header | What the user sees |
 |---|---|
-| `x-hwid-max-devices-reached: true` | «Достигнут лимит устройств» |
-| `x-hwid-not-supported: true` | «Провайдер не принял идентификатор устройства» |
+| `x-hwid-max-devices-reached: true` | “Device limit reached” |
+| `x-hwid-not-supported: true` | “The provider rejected this device ID” |
 
-Remnawave ставит их сама, когда включён учёт устройств. В этом случае ducker:
+Remnawave adds these when device tracking is enabled. In that case, ducker:
 
-- не затирает прежний профиль присланной заглушкой;
-- не даёт подключиться, пока отказ действует: лимит должен ограничивать на деле;
-- показывает на главной карточку с вашим текстом из `announce` и кнопкой «Поддержка» (ссылка из
-  `support-url`);
-- оставляет кнопку «Обновить» — после отвязки устройства в панели человек нажимает её сам.
+- does not overwrite the previous profile with the returned placeholder;
+- prevents connecting while the rejection remains in effect, so the limit is enforced;
+- shows a Home card with your `announce` text and a **Support** button from `support-url`;
+- keeps the **Update** button available: after unlinking a device in the panel, the user
+  taps it to retry.

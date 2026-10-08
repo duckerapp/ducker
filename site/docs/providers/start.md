@@ -1,76 +1,78 @@
-# Подписка для ducker
+# Subscription for ducker
 
-ducker работает с обычной подпиской mihomo: если ваша панель уже выдаёт конфиг клиентам Clash
-Meta или FlClash, для ducker ничего менять не нужно. Ниже — что приложение отправляет, что
-принимает в ответ и как сделать для него отдельный ответ.
+ducker works with a standard mihomo subscription: if your panel already serves configs to
+Clash Meta or FlClash, nothing needs changing for ducker. Below is what the app sends,
+what it accepts, and how to give it a separate response.
 
-## Что приходит от приложения
+## What comes from the app
 
-Запрос подписки идёт с заголовком
+Subscription requests carry this header:
 
 ```
-User-Agent: mihomo/<версия ядра> ducker/<версия приложения>
+User-Agent: mihomo/<core-version> ducker/<app-version>
 ```
 
-Он начинается с `mihomo/`, поэтому панель, которая выбирает формат ответа по `User-Agent`,
-отдаёт конфиг mihomo — в Remnawave срабатывает обычное правило для клиентов mihomo. Слово
-`ducker` в той же строке позволяет отличить приложение от остальных.
+It starts with `mihomo/`, so a panel which selects its response format by `User-Agent`
+returns a mihomo config. Remnawave uses its normal rule for mihomo clients.
+The word `ducker` in the same header distinguishes the app from other clients.
 
-Вместе с запросом уходят данные устройства — идентификатор, версия Android и модель. О них и о
-лимите устройств — на странице [«Устройства и лимит»](devices.md).
+The request also includes device data: id, Android version, and model. These and the
+device limit are explained under [Devices and limits](devices.md).
 
-## Что приложение принимает
+## What the app accepts
 
-| Что пришло по ссылке | Что делает ducker |
+| What the URL returns | What ducker does |
 |---|---|
-| Конфиг mihomo, который проходит проверку ядра | Применяет как есть. Ключи конфига приложение не переписывает. |
-| Список ссылок `vless://`, `vmess://`, `ss://`, `trojan://` и подобных, открытым текстом или в base64 | Подставляет узлы во [встроенный шаблон](template.md). |
-| Конфиг mihomo с ошибкой | Новая подписка: узлы из него идут во [встроенный шаблон](template.md), человек видит карточку с текстом ошибки. Уже добавленная — работает на прежнем конфиге. Подробнее — ниже. |
-| Что-то другое или конфиг без узлов | Новая подписка не добавляется, человек видит причину. Уже добавленная — работает на прежнем конфиге. |
+| A mihomo config that passes core validation | Applies it as supplied, without rewriting config keys. |
+| A list of `vless://`, `vmess://`, `ss://`, `trojan://`, or similar links, as plain text or base64 | Inserts the nodes into the [built-in template](template.md). |
+| A mihomo config with an error | For a new subscription, inserts its nodes into the [built-in template](template.md) and shows an error card. An existing subscription keeps its previous config. Details below. |
+| Anything else, or a config without nodes | Does not add a new subscription and explains why. An existing subscription keeps its previous config. |
 
-**Ошибка при обновлении не оставляет человека без VPN.** Новый конфиг сначала скачивается и
-проверяется ядром и только потом заменяет рабочий. Если проверку он не прошёл — пришёл конфиг с
-ошибкой, страница сервера вместо подписки, пустой ответ или конфиг без единого узла, — у человека
-остаётся прежний конфиг, VPN продолжает работать. На вкладке «Подписки» появляется карточка
-«Не удалось обновить» с причиной и текстом ошибки ядра, который он может переслать вам.
+**An update error does not leave the user without a VPN.** The new config is downloaded
+and validated by the core before replacing the working config. If validation fails —
+because of a config error, a server page instead of a subscription, an empty response,
+or a config without any nodes — the old config remains and the VPN continues working.
+The Subscriptions tab shows a “Could not update” card with the reason and core error text
+that the user can forward to you.
 
-**Ошибка в конфиге новой подписки.** Рабочего конфига у человека ещё нет, поэтому отказа он не
-получает. Если файл читается и в нём есть раздел `proxies`, ducker берёт узлы оттуда, подставляет
-во встроенный шаблон и показывает на главной карточку «В конфиге провайдера ошибка» с кнопкой
-«Скопировать ошибку» — чтобы человек переслал её вам. Узел, который ядро собрать не может,
-пропускается. Маршрутизация при этом — шаблона, не ваша. Исправили конфиг — при следующем
-обновлении он применится, карточка исчезнет. Узлы из `proxy-providers` так не берутся; если узлов
-достать не удалось, подписка не добавляется.
+**A config error in a new subscription.** The user has no working config yet, so the app
+does not simply reject it. If the file is readable and has a `proxies` section, ducker
+takes its nodes, inserts them into the built-in template, and shows a Home card saying
+“Error in the provider config”, with a **Copy error** button so the user can send it to you.
+A node that the core cannot construct is skipped. Routing comes from the template, not
+your config. Once you fix the config, the next update applies it and removes the card.
+Nodes from `proxy-providers` are not extracted this way; if no nodes can be obtained,
+the subscription is not added.
 
-Ссылка может переадресовывать на другой адрес — приложение идёт следом, не больше десяти раз.
+The URL may redirect to another address; the app follows up to ten redirects.
 
-Когда VPN включён, подписка обновляется по правилам профиля — обычно через узел. Если узлы
-недоступны, обновиться таким путём не получится: при выключенном VPN запрос идёт напрямую.
+While the VPN is enabled, subscription updates follow the profile's rules, usually through
+a node. If nodes are unavailable, an update through that route cannot succeed; with the
+VPN disabled, the request goes directly.
 
-## Заголовки ответа
+## Response headers
 
-Общепринятые заголовки подписки ducker понимает так:
+ducker interprets standard subscription headers as follows:
 
-| Заголовок | Что делает |
+| Header | Effect |
 |---|---|
-| `profile-title` | Имя подписки. |
-| `profile-update-interval` | Как часто обновлять подписку, в часах. |
-| `subscription-userinfo` | Израсходованный трафик, лимит и срок — на главной и на карточке подписки. |
-| `subscription-refill-date` | Когда обнулится счётчик трафика, время в секундах Unix. |
-| `support-url` | Кнопка «Поддержка». |
-| `profile-web-page-url` | Страница провайдера; она же — кнопка «Продлить», если не задан `ducker-buy-url`. |
-| `announce` | Объявление на главной. |
+| `profile-title` | Subscription name. |
+| `profile-update-interval` | Subscription update interval, in hours. |
+| `subscription-userinfo` | Used traffic, limit, and expiry on Home and the subscription card. |
+| `subscription-refill-date` | When the traffic counter resets, as Unix time in seconds. |
+| `support-url` | **Support** button. |
+| `profile-web-page-url` | Provider page; also the **Renew** button if `ducker-buy-url` is absent. |
+| `announce` | Announcement on Home. |
 
-Текст с кириллицей передаётся как `base64:<…>` в UTF-8.
+Text containing Cyrillic characters is sent as `base64:<…>` in UTF-8.
 
-Название, логотип и поведение приложения настраиваются
-[заголовками `ducker-*`](headers.md).
+The app's name, logo, and behavior are customized through [`ducker-*` headers](headers.md).
 
-## Отдельный ответ для ducker в Remnawave
+## A separate response for ducker in Remnawave
 
-Чтобы заголовки `ducker-*` и свой шаблон получал только ducker, заведите в правилах ответа
-подписки отдельное правило по слову `ducker` в `User-Agent` и поставьте его выше общего правила
-для клиентов mihomo. В выгрузке правил оно выглядит так:
+To give `ducker-*` headers and your template only to ducker, create a subscription response
+rule matching `ducker` in `User-Agent` and place it above the general rule for mihomo clients.
+In a rules export it looks like this:
 
 ```json
 {
@@ -97,16 +99,15 @@ User-Agent: mihomo/<версия ядра> ducker/<версия приложен
 }
 ```
 
-Названия полей — как в выгрузке правил Remnawave на октябрь 2026 года; если панель обновилась,
-сверьтесь с её документацией. Код панели править не нужно.
+Field names match Remnawave's October 2026 rules export; if the panel has been updated,
+check its documentation. No changes to the panel code are needed.
 
-## Ссылка в одно касание
+## One-tap link
 
 ```
-ducker://install-config?url=<ссылка подписки>&name=<имя>
+ducker://install-config?url=<subscription-url>&name=<name>
 ```
 
-Открывает в приложении окно добавления подписки с уже вставленной ссылкой. Скачивается подписка
-только после того, как человек нажмёт «Добавить». Ссылку подписки внутри нужно закодировать
-(`https%3A%2F%2F…`). Так же открываются ссылки `clash://install-config` и
-`clashmeta://install-config`.
+Opens the app's add-subscription window with the URL already filled in. The subscription
+is downloaded only after the user taps **Add**. Encode the embedded subscription URL
+(`https%3A%2F%2F…`). `clash://install-config` and `clashmeta://install-config` work in the same way.

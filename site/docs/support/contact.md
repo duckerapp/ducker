@@ -1,17 +1,18 @@
-# Сообщество и связь
+# Community and contact
 
-- **[Канал в Telegram](https://t.me/ducker_mihomo)** — новые версии и новости проекта.
-- **[Чат в Telegram](https://t.me/ducker_community)** — вопросы, обсуждение и помощь друг другу.
-- **[Issues на GitHub](https://github.com/duckerapp/ducker/issues)** — ошибки в приложении и идеи.
-  Как написать так, чтобы помочь быстро, — на странице [«Как помочь»](../help/contributing.md).
+- **[Telegram channel](https://t.me/ducker_mihomo)** — new releases and project news.
+- **[Telegram chat](https://t.me/ducker_community)** — questions, discussion, and mutual help.
+- **[GitHub Issues](https://github.com/duckerapp/ducker/issues)** — app bugs and ideas.
+  See [Contributing](../help/contributing.md) for how to write a report that helps us respond quickly.
 
-Если Telegram и GitHub не подходят — почта: [duckermihomo@proton.me](mailto:duckermihomo@proton.me).
+If Telegram or GitHub is unsuitable, email
+[duckermihomo@proton.me](mailto:duckermihomo@proton.me).
 
-Канал, чат и почта есть и в приложении: «Настройки» → «Помощь».
+The channel, chat, and email are also in the app under **Settings → Help**.
 
-## Куда писать, если вопрос не к разработчику
+## Questions for someone other than the developer
 
-- **Не работает подписка, нет доступа, оплата** — это к провайдеру, у которого вы купили
-  подписку. ducker только программа для подключения. Кнопка «Поддержка» на главной ведёт к нему,
-  если провайдер её добавил.
-- **Уязвимость** — только закрыто, как описано на странице [«Уязвимости»](../help/security.md).
+- **Subscription problems, access, or payments:** contact the provider you bought the
+  subscription from. ducker is only the connection app. The **Support** button on Home
+  leads to the provider if they supplied a link.
+- **Vulnerabilities:** report privately, as described under [Security](../help/security.md).

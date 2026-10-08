@@ -1,32 +1,33 @@
-# Сайт документации
+# Documentation site
 
-Сайт ducker на MkDocs Material. Будет жить на `duckerapp.github.io/ducker` после открытия
-репозитория; выкладывает его workflow `.github/workflows/pages.yaml`.
+The ducker site uses MkDocs Material. It will be available at `duckerapp.github.io/ducker`
+after the repository becomes public; `.github/workflows/pages.yaml` publishes it.
 
-## Собрать и посмотреть
+## Build and preview
 
 ```
 cd site
 pip install -r requirements.txt
-mkdocs build --strict     # проверка: любая битая ссылка — ошибка
-mkdocs serve              # http://127.0.0.1:8000, пересобирается при правке
+mkdocs build --strict     # validation: any broken link is an error
+mkdocs serve              # http://127.0.0.1:8000; rebuilds when files change
 ```
 
-Готовый сайт — в `site/build/`, в git не попадает.
+The built site is in `site/build/`, which is excluded from Git.
 
-## Что откуда
+## Content sources
 
-- `docs/` — страницы, которые есть только на сайте: главная, установка, раздел для
-  провайдеров, сообщество и связь.
-- FAQ, приватность, «Как помочь», «Уязвимости», «Благодарности» здесь **не лежат**: при
-  сборке их берёт `hooks/sources.py` из `docs/FAQ.ru.md`, `PRIVACY_POLICY.md`,
-  `docs/CONTRIBUTING.ru.md`, `SECURITY.md` и `docs/CREDITS.md`. Править — исходники; сайт подтянет сам.
-- Снимки экрана — те же, что в `README`: `hooks/sources.py` берёт их из `docs/images/ru` и
-  кладёт в `assets/shots`.
-- `docs/assets/ducker.css` — чёрно-белая палитра приложения, марка DUCKER.
-- `overrides/.icons/ducker/duck.svg` — утка в шапке.
+- `docs/`: pages used only on the site — home, installation, provider guides, and community.
+- FAQ, privacy, contributing, security, and credits are **not stored as duplicate pages here**.
+  `hooks/sources.py` generates them from `docs/FAQ.md`, `PRIVACY_POLICY.md`, `CONTRIBUTING.md`,
+  `SECURITY.md`, and `docs/CREDITS.md`. Edit the source; the site picks up the change.
+- Screenshots are the same as in the English `README`: `hooks/sources.py` copies them from
+  `docs/images/en` into `assets/shots`.
+- `docs/assets/ducker.css`: the app's black-and-white palette and DUCKER branding.
+- `overrides/.icons/ducker/duck.svg`: the duck wearing a hat.
+- Original Russian site sources are preserved in the private archive; public Russian
+  document versions remain available in `../docs/`.
 
-## Правила
+## Rules
 
-- Никаких шрифтов, скриптов и счётчиков со сторонних сайтов: сайт, как и приложение, ничего
-  никуда не шлёт. Поэтому `font: false` и нет `repo_url` (с ним Material ходит в API GitHub).
+- No fonts, scripts, or analytics from third-party sites. Like the app, this site sends
+  nothing externally. Keep `font: false` and omit `repo_url` (Material otherwise calls GitHub's API).

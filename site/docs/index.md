@@ -1,5 +1,5 @@
 ---
-title: Главная
+title: Home
 hide:
   - navigation
   - toc
@@ -10,51 +10,51 @@ hide:
 ![](assets/ducker_mark_dark.png){ .ducker-mark .ducker-mark--light }
 ![](assets/ducker_mark_light.png){ .ducker-mark .ducker-mark--dark }
 
-Открытый VPN-клиент для Android и Android TV на ядре
-[mihomo](https://github.com/MetaCubeX/mihomo): одна кнопка, честное состояние — и ничего лишнего
-на экране.
+An open-source VPN client for Android and Android TV powered by
+[mihomo](https://github.com/MetaCubeX/mihomo): one button, an accurate connection status,
+and no clutter on the screen.
 
-Без рекламы, без аналитики, без отчётов разработчику. Этот сайт тоже ничего никуда не шлёт.
+No ads, analytics, or reports sent to the developer. This site sends nothing externally either.
 
-[Установить](users/install.md){ .md-button .md-button--primary }
-[Вопросы и ответы](users/faq.md){ .md-button }
+[Install](users/install.md){ .md-button .md-button--primary }
+[Questions and answers](users/faq.md){ .md-button }
 
-![ducker на телевизоре и на телефоне: главная с кнопкой включения, текущим узлом и подпиской](assets/shots/hero-light.png){ .ducker-shot .ducker-shot--light }
-![ducker на телевизоре и на телефоне: главная с кнопкой включения, текущим узлом и подпиской](assets/shots/hero-dark.png){ .ducker-shot .ducker-shot--dark }
+![ducker on TV and phone: Home with the power button, current node, and subscription](assets/shots/hero-light.png){ .ducker-shot .ducker-shot--light }
+![ducker on TV and phone: Home with the power button, current node, and subscription](assets/shots/hero-dark.png){ .ducker-shot .ducker-shot--dark }
 
 <div class="grid cards" markdown>
 
--   **Пользователям**
+-   **Users**
 
     ---
 
-    Как [установить](users/install.md) и добавить подписку, что делать, если
-    [VPN сам отключается](users/faq.md#vpn-сам-отключается), как
-    [прислать журнал](users/faq.md#как-прислать-журнал).
-    Что приложение отправляет в сеть — [приватность](users/privacy.md).
+    How to [install](users/install.md) and add a subscription, what to do if
+    [the VPN disconnects by itself](users/faq.md#the-vpn-turns-itself-off), and how to
+    [send a log](users/faq.md#how-to-send-a-log).
+    What the app sends to the network: [privacy](users/privacy.md).
 
--   **Провайдерам**
-
-    ---
-
-    [Что нужно от подписки](providers/start.md), название и логотип
-    [заголовками `ducker-*`](providers/headers.md),
-    [устройства и лимит](providers/devices.md),
-    [встроенный шаблон](providers/template.md).
-
--   **Помочь проекту**
+-   **Providers**
 
     ---
 
-    Проект ведёт один человек. Помогают [сообщения об ошибках](help/contributing.md),
-    переводы, проверка на своих телефонах и телевизорах и код.
-    Уязвимости — [отдельно](help/security.md).
+    [Subscription requirements](providers/start.md), name and logo through
+    [`ducker-*` headers](providers/headers.md),
+    [devices and limits](providers/devices.md), and the
+    [built-in template](providers/template.md).
 
--   **Сообщество**
+-   **Help the project**
 
     ---
 
-    [Канал и чат в Telegram](support/contact.md) и
-    [благодарности](support/credits.md) тем, на чьей работе стоит ducker.
+    The project is maintained by one person. [Bug reports](help/contributing.md),
+    translations, testing on your phones and TVs, and code all help.
+    Report vulnerabilities [separately](help/security.md).
+
+-   **Community**
+
+    ---
+
+    [Telegram channel and chat](support/contact.md), and
+    [credits](support/credits.md) for the work ducker is built on.
 
 </div>

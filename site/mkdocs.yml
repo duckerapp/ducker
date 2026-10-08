@@ -1,21 +1,21 @@
-# Сайт документации ducker. Собирается из этой папки:
+# ducker documentation site. Build from this directory:
 #   pip install -r requirements.txt && mkdocs build --strict
 
 site_name: DUCKER
-site_description: Открытый VPN-клиент для Android и Android TV на ядре mihomo
+site_description: Open-source VPN client for Android and Android TV powered by mihomo
 site_url: https://duckerapp.github.io/ducker/
 site_dir: build
 
-# repo_url не задаём намеренно: с ним Material из браузера посетителя ходит в API GitHub
-# за звёздами и форками. Сайт, как и приложение, ничего никуда не шлёт — ссылка на
-# репозиторий стоит в подвале (extra.social), это обычная ссылка без запросов.
-copyright: ducker — GPL-3.0. Без аналитики и без счётчиков.
+# Intentionally omit repo_url: Material would request star and fork counts from
+# the GitHub API in the visitor's browser. Like the app, the site sends no data.
+# The footer repository link (extra.social) is a plain link without API requests.
+copyright: ducker — GPL-3.0. No analytics or trackers.
 
 theme:
   name: material
   custom_dir: overrides
-  language: ru
-  # false — никаких шрифтов Google: берутся системные, как в приложении.
+  language: en
+  # Use system fonts, as in the app, instead of fetching Google Fonts.
   font: false
   favicon: assets/favicon.png
   icon:
@@ -27,14 +27,14 @@ theme:
       accent: custom
       toggle:
         icon: material/weather-night
-        name: Тёмная тема
+        name: Dark theme
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: custom
       accent: custom
       toggle:
         icon: material/weather-sunny
-        name: Светлая тема
+        name: Light theme
   features:
     - navigation.tabs
     - navigation.sections
@@ -44,11 +44,11 @@ theme:
     - search.highlight
 
 hooks:
-  # FAQ, приватность, CONTRIBUTING, SECURITY, благодарности и снимки экрана берутся из
-  # документов репозитория при каждой сборке.
+  # Load FAQ, privacy, CONTRIBUTING, SECURITY, credits, and screenshots from the
+  # repository documents on every build.
   - hooks/sources.py
 
-# Битая ссылка или якорь — ошибка сборки при --strict.
+# A broken link or anchor fails the build with --strict.
 validation:
   links:
     anchors: warn
@@ -57,17 +57,17 @@ extra_css:
   - assets/ducker.css
 
 extra:
-  # Строка «Made with Material for MkDocs» в подвале не нужна.
+  # Omit the "Made with Material for MkDocs" footer text.
   generator: false
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/duckerapp/ducker
-      name: Исходники на GitHub
+      name: Source code on GitHub
 
 plugins:
-  # Поиск работает в браузере по готовому индексу, запросов наружу нет.
+  # Search uses a prebuilt index in the browser without external requests.
   - search:
-      lang: ru
+      lang: en
 
 markdown_extensions:
   - admonition
@@ -76,7 +76,7 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
-      # Якоря кириллицей, как в ссылках из FAQ (#vpn-сам-отключается).
+      # Keep heading anchors consistent with links in the English FAQ.
       slugify: !!python/object/apply:pymdownx.slugs.slugify
         kwds:
           case: lower
@@ -85,19 +85,19 @@ markdown_extensions:
   - pymdownx.inlinehilite
 
 nav:
-  - Главная: index.md
-  - Пользователям:
-      - Установка: users/install.md
-      - Вопросы и ответы: users/faq.md
-      - Приватность: users/privacy.md
-  - Провайдерам:
-      - Подписка для ducker: providers/start.md
-      - Заголовки ducker-*: providers/headers.md
-      - Устройства и лимит: providers/devices.md
-      - Встроенный шаблон: providers/template.md
-  - Помочь проекту:
-      - Как помочь: help/contributing.md
-      - Уязвимости: help/security.md
-  - Сообщество:
-      - Сообщество и связь: support/contact.md
-      - Благодарности: support/credits.md
+  - Home: index.md
+  - Users:
+      - Installation: users/install.md
+      - Questions and answers: users/faq.md
+      - Privacy: users/privacy.md
+  - Providers:
+      - Subscription for ducker: providers/start.md
+      - ducker-* headers: providers/headers.md
+      - Devices and limits: providers/devices.md
+      - Built-in template: providers/template.md
+  - Help the project:
+      - Contributing: help/contributing.md
+      - Security: help/security.md
+  - Community:
+      - Community and contact: support/contact.md
+      - Credits: support/credits.md

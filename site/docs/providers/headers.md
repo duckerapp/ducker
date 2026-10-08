@@ -1,33 +1,33 @@
-# Заголовки ducker-*
+# ducker-* headers
 
-Провайдер может настроить вид приложения заголовками ответа на запрос подписки.
-В Remnawave они задаются в настройках ответа подписки (`customResponseHeaders`),
-править код панели не нужно. Как отдавать их только ducker — на странице
-[«Подписка для ducker»](start.md#отдельный-ответ-для-ducker-в-remnawave).
+A provider can customize the app with response headers on subscription requests.
+In Remnawave, set them in the subscription response settings (`customResponseHeaders`);
+no panel code changes are needed. To return them only to ducker, see
+[Subscription for ducker](start.md#a-separate-response-for-ducker-in-remnawave).
 
-| Заголовок | Значение | Что делает |
+| Header | Value | Effect |
 |---|---|---|
-| `ducker-brand-name` | текст | Название провайдера в шапке главной вместо надписи DUCKER. Оно же — в шторке и на плитке быстрых настроек. |
-| `ducker-brand-logo` | ссылка `https://…` на картинку или сама картинка строкой `data:…;base64,…`: PNG, JPEG, WebP или SVG | Логотип слева от названия на главной и у подписки на вкладке «Подписки». Не загрузился — стоит значок ducker. |
-| `ducker-buy-url` | ссылка | Кнопка «Продлить» на карточке подписки, когда до конца меньше трёх дней, срок вышел или осталось меньше 10 % трафика; та же ссылка — в уведомлении о скором конце подписки. Без заголовка берётся `profile-web-page-url`. |
-| `ducker-global` | `off` | Прячет переключатель Global/Rules на вкладке «Прокси»; режим остаётся тем, что задан в конфиге. Без заголовка или с другим значением переключатель есть. |
-| `ducker-local-proxy` | `off` | Туннель поднимается с закрытыми локальными портами конфига (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`) и без раздела `listeners`: другие приложения на телефоне не находят прокси на `127.0.0.1`. Сам конфиг не переписывается. Открыть порт заголовком нельзя; без заголовка или с другим значением конфиг применяется как есть. |
-| `ducker-override-user` | `on` или `off` | Зарезервирован под настройки, которые провайдер задаёт заголовками. Сейчас приложение его читает, но ни на что он не влияет. |
+| `ducker-brand-name` | text | Provider name instead of DUCKER in the Home header, notification shade, and Quick Settings tile. |
+| `ducker-brand-logo` | an `https://…` image URL or inline `data:…;base64,…` image: PNG, JPEG, WebP, or SVG | Logo to the left of the name on Home and beside the subscription on the Subscriptions tab. If it fails to load, the ducker icon is used. |
+| `ducker-buy-url` | URL | **Renew** button on the subscription card when fewer than three days remain, it has expired, or less than 10% of traffic remains; also used in the upcoming-expiry notification. Without this header, `profile-web-page-url` is used. |
+| `ducker-global` | `off` | Hides the Global/Rules switch on the Proxy tab; the mode remains as specified in the config. Without this header or with another value, the switch is shown. |
+| `ducker-local-proxy` | `off` | Starts the tunnel with the config's local ports closed (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`) and without `listeners`: other apps cannot find a proxy at `127.0.0.1`. The config file itself is not rewritten. A header cannot open a port; without this header or with another value, the config is applied as supplied. |
+| `ducker-override-user` | `on` or `off` | Reserved for provider settings supplied through headers. The app currently reads it, but it has no effect. |
 
-## Общие правила
+## General rules
 
-- Регистр в имени заголовка не важен.
-- Текст с кириллицей или переводом строки передаётся как `base64:<…>` (UTF-8) —
-  так же, как Remnawave отдаёт `announce`.
-- Значение из одного прочерка `-` значит «не задано». Панель не даёт сохранить пустой
-  заголовок, а прочерком можно убрать свой — например, чтобы в шапке осталась надпись DUCKER.
-- Заголовки меняют только вид и поведение из списка выше. К безопасности — секрету API
-  ядра, журналам, адресу обновлений приложения — у них доступа нет.
+- Header names are case-insensitive.
+- Text containing Cyrillic characters or newlines is sent as `base64:<…>` (UTF-8),
+  just as Remnawave sends `announce`.
+- A single dash, `-`, means “not set”. The panel does not allow an empty header;
+  a dash clears your value, for example to keep DUCKER in the Home header.
+- These headers change only the appearance and behavior listed above. They cannot change
+  security-related values: the core API secret, logs, or the app update address.
 
-## Общепринятые заголовки
+## Standard headers
 
-Кроме `ducker-*`, приложение понимает общепринятые заголовки подписки: `profile-title`,
+Besides `ducker-*`, the app understands standard subscription headers: `profile-title`,
 `profile-update-interval`, `profile-web-page-url`, `support-url`, `announce`,
-`subscription-userinfo`, `subscription-refill-date` и `x-hwid-*`. Что делает каждый — на странице
-[«Подписка для ducker»](start.md#заголовки-ответа); заголовки `x-hwid-*` — на странице
-[«Устройства и лимит»](devices.md).
+`subscription-userinfo`, `subscription-refill-date`, and `x-hwid-*`.
+See [Subscription for ducker](start.md#response-headers) for their effects;
+`x-hwid-*` headers are described under [Devices and limits](devices.md).

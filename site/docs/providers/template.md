@@ -1,31 +1,31 @@
-# Встроенный шаблон
+# Built-in template
 
-Если по ссылке приходит не конфиг mihomo, а список ссылок на узлы — `vless://`, `vmess://`,
-`ss://`, `trojan://` и подобных, открытым текстом или в base64, — ducker подставляет их в свой
-шаблон. Он же включается, когда в конфиге новой подписки ошибка: узлы берутся из её раздела
-`proxies` ([подробнее](start.md#что-приложение-принимает)).
+If the URL returns a list of node links (`vless://`, `vmess://`, `ss://`, `trojan://`,
+and similar), as plain text or base64 rather than a mihomo config, ducker inserts them
+into its own template. The template is also used when a new subscription has a config
+error: nodes are taken from its `proxies` section
+([details](start.md#what-the-app-accepts)).
 
-Шаблон — запасной вариант. Полный конфиг от провайдера всегда главнее: приложение применяет его
-как есть.
+The template is a fallback. A complete provider config always takes precedence:
+the app applies it as supplied.
 
-## Что в шаблоне
+## What the template contains
 
-- **Маршрутизация под Россию.** Заблокированное идёт через узел, российские сайты и сервисы —
-  напрямую, локальная сеть — мимо VPN.
-- **Группы.** «Основной профиль» со списком всех узлов и автоматическим выбором «⚡ AUTO»,
-  «Без VPN» для прямых соединений.
-- **Наборы правил** подгружаются по ссылкам из шаблона и обновляются сами.
-- **Локального порта прокси нет:** другие приложения на телефоне не находят прокси на
-  `127.0.0.1`.
-- **Свой DNS** и синхронизация времени.
-- **Адрес подписки идёт мимо туннеля,** чтобы её можно было обновить и тогда, когда узлы не
-  отвечают.
+- **Routing for Russia.** Blocked destinations go through a node; Russian sites and
+  services go directly, and the local network bypasses the VPN.
+- **Groups.** “Основной профиль” (Main profile) lists all nodes and the automatic
+  “⚡ AUTO” choice; “Без VPN” (Without VPN) is used for direct connections.
+- **Rule sets** are downloaded from URLs in the template and update automatically.
+- **No local proxy port:** other apps cannot find a proxy at `127.0.0.1` on the phone.
+- **Its own DNS** and time synchronization.
+- **The subscription address bypasses the tunnel**, so it can be updated even when
+  the nodes do not respond.
 
-Сам файл — в репозитории:
+The file is in the repository:
 [`app/src/main/assets/ducker/template.yaml`](https://github.com/duckerapp/ducker/blob/main/app/src/main/assets/ducker/template.yaml).
-В нём подробные комментарии к каждому решению.
+It contains detailed comments explaining each decision.
 
-## Если нужна своя маршрутизация
+## If you need your own routing
 
-Отдавайте готовый конфиг mihomo — так, как описано на странице
-[«Подписка для ducker»](start.md). Шаблон приложения в этом случае не используется.
+Provide a complete mihomo config as described under [Subscription for ducker](start.md).
+The app template is not used in that case.
