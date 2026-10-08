@@ -5,7 +5,7 @@ import java.nio.file.StandardCopyOption
 plugins {
     // Плагин Kotlin не нужен: с AGP 9 поддержка Kotlin встроена в сам Android-плагин (D-84).
     id("com.android.application")
-    // ducker: интерфейс на Compose (D-3)
+    // Compose UI (D-3).
     id("org.jetbrains.kotlin.plugin.compose")
     // ducker: baseline profile (этап 8.1)
     id("androidx.baselineprofile")
@@ -28,7 +28,7 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     // Редактор конфига (D-124): рисует только видимые строки, большие конфиги не тормозят.
     implementation(libs.sora.editor)
-    // Безопасный экспорт: разбираем YAML, включая flow, aliases и quoted keys.
+    // Parse YAML for config export, including flow mappings, aliases, and quoted keys.
     implementation(libs.snakeyaml)
     baselineProfile(project(":baselineprofile"))
 
