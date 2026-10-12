@@ -2,7 +2,8 @@
 
 Download an APK from [releases](https://github.com/duckerapp/ducker/releases) and open it on
 your phone or TV. Android will ask you to allow installation from this source; this is
-normal for apps outside Play.
+normal for apps outside Play. Google Play Protect may also offer to scan the app first:
+[what to tap](faq.md#google-play-protect-asks-to-scan-the-app).
 
 Which file to choose:
 

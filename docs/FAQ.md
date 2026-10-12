@@ -19,6 +19,7 @@ in the app.
 - [The subscription does not update](#the-subscription-does-not-update)
 - [No internet with the VPN on](#no-internet-with-the-vpn-on)
 - [An app complains about the VPN](#an-app-complains-about-the-vpn)
+- [Google Play Protect asks to scan the app](#google-play-protect-asks-to-scan-the-app)
 - [How to send a log](#how-to-send-a-log)
 - [What never to send](#what-never-to-send)
 
@@ -283,6 +284,22 @@ rest go past it. While nothing is checked, all apps go through the VPN.
      lockdown_offline; the screen ui/apps/AppsScreen.kt; the restart after a change —
      HomeActivity.applyAppFilter (the list is set when the tunnel is created); the provider's
      list cannot be unchecked; no internet in lockdown mode — measured on a phone. -->
+
+## Google Play Protect asks to scan the app
+
+When you install or update ducker, a "Google Play Protect" window may appear with the title
+"App scan recommended". Google shows it for any file it has not seen yet: ducker is not installed
+from Google Play, and every new version is a new file to Google.
+
+1. Tap "Scan app". Google receives details of the app and answers within a few seconds.
+2. When it reports that the app looks safe, confirm the installation in the same window.
+
+"Don't install app" cancels the installation and breaks nothing: when updating, ducker shows the
+"Update" button again. If Google answers differently, do not install; write to us through
+⚙ Settings → the "Help" section.
+
+<!-- The window's labels come from the Google Play Store, not from the app: recorded on a phone on
+     12.10.2026. In ducker the button is the string update. -->
 
 ## How to send a log
 
