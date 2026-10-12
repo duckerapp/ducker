@@ -18,7 +18,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":common"))
 
-    ksp(libs.kaidl.compiler)
+    ksp(project(":kaidl"))
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.kotlin.coroutine)
@@ -26,7 +26,6 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    implementation(libs.kaidl.runtime)
 }
 
 // Прежде здесь вручную подкладывались сгенерированные KSP исходники: старая пара
@@ -44,5 +43,5 @@ dependencies {
 // does the same for the generated Binder glue (D-268) and has interfaces of its own.
 dependencies {
     androidTestImplementation(libs.androidx.test.runner)
-    kspAndroidTest(libs.kaidl.compiler)
+    kspAndroidTest(project(":kaidl"))
 }

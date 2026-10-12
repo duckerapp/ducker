@@ -4,6 +4,7 @@ include(":app")
 include(":core")
 include(":service")
 include(":common")
+include(":kaidl")
 include(":baselineprofile")
 
 pluginManagement {

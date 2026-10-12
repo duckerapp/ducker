@@ -7,7 +7,10 @@ coreKtx = "1.19.0"
 activity = "1.13.0"
 appcompat = "1.8.0"
 serialization = "1.7.3"
-kaidl = "1.15"
+# The generator of the Binder glue (`:kaidl`, D-268) writes its output with KotlinPoet. Room's
+# compiler shares the processor classpath and asks for the same version: raise the two together,
+# never this one a major version ahead.
+kotlinpoet = "2.0.0"
 room = "2.8.5"
 camerax = "1.6.2"
 zxing-cpp = "3.1.1"
@@ -56,8 +59,8 @@ androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "a
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
-kaidl-compiler = { module = "com.github.kr328.kaidl:kaidl", version.ref = "kaidl" }
-kaidl-runtime = { module = "com.github.kr328.kaidl:kaidl-runtime", version.ref = "kaidl" }
+ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }

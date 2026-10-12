@@ -13,7 +13,6 @@ buildscript {
     repositories {
         mavenCentral()
         google()
-        maven("https://raw.githubusercontent.com/MetaCubeX/maven-backup/main/releases")
     }
     dependencies {
         classpath(libs.build.android)
@@ -39,23 +38,17 @@ val abis by extra(
 )
 
 subprojects {
-    // Модуль генерации baseline profile настраивает себя сам: он не приложение и не
-    // библиотека, а com.android.test, и общая настройка ниже ему не подходит.
-    if (name == "baselineprofile") {
-        repositories {
-            mavenCentral()
-            google()
-            // kaidl лежит только здесь, а зависимости :app тянутся и сюда.
-            maven("https://raw.githubusercontent.com/MetaCubeX/maven-backup/main/releases")
-        }
-
-        return@subprojects
-    }
-
     repositories {
         mavenCentral()
         google()
-        maven("https://raw.githubusercontent.com/MetaCubeX/maven-backup/main/releases")
+    }
+
+    // Модуль генерации baseline profile настраивает себя сам: он не приложение и не
+    // библиотека, а com.android.test, и общая настройка ниже ему не подходит.
+    // The same goes for `kaidl`, the generator of the Binder glue (D-268): a plain JVM module
+    // that runs inside the build.
+    if (name == "baselineprofile" || name == "kaidl") {
+        return@subprojects
     }
 
     val isApp = name == "app"
