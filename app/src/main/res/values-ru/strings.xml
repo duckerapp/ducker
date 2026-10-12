@@ -350,6 +350,8 @@
     <string name="app_update_beta">Бета-версии</string>
     <string name="app_update_beta_hint">Новые версии на несколько дней раньше. В них бывают ошибки</string>
     <string name="app_update_card">Доступно обновление ducker %s</string>
+    <string name="app_update_card_downloading">Скачиваю ducker %1$s — %2$d %%</string>
+    <string name="app_update_card_installing">Устанавливаю ducker %s…</string>
     <string name="app_update_title">Новая версия %s</string>
     <string name="app_update_whats_new">Что нового</string>
     <string name="app_update_size">Размер загрузки — %s</string>

@@ -230,13 +230,21 @@ fun HomeScreen(
     /** Вышла новая версия приложения — её номер; `null` — ставить нечего. */
     update: String? = null,
     onUpdate: () -> Unit = {},
+    /** Its download in percent while it runs, and the installation after it. */
+    updateProgress: Int? = null,
+    updateInstalling: Boolean = false,
 ) {
+    // The cards about the app's own version are the same with and without a subscription.
+    val appCards: (@Composable () -> Unit)? = if (update == null) null else {
+        { AppUpdateCards(update, updateProgress, updateInstalling, onUpdate) }
+    }
+
     // Подписок нет — показывать нечего, кроме одного действия: добавить. Приветствие
     // по центру, а саму кнопку даёт панель внизу, ставшая одной кнопкой (D-98). Смена —
     // мягкая: после первой подписки главная проявляется на месте приветствия.
     Crossfade(targetState = onboarding, animationSpec = tween(ONBOARDING_MS), label = "onboarding") { first ->
         if (first) {
-            Welcome(onSettings, header, update, onUpdate, modifier)
+            Welcome(onSettings, header, appCards, modifier)
         } else {
             HomeRegular(
                 state = state,
@@ -261,8 +269,7 @@ fun HomeScreen(
                 updateFailed = updateFailed,
                 header = header,
                 onCopyError = onCopyError,
-                update = update,
-                onUpdate = onUpdate,
+                appCards = appCards,
                 modifier = modifier,
             )
         }
@@ -277,8 +284,7 @@ fun HomeScreen(
 private fun Welcome(
     onSettings: () -> Unit,
     header: Boolean,
-    update: String?,
-    onUpdate: () -> Unit,
+    appCards: (@Composable () -> Unit)?,
     modifier: Modifier,
 ) {
     Column(
@@ -291,14 +297,13 @@ private fun Welcome(
         // A new version matters before the first subscription too: whoever got an old file
         // from a friend should update before setting anything up. The notification cannot
         // tell them — on a fresh install it is not permitted yet.
-        if (update != null) {
-            Spacer(Modifier.height(8.dp))
-
-            InfoCard(
-                stringResource(R.string.app_update_card, update),
-                Icons.Default.SystemUpdate,
-                action = stringResource(R.string.update) to onUpdate,
-            )
+        if (appCards != null) {
+            Column(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                appCards()
+            }
         }
 
         Column(
@@ -364,8 +369,7 @@ private fun HomeRegular(
     updateFailed: Boolean,
     header: Boolean,
     onCopyError: (String) -> Unit,
-    update: String?,
-    onUpdate: () -> Unit,
+    appCards: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val profile = state.profile
@@ -498,13 +502,7 @@ private fun HomeRegular(
 
         // Новая версия приложения: карточка висит, пока её не поставят, — обновление по
         // умолчанию решает человек, и напоминание должно быть на виду.
-        if (update != null) {
-            InfoCard(
-                stringResource(R.string.app_update_card, update),
-                Icons.Default.SystemUpdate,
-                action = stringResource(R.string.update) to onUpdate,
-            )
-        }
+        appCards?.invoke()
 
         if (profile != null || state.running) {
             HeroCard(
@@ -1250,6 +1248,31 @@ sealed interface BackgroundNotice {
 
     /** Android разрешил, но оболочка телефона закрывает приложения сама (D-107). */
     class Shell(val vendor: Vendor, val onSetUp: () -> Unit) : BackgroundNotice
+}
+
+/**
+ * The card about the app's own version: a new one is out. It follows the download when the
+ * sheet is closed.
+ */
+@Composable
+private fun AppUpdateCards(
+    update: String?,
+    progress: Int?,
+    installing: Boolean,
+    onUpdate: () -> Unit,
+) {
+    if (update != null) {
+        InfoCard(
+            when {
+                installing -> stringResource(R.string.app_update_card_installing, update)
+                progress != null -> stringResource(R.string.app_update_card_downloading, update, progress)
+                else -> stringResource(R.string.app_update_card, update)
+            },
+            Icons.Default.SystemUpdate,
+            // Nothing to press while it downloads: the installation follows by itself.
+            action = (stringResource(R.string.update) to onUpdate).takeIf { !installing && progress == null },
+        )
+    }
 }
 
 @Composable

@@ -911,6 +911,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onCopyError = { copyReport(it, R.string.error_copied) },
                                         update = updateState.release?.version,
                                         onUpdate = openUpdate,
+                                        updateProgress = updateState.progress?.let { (it * 100).toInt() },
+                                        updateInstalling = updateState.installing,
                                         onChooseSubscription = {
                                             tvTarget = 2
                                             paging?.cancel()
