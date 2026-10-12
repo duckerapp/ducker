@@ -141,7 +141,7 @@ class SubscriptionsViewModel : ViewModel() {
             val profiles = runCatching { withProfile { queryAll() } }.getOrDefault(emptyList())
                 .inOrder(order.split(',')) { it.uuid.toString() }
 
-            val store = withContext(Dispatchers.IO) { ServiceStore(context) }
+            val sendHwid = withContext(Dispatchers.IO) { ServiceStore(context).sendHwid }
             val counts = withContext(Dispatchers.IO) {
                 val rules = UserRulesStore(context)
 
@@ -152,7 +152,7 @@ class SubscriptionsViewModel : ViewModel() {
                 it.copy(
                     profiles = profiles,
                     ruleCounts = counts,
-                    sendHwid = store.sendHwid,
+                    sendHwid = sendHwid,
                     hwid = SubscriptionHeaders.hwidOf(context),
                     loaded = true,
                 )
