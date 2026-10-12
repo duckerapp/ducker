@@ -77,6 +77,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.LocalFocusManager
 import com.github.kr328.clash.ui.components.TABS
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -558,8 +559,14 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                 // Выбор узла подтверждается службой не сразу, поэтому главную обновляем
                 // и при возврате на неё, и когда подтверждение доходит уже после перехода.
-                LaunchedEffect(pagerState.settledPage, showSettings, proxyState.groups, proxyState.mode) {
-                    if (pagerState.settledPage == 0 && !showSettings) viewModel.refresh(this@HomeActivity)
+                //
+                // Only on a change: the first pass repeated what `onStart` has just asked for.
+                LaunchedEffect(Unit) {
+                    snapshotFlow {
+                        Triple(pagerState.settledPage == 0 && !showSettings, proxyState.groups, proxyState.mode)
+                    }.drop(1).collect { (onHome) ->
+                        if (onHome) viewModel.refresh(this@HomeActivity)
+                    }
                 }
 
                 // Клавиатуру снимаем на начале жеста, а не по остановке: иначе она едет

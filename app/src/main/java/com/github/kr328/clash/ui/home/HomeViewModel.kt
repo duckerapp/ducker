@@ -150,9 +150,18 @@ class HomeViewModel : ViewModel() {
     /** Основная группа и узел, уже записанные в [DelayStore.main]: не писать на диск одно и то же. */
     private var lastMain: Pair<String, String>? = null
 
+    /** One refresh at a time, see [RefreshGate]. Created on first use: it needs a context. */
+    private var gate: RefreshGate? = null
+
     /** Опрос скорости идёт, только пока экран виден и туннель поднят. */
     fun refresh(context: Context) {
-        viewModelScope.launch {
+        val app = context.applicationContext
+
+        (gate ?: RefreshGate(viewModelScope) { answered -> load(app, answered) }.also { gate = it }).request()
+    }
+
+    private suspend fun load(context: Context, answered: () -> Unit) {
+        coroutineScope {
             val running = Remote.broadcasts.clashRunning
 
             // Туннель подняли или опустили — прежние замеры относятся к другой дороге,
@@ -198,7 +207,9 @@ class HomeViewModel : ViewModel() {
             // Подписка, режим и прошлые замеры друг от друга не зависят, а каждый
             // запрос — переход в чужой процесс. Подряд они складывались в паузу, которую
             // видно на запуске: заставка висит, пока не приедет последний (D-77).
-            val profileAsync = async { runCatching { withProfile { queryActive() } }.getOrNull() }
+            val profileAsync = async {
+                runCatching { withProfile { queryActive() } }.getOrNull().also { answered() }
+            }
 
             val modeAsync = async {
                 if (running) runCatching { withClash { queryTunnelState().mode } }.getOrNull()
