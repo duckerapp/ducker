@@ -178,3 +178,5 @@ commit and fails on a shallow clone.
 - `scripts/publish.sh` — uploads a built release to GitHub and the GitLab mirror and records it
   in `update.json`: first for the beta channel, then, with `--stable`, for everyone.
 - `scripts/baseline-profile.sh` — rebuilds the baseline profile on an emulator.
+- `scripts/check-linkage.py` — checks that the jars of one library still find every class and
+  method they use in a newer version of another; `kaidl/README.md` says when it is needed.

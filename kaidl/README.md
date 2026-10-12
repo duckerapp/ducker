@@ -158,5 +158,18 @@ To see what the generator refuses, add a function with such a type to the test i
 
 ## KotlinPoet
 
-KotlinPoet stays at the version Room's compiler asks for (`gradle/libs.versions.toml`): the two
-processors share one classpath in the build of `:service`.
+The generator writes its output with KotlinPoet, and Room's compiler does too: the two processors
+share one classpath in the build of `:service`, where the higher version wins. The version in
+`gradle/libs.versions.toml` is therefore the one Room's compiler was built against, 2.0.0 for
+Room 2.8. The latest, 2.4.0, generates the same files for our interfaces and for Room's, but
+Room's compiler calls an internal function of KotlinPoet by a name it no longer has there
+(`TypeVariableName.of`), and the first declaration that takes Room down that path would stop the
+build.
+
+Before raising the version, within the same major version only:
+
+1. `scripts/check-linkage.py` — every reference of Room's compiler into KotlinPoet resolves in
+   the new jar (the command is in the script);
+2. the files Room generates are the same before and after:
+   `service/build/generated/ksp/*/kotlin/com/github/kr328/clash/service/data/`;
+3. so are ours, or the difference is understood.

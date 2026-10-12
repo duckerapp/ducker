@@ -8,8 +8,8 @@ activity = "1.13.0"
 appcompat = "1.8.0"
 serialization = "1.7.3"
 # The generator of the Binder glue (`:kaidl`, D-268) writes its output with KotlinPoet. Room's
-# compiler shares the processor classpath and asks for the same version: raise the two together,
-# never this one a major version ahead.
+# compiler shares the processor classpath and was built against this version; 2.4.0 breaks it
+# (D-271). Raise it only together with Room, or after the checks in `kaidl/README.md`.
 kotlinpoet = "2.0.0"
 room = "2.8.5"
 camerax = "1.6.2"
