@@ -165,9 +165,12 @@ class SettingsExchangeTest {
 
     private fun awaitOnDisk(text: String) {
         val deadline = SystemClock.elapsedRealtime() + 5_000
+        val backup = File(file.path + ".bak")
 
-        // The file is replaced while it is written: a failed read is a reason to look again.
-        while (runCatching { text in file.readText() }.getOrDefault(false).not()) {
+        // The file is replaced while it is written, so a failed read is a reason to look again.
+        // The write is over when the copy of the previous file is gone: a process killed before
+        // that leaves the copy, and the next one restores it — without the value just written.
+        while (runCatching { text in file.readText() }.getOrDefault(false).not() || backup.exists()) {
             assertTrue("$text did not reach ${file.name}", SystemClock.elapsedRealtime() < deadline)
 
             Thread.sleep(20)
