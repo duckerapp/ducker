@@ -357,7 +357,7 @@
     <string name="app_update_available">Version %s is available</string>
     <string name="app_update_beta">Beta versions</string>
     <string name="app_update_beta_hint">Get new versions a few days early. They may have bugs</string>
-    <string name="app_update_card">ducker %s is out</string>
+    <string name="app_update_card">Update available: ducker %s</string>
     <string name="app_update_title">New version %s</string>
     <string name="app_update_whats_new">What\'s new</string>
     <string name="app_update_size">Download size: %s</string>
