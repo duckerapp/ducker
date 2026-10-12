@@ -9,7 +9,7 @@ object SystemLogcat {
         "Go",
         "DEBUG",
         "AndroidRuntime",
-        "ClashMetaForAndroid",
+        "Ducker",
         "LwIP",
     )
 

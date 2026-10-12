@@ -1,7 +1,7 @@
 package com.github.kr328.clash.common.log
 
 object Log {
-    private const val TAG = "ClashMetaForAndroid"
+    private const val TAG = "Ducker"
 
     /**
      * Куда ещё писать сообщения уровней info, warning и error — самописец службы (D-111).

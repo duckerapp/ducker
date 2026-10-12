@@ -1,4 +1,4 @@
-rootProject.name = "ClashMetaForAndroid"
+rootProject.name = "ducker"
 
 include(":app")
 include(":core")
