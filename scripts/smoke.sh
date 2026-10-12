@@ -95,7 +95,8 @@ fi
 # Версию, которую приложение показывает в «О приложении», считает CMake — один раз
 # при настройке. Сменили пин подмодуля, а настройка не перезапустилась — в приложении
 # висит версия прошлого ядра (F-102). Ловим это здесь, чтобы не ловить в поддержке.
-HEAD_SHORT=$(git -C core/src/foss/golang/clash rev-parse --short HEAD 2>/dev/null)
+# Seven characters, as CMake cuts it: `--short` grows with the repository and gave eight.
+HEAD_SHORT=$(git -C core/src/foss/golang/clash rev-parse HEAD 2>/dev/null | cut -c1-7)
 BAKED=$(grep -m1 'define GIT_VERSION' core/src/main/cpp/version.h 2>/dev/null | awk '{print $3}')
 if [ -z "$HEAD_SHORT" ] || [ -z "$BAKED" ]; then
   ok "версию в version.h проверить не удалось"
