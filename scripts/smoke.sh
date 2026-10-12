@@ -191,7 +191,13 @@ fi
 
 step "Проверяем DNS и маршруты"
 for site in https://www.youtube.com https://www.google.com https://ya.ru; do
-  CODE=$(phone "curl -s --max-time 15 -o /dev/null -w '%{http_code}' $site")
+  # Up to three tries: ya.ru drops part of a phone's connections even with the tunnel down,
+  # and one lost request used to turn the whole run red.
+  for try in 1 2 3; do
+    CODE=$(phone "curl -s --max-time 15 -o /dev/null -w '%{http_code}' $site")
+    case "$CODE" in 2*|3*) break ;; esac
+    sleep 3
+  done
   case "$CODE" in
     2*|3*) ok "$site отвечает $CODE" ;;
     *) bad "$site не ответил (код '$CODE')" ;;
