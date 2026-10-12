@@ -36,6 +36,9 @@ enum class UpdateError {
     Install,
 }
 
+/** The version the app has just updated itself to, and what it brought. */
+data class Updated(val version: String, val notes: Map<String, String>)
+
 data class UpdateState(
     /** Есть что ставить; `null` — установлена последняя или ещё не проверяли. */
     val release: Release? = null,
@@ -52,6 +55,11 @@ data class UpdateState(
     val errorDetail: String = "",
     /** Системное окно, без которого Android не ставит: открыть его может только окно приложения. */
     val confirm: Intent? = null,
+    /**
+     * The app has just updated itself and the person has not yet seen that on screen: the
+     * update closed the app, and the notification reaches only those who allowed notifications.
+     */
+    val updated: Updated? = null,
 ) {
     val busy: Boolean
         get() = progress != null || installing
@@ -92,7 +100,7 @@ object Updater {
 
             val known = pick()
 
-            _state.update { it.copy(release = known) }
+            _state.update { it.copy(release = known, updated = updated()) }
 
             if (System.currentTimeMillis() - store.checkedAt > OPEN_INTERVAL) check()
         }
@@ -241,6 +249,8 @@ object Updater {
         // просто исчезло с экрана. Поставил сам — прежнее «вышла версия» больше не правда.
         if (store.installing == BuildConfig.VERSION_CODE.toLong()) {
             UpdateNotice.updated(context, BuildConfig.VERSION_NAME)
+
+            store.updated = BuildConfig.VERSION_CODE.toLong()
         } else {
             UpdateNotice.cancel(context)
         }
@@ -248,6 +258,28 @@ object Updater {
         store.installing = 0
 
         dir.deleteRecursively()
+    }
+
+    /** The person has seen that the app was updated: the card and the notification are done. */
+    fun acknowledged() {
+        store.updated = 0
+
+        UpdateNotice.cancel(context)
+
+        _state.update { it.copy(updated = null) }
+    }
+
+    private fun updated(): Updated? {
+        val code = BuildConfig.VERSION_CODE.toLong()
+
+        if (store.updated != code) return null
+
+        // “What's new” is still in the answer the version was found in.
+        val entry = runCatching { parseFeed(store.feed) }.getOrNull()
+            ?.let { listOfNotNull(it.stable, it.beta) }
+            ?.firstOrNull { it.code == code }
+
+        return Updated(BuildConfig.VERSION_NAME, entry?.notes.orEmpty())
     }
 
     /**
@@ -391,6 +423,11 @@ private class UpdateStore(context: Context) {
     var notified: Long
         get() = prefs.getLong("notified", 0)
         set(value) = prefs.edit().putLong("notified", value).apply()
+
+    /** Which version the app updated itself to and has not yet said so on screen. */
+    var updated: Long
+        get() = prefs.getLong("updated", 0)
+        set(value) = prefs.edit().putLong("updated", value).apply()
 
     /**
      * Какую версию отдали установщику. Пишется сразу на диск: следом процесс заменят, и

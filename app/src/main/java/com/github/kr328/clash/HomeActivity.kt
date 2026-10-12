@@ -139,6 +139,7 @@ import com.github.kr328.clash.ui.home.BackgroundNotice
 import com.github.kr328.clash.ui.home.VpnSheet
 import com.github.kr328.clash.ui.settings.MAIL
 import com.github.kr328.clash.ui.update.UpdateSheet
+import com.github.kr328.clash.ui.update.UpdatedSheet
 import com.github.kr328.clash.update.Updater
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.lifecycle.Lifecycle
@@ -439,6 +440,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     updateOpen = true
                     updateShown = true
                 }
+
+                // “What's new” in the version the app has just updated itself to.
+                var updatedOpen by remember { mutableStateOf(false) }
+                var updatedShown by remember { mutableStateOf(false) }
 
                 // Из уведомления: что именно вышло, приложение после запуска узнаёт не сразу.
                 LaunchedEffect(updateRequest.value, updateState.release) {
@@ -913,6 +918,16 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onUpdate = openUpdate,
                                         updateProgress = updateState.progress?.let { (it * 100).toInt() },
                                         updateInstalling = updateState.installing,
+                                        updated = updateState.updated?.version,
+                                        onWhatsNew = if (updateState.updated?.notes?.values?.any { it.isNotBlank() } == true) {
+                                            {
+                                                updatedOpen = true
+                                                updatedShown = true
+                                            }
+                                        } else {
+                                            null
+                                        },
+                                        onUpdatedSeen = Updater::acknowledged,
                                         onChooseSubscription = {
                                             tvTarget = 2
                                             paging?.cancel()
@@ -1352,6 +1367,21 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                         if (packageManager.canRequestPackageInstalls()) Updater.install()
                     }
+                }
+
+                val updatedNow = updateState.updated
+
+                if (updatedShown && updatedNow != null) {
+                    UpdatedSheet(
+                        open = updatedOpen,
+                        updated = updatedNow,
+                        onDismiss = { updatedOpen = false },
+                        // Read — the card has done its job.
+                        onClosed = {
+                            updatedShown = false
+                            Updater.acknowledged()
+                        },
+                    )
                 }
 
                 if (updateShown && updateRelease != null) {

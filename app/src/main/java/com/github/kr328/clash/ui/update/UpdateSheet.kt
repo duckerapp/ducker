@@ -18,6 +18,7 @@ import com.github.kr328.clash.ui.components.formatBytes
 import com.github.kr328.clash.update.Release
 import com.github.kr328.clash.update.UpdateError
 import com.github.kr328.clash.update.UpdateState
+import com.github.kr328.clash.update.Updated
 
 /**
  * Панель обновления приложения: что нового и одна кнопка. Кнопка заливается по ходу скачивания,
@@ -46,19 +47,7 @@ fun UpdateSheet(
         onDismiss = onDismiss,
         onClosed = onClosed,
     ) {
-        val language = LocalConfiguration.current.locales[0].language
-        val notes = release.notes[language] ?: release.notes["en"].orEmpty()
-
-        if (notes.isNotBlank()) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(text = stringResource(R.string.app_update_whats_new), style = MaterialTheme.typography.titleSmall)
-                Text(
-                    text = notes,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        Notes(release.notes)
 
         Text(
             text = stringResource(
@@ -125,6 +114,49 @@ fun UpdateSheet(
 
         TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.not_now))
+        }
+    }
+}
+
+/**
+ * What the version the app has just updated itself to brought. Opened from the “updated” card on
+ * the home screen: the update closed the app, and here the person sees that it worked.
+ */
+@Composable
+fun UpdatedSheet(open: Boolean, updated: Updated, onDismiss: () -> Unit, onClosed: () -> Unit) {
+    DuckerSheet(
+        open = open,
+        title = stringResource(R.string.app_update_done_title, updated.version),
+        busy = false,
+        onDismiss = onDismiss,
+        onClosed = onClosed,
+    ) {
+        Notes(updated.notes)
+
+        SheetButton(
+            text = stringResource(R.string.dismiss),
+            busyText = "",
+            busy = false,
+            enabled = true,
+            onClick = onDismiss,
+        )
+    }
+}
+
+/** “What's new” in the phone's language; in English when the release has no such text. */
+@Composable
+private fun Notes(notes: Map<String, String>) {
+    val language = LocalConfiguration.current.locales[0].language
+    val text = notes[language] ?: notes["en"].orEmpty()
+
+    if (text.isNotBlank()) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(text = stringResource(R.string.app_update_whats_new), style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

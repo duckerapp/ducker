@@ -74,6 +74,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DataUsage
@@ -233,10 +234,15 @@ fun HomeScreen(
     /** Its download in percent while it runs, and the installation after it. */
     updateProgress: Int? = null,
     updateInstalling: Boolean = false,
+    /** The app has just updated itself — to which version; `null` — nothing to say. */
+    updated: String? = null,
+    /** “What's new” on that card; `null` — the release came without notes. */
+    onWhatsNew: (() -> Unit)? = null,
+    onUpdatedSeen: () -> Unit = {},
 ) {
     // The cards about the app's own version are the same with and without a subscription.
-    val appCards: (@Composable () -> Unit)? = if (update == null) null else {
-        { AppUpdateCards(update, updateProgress, updateInstalling, onUpdate) }
+    val appCards: (@Composable () -> Unit)? = if (update == null && updated == null) null else {
+        { AppUpdateCards(update, updateProgress, updateInstalling, onUpdate, updated, onWhatsNew, onUpdatedSeen) }
     }
 
     // Подписок нет — показывать нечего, кроме одного действия: добавить. Приветствие
@@ -1251,8 +1257,8 @@ sealed interface BackgroundNotice {
 }
 
 /**
- * The card about the app's own version: a new one is out. It follows the download when the
- * sheet is closed.
+ * Cards about the app's own version: “just updated” and “a new one is out”. The second one
+ * follows the download when the sheet is closed.
  */
 @Composable
 private fun AppUpdateCards(
@@ -1260,7 +1266,24 @@ private fun AppUpdateCards(
     progress: Int?,
     installing: Boolean,
     onUpdate: () -> Unit,
+    updated: String?,
+    onWhatsNew: (() -> Unit)?,
+    onUpdatedSeen: () -> Unit,
 ) {
+    // The update closed the app and Android does not let it reopen itself: this is where the
+    // person learns that it worked, with or without notifications.
+    if (updated != null) {
+        val seen = stringResource(R.string.dismiss) to onUpdatedSeen
+        val whatsNew = onWhatsNew?.let { stringResource(R.string.app_update_whats_new) to it }
+
+        InfoCard(
+            stringResource(R.string.app_update_done_title, updated),
+            Icons.Default.CheckCircle,
+            action = whatsNew ?: seen,
+            secondary = seen.takeIf { whatsNew != null },
+        )
+    }
+
     if (update != null) {
         InfoCard(
             when {
