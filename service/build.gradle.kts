@@ -8,6 +8,12 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+android {
+    defaultConfig {
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+}
+
 dependencies {
     implementation(project(":core"))
     implementation(project(":common"))
@@ -21,7 +27,6 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.kaidl.runtime)
-    implementation(libs.rikkax.multiprocess)
 }
 
 // Прежде здесь вручную подкладывались сгенерированные KSP исходники: старая пара
@@ -32,4 +37,10 @@ dependencies {
 dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test.junit)
+}
+
+// ducker: the settings exchange between two real processes (D-263) — on a device only,
+// run by hand on one named emulator (`SettingsExchangeTest`)
+dependencies {
+    androidTestImplementation(libs.androidx.test.runner)
 }

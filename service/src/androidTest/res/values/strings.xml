@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The flavor points `launch_name` and `application_name` at strings that live in :app.
+         A library is not linked, but its test package is. -->
+    <string name="launch_name_meta" translatable="false">ducker</string>
+    <string name="application_name_meta" translatable="false">ducker</string>
+</resources>
