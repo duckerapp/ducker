@@ -30,6 +30,7 @@ it is an idea or code.
 | Xray multiplexing (mux.cool) with UDP and XUDP; Xray-compatible REALITY (ML-KEM, ML-DSA-65) | jesus (Jolymmiles), via legiz-ru/Prizrak-Core, branch `v1-19-31`: 13 commits from `2197a3ca` to `9090c2c0`; upstream: MetaCubeX/mihomo#2980 | code, in our `ducker` core branch with the original authors |
 | Skipping a broken node in a provider rather than rejecting the entire provider | legiz-ru/Prizrak-Core `e265e713` (ported from Medium1992/mihomo-proxy-ros) | code |
 | ML-DSA-65 signatures for REALITY in uTLS | jesus, via legiz-ru/prizrak-utls `80ad7038` | code, in our `duckerapp/utls` fork, branch `ducker`, with the original author |
+| The generator of the Binder code between the interface and the service, and its runtime (`kaidl/`, `service/src/main/java/com/github/kr328/kaidl/`) | Kr328/kaidl, branch `main`, commit `7710f43` (version 1.15), MIT — `kaidl/LICENSE` | code; Clash Meta for Android takes it as a binary, here it is source in the tree; what was changed — `kaidl/README.md` |
 
 ## Recording borrowed work
 

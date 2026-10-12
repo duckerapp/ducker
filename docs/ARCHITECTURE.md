@@ -35,11 +35,15 @@ ID is `app.ducker.android`.
 | `app.ducker.android:dashboard` | Only zashboard in a WebView (`DashboardActivity`); exits when the panel is closed. |
 
 The interface talks to the service over Binder: `S/remote/I*.kt` (`IRemoteService`,
-`IClashManager`, `IProfileManager`). Settings are shared between the two processes by
+`IClashManager`, `IProfileManager`). The Binder code for these interfaces is written at build time
+by the generator in `:kaidl`; its runtime, which carries `suspend` commands, is
+`service/src/main/java/com/github/kr328/kaidl/`, and `kaidl/README.md` describes what travels
+between the processes. Settings are shared between the two processes by
 `S/PreferenceProvider.kt`: the settings file belongs to the service process, and every other
-process reads and writes it through that provider. `SettingsExchangeTest` in
-`service/src/androidTest` runs this exchange between two real processes; it needs a device, and
-the commands are in the file.
+process reads and writes it through that provider. Two tests in `service/src/androidTest` run
+these exchanges between two real processes: `SettingsExchangeTest` for the settings and
+`BinderExchangeTest` for the generated Binder code. They need a device, and the commands are in
+the files.
 
 A call into the core goes like this: Kotlin `K/Clash.kt` → `K/bridge/Bridge.kt`
 (`external fun native*`) → `core/src/main/cpp/main.c` (JNI) → Go functions marked `//export` in
@@ -57,6 +61,7 @@ receive ready-made state from view models and never call the service from layout
 | `:core` | JNI (`core/src/main/cpp`), the Go adapter `cfa` (`G`), the Kotlin facade (`K`), the core build (`core/src/foss/golang`). |
 | `:common` | Global context, intent constants, `Store`, utilities, `compat/`. |
 | `:baselineprofile` | The baseline profile generator (`StartupProfile.kt`). |
+| `:kaidl` | The generator of the Binder code for `S/remote/I*.kt`: a KSP processor that runs inside the build of `:service` and is not part of the APK (`kaidl/README.md`). |
 
 Outside Gradle: `site/` is the documentation site (MkDocs Material, see `site/README.md`),
 published by `.github/workflows/pages.yaml`.
