@@ -24,7 +24,7 @@
 | Мультиплекс Xray (mux.cool) с UDP и XUDP; REALITY, совместимый с Xray (ML-KEM, ML-DSA-65) | jesus (Jolymmiles), через legiz-ru/Prizrak-Core, ветка `v1-19-31`: 13 коммитов от `2197a3ca` до `9090c2c0`; в апстриме — MetaCubeX/mihomo#2980 | код, в нашей ветке ядра `ducker` с исходными авторами |
 | Пропуск битого узла в провайдере вместо отказа всего провайдера | legiz-ru/Prizrak-Core `e265e713` (порт из Medium1992/mihomo-proxy-ros) | код |
 | Подпись ML-DSA-65 для REALITY в uTLS | jesus, через legiz-ru/prizrak-utls `80ad7038` | код, в нашем форке `duckerapp/utls`, ветка `ducker`, с исходным автором |
-| Генератор кода Binder между интерфейсом и службой и его среда выполнения (`kaidl/`, `service/src/main/java/com/github/kr328/kaidl/`) | Kr328/kaidl, ветка `main`, коммит `7710f43` (версия 1.15), MIT — `kaidl/LICENSE` | код; Clash Meta for Android берёт его готовой библиотекой, у нас это исходники в дереве; что изменено — `kaidl/README.md` |
+| Генератор кода Binder между интерфейсом и службой и его среда выполнения (`kaidl/`, `service/src/main/java/com/github/kr328/kaidl/`) | Kr328/kaidl, ветка `main`, коммит `7710f43` (версия 1.15), MIT — `kaidl/LICENSE` | код; Clash Meta for Android берёт его готовой библиотекой, у нас генератор и среда выполнения переписаны на этой основе и лежат в дереве; чем отличаются — `kaidl/README.md` |
 
 ## Как оформлять заимствование
 1. **Код:** сохранить заголовок лицензии, в сообщении коммита указать источник
