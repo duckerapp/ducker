@@ -362,7 +362,7 @@
     <string name="app_update_error_foreign">Скачанный файл — не выпуск ducker, он не установлен</string>
     <string name="app_update_error_install">Android не установил обновление</string>
     <string name="app_update_notice_channel">Обновления приложения</string>
-    <string name="app_update_notice_title">Вышла версия ducker %s</string>
+    <string name="app_update_notice_title">Доступно обновление ducker %s</string>
     <string name="app_update_notice_text">Нажмите, чтобы обновить</string>
     <string name="app_update_done_title">ducker обновлён до %s</string>
     <string name="app_update_done_text">Нажмите, чтобы открыть</string>

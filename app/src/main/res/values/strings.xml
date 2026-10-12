@@ -370,7 +370,7 @@
     <string name="app_update_error_foreign">The downloaded file is not a ducker release, so it was not installed</string>
     <string name="app_update_error_install">Android didn\'t install the update</string>
     <string name="app_update_notice_channel">App updates</string>
-    <string name="app_update_notice_title">ducker %s is out</string>
+    <string name="app_update_notice_title">Update available: ducker %s</string>
     <string name="app_update_notice_text">Tap to update</string>
     <string name="app_update_done_title">ducker is updated to %s</string>
     <string name="app_update_done_text">Tap to open</string>
