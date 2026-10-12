@@ -135,9 +135,12 @@ subprojects {
                 // Где лежит update.json: GitHub, за ним зеркало на GitLab — приложение идёт по
                 // списку. Проверить обновление без выкладки, с компьютера:
                 // -Pducker.update.urls=http://127.0.0.1:8765/update.json и adb reverse tcp:8765 tcp:8765.
+                // Last is jsDelivr's copy of the GitHub file: one more chance where both sites are
+                // unreachable, though it can lag by up to 12 hours. Release files do not fit there.
                 val updateUrls = providers.gradleProperty("ducker.update.urls").orNull
                     ?: ("https://raw.githubusercontent.com/duckerapp/ducker/main/update.json," +
-                        "https://gitlab.com/duckerx/ducker/-/raw/main/update.json")
+                        "https://gitlab.com/duckerx/ducker/-/raw/main/update.json," +
+                        "https://cdn.jsdelivr.net/gh/duckerapp/ducker@main/update.json")
                 buildConfigField("String", "UPDATE_URLS", "\"$updateUrls\"")
             }
 

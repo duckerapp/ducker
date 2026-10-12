@@ -62,10 +62,11 @@ The URL is encrypted with a one-time key from the QR code. The TV listens on the
 only while the code is displayed.
 
 **7. Checking for a new ducker version.** About twice a day and when opened, the app downloads
-`update.json` from the project's GitHub repository, or from its GitLab mirror if GitHub does
-not respond. The request contains no information about you or the phone: only a `User-Agent`
-such as `ducker/<app version>`. The new version itself is downloaded from the same sites,
-only after you tap **Update**. Like any server, GitHub and GitLab see your IP address — or the
+`update.json` from the project's GitHub repository, from its GitLab mirror if GitHub does
+not respond, or, failing both, from a copy of that file on the jsDelivr CDN. The request
+contains no information about you or the phone: only a `User-Agent` such as
+`ducker/<app version>`. The new version itself is downloaded from GitHub or GitLab, only after
+you tap **Update**. Like any server, GitHub, GitLab, and jsDelivr see your IP address — or the
 provider node's address if the VPN is enabled. Before installation, the app checks the file's
 checksum and signature: it will not install a file from someone else.
 
