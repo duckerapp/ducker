@@ -40,7 +40,9 @@ dependencies {
 }
 
 // ducker: the settings exchange between two real processes (D-263) — on a device only,
-// run by hand on one named emulator (`SettingsExchangeTest`)
+// run by hand on one named emulator (`SettingsExchangeTest`). `BinderExchangeTest` beside it
+// does the same for the generated Binder glue (D-268) and has interfaces of its own.
 dependencies {
     androidTestImplementation(libs.androidx.test.runner)
+    kspAndroidTest(libs.kaidl.compiler)
 }

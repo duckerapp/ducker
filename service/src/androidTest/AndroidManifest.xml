@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- The far side of BinderExchangeTest: a second process of the test package. -->
+        <service
+            android:name="com.github.kr328.kaidl.test.ExchangeService"
+            android:exported="false"
+            android:process=":exchange" />
+    </application>
+</manifest>
