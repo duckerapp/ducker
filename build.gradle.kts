@@ -25,6 +25,19 @@ buildscript {
     }
 }
 
+// A debug build goes to one device, so it gets one ABI instead of four: the Go core is
+// compiled once and one APK is packaged. `-Pabi=x86_64` picks another one (an emulator),
+// `-Pabi=x86,x86_64` several; Android Studio passes the ABI of the device it runs on.
+// Everything else — release files, CI, a bare sync — builds all four.
+// ponytail: "debug" is read from the requested task names; a mixed run builds all four.
+val abis by extra(
+    ((findProperty("abi") ?: findProperty("android.injected.build.abi")) as String?)?.split(",")
+        ?: gradle.startParameter.taskNames
+            .takeIf { names -> names.isNotEmpty() && names.all { "Debug" in it } }
+            ?.let { listOf("arm64-v8a") }
+        ?: listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+)
+
 subprojects {
     // Модуль генерации baseline profile настраивает себя сам: он не приложение и не
     // библиотека, а com.android.test, и общая настройка ниже ему не подходит.
@@ -83,13 +96,17 @@ subprojects {
         defaultConfig.apply {
             minSdk = 29
 
-            ndk {
-                abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+            // The app's ABIs come from `splits` below: AGP rejects both settings together
+            // unless a universal APK is built as well.
+            if (!isApp) {
+                ndk {
+                    abiFilters += abis
+                }
             }
 
             externalNativeBuild {
                 cmake {
-                    abiFilters("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+                    abiFilters(*abis.toTypedArray())
                 }
             }
         }
@@ -207,9 +224,8 @@ subprojects {
             splits {
                 abi {
                     isEnable = true
-                    isUniversalApk = true
                     reset()
-                    include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+                    include(*abis.toTypedArray())
                 }
             }
         }

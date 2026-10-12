@@ -22,6 +22,9 @@ val goAbis = mapOf(
     "x86_64" to GoAbi("amd64", "x86_64-linux-android"),
 )
 
+/** Which of them this build compiles — decided in the root script. */
+val abis: List<String> by rootProject.extra
+
 /** Главный модуль сборки — `foss`; пакет `cfa/native` приходит в него через `replace`. */
 val goModuleDir = file("src/foss/golang")
 val golangSource = file("src/main/golang/native")
@@ -97,7 +100,7 @@ val androidMinSdk = 29
 androidComponents.onVariants { variant ->
     val cmakeName = if (variant.buildType == "debug") "Debug" else "RelWithDebInfo"
 
-    goAbis.forEach { (abi, spec) ->
+    goAbis.filterKeys { it in abis }.forEach { (abi, spec) ->
         val taskName = golangTaskName(variant.name, abi)
         val outputDir = goOutputBase.map { it.dir(variant.name).dir(abi) }
 
