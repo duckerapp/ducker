@@ -35,12 +35,15 @@ interface IExchange {
     fun echoBundle(v: Bundle): Bundle
     fun echoSparseBooleanArray(v: SparseBooleanArray): SparseBooleanArray
 
-    // A `Set` or a `Pair` standing directly in a signature is absent on purpose: the generator
-    // writes code for them that does not compile. Inside a list or a map they work.
     fun echoList(v: List<String>): List<String>
+    fun echoSet(v: Set<Long>): Set<Long>
     fun echoSets(v: List<Set<Long>>): List<Set<Long>>
+    fun echoPair(v: Pair<String, Long?>): Pair<String, Long?>
     fun echoMap(v: Map<String, Long>): Map<String, Long>
     fun echoNested(v: Map<String, List<Set<Long>>>): Map<String, List<Set<Long>>>
+
+    /** Two containers of each kind in one command: what the glue declares for one must not meet the other's. */
+    fun merge(a: Map<String, Long>, b: Map<String, Long>, c: Pair<String, Long>, d: Pair<String, Long>): Map<String, Long>
 
     fun echoModel(v: Model): Model
     fun echoModels(v: List<Model>): List<Model>
@@ -57,6 +60,10 @@ interface IExchange {
 
     /** Several arguments of different kinds in one command. */
     fun describe(count: Int, name: String, model: Model?, levels: List<Level>): String
+
+    /** Parameters named like what the glue itself has in scope. */
+    fun echoNames(code: Int, data: String, reply: String, flags: Int, remote: String, impl: String, it: String): String
+    suspend fun suspendEchoNames(code: Int, data: String, reply: String, flags: Int, remote: String, impl: String, it: String): String
 
     fun tell(observer: IObserver, text: String)
     fun tellAll(observers: List<IObserver>, text: String)
@@ -79,6 +86,16 @@ interface IExchange {
     fun bytes(size: Int): ByteArray
     suspend fun suspendBytes(size: Int): ByteArray
 
+    /** Replies when [openTheGate] is called: any number of commands then end at one moment. */
+    suspend fun suspendBytesAtTheGate(size: Int): ByteArray
+
+    /** How many commands wait at the gate. */
+    fun atTheGate(): Int
+    fun openTheGate()
+
+    /** `bytes` under the key "bytes" and, if asked, a binder under "binder". */
+    suspend fun suspendBundle(bytes: Int, binder: Boolean): Bundle
+
     suspend fun suspendEchoAfter(v: Int, millis: Long): Int
 
     /** Never returns: it ends by cancellation or with the process. */
@@ -86,6 +103,9 @@ interface IExchange {
 
     /** How many [suspendHang] bodies have started and how many of them were cancelled. */
     fun hangs(): IntArray
+
+    /** Turns the roles around: this side becomes the caller of [peer]'s `suspendHang`. */
+    fun callHang(peer: IExchange)
 
     fun sleep(millis: Long)
     fun pid(): Int

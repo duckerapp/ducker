@@ -6,6 +6,6 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 
 class KaidlProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        return KaidlProcessor(environment.codeGenerator)
+        return KaidlProcessor(environment.codeGenerator, environment.logger)
     }
 }

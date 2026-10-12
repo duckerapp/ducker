@@ -12,6 +12,7 @@ import android.os.DeadObjectException
 import android.os.IBinder
 import android.os.Process
 import android.os.SystemClock
+import android.os.TransactionTooLargeException
 import android.util.Log
 import android.util.SparseBooleanArray
 import androidx.test.platform.app.InstrumentationRegistry
@@ -19,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -129,13 +131,21 @@ class BinderExchangeTest {
     fun containers() {
         assertEquals(emptyList<String>(), exchange.echoList(emptyList()))
         assertEquals(listOf("a", "", "б"), exchange.echoList(listOf("a", "", "б")))
+        assertEquals(emptySet<Long>(), exchange.echoSet(emptySet()))
+        assertEquals(listOf(3L, 1L, 2L), exchange.echoSet(linkedSetOf(3L, 1L, 2L)).toList())
         assertEquals(listOf(setOf(3L, 1L, 2L), emptySet()), exchange.echoSets(listOf(setOf(3L, 1L, 2L), emptySet())))
+        assertEquals("a" to null, exchange.echoPair("a" to null))
+        assertEquals("b" to -7L, exchange.echoPair("b" to -7L))
         assertEquals(mapOf("a" to 1L, "b" to -1L), exchange.echoMap(mapOf("a" to 1L, "b" to -1L)))
         assertEquals(emptyMap<String, Long>(), exchange.echoMap(emptyMap()))
 
         val nested = mapOf("a" to listOf(setOf(1L, 2L), emptySet()), "b" to emptyList())
 
         assertEquals(nested, exchange.echoNested(nested))
+        assertEquals(
+            mapOf("a" to 1L, "b" to 2L, "c" to 3L, "d" to 4L),
+            exchange.merge(mapOf("a" to 1L), mapOf("b" to 2L), "c" to 3L, "d" to 4L),
+        )
 
         // The order of a list and of a map's entries survives.
         val order = (1..500).map { "name $it" }.shuffled()
@@ -159,6 +169,12 @@ class BinderExchangeTest {
 
         assertEquals("2 name model 1 [Info, Debug]", exchange.describe(2, "name", model(1), listOf(Level.Info, Level.Debug)))
         assertEquals("0  null []", exchange.describe(0, "", null, emptyList()))
+    }
+
+    @Test
+    fun parametersNamedLikeTheGlueItself() = runBlocking<Unit> {
+        assertEquals("1 d r 2 m i t", exchange.echoNames(1, "d", "r", 2, "m", "i", "t"))
+        assertEquals("1 d r 2 m i t", exchange.suspendEchoNames(1, "d", "r", 2, "m", "i", "t"))
     }
 
     @Test
@@ -241,7 +257,6 @@ class BinderExchangeTest {
         assertEquals(7, exchange.echoInt(7))
     }
 
-    // Fails today: the caller gets an empty answer instead (D-268, F-264).
     @Test
     fun anOrdinaryCommandThrowsAnythingElseAsIllegalArgument() {
         assertEquals(IllegalArgumentException::class.java, failureOf { exchange.fail(Failure.Io) })
@@ -251,19 +266,26 @@ class BinderExchangeTest {
     }
 
     @Test
-    fun aSuspendCommandThrowsWithTheMessage() = runBlocking<Unit> {
-        val carried = listOf(
-            Failure.IllegalState, Failure.IllegalArgumentSubclass, Failure.Security,
-            Failure.NullPointer, Failure.UnsupportedOperation,
-        )
-
-        // Callers recognise failures by their text; the type is checked only where it is settled.
-        for (failure in carried) failureOf { exchange.suspendFail(failure) }
+    fun aSuspendCommandThrowsLikeAnOrdinaryOne() = runBlocking<Unit> {
+        assertEquals(IllegalStateException::class.java, failureOf { exchange.suspendFail(Failure.IllegalState) })
+        assertEquals(IllegalArgumentException::class.java, failureOf { exchange.suspendFail(Failure.IllegalArgumentSubclass) })
+        assertEquals(SecurityException::class.java, failureOf { exchange.suspendFail(Failure.Security) })
+        assertEquals(NullPointerException::class.java, failureOf { exchange.suspendFail(Failure.NullPointer) })
+        assertEquals(UnsupportedOperationException::class.java, failureOf { exchange.suspendFail(Failure.UnsupportedOperation) })
 
         assertEquals(IllegalArgumentException::class.java, failureOf { exchange.suspendFail(Failure.Io) })
         assertEquals(IllegalArgumentException::class.java, failureOf { exchange.suspendFail(Failure.OwnRuntime) })
 
         assertEquals(7, exchange.suspendEchoInt(7))
+    }
+
+    @Test
+    fun aCommandTheOtherSideDoesNotKnowIsAnError() {
+        // A binder of another interface: its first command has the code of ours, the second has none.
+        val stranger = IExchangeProxy((exchange.peer("stranger") as IPeerProxy).remote)
+
+        assertEquals(SecurityException::class.java, runCatching { stranger.nothing() }.exceptionOrNull()?.javaClass)
+        assertEquals(UnsupportedOperationException::class.java, runCatching { stranger.echoInt(7) }.exceptionOrNull()?.javaClass)
     }
 
     @Test
@@ -317,6 +339,20 @@ class BinderExchangeTest {
     }
 
     @Test
+    fun theDeathOfTheCallerCancelsTheCommand() {
+        // The roles turned around: the command runs here, its caller is the other process.
+        val mine = Exchange()
+
+        exchange.callHang(mine)
+
+        await("the command started") { mine.hangs()[0] == 1 }
+
+        Process.killProcess(exchange.pid())
+
+        await("the command was cancelled") { mine.hangs()[1] == 1 }
+    }
+
+    @Test
     fun aThousandConcurrentCalls() = runBlocking<Unit> {
         // The delay keeps all of them waiting in the service at the same time.
         val results = withTimeout(60_000) {
@@ -331,7 +367,18 @@ class BinderExchangeTest {
         assertArrayEquals(Exchange.pattern(600 * 1024), exchange.bytes(600 * 1024))
     }
 
-    // The three below fail today: a reply over half of the Binder buffer never arrives (D-268, F-263).
+    // An ordinary reply over the whole Binder buffer cannot arrive, and Android calls that the death
+    // of the service. The service is alive, and the caller must be told so.
+    @Test
+    fun anOrdinaryReplyOf2MegabytesFailsButIsNotADeath() {
+        assertEquals(
+            TransactionTooLargeException::class.java,
+            runCatching { exchange.bytes(2 * 1024 * 1024) }.exceptionOrNull()?.javaClass,
+        )
+
+        assertEquals(7, exchange.echoInt(7))
+    }
+
     @Test
     fun aSuspendReplyOf600Kilobytes() = suspendReplyOf(600 * 1024)
 
@@ -341,6 +388,87 @@ class BinderExchangeTest {
     @Test
     fun aSuspendReplyOf8Megabytes() = suspendReplyOf(8 * 1024 * 1024)
 
+    // Sizes around the two limits of the transport: one one-way message, one piece of a parked reply.
+    @Test
+    fun suspendRepliesAroundTheLimits() = runBlocking<Unit> {
+        for (limit in listOf(64 * 1024, 256 * 1024, 512 * 1024)) {
+            for (size in listOf(limit - 64, limit - 16, limit - 8, limit - 4, limit, limit + 4, limit + 64)) {
+                assertArrayEquals("$size bytes", Exchange.pattern(size), exchange.suspendBytes(size))
+            }
+        }
+    }
+
+    @Test
+    fun aLargeSuspendReplyCannotHoldABinder() = runBlocking<Unit> {
+        val small = exchange.suspendBundle(16, binder = true)
+
+        assertNotNull(small.getBinder("binder"))
+        assertArrayEquals(Exchange.pattern(16), small.getByteArray("bytes"))
+
+        assertArrayEquals(Exchange.pattern(300_000), exchange.suspendBundle(300_000, binder = false).getByteArray("bytes"))
+
+        val failure = runCatching { exchange.suspendBundle(300_000, binder = true) }.exceptionOrNull()
+
+        assertEquals(IllegalArgumentException::class.java, failure?.javaClass)
+        assertTrue(failure?.message, failure?.message?.contains("binder") == true)
+
+        assertEquals(7, exchange.suspendEchoInt(7))
+    }
+
+    // Twelve megabytes of replies that each fit a one-way message, at one moment: the caller's buffer
+    // takes half a megabyte of them, the rest have to wait in the service and be pulled.
+    @Test
+    fun aBurstOfRepliesLargerThanTheBuffer() = runBlocking<Unit> {
+        val calls = (0 until 200).map { async(Dispatchers.IO) { exchange.suspendBytesAtTheGate(60_000) } }
+
+        await("every command is at the gate") { exchange.atTheGate() == calls.size }
+
+        exchange.openTheGate()
+
+        for (reply in withTimeout(60_000) { calls.awaitAll() }) assertArrayEquals(Exchange.pattern(60_000), reply)
+    }
+
+    @Test
+    fun cancellingWhileALargeReplyArrives() = runBlocking<Unit> {
+        val size = 4 * 1024 * 1024
+        val whole = millisOf { assertArrayEquals(Exchange.pattern(size), exchange.suspendBytes(size)) }
+
+        // The cancellation lands before the reply is ready, while it is pulled, and after it.
+        for (step in 0..24) {
+            val call = async(Dispatchers.IO) { exchange.suspendBytes(size) }
+
+            delay(whole * step / 20)
+
+            withTimeout(TIMEOUT) { call.cancelAndJoin() }
+        }
+
+        assertEquals(7, exchange.echoInt(7))
+        assertArrayEquals(Exchange.pattern(size), exchange.suspendBytes(size))
+    }
+
+    @Test
+    fun theDeathOfTheServiceWhileALargeReplyArrives() = runBlocking<Unit> {
+        val size = 8 * 1024 * 1024
+        val whole = millisOf { assertArrayEquals(Exchange.pattern(size), exchange.suspendBytes(size)) }
+
+        val pid = exchange.pid()
+        val call = async(Dispatchers.IO) { runCatching { exchange.suspendBytes(size) } }
+
+        delay(whole / 2)
+        Process.killProcess(pid)
+
+        // Whole or not at all, and never without an end.
+        val outcome = withTimeoutOrNull(TIMEOUT) { call.await() }
+
+        assertNotNull("The call is still waiting", outcome)
+
+        if (outcome!!.isSuccess) {
+            assertArrayEquals(Exchange.pattern(size), outcome.getOrThrow())
+        } else {
+            assertEquals(DeadObjectException::class.java, outcome.exceptionOrNull()?.javaClass)
+        }
+    }
+
     @Test
     fun roundTripTimes() = runBlocking<Unit> {
         val models = models(100)
@@ -349,6 +477,7 @@ class BinderExchangeTest {
         report("suspend, Int", measure { exchange.suspendEchoInt(it) })
         report("ordinary, 100 models", measure { exchange.echoModels(models) })
         report("suspend, 100 models", measure { exchange.suspendEchoModels(models) })
+        report("suspend, 2 MB", measure(warmUp = 5, rounds = 50) { exchange.suspendBytes(2 * 1024 * 1024) })
     }
 
     private fun suspendReplyOf(size: Int) = runBlocking<Unit> {
@@ -367,6 +496,14 @@ class BinderExchangeTest {
         return failure.javaClass
     }
 
+    private inline fun millisOf(block: () -> Unit): Long {
+        val started = SystemClock.elapsedRealtime()
+
+        block()
+
+        return SystemClock.elapsedRealtime() - started
+    }
+
     private inline fun await(what: String, condition: () -> Boolean) {
         val deadline = SystemClock.elapsedRealtime() + TIMEOUT
 
@@ -377,11 +514,11 @@ class BinderExchangeTest {
         }
     }
 
-    /** Sorted durations of [ROUNDS] calls, in nanoseconds. */
-    private inline fun measure(call: (Int) -> Unit): LongArray {
-        repeat(WARM_UP) { call(it) }
+    /** Sorted durations of [rounds] calls, in nanoseconds. */
+    private inline fun measure(warmUp: Int = WARM_UP, rounds: Int = ROUNDS, call: (Int) -> Unit): LongArray {
+        repeat(warmUp) { call(it) }
 
-        return LongArray(ROUNDS) {
+        return LongArray(rounds) {
             val started = System.nanoTime()
 
             call(it)
