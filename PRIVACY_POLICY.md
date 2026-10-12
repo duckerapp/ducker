@@ -100,8 +100,6 @@ and copies only the prepared report. Nothing is sent automatically.
 - **Camera** — only to scan subscription QR codes. Frames are neither saved nor sent anywhere.
 - **App list** — to let you choose apps that bypass the VPN. The list stays on the phone.
 - **Background work and start after reboot** — to prevent the VPN from stopping on its own.
-- **`INTERACT_ACROSS_USERS`** is declared in the manifest but can be granted only manually
-  through USB debugging (adb). The app does not request it itself.
 
 ## Changes
 
