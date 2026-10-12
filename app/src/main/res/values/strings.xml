@@ -363,6 +363,7 @@
     <string name="app_update_size">Download size: %s</string>
     <string name="app_update_size_vpn">Download size: %s. The VPN is on, so the file will come through it</string>
     <string name="app_update_permission">A one-time step: on the Android screen, allow installs from this source and go back. The update will continue by itself</string>
+    <string name="app_update_closes">After installing, ducker will close — open it again</string>
     <string name="app_update_downloading">Downloading…</string>
     <string name="app_update_installing">Installing…</string>
     <string name="app_update_error_download">Couldn\'t download the update. Check the connection and try again</string>

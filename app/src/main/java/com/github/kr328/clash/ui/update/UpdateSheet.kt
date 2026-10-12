@@ -103,6 +103,14 @@ fun UpdateSheet(
             }
         }
 
+        // Android closes the app to replace it and does not let it reopen itself. People
+        // without notifications get no “updated” notice, so the sheet says it beforehand.
+        Text(
+            text = stringResource(R.string.app_update_closes),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
         SheetButton(
             text = stringResource(R.string.update),
             busyText = stringResource(
