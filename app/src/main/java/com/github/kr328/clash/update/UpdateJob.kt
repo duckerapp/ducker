@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 class UpdateJob : JobService() {
     override fun onStartJob(params: JobParameters): Boolean {
         Global.launch {
-            Updater.refresh(manual = false)
+            Updater.scheduled()
 
             jobFinished(params, false)
         }

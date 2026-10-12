@@ -98,16 +98,28 @@ object Updater {
         }
     }
 
-    /** [manual] — человек нажал «Проверить обновления» и ждёт ответа, каким бы тот ни был. */
-    @Synchronized
-    fun check(manual: Boolean = false) {
-        if (checkJob?.isActive == true) return
-
-        checkJob = Global.launch { refresh(manual) }
+    /**
+     * The check on the system's schedule, from [UpdateJob]. The job runs the moment it is first
+     * scheduled — right when the app opens and checks by itself: the server should see one
+     * request then, not two.
+     */
+    suspend fun scheduled() {
+        if (System.currentTimeMillis() - store.checkedAt > JUST_CHECKED) check().join()
     }
 
-    /** Одна проверка от начала до конца. Вызывает и фоновая задача, поэтому без своей корутины. */
-    fun refresh(manual: Boolean) {
+    /**
+     * [manual] — человек нажал «Проверить обновления» и ждёт ответа, каким бы тот ни был.
+     * A check already in flight is returned as is.
+     */
+    @Synchronized
+    fun check(manual: Boolean = false): Job {
+        checkJob?.takeIf { it.isActive }?.let { return it }
+
+        return Global.launch { refresh(manual) }.also { checkJob = it }
+    }
+
+    /** One check from start to finish. */
+    private fun refresh(manual: Boolean) {
         // Канал могли сменить — сначала то, что уже лежит на телефоне.
         val known = pick()
 
@@ -357,6 +369,7 @@ object Updater {
 
     /** При открытии приложения — не чаще: адрес у людей за одним узлом общий, а сервер считает запросы. */
     private const val OPEN_INTERVAL = 6 * 60 * 60 * 1000L
+    private const val JUST_CHECKED = 60 * 1000L
     private const val CONNECT_MS = 10_000
     private const val READ_MS = 15_000
     private const val FEED_LIMIT = 256 * 1024
