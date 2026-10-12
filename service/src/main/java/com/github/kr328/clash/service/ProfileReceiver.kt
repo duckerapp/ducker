@@ -86,7 +86,7 @@ class ProfileReceiver : BroadcastReceiver() {
         private var initialized: Boolean = false
         private val updateFailures = ConcurrentHashMap<UUID, Int>()
 
-        suspend fun rescheduleAll(context: Context) = lock.withLock {
+        suspend fun rescheduleAll(context: Context): Unit = lock.withLock {
             if (initialized)
                 return
 
