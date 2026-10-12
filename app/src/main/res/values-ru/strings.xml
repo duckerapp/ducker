@@ -354,7 +354,7 @@
     <string name="app_update_whats_new">Что нового</string>
     <string name="app_update_size">Размер загрузки — %s</string>
     <string name="app_update_size_vpn">Размер загрузки — %s. VPN включён, поэтому файл скачается через него</string>
-    <string name="app_update_permission">Один раз понадобится разрешение: на экране Android включите установку из этого источника и вернитесь назад. Обновление продолжится само</string>
+    <string name="app_update_permission">Один раз понадобится разрешение: на экране Android включите установку из этого источника и вернитесь назад — обновление продолжится само. Предупреждение о неизвестных приложениях на том экране стандартное: ducker ставит только свои обновления и проверяет, что файл настоящий</string>
     <string name="app_update_closes">После установки ducker закроется — откройте его снова</string>
     <string name="app_update_downloading">Скачиваю…</string>
     <string name="app_update_installing">Устанавливаю…</string>
