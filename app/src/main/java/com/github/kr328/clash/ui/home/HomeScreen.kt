@@ -236,7 +236,7 @@ fun HomeScreen(
     // мягкая: после первой подписки главная проявляется на месте приветствия.
     Crossfade(targetState = onboarding, animationSpec = tween(ONBOARDING_MS), label = "onboarding") { first ->
         if (first) {
-            Welcome(onSettings, header, modifier)
+            Welcome(onSettings, header, update, onUpdate, modifier)
         } else {
             HomeRegular(
                 state = state,
@@ -274,13 +274,32 @@ fun HomeScreen(
  * стояла карточка «первое подключение» без единой кнопки, а под ней — пустой экран.
  */
 @Composable
-private fun Welcome(onSettings: () -> Unit, header: Boolean, modifier: Modifier) {
+private fun Welcome(
+    onSettings: () -> Unit,
+    header: Boolean,
+    update: String?,
+    onUpdate: () -> Unit,
+    modifier: Modifier,
+) {
     Column(
         modifier = modifier.fillMaxSize()
             .screenInsets()
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         if (header) BrandHeader(null, onSettings)
+
+        // A new version matters before the first subscription too: whoever got an old file
+        // from a friend should update before setting anything up. The notification cannot
+        // tell them — on a fresh install it is not permitted yet.
+        if (update != null) {
+            Spacer(Modifier.height(8.dp))
+
+            InfoCard(
+                stringResource(R.string.app_update_card, update),
+                Icons.Default.SystemUpdate,
+                action = stringResource(R.string.update) to onUpdate,
+            )
+        }
 
         Column(
             modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp),
