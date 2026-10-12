@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -114,10 +115,16 @@ object Updater {
 
         store.checkedAt = System.currentTimeMillis()
 
+        // The address answered that there is no such file: nothing is published there. That is
+        // an answer, not a failed check — otherwise builds made before the first published
+        // release would report an error to someone who has the latest version.
+        var absent = false
         val mirrors = runCatching { parseFeed(store.feed).mirrors }.getOrDefault(emptyList())
         val fresh = (BuildConfig.UPDATE_URLS.split(',') + mirrors).firstNotNullOfOrNull { url ->
             // Ответ не того вида — тот же отказ: идём к следующему адресу.
-            runCatching { fetchText(url).also(::parseFeed) }.getOrNull()
+            runCatching { fetchText(url).also(::parseFeed) }
+                .onFailure { if (it is FileNotFoundException) absent = true }
+                .getOrNull()
         }
 
         if (fresh != null) store.feed = fresh
@@ -129,7 +136,7 @@ object Updater {
                 release = release,
                 checking = false,
                 checked = when {
-                    fresh != null -> true
+                    fresh != null || absent -> true
                     manual -> false
                     else -> it.checked
                 },
@@ -261,7 +268,11 @@ object Updater {
         connection.setRequestProperty("User-Agent", AGENT)
 
         try {
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) throw IOException("HTTP ${connection.responseCode}")
+            when (connection.responseCode) {
+                HttpURLConnection.HTTP_OK -> Unit
+                HttpURLConnection.HTTP_NOT_FOUND -> throw FileNotFoundException(url)
+                else -> throw IOException("HTTP ${connection.responseCode}")
+            }
 
             // Файл — пара килобайт; больше предела не читаем, что бы ни отдал сервер.
             val buffer = ByteArray(FEED_LIMIT + 1)
