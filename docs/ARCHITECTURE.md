@@ -36,7 +36,10 @@ ID is `app.ducker.android`.
 
 The interface talks to the service over Binder: `S/remote/I*.kt` (`IRemoteService`,
 `IClashManager`, `IProfileManager`). Settings are shared between the two processes by
-`S/PreferenceProvider.kt`.
+`S/PreferenceProvider.kt`: the settings file belongs to the service process, and every other
+process reads and writes it through that provider. `SettingsExchangeTest` in
+`service/src/androidTest` runs this exchange between two real processes; it needs a device, and
+the commands are in the file.
 
 A call into the core goes like this: Kotlin `K/Clash.kt` → `K/bridge/Bridge.kt`
 (`external fun native*`) → `core/src/main/cpp/main.c` (JNI) → Go functions marked `//export` in
