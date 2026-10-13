@@ -10,13 +10,16 @@
 package convert
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/common/convert"
-	"github.com/metacubex/mihomo/common/yaml"
+	// The library itself, not mihomo's `common/yaml`: that one has no node tree.
+	"go.yaml.in/yaml/v3"
 )
 
 // ErrNotConvertible означает, что в содержимом не нашлось ни одной ссылки протокола.
@@ -131,14 +134,11 @@ func nameProxies(proxies []map[string]any) {
 // обычно через узел (FACTS.md, F-53). Если узлы умерли или подписка кончилась,
 // обновиться становится нельзя — ровно тогда, когда это нужно. Здесь мы правим
 // свой шаблон, а не конфиг провайдера, так что инвариант 1 не нарушается.
-func withDirectHost(rules any, host string) []any {
-	result := []any{"DOMAIN," + host + ",DIRECT"}
+func withDirectHost(rules *yaml.Node, host string) {
+	rule := &yaml.Node{}
+	rule.SetString("DOMAIN," + host + ",DIRECT")
 
-	if existing, ok := rules.([]any); ok {
-		result = append(result, existing...)
-	}
-
-	return result
+	rules.Content = append([]*yaml.Node{rule}, rules.Content...)
 }
 
 // ApplyTemplate вставляет узлы в шаблон и отдаёт готовый конфиг.
@@ -167,35 +167,135 @@ func ApplyTemplate(content, template, directHost string) (string, bool, error) {
 		proxies, fromConfig = fromFile, true
 	}
 
-	var document map[string]any
+	// The template is edited as a tree of nodes, not as a map: a map comes back sorted by
+	// key, and a person opening their config found `allow-lan`, `dns`, … instead of the
+	// template's order (D-288). Anchors and their references stay as written.
+	var document yaml.Node
 	if err := yaml.Unmarshal([]byte(template), &document); err != nil {
 		return "", false, err
 	}
 
-	if document == nil {
-		document = map[string]any{}
+	// An empty template is no document at all.
+	if document.Kind == 0 {
+		document = yaml.Node{Kind: yaml.DocumentNode, Content: []*yaml.Node{{Kind: yaml.MappingNode}}}
 	}
 
-	merged := make([]any, 0, len(proxies)+4)
-
-	if existing, ok := document["proxies"].([]any); ok {
-		merged = append(merged, existing...)
+	root := document.Content[0]
+	if root.Kind != yaml.MappingNode {
+		return "", false, errors.New("шаблон не является набором ключей")
 	}
+
+	tidy(root)
+
+	list := sequence(root, "proxies")
 
 	for _, proxy := range proxies {
-		merged = append(merged, proxy)
-	}
+		node, err := proxyNode(proxy)
+		if err != nil {
+			return "", false, err
+		}
 
-	document["proxies"] = merged
+		list.Content = append(list.Content, node)
+	}
 
 	if directHost != "" {
-		document["rules"] = withDirectHost(document["rules"], directHost)
+		withDirectHost(sequence(root, "rules"), directHost)
 	}
 
-	out, err := yaml.Marshal(document)
-	if err != nil {
+	var out bytes.Buffer
+
+	encoder := yaml.NewEncoder(&out)
+	// As the template is written.
+	encoder.SetIndent(2)
+
+	if err := encoder.Encode(&document); err != nil {
 		return "", false, err
 	}
 
-	return string(out), fromConfig, nil
+	if err := encoder.Close(); err != nil {
+		return "", false, err
+	}
+
+	return out.String(), fromConfig, nil
+}
+
+// sequence returns the list under a top-level key. A key the template lacks is added at
+// the end; a value that is not a list becomes an empty one.
+func sequence(root *yaml.Node, key string) *yaml.Node {
+	for i := 0; i+1 < len(root.Content); i += 2 {
+		if root.Content[i].Value != key {
+			continue
+		}
+
+		value := root.Content[i+1]
+		if value.Kind != yaml.SequenceNode {
+			*value = yaml.Node{Kind: yaml.SequenceNode}
+		}
+
+		// `proxies: []` would otherwise put every node on that one line.
+		value.Style &^= yaml.FlowStyle
+
+		return value
+	}
+
+	name, value := &yaml.Node{}, &yaml.Node{Kind: yaml.SequenceNode}
+	name.SetString(key)
+
+	root.Content = append(root.Content, name, value)
+
+	return value
+}
+
+// tidy removes what has no place in a person's config: the template's comments, written for
+// whoever maintains it, and the tag the encoder would put before every merge — `!!merge <<:`.
+func tidy(node *yaml.Node) {
+	node.HeadComment, node.LineComment, node.FootComment = "", "", ""
+
+	if node.Tag == "!!merge" {
+		node.Tag = ""
+	}
+
+	for _, child := range node.Content {
+		tidy(child)
+	}
+}
+
+// proxyNode writes a node with the keys a person looks for first. The converter hands it
+// over as a map, which would come out sorted by key: `alpn` at the top, `name` in the middle.
+func proxyNode(proxy map[string]any) (*yaml.Node, error) {
+	node := &yaml.Node{}
+	if err := node.Encode(proxy); err != nil {
+		return nil, err
+	}
+
+	pairs := make([][2]*yaml.Node, 0, len(node.Content)/2)
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		pairs = append(pairs, [2]*yaml.Node{node.Content[i], node.Content[i+1]})
+	}
+
+	sort.SliceStable(pairs, func(a, b int) bool {
+		return proxyKeyRank(pairs[a][0].Value) < proxyKeyRank(pairs[b][0].Value)
+	})
+
+	node.Content = node.Content[:0]
+	for _, pair := range pairs {
+		node.Content = append(node.Content, pair[0], pair[1])
+	}
+
+	return node, nil
+}
+
+func proxyKeyRank(key string) int {
+	switch key {
+	case "name":
+		return 0
+	case "type":
+		return 1
+	case "server":
+		return 2
+	case "port":
+		return 3
+	}
+
+	return 4
 }

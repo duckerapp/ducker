@@ -1,10 +1,12 @@
 package convert
 
 import (
+	"os"
+	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/metacubex/mihomo/common/yaml"
+	"go.yaml.in/yaml/v3"
 )
 
 // Шаблон нарочно похож на встроенный (D-29): служебный узел, на который ссылается
@@ -213,5 +215,171 @@ func TestConfigWithoutNodesIsRejected(t *testing.T) {
 		if _, _, err := ApplyTemplate(content, template, ""); err == nil {
 			t.Fatalf("%s: должно отвергаться, узлов взять неоткуда", name)
 		}
+	}
+}
+
+// What the conversion must carry over untouched: comments of every kind to drop, an anchor
+// with a merge, a list written in one line, and `proxies` at the bottom.
+const orderedTemplate = `# A header comment.
+x-anchors:
+  provider: &provider
+    type: http      # a comment at the end of a line
+    interval: 86400
+
+mode: rule
+allow-lan: false
+dns:
+  enable: true
+  nameserver: [1.1.1.1, 8.8.8.8]
+rule-providers:
+  ads:
+    <<: *provider
+    behavior: domain
+proxy-groups:
+  - name: Основной
+    type: select
+    include-all-proxies: true
+rules:
+  # A comment before a rule.
+  - RULE-SET,ads,REJECT
+  - MATCH,Основной
+
+# A comment before the last key.
+proxies:
+  - name: DIRECTv4
+    type: direct
+`
+
+// topKeys lists the keys of the first level in the order they are written.
+func topKeys(text string) string {
+	keys := []string{}
+
+	for _, line := range strings.Split(text, "\n") {
+		if line == "" || strings.ContainsAny(line[:1], " -#") {
+			continue
+		}
+
+		keys = append(keys, strings.SplitN(line, ":", 2)[0])
+	}
+
+	return strings.Join(keys, ",")
+}
+
+func hasComments(node *yaml.Node) bool {
+	if node.HeadComment != "" || node.LineComment != "" || node.FootComment != "" {
+		return true
+	}
+
+	for _, child := range node.Content {
+		if hasComments(child) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func TestTemplateKeepsItsOrderWithoutComments(t *testing.T) {
+	out, _, err := ApplyTemplate(links, orderedTemplate, "sub.example.net")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A person opening their config sees the template's order, not the alphabet (D-288).
+	if keys := topKeys(out); keys != "x-anchors,mode,allow-lan,dns,rule-providers,proxy-groups,rules,proxies" {
+		t.Fatalf("keys of the first level: %s", keys)
+	}
+
+	for _, piece := range []string{
+		// The order below the first level, and a one-line list left as written.
+		"dns:\n  enable: true\n  nameserver: [1.1.1.1, 8.8.8.8]\n",
+		// The anchor and its reference, not a copy in every place.
+		"provider: &provider\n    type: http\n    interval: 86400\n",
+		"    <<: *provider\n",
+		"rules:\n  - DOMAIN,sub.example.net,DIRECT\n  - RULE-SET,ads,REJECT\n",
+		// A node from a link begins with what a person looks for.
+		"  - name: Франкфурт\n    type: vless\n    server: example.com\n    port: \"443\"\n",
+	} {
+		if !strings.Contains(out, piece) {
+			t.Fatalf("not in the result: %q\n%s", piece, out)
+		}
+	}
+
+	if strings.Contains(out, "#") {
+		t.Fatalf("a comment went into the config:\n%s", out)
+	}
+
+	// The merge still gives the core what it gave before.
+	var document struct {
+		Providers map[string]map[string]any `yaml:"rule-providers"`
+	}
+	if err := yaml.Unmarshal([]byte(out), &document); err != nil {
+		t.Fatal(err)
+	}
+
+	if document.Providers["ads"]["type"] != "http" {
+		t.Fatalf("the merged provider: %v", document.Providers["ads"])
+	}
+}
+
+// The built-in template itself: whatever is written into it next has to survive the same way.
+func TestBuiltInTemplateMeansTheSame(t *testing.T) {
+	source, err := os.ReadFile("../../../../../../app/src/main/assets/ducker/template.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out, _, err := ApplyTemplate(links, string(source), "sub.example.net")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if before, after := topKeys(string(source)), topKeys(out); before != after {
+		t.Fatalf("keys of the first level:\n%s\nin the template:\n%s", after, before)
+	}
+
+	if !strings.HasSuffix(topKeys(out), ",proxies") {
+		t.Fatal("`proxies` is not the last key")
+	}
+
+	var tree yaml.Node
+	if err := yaml.Unmarshal([]byte(out), &tree); err != nil {
+		t.Fatal(err)
+	}
+
+	if hasComments(&tree) {
+		t.Fatal("a comment went into the config")
+	}
+
+	// To the core the result is the template with two lists longer: nodes at the end of one,
+	// a rule at the start of the other.
+	var before, after map[string]any
+	if err := yaml.Unmarshal(source, &before); err != nil {
+		t.Fatal(err)
+	}
+	if err := yaml.Unmarshal([]byte(out), &after); err != nil {
+		t.Fatal(err)
+	}
+
+	own, _ := before["proxies"].([]any)
+	proxies, _ := after["proxies"].([]any)
+
+	if len(proxies) != len(own)+2 || !reflect.DeepEqual(proxies[:len(own)], own) {
+		t.Fatalf("the template's own nodes changed: %v", proxies)
+	}
+
+	rules, _ := after["rules"].([]any)
+
+	if len(rules) == 0 || rules[0] != "DOMAIN,sub.example.net,DIRECT" || !reflect.DeepEqual(rules[1:], before["rules"]) {
+		t.Fatal("the template's rules changed")
+	}
+
+	delete(before, "proxies")
+	delete(after, "proxies")
+	delete(before, "rules")
+	delete(after, "rules")
+
+	if !reflect.DeepEqual(before, after) {
+		t.Fatal("the rest of the template reads differently")
 	}
 }
