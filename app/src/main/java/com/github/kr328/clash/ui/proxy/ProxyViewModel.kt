@@ -15,6 +15,7 @@ import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.util.withProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,6 +65,21 @@ data class ProxyState(
     val canCheck: Boolean = false,
     val loaded: Boolean = false,
 )
+
+/**
+ * What the core has measured so far ([fresh]: node name to the core's value), laid over the list
+ * while a check is still running (F-271). The order stays as it is: sorted by delay, the cards
+ * would otherwise move every second. A node without a number keeps what it showed — "not asked
+ * yet" and "did not answer" look the same in the core until the check ends (D-72).
+ */
+internal fun overlay(groups: List<ProxyGroupState>, fresh: Map<String, Int>): List<ProxyGroupState> =
+    groups.map { group ->
+        group.copy(proxies = group.proxies.map { node ->
+            val delay = DelayStore.ofCore(fresh[node.name] ?: DelayStore.UNKNOWN)
+
+            if (delay > 0) node.copy(delay = delay) else node
+        })
+    }
 
 class ProxyViewModel : ViewModel() {
     private val _state = MutableStateFlow(ProxyState())
@@ -283,9 +299,7 @@ class ProxyViewModel : ViewModel() {
 
             _state.update { it.copy(checking = pending.first().name) }
 
-            pending.forEach { group ->
-                runCatching { withClash { healthCheck(group.name) } }
-            }
+            pending.forEach { group -> checkLive(group.name) }
 
             val names = pending.map { it.name }.toSet()
 
@@ -381,7 +395,7 @@ class ProxyViewModel : ViewModel() {
 
         _state.update { it.copy(checking = group) }
 
-        runCatching { withClash { healthCheck(group) } }
+        checkLive(group)
 
         // Результат сохраняем сразу: не ответившие узлы получают отметку отказа,
         // но только со второго промаха подряд (D-72).
@@ -395,6 +409,31 @@ class ProxyViewModel : ViewModel() {
         _state.update { it.copy(checking = null) }
 
         return measured
+    }
+
+    /**
+     * The check of a group, with every delay shown as the core records it instead of after the
+     * last one: on a long list where most nodes are silent the check takes about a minute (F-270).
+     * The core asks the nodes in the order of the profile, ten at a time
+     * (`adapter/provider/healthcheck.go`), so the top of the list is done within seconds.
+     */
+    private suspend fun checkLive(group: String) = coroutineScope {
+        val watch = launch {
+            while (true) {
+                delay(WATCH)
+
+                val fresh = runCatching { withClash { queryProxyGroup(group, ProxySort.Default) } }
+                    .getOrNull()?.proxies.orEmpty().associate { it.name to it.delay }
+
+                baseGroups = overlay(baseGroups, fresh)
+
+                _state.update { it.copy(groups = withFavorites(baseGroups)) }
+            }
+        }
+
+        runCatching { withClash { healthCheck(group) } }
+
+        watch.cancel()
     }
 
     /**
@@ -423,5 +462,8 @@ class ProxyViewModel : ViewModel() {
 
         /** Пауза перед повторным автозамером после неудачного — как на главной. */
         const val RETRY = 5000L
+
+        /** How often the list picks up new delays while a check is running. */
+        const val WATCH = 1000L
     }
 }
