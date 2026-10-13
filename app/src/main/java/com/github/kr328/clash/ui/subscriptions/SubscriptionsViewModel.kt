@@ -130,6 +130,14 @@ data class SubscriptionsState(
  */
 internal const val FIELD_LIMIT = 16_000
 
+/**
+ * The longest list of links that is added, in characters. Turning a list into a config costs the
+ * VPN service's process about 180 MB per megabyte of list (F-269): 1 MB is some four thousand nodes
+ * and a peak of about 360 MB (F-270). A longer list is refused, not cut: nobody could tell which
+ * nodes went.
+ */
+internal const val LIST_LIMIT = 1024 * 1024
+
 /** Приём подписки с телефона (D-162): что панель «+» на телевизоре показывает на месте QR. */
 sealed interface Receive {
     /** Ждём телефон: код для QR. */
@@ -223,6 +231,8 @@ class SubscriptionsViewModel : ViewModel() {
             val result = runCatching {
                 val isUrl = raw.startsWith("http://", true) || raw.startsWith("https://", true)
 
+                if (!isUrl && raw.length > LIST_LIMIT) throw Told(context.getString(R.string.add_list_too_large))
+
                 val uuid = withProfile {
                     if (isUrl) {
                         val name = defaultName(raw).ifEmpty { context.getString(R.string.subscription_default_name) }
@@ -277,6 +287,9 @@ class SubscriptionsViewModel : ViewModel() {
                 if ('\u0000' in text) throw Told(context.getString(R.string.file_not_subscription))
 
                 if (!CONFIG.containsMatchIn(text)) {
+                    // Said here, not after “Добавить”: the field would promise to add all of it.
+                    if (text.length > LIST_LIMIT) throw Told(context.getString(R.string.add_list_too_large))
+
                     _state.update { it.copy(input = text.trim()) }
 
                     return@runCatching false

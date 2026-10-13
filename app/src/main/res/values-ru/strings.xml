@@ -55,6 +55,7 @@
     <string name="add_from_file">Файл</string>
     <string name="file_not_subscription">В файле нет ни ссылки, ни конфига</string>
     <string name="add_file_too_large">Файл слишком большой: добавить можно до 8 МБ</string>
+    <string name="add_list_too_large">Список ссылок слишком большой: добавить можно до 1 МБ</string>
     <string name="subscription_input_long">Показано только начало. Добавится весь текст</string>
     <string name="scan_hint">Наведите камеру на QR-код подписки</string>
     <string name="scan_title">Сканировать QR-код</string>
