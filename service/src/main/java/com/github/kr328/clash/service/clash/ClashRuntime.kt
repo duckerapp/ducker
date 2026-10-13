@@ -26,16 +26,15 @@ fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): Cl
                     Log.d("ClashRuntime: initialize")
 
                     try {
-                        val modules = mutableListOf<Module<*>>()
-
                         Clash.reset()
                         Clash.clearOverride(Clash.OverrideSlot.Session)
 
                         val scope = object : ClashRuntimeScope {
                             override fun <E, T : Module<E>> install(module: T): T {
+                                // Each module runs in a coroutine of its own, on several threads at
+                                // once: nothing may be shared here without a guard. A plain list of
+                                // the modules, written and never read, crashed the process (D-293).
                                 launch {
-                                    modules.add(module)
-
                                     module.execute()
                                 }
 
