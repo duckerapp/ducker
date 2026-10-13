@@ -12,19 +12,17 @@ import com.github.kr328.clash.core.model.*
 import com.github.kr328.clash.service.data.ImportedDao
 import com.github.kr328.clash.service.data.Selection
 import com.github.kr328.clash.service.data.SelectionDao
+import com.github.kr328.clash.service.model.LogSlice
 import com.github.kr328.clash.service.remote.IClashManager
-import com.github.kr328.clash.service.remote.ILogObserver
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.sendOverrideChanged
 import com.github.kr328.clash.service.util.sendSelectorChanged
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.ReceiveChannel
 
 class ClashManager(private val context: Context) : IClashManager,
     CoroutineScope by backgroundScope("ClashManager") {
     private val store = ServiceStore(context)
-    private var logReceiver: ReceiveChannel<LogMessage>? = null
 
     /** Профиль и время его файла, уже загруженные ради замера. */
     private var previewLoaded: Pair<java.util.UUID, Long>? = null
@@ -241,37 +239,12 @@ class ClashManager(private val context: Context) : IClashManager,
         return Clash.updateProvider(type, name).await()
     }
 
-    override fun setLogObserver(observer: ILogObserver?) {
-        synchronized(this) {
-            logReceiver?.apply {
-                cancel()
+    override suspend fun queryLogs(epoch: Long, after: Long): LogSlice {
+        return LogTail.read(epoch, after)
+    }
 
-                Clash.forceGc()
-            }
-
-            if (observer != null) {
-                logReceiver = Clash.subscribeLogcat().also { c ->
-                    launch {
-                        try {
-                            while (isActive) {
-                                observer.newItem(c.receive())
-                            }
-                        } catch (e: CancellationException) {
-                            // intended behavior
-                            // ignore
-                        } catch (e: Exception) {
-                            Log.w("UI crashed", e)
-                        } finally {
-                            withContext(NonCancellable) {
-                                c.cancel()
-
-                                Clash.forceGc()
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    override fun clearLogs() {
+        LogTail.clear()
     }
 }
 

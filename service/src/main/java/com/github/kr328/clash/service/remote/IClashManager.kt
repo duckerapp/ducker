@@ -2,6 +2,7 @@ package com.github.kr328.clash.service.remote
 
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.*
+import com.github.kr328.clash.service.model.LogSlice
 import com.github.kr328.kaidl.BinderInterface
 import java.util.UUID
 
@@ -85,5 +86,14 @@ interface IClashManager {
     fun patchOverride(slot: Clash.OverrideSlot, configuration: ConfigurationOverride)
     fun clearOverride(slot: Clash.OverrideSlot)
 
-    fun setLogObserver(observer: ILogObserver?)
+    /**
+     * The core log for the “Журнал” screen (D-290): the lines numbered [after] and later, with the
+     * number to ask from next time. The service holds the last lines itself — always while
+     * “Подробный журнал” is on, otherwise only while somebody asks. A reader names the [epoch] of
+     * its previous reply; another life of the service process answers with all it has.
+     */
+    suspend fun queryLogs(epoch: Long, after: Long): LogSlice
+
+    /** “Очистить”: the service's copy too, or an evicted interface would read the lines again. */
+    fun clearLogs()
 }

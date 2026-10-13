@@ -33,6 +33,8 @@ object VerboseLog {
         if (override.logLevel != LogMessage.Level.Debug) {
             if (store.verboseLogSince != 0L) store.verboseLogSince = 0
 
+            LogTail.keep(false)
+
             return disarm(context)
         }
 
@@ -41,6 +43,9 @@ object VerboseLog {
 
         if (until > now) {
             if (store.verboseLogSince != until - LIMIT_MS) store.verboseLogSince = until - LIMIT_MS
+
+            // While the verbose log is on, its lines are collected with no screen open (D-290).
+            LogTail.keep(true)
 
             return arm(context, until)
         }
@@ -53,6 +58,8 @@ object VerboseLog {
         Clash.setLogLevel(LogMessage.Level.Info)
 
         store.verboseLogSince = 0
+
+        LogTail.keep(false)
 
         disarm(context)
 

@@ -199,14 +199,14 @@
     <string name="advanced_risky">Меняют путь трафика</string>
     <string name="system_proxy">Системный прокси</string>
     <string name="system_proxy_hint">Второй путь для приложений, которые слушаются системного прокси, — в основном браузеров. Выключено — всё идёт одним путём, через VPN</string>
-    <string name="logs_empty">Пока пусто. Ядро пишет сюда, только пока этот экран открыт — повторите проблему, и строки появятся</string>
+    <string name="logs_empty">Пока пусто. Без подробного журнала ядро пишет сюда, только пока этот экран открыт — повторите проблему, и строки появятся</string>
     <string name="logs_copy">Скопировать</string>
     <string name="logs_share">Отправить</string>
     <string name="logs_save">Сохранить</string>
     <string name="logs_clear">Очистить</string>
     <string name="logs_saved">Журнал сохранён</string>
     <string name="logs_level_hint">Сейчас ядро пишет только то, что разрешает профиль, — обычно одни ошибки. Включите, чтобы видеть все события; сработает сразу</string>
-    <string name="logs_level_on">Ядро пишет всё, включая отладочные события. Это расходует батарею, поэтому через сутки журнал выключится сам</string>
+    <string name="logs_level_on">Ядро пишет всё, включая отладочные события, даже когда приложение свёрнуто. Это расходует батарею, поэтому через сутки журнал выключится сам</string>
     <!-- Правка подписки (этап 8.3) -->
     <string name="edit_subscription">Правка подписки</string>
     <string name="subscription_name">Название</string>

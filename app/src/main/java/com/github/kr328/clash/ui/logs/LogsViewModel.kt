@@ -5,12 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.kr328.clash.core.model.LogMessage
 import com.github.kr328.clash.log.LogcatFilter
-import com.github.kr328.clash.service.remote.ILogObserver
-import com.github.kr328.clash.service.remote.ILogObserverDelegate
 import com.github.kr328.clash.util.withClash
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +22,8 @@ import java.util.Date
 data class LogsState(
     val lines: List<LogMessage> = emptyList(),
     val streaming: Boolean = false,
+    /** The number of the first of [lines] among all this screen has shown: a row's key is `first + index`. */
+    val first: Long = 0,
 )
 
 /** Дальше этого в памяти не держим: при уровне debug ядро пишет сотни строк в секунду. */
@@ -37,24 +36,9 @@ class LogsViewModel : ViewModel() {
     private val _state = MutableStateFlow(LogsState())
     val state: StateFlow<LogsState> = _state.asStateFlow()
 
-    private val incoming = Channel<LogMessage>(Channel.UNLIMITED)
-
-    /**
-     * Обёртка держится полем, и это не косметика.
-     *
-     * `setLogObserver` принимает интерфейс, а kaidl заворачивает его в `ILogObserverDelegate`
-     * **внутри вызова**. Если этот `Binder` не держать, сборщик мусора убирает его, у службы
-     * остаётся мёртвый прокси, и ядро закрывает подписку — на экран приходит ровно одна
-     * строка, после чего тишина. Проверено на устройстве.
-     *
-     * `wrap()` возвращает сам объект, если он уже `IBinder`, поэтому передаём делегата.
-     */
-    private val observer = ILogObserverDelegate(object : ILogObserver {
-        override fun newItem(log: LogMessage) {
-            // Вызывается из потока биндера, поэтому только складываем в очередь.
-            incoming.trySend(log)
-        }
-    })
+    /** Where the service's last reply ended: the next request asks from there (D-290). */
+    private var epoch = 0L
+    private var after = 0L
 
     private var pump: Job? = null
 
@@ -62,28 +46,29 @@ class LogsViewModel : ViewModel() {
         if (pump != null) return
 
         pump = viewModelScope.launch {
-            runCatching { withClash { setLogObserver(observer) } }
-
             _state.update { it.copy(streaming = true) }
 
-            val batch = mutableListOf<LogMessage>()
-
             while (isActive) {
-                delay(FLUSH_MS)
+                // The service holds the lines, and the screen asks for the new ones (D-290). A
+                // request waits while the app is hidden — the interface is unbound from the service
+                // then — and the first one after the return brings what was written meanwhile.
+                val slice = runCatching { withClash { queryLogs(epoch, after) } }.getOrNull()
 
-                while (true) {
-                    val msg = incoming.tryReceive().getOrNull() ?: break
+                if (slice != null) {
+                    epoch = slice.epoch
+                    after = slice.next
 
-                    batch += msg
+                    if (slice.lines.isNotEmpty()) _state.update {
+                        val all = it.lines + slice.lines
+
+                        it.copy(
+                            lines = all.takeLast(LIMIT),
+                            first = it.first + (all.size - LIMIT).coerceAtLeast(0),
+                        )
+                    }
                 }
 
-                if (batch.isEmpty()) continue
-
-                val appended = batch.toList()
-
-                batch.clear()
-
-                _state.update { it.copy(lines = (it.lines + appended).takeLast(LIMIT)) }
+                delay(FLUSH_MS)
             }
         }
     }
@@ -93,14 +78,13 @@ class LogsViewModel : ViewModel() {
         pump = null
 
         _state.update { it.copy(streaming = false) }
-
-        // Наблюдатель живёт в службе, и его надо снять, иначе он продолжит слать строки
-        // в очередь, пока приложение не закроют.
-        viewModelScope.launch { runCatching { withClash { setLogObserver(null) } } }
     }
 
     fun clear() {
-        _state.update { it.copy(lines = emptyList()) }
+        _state.update { it.copy(lines = emptyList(), first = it.first + it.lines.size) }
+
+        // The service's copy too: otherwise the lines come back once this process is evicted.
+        viewModelScope.launch { runCatching { withClash { clearLogs() } } }
     }
 
     /**

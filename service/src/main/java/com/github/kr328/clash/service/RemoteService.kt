@@ -32,6 +32,8 @@ class RemoteService : BaseService(), IRemoteService {
         profile?.cancelAndJoinBlocking()
 
         clash?.unloadPreview()
+
+        LogTail.release()
     }
 
     override fun onBind(intent: Intent?): IBinder {

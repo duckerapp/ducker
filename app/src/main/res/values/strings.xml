@@ -209,14 +209,14 @@
     <string name="advanced_risky">These change how traffic is routed</string>
     <string name="system_proxy">System proxy</string>
     <string name="system_proxy_hint">A second route for apps that follow the system proxy, mostly browsers. When off, everything goes one way — through the VPN</string>
-    <string name="logs_empty">Nothing yet. The core writes here only while this screen is open — repeat the problem and lines will appear</string>
+    <string name="logs_empty">Nothing yet. Without the detailed log, the core writes here only while this screen is open — repeat the problem and lines will appear</string>
     <string name="logs_copy">Copy</string>
     <string name="logs_share">Send</string>
     <string name="logs_save">Save</string>
     <string name="logs_clear">Clear</string>
     <string name="logs_saved">Log saved</string>
     <string name="logs_level_hint">Right now the core logs only what the profile allows — usually just errors. Turn this on to see all events; it applies immediately</string>
-    <string name="logs_level_on">The core logs everything, including debug events. This uses battery, so it turns itself off after 24 hours</string>
+    <string name="logs_level_on">The core logs everything, including debug events, even while the app is in the background. This uses battery, so it turns itself off after 24 hours</string>
     <!-- Editing a subscription (stage 8.3) -->
     <string name="edit_subscription">Edit subscription</string>
     <string name="subscription_name">Name</string>
