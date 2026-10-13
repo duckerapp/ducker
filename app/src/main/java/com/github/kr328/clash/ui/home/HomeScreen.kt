@@ -82,7 +82,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material.icons.filled.BatteryAlert
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ButtonDefaults
@@ -466,14 +466,14 @@ private fun HomeRegular(
             when (backgroundNotice) {
                 is BackgroundNotice.Restricted -> InfoCard(
                     stringResource(R.string.background_restricted_card),
-                    Icons.Default.BatteryAlert,
+                    Icons.Default.ErrorOutline,
                     action = stringResource(R.string.background_allow) to backgroundNotice.onAllow,
                     secondary = stringResource(R.string.not_now) to backgroundNotice.onLater,
                 )
 
                 is BackgroundNotice.Shell -> InfoCard(
                     stringResource(R.string.background_hint, stringResource(backgroundNotice.vendor.names)),
-                    Icons.Default.BatteryAlert,
+                    Icons.Default.ErrorOutline,
                     action = stringResource(R.string.background_hint_action) to backgroundNotice.onSetUp,
                 )
 
