@@ -10,6 +10,7 @@ import com.github.kr328.clash.service.remote.IFetchObserver
 import com.github.kr328.clash.R
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.ui.config.ConfigEdits
+import com.github.kr328.clash.ui.config.ConfigFileTooLargeException
 import com.github.kr328.clash.ui.config.fileName
 import com.github.kr328.clash.ui.config.readFile
 import com.github.kr328.clash.log.LogScrubber
@@ -266,8 +267,12 @@ class SubscriptionsViewModel : ViewModel() {
             _state.update { it.copy(busy = true, addError = "", addProgress = 0f) }
 
             val result = runCatching {
-                val text = withContext(Dispatchers.IO) { readFile(context, uri) }?.removePrefix("\uFEFF")
-                    ?: throw Told(context.getString(R.string.config_file_unreadable))
+                val text = try {
+                    withContext(Dispatchers.IO) { readFile(context, uri) }?.removePrefix("\uFEFF")
+                } catch (_: ConfigFileTooLargeException) {
+                    // `readFile` words it for the editor.
+                    throw Told(context.getString(R.string.add_file_too_large))
+                } ?: throw Told(context.getString(R.string.config_file_unreadable))
 
                 if ('\u0000' in text) throw Told(context.getString(R.string.file_not_subscription))
 

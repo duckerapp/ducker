@@ -62,6 +62,7 @@
     <string name="scan_qr">Scan QR</string>
     <string name="add_from_file">File</string>
     <string name="file_not_subscription">No link or config in this file</string>
+    <string name="add_file_too_large">The file is too large: files up to 8 MB can be added</string>
     <string name="subscription_input_long">Only the beginning is shown. The whole text will be added</string>
     <string name="scan_hint">Point the camera at the subscription QR code</string>
     <string name="scan_title">Scan a QR code</string>
