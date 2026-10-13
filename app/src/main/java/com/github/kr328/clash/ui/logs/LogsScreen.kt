@@ -1,7 +1,11 @@
 package com.github.kr328.clash.ui.logs
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -9,20 +13,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,9 +52,10 @@ import com.github.kr328.clash.ui.components.screenInsets
 /**
  * Журнал ядра (этап 8.3, замена экрана CMFA).
  *
- * Строки идут в память, только пока экран открыт: службы и файлов на диске здесь нет,
- * поэтому и чистить потом нечего. Человеку нужно ровно это — открыть, повторить проблему,
- * скопировать.
+ * The lines live in memory only, the service's and this screen's (D-290): nothing goes to disk,
+ * so there is nothing to clean up afterwards. Without “Подробный журнал” they exist only while the
+ * screen is open; with it the service collects them all the time and the screen takes them on
+ * opening and on the return to the app.
  */
 @Composable
 fun LogsScreen(
@@ -61,20 +71,35 @@ fun LogsScreen(
 ) {
     val listState = rememberLazyListState()
 
-    // Свежие строки внизу, но только пока человек сам смотрит в конец. Иначе при
-    // подробном журнале список дёргается по три раза в секунду и утаскивает вниз
-    // ровно в тот момент, когда пытаешься прочитать строку выше.
-    val atBottom by remember {
-        derivedStateOf {
-            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+    // Following the stream is a state of its own (D-290), not a guess from where the list happens
+    // to stand: on — the list keeps to the newest line. A scroll that comes to rest above the end
+    // switches it off, so the text stays under the eyes; one that reaches the end, or the button,
+    // switches it back on. Not saved: after an eviction the lines are read anew, and the old place
+    // in the list would point at other ones.
+    var follow by remember { mutableStateOf(true) }
 
-            last == null || last >= listState.layoutInfo.totalItemsCount - 2
+    // A finger on the list takes it from the stream at once, without waiting for the scroll to
+    // end: a batch arriving in the middle of a fling pulled the list back to the end.
+    LaunchedEffect(listState) {
+        listState.interactionSource.interactions.collect { if (it is DragInteraction.Start) follow = false }
+    }
+
+    LaunchedEffect(listState) {
+        var moving = false
+
+        snapshotFlow { listState.isScrollInProgress to listState.canScrollForward }.collect { (now, more) ->
+            if (moving && !now) follow = !more
+
+            moving = now
         }
     }
 
-    LaunchedEffect(state.lines.size) {
+    // The number after the last line, not the count: the count stops changing at the cap.
+    val end = state.first + state.lines.size
+
+    LaunchedEffect(follow, end) {
         // Прокрутка без анимации: обновления приходят чаще, чем анимация успевает дойти.
-        if (atBottom && state.lines.isNotEmpty()) listState.scrollToItem(state.lines.lastIndex)
+        if (follow && state.lines.isNotEmpty()) listState.scrollToItem(state.lines.lastIndex)
     }
 
     Column(
@@ -139,23 +164,40 @@ fun LogsScreen(
         }
 
         Card(Modifier.fillMaxSize()) {
-            LazyColumn(
-                state = listState,
-                overscrollEffect = overscrollFor(listState),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                items(state.lines) { line ->
-                    val row = rememberScrollState()
+            Box(Modifier.fillMaxSize()) {
+                LazyColumn(
+                    state = listState,
+                    overscrollEffect = overscrollFor(listState),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    // A key per line: at the cap every batch shifts the indices, and without keys
+                    // the text ran away from under the finger.
+                    items(state.lines.size, key = { state.first + it }) { index ->
+                        val line = state.lines[index]
+                        val row = rememberScrollState()
 
-                    Row(Modifier.fillMaxWidth().horizontalScroll(row, overscrollEffect = overscrollFor(row))) {
-                        Text(
-                            text = line.message,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = colorOf(line.level),
-                        )
+                        Row(Modifier.fillMaxWidth().horizontalScroll(row, overscrollEffect = overscrollFor(row))) {
+                            Text(
+                                text = line.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                color = colorOf(line.level),
+                            )
+                        }
+                    }
+                }
+
+                // Fully qualified: the card's column scope would claim the short name.
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = !follow,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
+                ) {
+                    FilledIconButton(onClick = { follow = true }) {
+                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(R.string.logs_follow))
                     }
                 }
             }

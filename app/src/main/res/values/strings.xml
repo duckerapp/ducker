@@ -217,6 +217,7 @@
     <string name="logs_saved">Log saved</string>
     <string name="logs_level_hint">Right now the core logs only what the profile allows — usually just errors. Turn this on to see all events; it applies immediately</string>
     <string name="logs_level_on">The core logs everything, including debug events, even while the app is in the background. This uses battery, so it turns itself off after 24 hours</string>
+    <string name="logs_follow">Jump to the newest lines</string>
     <!-- Editing a subscription (stage 8.3) -->
     <string name="edit_subscription">Edit subscription</string>
     <string name="subscription_name">Name</string>

@@ -207,6 +207,7 @@
     <string name="logs_saved">Журнал сохранён</string>
     <string name="logs_level_hint">Сейчас ядро пишет только то, что разрешает профиль, — обычно одни ошибки. Включите, чтобы видеть все события; сработает сразу</string>
     <string name="logs_level_on">Ядро пишет всё, включая отладочные события, даже когда приложение свёрнуто. Это расходует батарею, поэтому через сутки журнал выключится сам</string>
+    <string name="logs_follow">К новым строкам</string>
     <!-- Правка подписки (этап 8.3) -->
     <string name="edit_subscription">Правка подписки</string>
     <string name="subscription_name">Название</string>
