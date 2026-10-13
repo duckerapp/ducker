@@ -103,6 +103,29 @@ class DelayValuesTest {
     }
 
     @Test
+    fun `a result taken before the last change of network belongs to another network`() {
+        assertEquals(true, DelayStore.outdated(tested = 1_000, changedAt = 5_000))
+        assertEquals(false, DelayStore.outdated(tested = 5_000, changedAt = 5_000))
+        assertEquals(false, DelayStore.outdated(tested = 9_000, changedAt = 5_000))
+
+        // The core has not tested the node; the network has not changed under this tunnel.
+        assertEquals(false, DelayStore.outdated(tested = 0, changedAt = 5_000))
+        assertEquals(false, DelayStore.outdated(tested = 1_000, changedAt = 0))
+    }
+
+    @Test
+    fun `results of another network are worth one check, whatever they say`() {
+        val alive = 70 to 70
+        val silent = DelayStore.NO_ANSWER to DelayStore.NO_ANSWER
+
+        assertEquals(false, DelayStore.recheck(tried = 0, nodes = listOf(alive, silent)))
+        assertEquals(true, DelayStore.recheck(tried = 0, nodes = listOf(alive, silent), outdated = true))
+
+        // What that check brought is the result on this network: no second one.
+        assertEquals(false, DelayStore.recheck(tried = 1, nodes = listOf(alive, silent), outdated = true))
+    }
+
+    @Test
     fun `a check that brought nothing at all is made once more`() {
         // Lost while the tunnel was coming up: that says nothing about the nodes.
         val lost = DelayStore.NO_ANSWER to DelayStore.NO_ANSWER

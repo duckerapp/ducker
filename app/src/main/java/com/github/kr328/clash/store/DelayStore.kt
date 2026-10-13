@@ -21,10 +21,6 @@ import org.json.JSONObject
 class DelayStore(context: Context) {
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
 
-    /** Когда последний раз что-то мерили. По нему решаем, не пора ли обновить. */
-    val measuredAt: Long
-        get() = prefs.getLong(KEY_AT, 0)
-
     /**
      * Замеры относятся к узлам одной подписки. Сменилась активная — прежние значения
      * уже не про неё, и хранить их нельзя (D-81).
@@ -79,7 +75,6 @@ class DelayStore(context: Context) {
         prefs.edit()
             .putString(KEY_VALUES, JSONObject(known.answers as Map<*, *>).toString())
             .putStringSet(KEY_SILENT, known.silent)
-            .putLong(KEY_AT, System.currentTimeMillis())
             .apply()
     }
 
@@ -116,7 +111,6 @@ class DelayStore(context: Context) {
     companion object {
         private const val FILE_NAME = "ducker_delays"
         private const val KEY_VALUES = "values"
-        private const val KEY_AT = "measured_at"
         private const val KEY_SILENT = "silent"
         private const val KEY_PROFILE = "profile"
         private const val KEY_MAIN_GROUP = "main_group"
@@ -167,13 +161,21 @@ class DelayStore(context: Context) {
          * Whether the tab checks a group by itself after [tried] checks; [nodes] are the core's
          * value and the stored one of each node.
          *
-         * Once — when a node has no result yet. Again — only when the check brought nothing at
-         * all: that is a check lost while the tunnel was coming up (D-72), not the nodes. A node
-         * that did not answer is not asked again: that is its result (D-282).
+         * Once — when a node has no result yet, or when a result is [outdated]. Again — only
+         * when the check brought nothing at all: that is a check lost while the tunnel was coming
+         * up (D-72), not the nodes. A node that did not answer is not asked again: that is its
+         * result (D-282).
          */
-        fun recheck(tried: Int, nodes: List<Pair<Int, Int?>>): Boolean =
-            if (tried == 0) nodes.any { (core, stored) -> undecided(core, stored) }
+        fun recheck(tried: Int, nodes: List<Pair<Int, Int?>>, outdated: Boolean = false): Boolean =
+            if (tried == 0) outdated || nodes.any { (core, stored) -> undecided(core, stored) }
             else nodes.isNotEmpty() && nodes.none { (core, _) -> ofCore(core) > 0 }
+
+        /**
+         * A result taken at [tested] is one of another network: the network under the tunnel
+         * changed at [changedAt] after it (both ms since the epoch, 0 — never). On the walk home
+         * a "нет ответа" of the mobile network was still on screen on Wi-Fi (D-299).
+         */
+        fun outdated(tested: Long, changedAt: Long): Boolean = tested in 1 until changedAt
 
         /**
          * From here on the number is the time limit of the check, not a delay. With
@@ -187,9 +189,5 @@ class DelayStore(context: Context) {
          * the core for the limit of every group.
          */
         const val SLOW = 5000
-
-        /** Замеры старше этого срока стоит обновить. */
-        const val STALE = 5 * 60 * 1000L
-
     }
 }

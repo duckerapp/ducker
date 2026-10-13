@@ -92,6 +92,16 @@ class ServiceStore(context: Context) {
         defaultValue = 0L,
     )
 
+    /**
+     * When the network under the tunnel last became another one, ms since the epoch; 0 — never.
+     * Delay checks made before it are results of another network, and «Прокси» makes them again
+     * when it is looked at (D-299).
+     */
+    var networkChangedAt by store.long(
+        key = "network_changed_at",
+        defaultValue = 0L,
+    )
+
     /** Когда туннель последний раз поднимали сами после его гибели (D-90). */
     var tunnelRestoredAt by store.long(
         key = "tunnel_restored_at",

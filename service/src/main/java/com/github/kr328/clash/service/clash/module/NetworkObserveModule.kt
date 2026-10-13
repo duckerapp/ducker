@@ -7,6 +7,7 @@ import android.os.SystemClock
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.core.Clash
+import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.asSocketAddressText
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
@@ -17,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class NetworkObserveModule(service: Service) : Module<Network>(service) {
     private val connectivity = service.getSystemService<ConnectivityManager>()!!
+    private val store = ServiceStore(service)
     private val networks: Channel<Network> = Channel(Channel.UNLIMITED)
     private val request = NetworkRequest.Builder().apply {
         addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
@@ -149,11 +151,17 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
 
         bestNetwork = best
 
-        // При первом появлении сети закрывать нечего: соединений ещё нет. И сразу после
-        // подписки Android по очереди присылает все уже подключённые сети — «лучшая» за
-        // миллисекунды меняется с мобильной на Wi-Fi. Это знакомство, а не смена сети:
-        // сброс мультиплекса (D-105) рвал бы проверки узлов, начатые в ту же секунду (D-109).
-        if (previous == null || SystemClock.elapsedRealtime() - registeredAt < SETTLE_MS) return
+        // Сразу после подписки Android по очереди присылает все уже подключённые сети —
+        // «лучшая» за миллисекунды меняется с мобильной на Wi-Fi. Это знакомство, а не смена
+        // сети: сброс мультиплекса (D-105) рвал бы проверки узлов, начатые в ту же секунду (D-109).
+        if (SystemClock.elapsedRealtime() - registeredAt < SETTLE_MS) return
+
+        // Another network carries the tunnel from now on, also when it comes after none at all:
+        // delay checks made before this moment say nothing about it (D-299).
+        if (best != null) store.networkChangedAt = System.currentTimeMillis()
+
+        // При первом появлении сети закрывать нечего: соединений ещё нет.
+        if (previous == null) return
 
         Log.i("NetworkObserve best network $previous -> $best, closing connections")
 

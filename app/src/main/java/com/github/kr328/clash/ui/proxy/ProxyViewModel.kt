@@ -34,6 +34,8 @@ data class NodeState(
     val delay: Int = 0,
     /** Поднят звёздочкой наверх списка. */
     val favorite: Boolean = false,
+    /** When the core last tested the node, ms since the epoch; 0 — it has not. */
+    val tested: Long = 0,
 )
 
 data class ProxyGroupState(
@@ -106,6 +108,9 @@ class ProxyViewModel : ViewModel() {
     /** Когда туннель последний раз менял состояние: сразу после этого мерить бесполезно. */
     private var switchedAt = 0L
 
+    /** The last change of network the tab has seen, as the service recorded it (D-299). */
+    private var networkChangedAt = 0L
+
     /** Отложенный или идущий автозамер: второй поверх него не запускаем. */
     private var autoJob: Job? = null
 
@@ -130,6 +135,18 @@ class ProxyViewModel : ViewModel() {
             }
 
             lastRunning = running
+
+            // The network under the tunnel became another one: what the core holds are results
+            // of the previous network, and every group is due one check of the tab's own (D-299).
+            val changedAt = if (running) {
+                withContext(Dispatchers.IO) { ServiceStore(context).networkChangedAt }
+            } else 0L
+
+            if (changedAt > networkChangedAt) {
+                attempts.clear()
+
+                networkChangedAt = changedAt
+            }
 
             val mode = if (running) {
                 runCatching { withClash { queryTunnelState().mode } }.getOrNull()
@@ -166,7 +183,7 @@ class ProxyViewModel : ViewModel() {
                 })
             }
 
-            autoCheck(context, live, known, store.measuredAt, canCheck = running || preview)
+            autoCheck(context, live, known, canCheck = running || preview)
 
             _state.update {
                 it.copy(
@@ -201,7 +218,7 @@ class ProxyViewModel : ViewModel() {
                 // интернет пропадает, а замер их не меряет (D-143). Выбранный остаётся виден.
                 proxies = group.proxies
                     .filterNot { name == "GLOBAL" && it.type in BUILTIN_PROXY_TYPES && it.name != group.now }
-                    .map { NodeState(it.name, it.type, DelayStore.ofCore(it.delay, it.tested)) },
+                    .map { NodeState(it.name, it.type, DelayStore.ofCore(it.delay, it.tested), tested = it.tested) },
                 // Живое ядро зовёт тип группы «Selector», файл профиля — «select».
                 selectable = group.type.equals("selector", ignoreCase = true),
             )
@@ -252,7 +269,7 @@ class ProxyViewModel : ViewModel() {
     /**
      * Замер идёт сам, без кнопки: человеку нужны цифры, а не повод их запросить.
      *
-     * Меряем, когда по группе есть неизвестные узлы или прошлые замеры устарели.
+     * Меряем, когда по группе есть неизвестные узлы или её замеры сняты до смены сети.
      * Попыток не больше трёх подряд: первая после подъёма туннеля часто уходит в
      * пустоту — ядро ещё встаёт. Прежние значения при этом остаются на экране.
      *
@@ -263,16 +280,16 @@ class ProxyViewModel : ViewModel() {
         context: Context,
         groups: List<ProxyGroupState>,
         known: Map<String, Int>,
-        measuredAt: Long,
         canCheck: Boolean,
     ) {
-        val stale = System.currentTimeMillis() - measuredAt > DelayStore.STALE
-
         val pending = groups.filter { group ->
             val tried = attempts[group.name] ?: 0
 
-            tried < MAX_ATTEMPTS &&
-                (stale || DelayStore.recheck(tried, group.proxies.map { it.delay to known[it.name] }))
+            tried < MAX_ATTEMPTS && DelayStore.recheck(
+                tried,
+                group.proxies.map { it.delay to known[it.name] },
+                outdated = group.proxies.any { DelayStore.outdated(it.tested, networkChangedAt) },
+            )
         }
 
         if (pending.isEmpty() || _state.value.checking != null || autoJob?.isActive == true) return
@@ -283,8 +300,9 @@ class ProxyViewModel : ViewModel() {
 
         // Туннель только что переключили — сеть ещё не устоялась, и замер вернёт
         // пустоту по всем узлам. Меряем, когда окно пройдёт: следующего обновления
-        // может и не быть, пока человек не нажмёт что-нибудь.
-        val left = SETTLE - (System.currentTimeMillis() - switchedAt)
+        // может и не быть, пока человек не нажмёт что-нибудь. The same after a change of
+        // network, with a longer window.
+        val left = maxOf(switchedAt + SETTLE, networkChangedAt + NETWORK_SETTLE) - System.currentTimeMillis()
 
         if (left > 0) {
             autoJob = viewModelScope.launch {
@@ -474,6 +492,14 @@ class ProxyViewModel : ViewModel() {
 
         /** Сколько ждать после переключения туннеля, прежде чем мерить. */
         const val SETTLE = 2500L
+
+        /**
+         * How long after a change of network before the tab checks by itself. On the phone a
+         * request through the node was back to its usual time 5–8 s after Wi-Fi gave way to the
+         * mobile network, and in under 2 s on the way back (F-285); a check made earlier marks
+         * working nodes as silent.
+         */
+        const val NETWORK_SETTLE = 10_000L
 
         /** Пауза перед повторным автозамером после неудачного — как на главной. */
         const val RETRY = 5000L

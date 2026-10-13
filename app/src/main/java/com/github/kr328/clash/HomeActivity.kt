@@ -201,6 +201,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
     /** Возвраты на экран — по ним панель «работа в фоне» узнаёт ответ системного окна. */
     private val resumes = mutableIntStateOf(0)
 
+    /** Returns of the app to the foreground: «Прокси» reads the core again by them (D-299). */
+    private val starts = mutableIntStateOf(0)
+
     private val qrScanner = registerForActivityResult(QrScanActivity.Scan) { text ->
         if (text != null) subscriptionsViewModel.scanned(text)
     }
@@ -562,6 +565,15 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     when (pagerState.settledPage) {
                         1 -> proxyViewModel.refresh(this@HomeActivity)
                         2 -> subscriptionsViewModel.refresh(this@HomeActivity)
+                    }
+                }
+
+                // The app came back with «Прокси» on screen: the page did not change, and the tab
+                // would go on showing what it read before the app was left — on the walk home,
+                // the delays of the mobile network (D-299). The first start is the effect above.
+                LaunchedEffect(starts.intValue) {
+                    if (starts.intValue > 1 && pagerState.settledPage == 1) {
+                        proxyViewModel.refresh(this@HomeActivity)
                     }
                 }
 
@@ -1503,6 +1515,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         viewModel.startTrafficPolling(this@HomeActivity)
 
         viewModel.refresh(this@HomeActivity)
+
+        starts.intValue++
 
         // Новая версия приложения: что знали в прошлый раз — сразу, проверка — если давно не было.
         Updater.opened()
