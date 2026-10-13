@@ -142,6 +142,11 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                     SelectionDao().removeSelections(active.uuid, remove)
 
                     keepGlobalOffDirect(active.uuid)
+
+                    // Another subscription: what is open goes through the nodes of the previous
+                    // one and would stay there. A choice applied above closes only what its own
+                    // group has on another member (D-300).
+                    if (switched && ready) Clash.closeAllConnections()
                 }
 
                 ready = true
