@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
@@ -31,7 +30,6 @@ import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Translate
@@ -58,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.luminance
@@ -67,13 +66,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -593,34 +599,46 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
             }
 
             if (sendHwid) {
-                // Hidden until tapped (D-291). The text is not composed while hidden, so a
-                // screenshot and TalkBack get nothing. Not saved on purpose: leaving settings, or
-                // scrolling the card away, hides it again.
+                // Hidden until tapped, and hidden again seven seconds later (D-292). While hidden,
+                // the text is measured and never composed: the mosaic takes its size, and a
+                // screenshot or TalkBack get nothing. Not saved on purpose: leaving settings, or
+                // scrolling the card away, hides it at once.
                 var shown by remember { mutableStateOf(false) }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
-                        .clickable(role = Role.Button) { shown = !shown },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                LaunchedEffect(shown) {
+                    if (shown) {
+                        delay(HWID_SHOWN_MS)
+
+                        shown = false
+                    }
+                }
+
+                val style = MaterialTheme.typography.bodyMedium
+                val measurer = rememberTextMeasurer()
+                val size = remember(hwid, style) { measurer.measure(hwid, style).size }
+                val show = stringResource(R.string.hwid_show)
+
+                Box(
+                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
+                        .clickable(
+                            onClickLabel = if (shown) stringResource(R.string.hwid_hide) else null,
+                            role = Role.Button,
+                        ) { shown = !shown }
+                        .padding(vertical = 6.dp),
                 ) {
-                    Box(Modifier.weight(1f)) {
-                        if (shown) {
+                    Crossfade(shown, label = "hwid") { open ->
+                        if (open) {
                             SelectionContainer {
-                                Text(text = hwid, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = hwid, style = style)
                             }
                         } else {
-                            val line = with(LocalDensity.current) { MaterialTheme.typography.bodyMedium.lineHeight.toDp() }
-
-                            Noise(Modifier.fillMaxWidth().height(line))
+                            Mosaic(
+                                with(LocalDensity.current) {
+                                    Modifier.size(size.width.toDp(), size.height.toDp())
+                                }.semantics { contentDescription = show },
+                            )
                         }
                     }
-
-                    Icon(
-                        if (shown) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = stringResource(if (shown) R.string.hwid_hide else R.string.hwid_show),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             } else {
                 // Прямо говорим, чем это кончится: у панели с лимитом устройств
@@ -875,30 +893,36 @@ private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit, icon: 
     }
 }
 
+/** How long the device identifier stays on screen after a tap (D-292). */
+private const val HWID_SHOWN_MS = 7_000L
+
+private const val MOSAIC_ROWS = 3
+private val MOSAIC_TONES = floatArrayOf(0.10f, 0.18f, 0.28f, 0.42f)
+
 /**
- * Grain in place of a hidden text. Drawn by us: `Modifier.blur` does nothing below Android 12, and
- * a blur would still need the text under it.
+ * A mosaic in place of a hidden text, the size of that text. Drawn by us: `Modifier.blur` does
+ * nothing below Android 12, and a blur would still need the text under it.
  */
 @Composable
-private fun Noise(modifier: Modifier) {
+private fun Mosaic(modifier: Modifier) {
     val ink = MaterialTheme.colorScheme.onSurface
 
-    Canvas(modifier.clip(MaterialTheme.shapes.extraSmall)) {
-        val cell = 3.dp.toPx()
-        // The same seed at every draw, or the grain would flicker.
-        val random = kotlin.random.Random(0)
-        var y = 0f
+    Canvas(modifier) {
+        val cell = size.height / MOSAIC_ROWS
+        val columns = (size.width / cell).roundToInt().coerceAtLeast(1)
+        val width = size.width / columns
+        val gap = 0.5.dp.toPx()
+        val corner = CornerRadius(1.5.dp.toPx())
+        // The same seed at every draw, or the tiles would flicker.
+        val random = kotlin.random.Random(7)
 
-        while (y < size.height) {
-            var x = 0f
-
-            while (x < size.width) {
-                drawRect(ink.copy(alpha = 0.08f + 0.5f * random.nextFloat()), Offset(x, y), Size(cell, cell))
-
-                x += cell
-            }
-
-            y += cell
+        for (row in 0 until MOSAIC_ROWS) for (column in 0 until columns) {
+            drawRoundRect(
+                color = ink.copy(alpha = MOSAIC_TONES[random.nextInt(MOSAIC_TONES.size)]),
+                topLeft = Offset(column * width + gap, row * cell + gap),
+                size = Size(width - 2 * gap, cell - 2 * gap),
+                cornerRadius = corner,
+            )
         }
     }
 }
