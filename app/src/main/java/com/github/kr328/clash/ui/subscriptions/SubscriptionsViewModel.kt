@@ -212,7 +212,14 @@ class SubscriptionsViewModel : ViewModel() {
                             patch(created, name, raw, UPDATE_INTERVAL, null)
                         }
                     } else {
-                        createFromContent(context.getString(R.string.subscription_default_name), raw)
+                        // As a file: a long list does not fit into the arguments of a command (F-268).
+                        val file = context.cacheDir.resolve(PASTED).apply { writeText(raw) }
+
+                        try {
+                            createFromContent(context.getString(R.string.subscription_default_name), file.absolutePath)
+                        } finally {
+                            file.delete()
+                        }
                     }
                 }.also { addUuid = it }
 
@@ -802,6 +809,9 @@ class SubscriptionsViewModel : ViewModel() {
 
         /** Конфиг mihomo, а не ссылки: без узлов или их источников конфиг подписке ни к чему. */
         val CONFIG = Regex("""^(proxies|proxy-providers)\s*:""", RegexOption.MULTILINE)
+
+        /** The pasted text on its way to the service, in the cache directory: one add runs at a time. */
+        const val PASTED = "pasted-links.txt"
     }
 
 }

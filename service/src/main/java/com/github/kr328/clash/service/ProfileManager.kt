@@ -23,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.FileNotFoundException
 import java.util.*
 
@@ -70,7 +71,8 @@ class ProfileManager(private val context: Context) : IProfileManager,
         return uuid
     }
 
-    override suspend fun createFromContent(name: String, content: String): UUID {
+    override suspend fun createFromContent(name: String, path: String): UUID {
+        val content = withContext(Dispatchers.IO) { File(path).readText() }
         val template = withContext(Dispatchers.IO) {
             context.assets.open("ducker/template.yaml").bufferedReader().use { it.readText() }
         }

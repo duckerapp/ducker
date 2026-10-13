@@ -15,8 +15,12 @@ interface IProfileManager {
      * Конвертация идёт здесь, а не в интерфейсе, намеренно: она делается ядром, а ядро
      * живёт в процессе службы. Тронуть его из процесса интерфейса — значит загрузить туда
      * libclash.so целиком и потерять смысл разделения процессов (FACTS.md, F-5).
+     *
+     * The text comes as a file at [path], which the caller writes and deletes: the arguments of a
+     * command are one Binder transaction, and a list over about 520,000 characters did not fit
+     * into it (F-268).
      */
-    suspend fun createFromContent(name: String, content: String): UUID
+    suspend fun createFromContent(name: String, path: String): UUID
     suspend fun clone(uuid: UUID): UUID
     suspend fun commit(uuid: UUID, callback: IFetchObserver? = null)
     suspend fun release(uuid: UUID)
