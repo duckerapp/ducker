@@ -9,6 +9,8 @@ import (
 	"cfa/native/app"
 
 	"github.com/metacubex/mihomo/common/yaml"
+	"github.com/metacubex/mihomo/component/profile/cachefile"
+	"github.com/metacubex/mihomo/component/resolver"
 	"github.com/metacubex/mihomo/config"
 	"github.com/metacubex/mihomo/hub"
 	"github.com/metacubex/mihomo/log"
@@ -67,9 +69,46 @@ func ValidateConfig(path string) error {
 		return err
 	}
 
-	_, err = Parse(rawCfg)
+	_, err = validate(rawCfg)
 
 	return err
+}
+
+// validate parses a config that will not be applied. Its fake-ip pool is made in memory: a
+// pool on the core's cache file works on the table of the running core, and making one
+// deleted that table (F-285).
+func validate(rawConfig *config.RawConfig) (*config.Config, error) {
+	rawConfig.Profile.StoreFakeIP = false
+
+	return Parse(rawConfig)
+}
+
+// keepFakeIP prepares the fake-ip table in the cache file for the pool the coming parse makes
+// (F-285). The core writes where allocation stands only in executor.Shutdown, which is never
+// called here; a pool that finds no such record deletes the table, and one that finds an old
+// record hands out addresses that are taken.
+//
+// A reload: the place of the running pool is written, the new pool goes on from it, and the
+// addresses apps hold keep their names. A start with no core running: a clean table — the
+// previous pool went away without saying where it stood.
+//
+// ponytail: a name asked between this call and the moment the new pool takes over, tens of
+// milliseconds, may lose its address to the next new name. mihomo#3283 copies the place at
+// the takeover itself; it comes with the next core update.
+func keepFakeIP() {
+	if resolver.DefaultHostMapper != nil {
+		resolver.StoreFakePoolState()
+
+		return
+	}
+
+	cache := cachefile.Cache()
+	if cache.DB == nil {
+		return
+	}
+
+	_ = cache.FakeIpStore().FlushFakeIP()
+	_ = cache.FakeIpStore6().FlushFakeIP()
 }
 
 func Load(path string) error {
@@ -81,6 +120,8 @@ func Load(path string) error {
 	}
 
 	logDns(rawCfg)
+
+	keepFakeIP()
 
 	cfg, err := Parse(rawCfg)
 	if err != nil {

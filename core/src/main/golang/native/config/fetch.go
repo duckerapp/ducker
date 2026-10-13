@@ -370,7 +370,7 @@ func FetchAndValid(
 
 	reportStatus(string(bytes))
 
-	cfg, err := Parse(rawCfg)
+	cfg, err := validate(rawCfg)
 	if err != nil {
 		return err
 	}
