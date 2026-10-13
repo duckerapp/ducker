@@ -13,6 +13,12 @@ data class Proxy(
     val type: String,
     val delay: Int,
     var isGroup: Boolean,
+    /**
+     * When the node was last tested at the address [delay] is read from, answered or not, ms
+     * since the epoch; 0 — never. [delay] alone cannot tell "not tested yet" from "did not
+     * answer" (D-282).
+     */
+    val tested: Long = 0,
 ) : Parcelable {
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         Parcelizer.encodeToParcel(serializer(), parcel, this)

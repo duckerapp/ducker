@@ -28,6 +28,10 @@ type Proxy struct {
 	Type     string `json:"type"`
 	Delay    int    `json:"delay"`
 	IsGroup  bool   `json:"isGroup"`
+	// When the node was last tested at the address its delay is read from, answered or not,
+	// in ms since the epoch; 0 — never. The delay alone cannot tell "not tested yet" from
+	// "did not answer", and the screen shows each node's result as soon as there is one (D-282).
+	Tested int64 `json:"tested"`
 }
 
 type ProxyGroup struct {
@@ -199,17 +203,30 @@ func convertProxies(proxies []C.Proxy, uiSubtitlePattern *regexp2.Regexp) []*Pro
 			}
 		}
 		_, isGroup := p.Adapter().(outboundgroup.ProxyGroup)
+		url := testURLOf(p)
 
 		result = append(result, &Proxy{
 			Name:     name,
 			Title:    strings.TrimSpace(title),
 			Subtitle: strings.TrimSpace(subtitle),
 			Type:     p.Type().String(),
-			Delay:    int(p.LastDelayForTestUrl(testURLOf(p))),
+			Delay:    int(p.LastDelayForTestUrl(url)),
 			IsGroup:  isGroup,
+			Tested:   testedAt(p, url),
 		})
 	}
 	return result
+}
+
+// testedAt — when the node was last tested at this address: every test leaves a record in
+// the node's history, an unanswered one too (`Proxy.URLTest`, `adapter/adapter.go`).
+func testedAt(p C.Proxy, url string) int64 {
+	history := p.ExtraDelayHistories()[url].History
+	if len(history) == 0 {
+		return 0
+	}
+
+	return history[len(history)-1].Time.UnixMilli()
 }
 
 // testURLOf — адрес, по которому экран берёт задержку узла: первый из замеров групп,
