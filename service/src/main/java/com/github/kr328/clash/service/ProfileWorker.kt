@@ -32,6 +32,7 @@ class ProfileWorker : BaseService() {
     private val service: ProfileWorker
         get() = this
 
+    // The main thread adds, a coroutine takes off: every access under the lock (D-293).
     private val jobs = mutableListOf<Job>()
 
     override fun onCreate() {
@@ -45,7 +46,9 @@ class ProfileWorker : BaseService() {
             delay(TimeUnit.SECONDS.toMillis(10))
 
             while (true) {
-                jobs.removeFirstOrNull()?.join() ?: break
+                val job = synchronized(jobs) { jobs.removeFirstOrNull() } ?: break
+
+                job.join()
             }
 
             stopSelf()
@@ -68,7 +71,7 @@ class ProfileWorker : BaseService() {
                         run(it)
                     }
 
-                    jobs.add(job)
+                    synchronized(jobs) { jobs.add(job) }
                 }
             }
             Intents.ACTION_PROFILE_SCHEDULE_UPDATES -> {
@@ -78,7 +81,7 @@ class ProfileWorker : BaseService() {
                     delay(TimeUnit.SECONDS.toMillis(30))
                 }
 
-                jobs.add(job)
+                synchronized(jobs) { jobs.add(job) }
             }
         }
 
