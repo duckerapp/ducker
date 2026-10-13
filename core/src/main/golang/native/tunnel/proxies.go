@@ -179,7 +179,9 @@ func PatchSelector(selector, name string) bool {
 
 	log.Infoln("Patch selector %s -> %s", selector, name)
 
-	closeConnByGroup(selector)
+	// By what the group uses now, not by the name asked for: a choice the group did not take
+	// changed nothing.
+	closeConnByGroup(selector, g.Now())
 
 	return true
 }

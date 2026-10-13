@@ -21,14 +21,24 @@ func closeMatch(filter func(conn C.Connection) bool) {
 	})
 }
 
-func closeConnByGroup(name string) {
+// closeConnByGroup closes the group's connections that do not go through member: the ones a
+// new choice in the group leaves on another node. A stored choice applied again after a reload
+// is the one they were made with, and they stay (F-285).
+func closeConnByGroup(group, member string) {
 	closeMatch(func(conn C.Connection) bool {
-		for _, c := range conn.Chains() {
-			if c == name {
-				return true
-			}
-		}
-
-		return false
+		return offMember(conn.Chains(), group, member)
 	})
+}
+
+// offMember reports whether a connection goes through group by a member other than member. A
+// chain names the node first and then every group the node was reached through, each right
+// after the member it used (`AppendToChains`, `adapter/outbound/base.go`).
+func offMember(chain []string, group, member string) bool {
+	for i, name := range chain {
+		if name == group {
+			return i == 0 || chain[i-1] != member
+		}
+	}
+
+	return false
 }
