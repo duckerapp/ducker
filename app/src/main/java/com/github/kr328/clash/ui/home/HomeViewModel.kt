@@ -218,7 +218,9 @@ class HomeViewModel : ViewModel() {
 
             // Задержка узла берётся из общего хранилища замеров (D-72): под кнопкой
             // должно стоять последнее известное значение, а не прочерк на время замера.
-            val knownAsync = async(Dispatchers.IO) { DelayStore(context).all() }
+            // The last delay the node answered with: one unanswered check of the list is not
+            // "нет ответа" here — that is said by this screen's own check of the connection (D-282).
+            val knownAsync = async(Dispatchers.IO) { DelayStore(context).answers() }
 
             val lockdownAsync = async(Dispatchers.IO) { running && ServiceStore(context).lockdownOffline }
 
@@ -237,7 +239,7 @@ class HomeViewModel : ViewModel() {
                         store.switchTo(it.uuid.toString())
 
                         store.main?.let { (group, node) ->
-                            GroupState(group, node, emptyList(), store.all()[node] ?: DelayStore.UNKNOWN)
+                            GroupState(group, node, emptyList(), store.answers()[node] ?: DelayStore.UNKNOWN)
                         }
                     }
                 }
@@ -297,10 +299,6 @@ class HomeViewModel : ViewModel() {
             // Задержка на главной не должна висеть прочерком: ядро отдаёт «неизвестно»,
             // пока по группе не было ни одного замера (F-93). Меряем сами, до трёх раз
             // на группу за сеанс туннеля.
-            //
-            // Мерим и когда в хранилище лежит «нет ответа»: этот вывод мог остаться
-            // от прошлого запуска, а красная надпись под кнопкой висела бы при
-            // работающем туннеле до тех пор, пока человек не зайдёт на «Прокси».
             groups.firstOrNull()
                 ?.takeIf { it.delay <= DelayStore.UNKNOWN }
                 ?.takeIf { System.currentTimeMillis() - switchedAt > SETTLE }

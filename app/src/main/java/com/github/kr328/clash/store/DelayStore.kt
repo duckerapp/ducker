@@ -13,6 +13,10 @@ import org.json.JSONObject
  *
  * Значение — миллисекунды. [NO_ANSWER] значит «замер был и не удался»: это разные вещи,
  * и ядро их не различает (одно и то же 0xffff, `adapter/adapter.go:118`).
+ *
+ * What is kept is as it was measured (D-282): the last delay a node answered with, and whether
+ * its last check went unanswered. A list shows the second as "нет ответа" after that one check.
+ * "Главная" shows the first and decides about "нет ответа" by its own check of the connection.
  */
 class DelayStore(context: Context) {
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
@@ -53,75 +57,67 @@ class DelayStore(context: Context) {
             .putString(KEY_MAIN_NODE, value?.second)
             .apply()
 
-    fun all(): Map<String, Int> {
-        val raw = prefs.getString(KEY_VALUES, null) ?: return emptyMap()
+    /** For a list: the last delay of a node, or [NO_ANSWER] when its last check went unanswered. */
+    fun all(): Map<String, Int> = known().listed
 
-        return runCatching {
-            val json = JSONObject(raw)
+    /**
+     * The last delay each node answered with, also when a later check went unanswered: for the
+     * node under the button on "Главная", where one miss in a check of the list must not read
+     * "нет ответа" for a server that works (D-282).
+     */
+    fun answers(): Map<String, Int> = known().answers
 
-            json.keys().asSequence()
-                .associateWith { json.getInt(it) }
-                .filterValues { valid(it) }
-        }.getOrDefault(emptyMap())
-    }
+    /**
+     * What the core knows about the nodes now, node name to its last result ([ofCore]): a delay,
+     * [NO_ANSWER], or [UNKNOWN] for a node the core has not tested — that one is left as it was.
+     */
+    fun merge(results: Map<String, Int>) {
+        if (results.values.none { it > 0 || it == NO_ANSWER }) return
 
-    /** Дописывает замеры к прежним: узлы, которых в этот раз не мерили, остаются как были. */
-    fun merge(values: Map<String, Int>) {
-        // Мусор в хранилище живёт до следующего замера и показывается как настоящая
-        // цифра, поэтому чужие значения сюда не попадают вовсе.
-        val clean = values.filterValues { valid(it) }
-
-        if (clean.isEmpty()) return
-
-        val json = JSONObject(all() + clean as Map<*, *>)
+        val known = known().after(results)
 
         prefs.edit()
-            .putString(KEY_VALUES, json.toString())
+            .putString(KEY_VALUES, JSONObject(known.answers as Map<*, *>).toString())
+            .putStringSet(KEY_SILENT, known.silent)
             .putLong(KEY_AT, System.currentTimeMillis())
             .apply()
     }
 
-    /**
-     * Результат замера группы: имя узла → значение от ядра.
-     *
-     * Отказ записывается только со второго промаха подряд. Один промах ничего не значит:
-     * замер мог уйти в момент, когда туннель поднимался или ложился, и узел при этом
-     * живой. Ложное «нет ответа» красным пугает сильнее, чем прочерк.
-     */
-    fun record(values: Map<String, Int>) {
-        if (values.isEmpty()) return
+    private fun known(): Known {
+        val stored = prefs.getString(KEY_VALUES, null)?.let { raw ->
+            runCatching {
+                val json = JSONObject(raw)
 
-        val misses = misses().toMutableMap()
-        val measured = mutableMapOf<String, Int>()
+                json.keys().asSequence().associateWith { json.getInt(it) }
+            }.getOrNull()
+        }.orEmpty()
 
-        values.forEach { (name, core) ->
-            val (value, count) = verdict(core, misses[name] ?: 0)
+        // Builds before D-282 kept "нет ответа" among the delays, as -1.
+        val old = stored.filterValues { it == NO_ANSWER }.keys
 
-            if (value != null) measured[name] = value
-
-            if (count == 0) misses -= name else misses[name] = count
-        }
-
-        prefs.edit().putString(KEY_MISSES, JSONObject(misses as Map<*, *>).toString()).apply()
-
-        merge(measured)
+        return Known(
+            answers = stored.filterValues { it in 1 until CORE_UNKNOWN },
+            silent = prefs.getStringSet(KEY_SILENT, null).orEmpty() + old,
+        )
     }
 
-    private fun misses(): Map<String, Int> {
-        val raw = prefs.getString(KEY_MISSES, null) ?: return emptyMap()
+    /** What is known about the nodes: the last delay each answered with, and who is silent now. */
+    data class Known(val answers: Map<String, Int> = emptyMap(), val silent: Set<String> = emptySet()) {
+        val listed: Map<String, Int> get() = answers + silent.associateWith { NO_ANSWER }
 
-        return runCatching {
-            val json = JSONObject(raw)
+        /** After a reading of the core: [results] are node name to its last result. */
+        fun after(results: Map<String, Int>): Known {
+            val answered = results.filterValues { it > 0 }
 
-            json.keys().asSequence().associateWith { json.getInt(it) }
-        }.getOrDefault(emptyMap())
+            return Known(answers + answered, silent - answered.keys + results.filterValues { it == NO_ANSWER }.keys)
+        }
     }
 
     companion object {
         private const val FILE_NAME = "ducker_delays"
         private const val KEY_VALUES = "values"
         private const val KEY_AT = "measured_at"
-        private const val KEY_MISSES = "misses"
+        private const val KEY_SILENT = "silent"
         private const val KEY_PROFILE = "profile"
         private const val KEY_MAIN_GROUP = "main_group"
         private const val KEY_MAIN_NODE = "main_node"
@@ -139,36 +135,44 @@ class DelayStore(context: Context) {
         fun ofCore(value: Int): Int = if (value in 1 until CORE_UNKNOWN) value else UNKNOWN
 
         /**
+         * The last result of a node as the core has it: its delay; [NO_ANSWER] when it was tested
+         * (at [tested], ms since the epoch) and did not answer; [UNKNOWN] when the core has not
+         * tested it. The delay alone is the same for the last two (D-282).
+         */
+        fun ofCore(delay: Int, tested: Long): Int = when {
+            ofCore(delay) > 0 -> delay
+            tested > 0 -> NO_ANSWER
+            else -> UNKNOWN
+        }
+
+        /**
          * Что показать: свежий замер, иначе прошлый. Прочерк остаётся только там, где
          * узел не мерили никогда.
          */
         fun shown(core: Int, stored: Int?): Int {
+            if (core == NO_ANSWER) return NO_ANSWER
+
             val fresh = ofCore(core)
 
             return if (fresh > 0) fresh else stored ?: UNKNOWN
         }
 
         /**
-         * A node still waits for its verdict: the core has no delay for it, and the store has not
-         * written it off.
+         * A node has no result yet: the core has no delay for it, and its last check is not known
+         * to have gone unanswered.
          */
         fun undecided(core: Int, stored: Int?): Boolean = ofCore(core) == UNKNOWN && stored != NO_ANSWER
 
-        /** After this many checks every miss of the first one has had its second attempt (D-73). */
-        private const val CONFIRMING = 2
-
         /**
-         * Whether the tab checks a group again by itself after [tried] checks; [nodes] are the
-         * core's value and the stored one of each node.
+         * Whether the tab checks a group by itself after [tried] checks; [nodes] are the core's
+         * value and the stored one of each node.
          *
-         * A node with an unconfirmed miss gets its second attempt (D-73) — once. A check after that
-         * is only for one lost while the tunnel was coming up, when nobody answered at all (D-72).
-         * Before, any node without a delay in the core asked for every attempt there is, and a
-         * silent node never has one: three checks in a row, about a minute each on a long list
-         * (F-271).
+         * Once — when a node has no result yet. Again — only when the check brought nothing at
+         * all: that is a check lost while the tunnel was coming up (D-72), not the nodes. A node
+         * that did not answer is not asked again: that is its result (D-282).
          */
         fun recheck(tried: Int, nodes: List<Pair<Int, Int?>>): Boolean =
-            if (tried < CONFIRMING) nodes.any { (core, stored) -> undecided(core, stored) }
+            if (tried == 0) nodes.any { (core, stored) -> undecided(core, stored) }
             else nodes.isNotEmpty() && nodes.none { (core, _) -> ofCore(core) > 0 }
 
         /**
@@ -184,34 +188,8 @@ class DelayStore(context: Context) {
          */
         const val SLOW = 5000
 
-        /** Сколько промахов подряд считается настоящим отказом узла. */
-        const val MISSES_BEFORE_NO_ANSWER = 2
-
-        /**
-         * Что записать по итогам одного замера: значение для хранилища (или `null`,
-         * если записывать нечего) и новое число промахов подряд.
-         *
-         * Первый промах не пишет ничего: на экране остаётся прошлое значение, и узел
-         * получает вторую попытку. Отказ ставится только со второго промаха.
-         */
-        fun verdict(core: Int, misses: Int): Pair<Int?, Int> {
-            val ms = ofCore(core)
-
-            if (ms > 0) return ms to 0
-
-            val count = misses + 1
-
-            return (if (count >= MISSES_BEFORE_NO_ANSWER) NO_ANSWER else null) to count
-        }
-
         /** Замеры старше этого срока стоит обновить. */
         const val STALE = 5 * 60 * 1000L
 
-        /**
-         * Настоящий замер или отметка отказа. Всё прочее — служебные числа ядра
-         * (то же `0xffff`), и на экране они выглядели бы как «65535 мс».
-         */
-        private fun valid(value: Int): Boolean =
-            value == NO_ANSWER || value in 1 until CORE_UNKNOWN
     }
 }

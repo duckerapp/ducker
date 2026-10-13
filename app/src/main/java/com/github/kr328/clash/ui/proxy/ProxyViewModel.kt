@@ -67,17 +67,17 @@ data class ProxyState(
 )
 
 /**
- * What the core has measured so far ([fresh]: node name to the core's value), laid over the list
- * while a check is still running (F-271). The order stays as it is: sorted by delay, the cards
- * would otherwise move every second. A node without a number keeps what it showed — "not asked
- * yet" and "did not answer" look the same in the core until the check ends (D-72).
+ * What the core knows now laid over the list while a check is still running (D-282): [results]
+ * are node name to its last result as [DelayStore.ofCore] gives it. A node shows a delay or "нет
+ * ответа" the moment the core has tested it; one the core has not tested keeps what it showed. The
+ * order stays as it is: sorted by delay, the cards would otherwise move every second.
  */
-internal fun overlay(groups: List<ProxyGroupState>, fresh: Map<String, Int>): List<ProxyGroupState> =
+internal fun overlay(groups: List<ProxyGroupState>, results: Map<String, Int>): List<ProxyGroupState> =
     groups.map { group ->
         group.copy(proxies = group.proxies.map { node ->
-            val delay = DelayStore.ofCore(fresh[node.name] ?: DelayStore.UNKNOWN)
+            val result = results[node.name] ?: DelayStore.UNKNOWN
 
-            if (delay > 0) node.copy(delay = delay) else node
+            if (result == DelayStore.UNKNOWN) node else node.copy(delay = result)
         })
     }
 
@@ -155,9 +155,7 @@ class ProxyViewModel : ViewModel() {
             val store = DelayStore(context)
 
             withContext(Dispatchers.IO) {
-                store.merge(live.flatMap { it.proxies }
-                    .filter { DelayStore.ofCore(it.delay) > 0 }
-                    .associate { it.name to it.delay })
+                store.merge(live.flatMap { it.proxies }.associate { it.name to it.delay })
             }
 
             val known = withContext(Dispatchers.IO) { store.all() }
@@ -168,7 +166,7 @@ class ProxyViewModel : ViewModel() {
                 })
             }
 
-            autoCheck(context, live, known, store.measuredAt)
+            autoCheck(context, live, known, store.measuredAt, canCheck = running || preview)
 
             _state.update {
                 it.copy(
@@ -203,7 +201,7 @@ class ProxyViewModel : ViewModel() {
                 // интернет пропадает, а замер их не меряет (D-143). Выбранный остаётся виден.
                 proxies = group.proxies
                     .filterNot { name == "GLOBAL" && it.type in BUILTIN_PROXY_TYPES && it.name != group.now }
-                    .map { NodeState(it.name, it.type, it.delay) },
+                    .map { NodeState(it.name, it.type, DelayStore.ofCore(it.delay, it.tested)) },
                 // Живое ядро зовёт тип группы «Selector», файл профиля — «select».
                 selectable = group.type.equals("selector", ignoreCase = true),
             )
@@ -266,6 +264,7 @@ class ProxyViewModel : ViewModel() {
         groups: List<ProxyGroupState>,
         known: Map<String, Int>,
         measuredAt: Long,
+        canCheck: Boolean,
     ) {
         val stale = System.currentTimeMillis() - measuredAt > DelayStore.STALE
 
@@ -278,7 +277,9 @@ class ProxyViewModel : ViewModel() {
 
         if (pending.isEmpty() || _state.value.checking != null || autoJob?.isActive == true) return
 
-        if (!_state.value.canCheck && !_state.value.running) return
+        // Not the state: on the first reading it does not say yet that the core can measure,
+        // and with the tunnel down the tab's own check did not start until the second.
+        if (!canCheck) return
 
         // Туннель только что переключили — сеть ещё не устоялась, и замер вернёт
         // пустоту по всем узлам. Меряем, когда окно пройдёт: следующего обновления
@@ -319,7 +320,7 @@ class ProxyViewModel : ViewModel() {
             // к другой дороге, и записывать его нельзя.
             if (Remote.broadcasts.clashRunning == startedWith) {
                 withContext(Dispatchers.IO) {
-                    DelayStore(context).record(
+                    DelayStore(context).merge(
                         measured.filter { it.name in names }
                             .flatMap { it.proxies }
                             .associate { it.name to it.delay },
@@ -401,19 +402,19 @@ class ProxyViewModel : ViewModel() {
 
     /** Замер группы с записью итога; отдаёт её узлы с тем, что намерило ядро. */
     private suspend fun measure(context: Context, group: String): List<NodeState> {
-        attempts[group] = 0
+        // The tab does not follow a check by hand with its own, unless nobody answered at all (D-282).
+        attempts[group] = 1
 
         _state.update { it.copy(checking = group) }
 
         checkLive(group)
 
-        // Результат сохраняем сразу: не ответившие узлы получают отметку отказа,
-        // но только со второго промаха подряд (D-72).
+        // The result is stored as it is: a node that did not answer is marked at once (D-282).
         val measured = runCatching { liveGroups(_state.value.sort) }.getOrDefault(emptyList())
             .firstOrNull { it.name == group }?.proxies.orEmpty()
 
         withContext(Dispatchers.IO) {
-            DelayStore(context).record(measured.associate { it.name to it.delay })
+            DelayStore(context).merge(measured.associate { it.name to it.delay })
         }
 
         _state.update { it.copy(checking = null) }
@@ -422,20 +423,24 @@ class ProxyViewModel : ViewModel() {
     }
 
     /**
-     * The check of a group, with every delay shown as the core records it instead of after the
-     * last one: on a long list where most nodes are silent the check takes about a minute (F-270).
-     * The core asks the nodes in the order of the profile, ten at a time
-     * (`adapter/provider/healthcheck.go`), so the top of the list is done within seconds.
+     * The check of a group, with the result of every node shown the moment the core has tested it —
+     * a delay or "нет ответа" — instead of after the last one (D-282): on a long list where most
+     * nodes are silent the check takes about a minute (F-270). The core asks the nodes in the order
+     * of the profile, ten at a time (`adapter/provider/healthcheck.go`), so the top of the list is
+     * done within seconds.
+     *
+     * The nodes still to be asked are not marked: a check often joins one the core is already
+     * running, and which of the results belong to that one cannot be told (F-276).
      */
     private suspend fun checkLive(group: String) = coroutineScope {
         val watch = launch {
             while (true) {
                 delay(WATCH)
 
-                val fresh = runCatching { withClash { queryProxyGroup(group, ProxySort.Default) } }
-                    .getOrNull()?.proxies.orEmpty().associate { it.name to it.delay }
+                val results = runCatching { withClash { queryProxyGroup(group, ProxySort.Default) } }
+                    .getOrNull()?.proxies.orEmpty().associate { it.name to DelayStore.ofCore(it.delay, it.tested) }
 
-                baseGroups = overlay(baseGroups, fresh)
+                baseGroups = overlay(baseGroups, results)
 
                 _state.update { it.copy(groups = withFavorites(baseGroups)) }
             }

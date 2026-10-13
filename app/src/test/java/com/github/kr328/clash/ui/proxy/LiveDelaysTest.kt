@@ -4,7 +4,7 @@ import com.github.kr328.clash.store.DelayStore
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** Delays shown while a check is still running (F-271). */
+/** The result of each node shown while the check of its group is still running (D-282). */
 class LiveDelaysTest {
     private val main = ProxyGroupState(
         name = "Main",
@@ -20,33 +20,40 @@ class LiveDelaysTest {
     private fun delays(groups: List<ProxyGroupState>) = groups.single().proxies.map { it.name to it.delay }
 
     @Test
-    fun `a delay the core has by now replaces the one on screen`() {
-        val shown = overlay(listOf(main), mapOf("Paris" to 120, "Oslo" to 80))
+    fun `a node shows its result the moment the core has tested it`() {
+        // Paris was asked in vain, Oslo answered; Tokyo has not been asked in this run of the core.
+        val list = overlay(
+            listOf(main),
+            mapOf("Paris" to DelayStore.NO_ANSWER, "Tokyo" to DelayStore.UNKNOWN, "Oslo" to 80),
+        )
 
-        assertEquals(listOf("Paris" to 120, "Tokyo" to DelayStore.NO_ANSWER, "Oslo" to 80), delays(shown))
+        assertEquals(
+            listOf("Paris" to DelayStore.NO_ANSWER, "Tokyo" to DelayStore.NO_ANSWER, "Oslo" to 80),
+            delays(list),
+        )
     }
 
     @Test
-    fun `a node without an answer keeps what it showed`() {
-        // 65535 is both "not asked yet" and "did not answer": the verdict waits for the end.
-        val shown = overlay(listOf(main), mapOf("Paris" to 65535, "Tokyo" to 65535))
+    fun `a node the core has not tested keeps what it showed`() {
+        val list = overlay(listOf(main), mapOf("Paris" to DelayStore.UNKNOWN, "Oslo" to DelayStore.UNKNOWN))
 
-        assertEquals(listOf(main), shown)
+        assertEquals(listOf(main), list)
     }
 
     @Test
-    fun `the order of the list is left alone`() {
-        val shown = overlay(listOf(main), mapOf("Oslo" to 10, "Paris" to 900))
+    fun `nodes outside the check and the order of the list are left alone`() {
+        val list = overlay(listOf(main), mapOf("Oslo" to 10))
 
-        assertEquals(listOf("Paris", "Tokyo", "Oslo"), shown.single().proxies.map { it.name })
+        assertEquals(listOf("Paris", "Tokyo", "Oslo"), list.single().proxies.map { it.name })
+        assertEquals(main.proxies.take(2), list.single().proxies.take(2))
     }
 
     @Test
     fun `the same node is updated in every group that holds it`() {
         val other = main.copy(name = "Video")
 
-        val shown = overlay(listOf(main, other), mapOf("Oslo" to 80))
+        val list = overlay(listOf(main, other), mapOf("Oslo" to 80))
 
-        assertEquals(listOf(80, 80), shown.map { group -> group.proxies.first { it.name == "Oslo" }.delay })
+        assertEquals(listOf(80, 80), list.map { group -> group.proxies.first { it.name == "Oslo" }.delay })
     }
 }

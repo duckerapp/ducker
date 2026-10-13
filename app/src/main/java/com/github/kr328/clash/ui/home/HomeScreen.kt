@@ -1179,7 +1179,10 @@ private val RING_BOX = 132.dp
 private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
     val group = state.groups.firstOrNull()
 
-    val delay = group?.delay ?: 0
+    // "Нет ответа" under the button is this screen's own verdict — two checks of the connection
+    // in a row that failed, the same that brings the "нет связи" card. A check of the list that
+    // one node did not answer does not put it here: the server may well be working (D-282).
+    val delay = if (state.linkOk == false) DelayStore.NO_ANSWER else group?.delay ?: 0
 
     Row(
         modifier = modifier.fillMaxWidth()

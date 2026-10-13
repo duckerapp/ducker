@@ -25,69 +25,89 @@ class DelayValuesTest {
     }
 
     @Test
-    fun `один промах не считается отказом`() {
-        // Замер мог уйти в момент переключения туннеля — узел при этом живой.
-        val (first, misses) = DelayStore.verdict(core = 65535, misses = 0)
+    fun `the last result of a node is a delay, no answer, or nothing yet`() {
+        assertEquals(70, DelayStore.ofCore(delay = 70, tested = 5_000))
 
-        assertEquals(null, first)
-        assertEquals(1, misses)
-
-        val (second, next) = DelayStore.verdict(core = 65535, misses = misses)
-
-        assertEquals(DelayStore.NO_ANSWER, second)
-        assertEquals(2, next)
+        // The core gives the same delay for a node it asked in vain and one it has not asked.
+        assertEquals(DelayStore.NO_ANSWER, DelayStore.ofCore(delay = 65535, tested = 5_000))
+        assertEquals(DelayStore.UNKNOWN, DelayStore.ofCore(delay = 65535, tested = 0))
     }
 
     @Test
-    fun `удачный замер обнуляет промахи`() {
-        val (value, misses) = DelayStore.verdict(core = 70, misses = 1)
-
-        assertEquals(70, value)
-        assertEquals(0, misses)
+    fun `what the core knows is shown as it is, the stored value only where it knows nothing`() {
+        assertEquals(DelayStore.NO_ANSWER, DelayStore.shown(core = DelayStore.NO_ANSWER, stored = 120))
+        assertEquals(70, DelayStore.shown(core = 70, stored = DelayStore.NO_ANSWER))
+        assertEquals(120, DelayStore.shown(core = DelayStore.UNKNOWN, stored = 120))
+        assertEquals(DelayStore.NO_ANSWER, DelayStore.shown(core = DelayStore.UNKNOWN, stored = DelayStore.NO_ANSWER))
     }
 
     @Test
-    fun `a node without a verdict is worth another check, a silent one is not`() {
+    fun `a node that did not answer is marked after that one check and keeps its last delay`() {
+        val known = DelayStore.Known(answers = mapOf("Paris" to 100, "Oslo" to 80))
+            .after(mapOf("Paris" to DelayStore.NO_ANSWER, "Oslo" to 90))
+
+        // A list shows the miss; "Главная" still has the delay the node last answered with.
+        assertEquals(mapOf("Paris" to DelayStore.NO_ANSWER, "Oslo" to 90), known.listed)
+        assertEquals(mapOf("Paris" to 100, "Oslo" to 90), known.answers)
+    }
+
+    @Test
+    fun `an answer takes the mark off at once`() {
+        val known = DelayStore.Known(answers = mapOf("Paris" to 100), silent = setOf("Paris", "Tokyo"))
+            .after(mapOf("Paris" to 120, "Tokyo" to DelayStore.NO_ANSWER))
+
+        assertEquals(mapOf("Paris" to 120, "Tokyo" to DelayStore.NO_ANSWER), known.listed)
+    }
+
+    @Test
+    fun `a node the core has not tested is left as it was`() {
+        val before = DelayStore.Known(answers = mapOf("Paris" to 100), silent = setOf("Tokyo"))
+
+        assertEquals(before, before.after(mapOf("Paris" to DelayStore.UNKNOWN, "Tokyo" to DelayStore.UNKNOWN)))
+    }
+
+    @Test
+    fun `a node never heard and silent has no delay to show on Home`() {
+        val known = DelayStore.Known().after(mapOf("Tokyo" to DelayStore.NO_ANSWER))
+
+        assertEquals(DelayStore.NO_ANSWER, known.listed["Tokyo"])
+        assertEquals(null, known.answers["Tokyo"])
+    }
+
+    @Test
+    fun `a node without a result is worth a check, a silent one is not`() {
         // Never measured, and measured before but not in this run of the core.
-        assertEquals(true, DelayStore.undecided(core = 65535, stored = null))
-        assertEquals(true, DelayStore.undecided(core = 65535, stored = 120))
+        assertEquals(true, DelayStore.undecided(core = DelayStore.UNKNOWN, stored = null))
+        assertEquals(true, DelayStore.undecided(core = DelayStore.UNKNOWN, stored = 120))
 
-        // Written off after two misses: the core keeps no delay for it after any check.
-        assertEquals(false, DelayStore.undecided(core = 65535, stored = DelayStore.NO_ANSWER))
+        // "Did not answer" is a result.
+        assertEquals(false, DelayStore.undecided(core = DelayStore.NO_ANSWER, stored = DelayStore.NO_ANSWER))
+        assertEquals(false, DelayStore.undecided(core = DelayStore.UNKNOWN, stored = DelayStore.NO_ANSWER))
 
         assertEquals(false, DelayStore.undecided(core = 70, stored = null))
         assertEquals(false, DelayStore.undecided(core = 70, stored = DelayStore.NO_ANSWER))
     }
 
     @Test
-    fun `a first miss gets its second attempt`() {
+    fun `the tab checks a group once, and a node that did not answer is not asked again`() {
         val alive = 70 to 70
-        val missed = 65535 to 120
-        val silent = 65535 to DelayStore.NO_ANSWER
+        val unmeasured = DelayStore.UNKNOWN to 120
+        val silent = DelayStore.NO_ANSWER to DelayStore.NO_ANSWER
 
-        assertEquals(true, DelayStore.recheck(tried = 0, nodes = listOf(alive, missed)))
-        assertEquals(true, DelayStore.recheck(tried = 1, nodes = listOf(alive, missed, silent)))
-
-        // Nodes written off earlier do not ask for a check on their own.
+        assertEquals(true, DelayStore.recheck(tried = 0, nodes = listOf(alive, unmeasured)))
         assertEquals(false, DelayStore.recheck(tried = 0, nodes = listOf(alive, silent)))
+
+        // After the check somebody is silent, somebody answered: that is the result.
         assertEquals(false, DelayStore.recheck(tried = 1, nodes = listOf(alive, silent)))
-    }
-
-    @Test
-    fun `there is no third check while somebody answers`() {
-        // A list where nodes answer every other time always has a fresh miss.
-        val alive = 70 to 70
-        val missed = 65535 to 120
-
-        assertEquals(false, DelayStore.recheck(tried = 2, nodes = listOf(alive, missed)))
+        assertEquals(false, DelayStore.recheck(tried = 1, nodes = listOf(alive, unmeasured)))
     }
 
     @Test
     fun `a check that brought nothing at all is made once more`() {
-        // Two checks lost while the tunnel was coming up have written everybody off.
-        val lost = 65535 to DelayStore.NO_ANSWER
+        // Lost while the tunnel was coming up: that says nothing about the nodes.
+        val lost = DelayStore.NO_ANSWER to DelayStore.NO_ANSWER
 
-        assertEquals(true, DelayStore.recheck(tried = 2, nodes = listOf(lost, lost)))
-        assertEquals(false, DelayStore.recheck(tried = 2, nodes = emptyList()))
+        assertEquals(true, DelayStore.recheck(tried = 1, nodes = listOf(lost, lost)))
+        assertEquals(false, DelayStore.recheck(tried = 1, nodes = emptyList()))
     }
 }
