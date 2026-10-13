@@ -51,6 +51,8 @@
     <string name="hwid_title">Device ID</string>
     <string name="hwid_explained">Providers use it to count your devices, and support may ask for it.</string>
     <string name="hwid_disabled_warning">The ID isn\'t sent. If your provider counts devices, the subscription will stop updating.</string>
+    <string name="hwid_show">Show the ID</string>
+    <string name="hwid_hide">Hide the ID</string>
 
     <string name="subscription_link">Link</string>
     <string name="subscription_link_hint">Subscription link, or a vless:// or similar link</string>

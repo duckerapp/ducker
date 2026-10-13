@@ -3,15 +3,18 @@ package com.github.kr328.clash.ui.settings
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
@@ -28,6 +31,7 @@ import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Translate
@@ -54,7 +58,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
@@ -68,6 +75,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.github.kr328.clash.R
@@ -585,8 +593,34 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
             }
 
             if (sendHwid) {
-                SelectionContainer {
-                    Text(text = hwid, style = MaterialTheme.typography.bodyMedium)
+                // Hidden until tapped (D-291). The text is not composed while hidden, so a
+                // screenshot and TalkBack get nothing. Not saved on purpose: leaving settings, or
+                // scrolling the card away, hides it again.
+                var shown by remember { mutableStateOf(false) }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
+                        .clickable(role = Role.Button) { shown = !shown },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(Modifier.weight(1f)) {
+                        if (shown) {
+                            SelectionContainer {
+                                Text(text = hwid, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        } else {
+                            val line = with(LocalDensity.current) { MaterialTheme.typography.bodyMedium.lineHeight.toDp() }
+
+                            Noise(Modifier.fillMaxWidth().height(line))
+                        }
+                    }
+
+                    Icon(
+                        if (shown) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = stringResource(if (shown) R.string.hwid_hide else R.string.hwid_show),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             } else {
                 // Прямо говорим, чем это кончится: у панели с лимитом устройств
@@ -837,6 +871,34 @@ private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit, icon: 
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        }
+    }
+}
+
+/**
+ * Grain in place of a hidden text. Drawn by us: `Modifier.blur` does nothing below Android 12, and
+ * a blur would still need the text under it.
+ */
+@Composable
+private fun Noise(modifier: Modifier) {
+    val ink = MaterialTheme.colorScheme.onSurface
+
+    Canvas(modifier.clip(MaterialTheme.shapes.extraSmall)) {
+        val cell = 3.dp.toPx()
+        // The same seed at every draw, or the grain would flicker.
+        val random = kotlin.random.Random(0)
+        var y = 0f
+
+        while (y < size.height) {
+            var x = 0f
+
+            while (x < size.width) {
+                drawRect(ink.copy(alpha = 0.08f + 0.5f * random.nextFloat()), Offset(x, y), Size(cell, cell))
+
+                x += cell
+            }
+
+            y += cell
         }
     }
 }

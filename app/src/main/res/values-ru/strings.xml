@@ -43,6 +43,8 @@
     <string name="hwid_title">Идентификатор устройства</string>
     <string name="hwid_explained">По нему провайдер считает устройства; его же спрашивает поддержка.</string>
     <string name="hwid_disabled_warning">Идентификатор не отправляется. Если провайдер считает устройства, подписка перестанет обновляться.</string>
+    <string name="hwid_show">Показать идентификатор</string>
+    <string name="hwid_hide">Скрыть идентификатор</string>
 
     <string name="subscription_link">Ссылка</string>
     <string name="subscription_link_hint">Ссылка на подписку или ссылка вида vless://</string>
