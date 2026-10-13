@@ -549,10 +549,19 @@ private fun AppPicker(
                         else -> null
                     }
 
+                    // The chosen row is filled like the chosen subscription (D-101): the former grey
+                    // was next to invisible on the sheet in both themes.
+                    val ink = when {
+                        chosen -> MaterialTheme.colorScheme.onPrimaryContainer
+                        outside == null -> MaterialTheme.colorScheme.onSurface
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                    val quiet = if (chosen) ink else MaterialTheme.colorScheme.onSurfaceVariant
+
                     Row(
                         modifier = Modifier.fillMaxWidth()
                             .clip(MaterialTheme.shapes.small)
-                            .then(if (chosen) Modifier.background(MaterialTheme.colorScheme.surfaceVariant) else Modifier)
+                            .then(if (chosen) Modifier.background(MaterialTheme.colorScheme.primaryContainer) else Modifier)
                             .selectable(selected = chosen, enabled = outside == null, role = Role.RadioButton) { onSelect(app.packageName) }
                             .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -567,8 +576,7 @@ private fun AppPicker(
                             Text(
                                 app.label,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = if (outside == null) MaterialTheme.colorScheme.onSurface
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = ink,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -577,7 +585,7 @@ private fun AppPicker(
                                 Text(
                                     note,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = quiet,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -589,7 +597,7 @@ private fun AppPicker(
                                 Icons.Default.Lock,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = quiet,
                             )
                         }
                     }
