@@ -148,6 +148,19 @@ class DelayStore(context: Context) {
             return if (fresh > 0) fresh else stored ?: UNKNOWN
         }
 
+        /**
+         * From here on the number is the time limit of the check, not a delay. With
+         * `unified-delay` the core asks twice and reports the second answer; when the second
+         * one does not fit into the limit, its error is dropped and the time since the first
+         * request is returned — the limit plus a millisecond, "5001 мс" (`adapter/adapter.go`,
+         * F-271). The node did answer, only slower than that.
+         *
+         * ponytail: the core's default limit, 5 s (`adapter/provider/healthcheck.go`). A profile
+         * with a shorter `timeout` still shows its limit as a delay; curing that means asking
+         * the core for the limit of every group.
+         */
+        const val SLOW = 5000
+
         /** Сколько промахов подряд считается настоящим отказом узла. */
         const val MISSES_BEFORE_NO_ANSWER = 2
 

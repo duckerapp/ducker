@@ -741,6 +741,7 @@ private fun ProxyOption(
 
             Text(
                 text = when {
+                    proxy.delay >= DelayStore.SLOW -> stringResource(R.string.delay_slow, proxy.delay / 1000)
                     proxy.delay > 0 -> stringResource(R.string.delay_ms, proxy.delay)
                     failed -> stringResource(R.string.delay_failed)
                     else -> stringResource(R.string.value_unknown)

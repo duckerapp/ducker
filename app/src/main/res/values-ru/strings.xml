@@ -249,6 +249,7 @@
     <string name="tile_disconnecting">Отключение…</string>
     <string name="value_unknown">—</string>
     <string name="delay_failed">нет ответа</string>
+    <string name="delay_slow">&gt; %d с</string>
     <string name="favorite">В избранное</string>
     <!-- Главная в чёрно-белом стиле (D-65) -->
     <string name="hero_protected">Защищено</string>

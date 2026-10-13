@@ -1221,6 +1221,7 @@ private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
                 // означает, что замер был и не удался, а не что его ещё не делали.
                 Text(
                     text = when {
+                        shownDelay >= DelayStore.SLOW -> stringResource(R.string.delay_slow, shownDelay / 1000)
                         shownDelay > 0 -> stringResource(R.string.delay_ms, shownDelay)
                         shownDelay == DelayStore.NO_ANSWER -> stringResource(R.string.delay_failed)
                         else -> stringResource(R.string.value_unknown)

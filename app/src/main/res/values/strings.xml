@@ -259,6 +259,7 @@
     <string name="tile_disconnecting">Disconnecting…</string>
     <string name="value_unknown">—</string>
     <string name="delay_failed">no answer</string>
+    <string name="delay_slow">&gt; %d s</string>
     <string name="favorite">Favorite</string>
     <!-- Monochrome home screen (D-65) -->
     <string name="hero_protected">Protected</string>

@@ -244,6 +244,7 @@ abstract class DuckerWidget(
             row.setTextViewText(
                 R.id.node_delay,
                 when {
+                    delay >= DelayStore.SLOW -> text.getString(R.string.delay_slow, delay / 1000)
                     delay > 0 -> text.getString(R.string.delay_ms, delay)
                     delay == DelayStore.NO_ANSWER -> text.getString(R.string.delay_failed)
                     else -> ""

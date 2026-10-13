@@ -218,6 +218,7 @@ private fun NodeLine(node: NodeState, selected: Boolean, onClick: () -> Unit, mo
 
         Text(
             text = when {
+                node.delay >= DelayStore.SLOW -> stringResource(R.string.delay_slow, node.delay / 1000)
                 node.delay > 0 -> stringResource(R.string.delay_ms, node.delay)
                 node.delay == DelayStore.NO_ANSWER -> stringResource(R.string.delay_failed)
                 else -> stringResource(R.string.value_unknown)

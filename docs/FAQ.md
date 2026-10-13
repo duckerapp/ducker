@@ -33,6 +33,7 @@ opens.
 **nodes** and live on the Proxies tab. There are usually several: if one does not work or is slow,
 choose another. The number next to a server is its delay in milliseconds (ms): the smaller, the
 faster it answers. "no answer" means the server cannot be reached from this network right now.
+"> 5 s" means the server answered, but took more than five seconds.
 
 **A subscription** is your access to the servers. It comes from a provider — the service where
 you bought or received it — as a link, a QR code or a file. Using the link, ducker downloads the
