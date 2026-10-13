@@ -1,6 +1,8 @@
 package com.github.kr328.clash.ui.rules
 
 import android.content.Context
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -550,19 +552,30 @@ private fun AppPicker(
                     }
 
                     // The chosen row is filled like the chosen subscription (D-101): the former grey
-                    // was next to invisible on the sheet in both themes.
+                    // was next to invisible on the sheet in both themes. The fill flows in, and the
+                    // text changes color exactly halfway.
+                    val fill by animateFloatAsState(if (chosen) 1f else 0f, tween(240), label = "appFill")
+                    val filled = fill > 0.5f
                     val ink = when {
-                        chosen -> MaterialTheme.colorScheme.onPrimaryContainer
+                        filled -> MaterialTheme.colorScheme.onPrimaryContainer
                         outside == null -> MaterialTheme.colorScheme.onSurface
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
-                    val quiet = if (chosen) ink else MaterialTheme.colorScheme.onSurfaceVariant
+                    val quiet = if (filled) ink else MaterialTheme.colorScheme.onSurfaceVariant
 
                     Row(
                         modifier = Modifier.fillMaxWidth()
                             .clip(MaterialTheme.shapes.small)
-                            .then(if (chosen) Modifier.background(MaterialTheme.colorScheme.primaryContainer) else Modifier)
-                            .selectable(selected = chosen, enabled = outside == null, role = Role.RadioButton) { onSelect(app.packageName) }
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = fill))
+                            // No press wave: it is tinted for the unfilled row, played over the fresh fill
+                            // and dimmed the text for a third of a second (D-292). The fill is the answer.
+                            .selectable(
+                                selected = chosen,
+                                interactionSource = null,
+                                indication = null,
+                                enabled = outside == null,
+                                role = Role.RadioButton,
+                            ) { onSelect(app.packageName) }
                             .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
