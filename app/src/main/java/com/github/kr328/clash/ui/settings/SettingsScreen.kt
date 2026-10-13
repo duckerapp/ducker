@@ -3,6 +3,7 @@ package com.github.kr328.clash.ui.settings
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -52,6 +54,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -73,7 +77,6 @@ import com.github.kr328.clash.util.Vendor
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import androidx.compose.material.icons.filled.CheckCircle
-import com.github.kr328.clash.ui.components.BrandAvatar
 import com.github.kr328.clash.ui.components.IconBadge
 import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.overscrollFor
@@ -519,7 +522,16 @@ fun SettingsScreen(
             Card(modifier = Modifier.fillMaxWidth()) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BrandAvatar(null, Modifier.size(44.dp))
+                    // The tile as on the launcher (D-291): the mark of the other theme, so that it
+                    // stands out from the card instead of blending into it.
+                    Image(
+                        painter = painterResource(
+                            if (MaterialTheme.colorScheme.background.luminance() < 0.5f) R.drawable.ducker_mark_light
+                            else R.drawable.ducker_mark_dark
+                        ),
+                        contentDescription = null,
+                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(percent = 22)),
+                    )
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             text = stringResource(R.string.version_app, state.appVersion),
