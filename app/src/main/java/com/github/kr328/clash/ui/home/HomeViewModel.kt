@@ -254,6 +254,16 @@ class HomeViewModel : ViewModel() {
                 }
             }
 
+            // Home shows no subscription and one has become active — the first one added: it goes
+            // on screen now, with the power button. Its node comes after the core has loaded the
+            // config below, which with the built-in template takes seconds: the rule sets are
+            // downloaded first (D-229). All that time home said «Подписка не выбрана».
+            if (_state.value.loaded && _state.value.profile == null) {
+                profileAsync.await()?.let { added ->
+                    _state.update { if (it.profile == null) it.copy(profile = added) else it }
+                }
+            }
+
             // При выключенном туннеле поднимаем конфиг в ядре без туннеля (D-63):
             // тогда на главной видно выбранный узел и его задержку ещё до подключения.
             val preview = !running &&

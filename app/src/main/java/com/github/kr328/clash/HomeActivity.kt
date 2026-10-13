@@ -132,6 +132,7 @@ import com.github.kr328.clash.util.startClashService
 import com.github.kr328.clash.util.stopClashService
 import com.github.kr328.clash.common.util.providerLink
 import com.github.kr328.clash.service.StopNotice
+import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.sendBroadcastSelf
 import com.github.kr328.clash.util.withProfile
 import com.github.kr328.clash.ui.home.BackgroundStep
@@ -283,6 +284,13 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
         // Телевизор (этап 6, D-12): тот же APK, но док слева и управление пультом.
         val tv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+
+        // Whether there is a subscription, known before the service answers: its folder of
+        // downloaded ones. The first frame is drawn by it — the welcome or home — instead of home
+        // giving way to the welcome a moment later. Not a flag in the settings: those go into
+        // Android's backup and the subscriptions do not (`backup_rules.xml`), so on a restored
+        // phone the flag would say there are some.
+        val hadSubscriptions = !importedDir.list().isNullOrEmpty()
 
         setContent {
             val settingsState by settingsViewModel.state.collectAsState()
@@ -581,7 +589,20 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // Подписок нет вовсе: приложению нечего показывать, кроме одного действия (D-98).
                 // Решаем по списку подписок, а не по активной: подписки могут быть, но ни одна
                 // не выбрана, — это не первый запуск.
-                val onboarding = subscriptionsState.loaded && subscriptionsState.profiles.isEmpty()
+                //
+                // Until the list arrives the answer is the one from the disk. A subscription that has
+                // not been downloaded is not one yet: the first is in the list from the press of
+                // «Добавить», long before there is anything to show.
+                val none = if (subscriptionsState.loaded) subscriptionsState.profiles.none { it.imported } else !hadSubscriptions
+
+                // The first subscription is in the list a moment before home has it, and home without
+                // it is the «Подписка не выбрана» card. The welcome stays until home has it and gives
+                // way straight to the power button. A plain holder, not state: it is this line's own
+                // previous answer.
+                val arriving = state.profile == null &&
+                    (subscriptionsState.busy || subscriptionsState.profiles.any { it.active })
+                val welcomed = remember { booleanArrayOf(false) }
+                val onboarding = (none || welcomed[0] && arriving).also { welcomed[0] = it }
 
                 // На главную — доездом, а не прыжком: подсветка на панели в это время
                 // растягивается в кнопку, и обе к концу сходятся у левого края. Прыжком
