@@ -105,7 +105,29 @@ data class SubscriptionsState(
     val sendBusy: Boolean = false,
     /** Телевизор подписку принял: панель говорит об этом, пока её не закроют. */
     val sent: Boolean = false,
-)
+) {
+    /** The field shows a long [input] only by its beginning and is then read-only (F-268). */
+    val inputLong: Boolean
+        get() = input.length > FIELD_LIMIT
+
+    /** What the field shows of [input]. */
+    val inputShown: String
+        get() {
+            if (!inputLong) return input
+
+            // Not through the middle of a character that takes two: a flag in a node's name.
+            val end = if (input[FIELD_LIMIT - 1].isHighSurrogate()) FIELD_LIMIT - 1 else FIELD_LIMIT
+
+            return input.substring(0, end) + "…"
+        }
+}
+
+/**
+ * The longest text the “Добавить” field takes whole. The field lays out and draws all of its text,
+ * not the lines it shows: on the emulator 32,000 characters still fit a frame, 64,000 took two, 2 MB
+ * took 56 s (F-268, F-269). The limit leaves room for a slower phone.
+ */
+internal const val FIELD_LIMIT = 16_000
 
 /** Приём подписки с телефона (D-162): что панель «+» на телевизоре показывает на месте QR. */
 sealed interface Receive {

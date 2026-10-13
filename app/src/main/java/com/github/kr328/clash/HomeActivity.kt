@@ -1275,7 +1275,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 if (addShown) {
                     AddSubscriptionDialog(
                         open = subscriptionsState.adding,
-                        value = subscriptionsState.input,
+                        value = subscriptionsState.inputShown,
+                        longText = subscriptionsState.inputLong,
                         error = subscriptionsState.addError,
                         busy = subscriptionsState.busy,
                         progress = subscriptionsState.addProgress,

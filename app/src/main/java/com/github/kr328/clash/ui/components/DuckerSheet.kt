@@ -481,6 +481,7 @@ internal fun SheetField(
     enabled: Boolean,
     error: Boolean = false,
     maxLines: Int = 1,
+    readOnly: Boolean = false,
 ) {
     val shape = RoundedCornerShape(20.dp)
     val scheme = MaterialTheme.colorScheme
@@ -503,6 +504,7 @@ internal fun SheetField(
             value = value,
             onValueChange = onValue,
             enabled = enabled,
+            readOnly = readOnly,
             modifier = Modifier.weight(1f).heightIn(min = 56.dp).then(input).padding(vertical = 14.dp),
             singleLine = maxLines == 1,
             maxLines = maxLines,

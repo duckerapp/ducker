@@ -54,6 +54,7 @@
     <string name="scan_qr">Сканировать QR</string>
     <string name="add_from_file">Файл</string>
     <string name="file_not_subscription">В файле нет ни ссылки, ни конфига</string>
+    <string name="subscription_input_long">Показано только начало. Добавится весь текст</string>
     <string name="scan_hint">Наведите камеру на QR-код подписки</string>
     <string name="scan_title">Сканировать QR-код</string>
     <string name="scan_gallery">Из галереи</string>

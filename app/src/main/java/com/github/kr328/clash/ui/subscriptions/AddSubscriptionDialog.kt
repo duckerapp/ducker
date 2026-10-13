@@ -69,6 +69,8 @@ import io.nayuki.qrcodegen.QrCode
 fun AddSubscriptionDialog(
     open: Boolean,
     value: String,
+    /** [value] is only the beginning of a long text (F-268): it is shown, not edited. */
+    longText: Boolean = false,
     error: String,
     busy: Boolean,
     /** Доля загрузки подписки, 0..1 (D-212); `null` — пока неизвестна. */
@@ -103,7 +105,16 @@ fun AddSubscriptionDialog(
                 enabled = !busy,
                 error = error.isNotEmpty(),
                 maxLines = 4,
+                readOnly = longText,
             )
+
+            if (longText) {
+                Text(
+                    text = stringResource(R.string.subscription_input_long),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
 
             if (error.isNotEmpty()) {
                 Text(
