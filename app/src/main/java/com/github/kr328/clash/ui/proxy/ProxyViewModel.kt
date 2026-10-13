@@ -168,7 +168,7 @@ class ProxyViewModel : ViewModel() {
                 })
             }
 
-            autoCheck(context, live, store.measuredAt)
+            autoCheck(context, live, known, store.measuredAt)
 
             _state.update {
                 it.copy(
@@ -257,13 +257,23 @@ class ProxyViewModel : ViewModel() {
      * Меряем, когда по группе есть неизвестные узлы или прошлые замеры устарели.
      * Попыток не больше трёх подряд: первая после подъёма туннеля часто уходит в
      * пустоту — ядро ещё встаёт. Прежние значения при этом остаются на экране.
+     *
+     * [groups] carry the core's own values, [known] is the store: which of the attempts are
+     * worth making is decided by [DelayStore.recheck].
      */
-    private fun autoCheck(context: Context, groups: List<ProxyGroupState>, measuredAt: Long) {
+    private fun autoCheck(
+        context: Context,
+        groups: List<ProxyGroupState>,
+        known: Map<String, Int>,
+        measuredAt: Long,
+    ) {
         val stale = System.currentTimeMillis() - measuredAt > DelayStore.STALE
 
         val pending = groups.filter { group ->
-            (attempts[group.name] ?: 0) < MAX_ATTEMPTS &&
-                (stale || group.proxies.any { DelayStore.ofCore(it.delay) == DelayStore.UNKNOWN })
+            val tried = attempts[group.name] ?: 0
+
+            tried < MAX_ATTEMPTS &&
+                (stale || DelayStore.recheck(tried, group.proxies.map { it.delay to known[it.name] }))
         }
 
         if (pending.isEmpty() || _state.value.checking != null || autoJob?.isActive == true) return

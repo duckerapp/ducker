@@ -45,4 +45,49 @@ class DelayValuesTest {
         assertEquals(70, value)
         assertEquals(0, misses)
     }
+
+    @Test
+    fun `a node without a verdict is worth another check, a silent one is not`() {
+        // Never measured, and measured before but not in this run of the core.
+        assertEquals(true, DelayStore.undecided(core = 65535, stored = null))
+        assertEquals(true, DelayStore.undecided(core = 65535, stored = 120))
+
+        // Written off after two misses: the core keeps no delay for it after any check.
+        assertEquals(false, DelayStore.undecided(core = 65535, stored = DelayStore.NO_ANSWER))
+
+        assertEquals(false, DelayStore.undecided(core = 70, stored = null))
+        assertEquals(false, DelayStore.undecided(core = 70, stored = DelayStore.NO_ANSWER))
+    }
+
+    @Test
+    fun `a first miss gets its second attempt`() {
+        val alive = 70 to 70
+        val missed = 65535 to 120
+        val silent = 65535 to DelayStore.NO_ANSWER
+
+        assertEquals(true, DelayStore.recheck(tried = 0, nodes = listOf(alive, missed)))
+        assertEquals(true, DelayStore.recheck(tried = 1, nodes = listOf(alive, missed, silent)))
+
+        // Nodes written off earlier do not ask for a check on their own.
+        assertEquals(false, DelayStore.recheck(tried = 0, nodes = listOf(alive, silent)))
+        assertEquals(false, DelayStore.recheck(tried = 1, nodes = listOf(alive, silent)))
+    }
+
+    @Test
+    fun `there is no third check while somebody answers`() {
+        // A list where nodes answer every other time always has a fresh miss.
+        val alive = 70 to 70
+        val missed = 65535 to 120
+
+        assertEquals(false, DelayStore.recheck(tried = 2, nodes = listOf(alive, missed)))
+    }
+
+    @Test
+    fun `a check that brought nothing at all is made once more`() {
+        // Two checks lost while the tunnel was coming up have written everybody off.
+        val lost = 65535 to DelayStore.NO_ANSWER
+
+        assertEquals(true, DelayStore.recheck(tried = 2, nodes = listOf(lost, lost)))
+        assertEquals(false, DelayStore.recheck(tried = 2, nodes = emptyList()))
+    }
 }

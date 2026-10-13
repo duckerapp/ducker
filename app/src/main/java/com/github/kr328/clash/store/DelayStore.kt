@@ -149,6 +149,29 @@ class DelayStore(context: Context) {
         }
 
         /**
+         * A node still waits for its verdict: the core has no delay for it, and the store has not
+         * written it off.
+         */
+        fun undecided(core: Int, stored: Int?): Boolean = ofCore(core) == UNKNOWN && stored != NO_ANSWER
+
+        /** After this many checks every miss of the first one has had its second attempt (D-73). */
+        private const val CONFIRMING = 2
+
+        /**
+         * Whether the tab checks a group again by itself after [tried] checks; [nodes] are the
+         * core's value and the stored one of each node.
+         *
+         * A node with an unconfirmed miss gets its second attempt (D-73) — once. A check after that
+         * is only for one lost while the tunnel was coming up, when nobody answered at all (D-72).
+         * Before, any node without a delay in the core asked for every attempt there is, and a
+         * silent node never has one: three checks in a row, about a minute each on a long list
+         * (F-271).
+         */
+        fun recheck(tried: Int, nodes: List<Pair<Int, Int?>>): Boolean =
+            if (tried < CONFIRMING) nodes.any { (core, stored) -> undecided(core, stored) }
+            else nodes.isNotEmpty() && nodes.none { (core, _) -> ofCore(core) > 0 }
+
+        /**
          * From here on the number is the time limit of the check, not a delay. With
          * `unified-delay` the core asks twice and reports the second answer; when the second
          * one does not fit into the limit, its error is dropped and the time since the first
