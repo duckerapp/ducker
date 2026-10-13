@@ -342,6 +342,14 @@ func TestBuiltInTemplateMeansTheSame(t *testing.T) {
 		t.Fatal("`proxies` is not the last key")
 	}
 
+	// The encoder writes a key over 128 characters as `? key` with `: value` on the next line.
+	// The core reads that, a person does not: such a key is to be split in the template.
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(strings.TrimLeft(line, " "), "? ") {
+			t.Fatalf("a key too long for one line: %s", line)
+		}
+	}
+
 	var tree yaml.Node
 	if err := yaml.Unmarshal([]byte(out), &tree); err != nil {
 		t.Fatal(err)

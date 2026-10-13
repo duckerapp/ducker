@@ -1062,7 +1062,10 @@ dns:
     # ключа с custom-direct, поэтому system побеждает dns_ru.
     "+.lan,+.local,+.home.arpa,+.routerlogin.net":
       - system
-    "rule-set:youtube,category-ban-ru,whatsapp_domains,telegram_domains,discord_domains,meta_domains,instagram,instagram_ads,twitter_domains,google-play": *dns_proxy
+    # Two keys, not one: a key over 128 characters is written into a person's config on a line
+    # of its own after `?`. The core makes one policy per rule set either way, in this order.
+    "rule-set:youtube,category-ban-ru,whatsapp_domains,telegram_domains,discord_domains": *dns_proxy
+    "rule-set:meta_domains,instagram,instagram_ads,twitter_domains,google-play": *dns_proxy
     "rule-set:geosite-ru,custom-direct,torrent-trackers,tiktok,ru-direct-inline": *dns_ru
     "+.fcm.googleapis.com,+.fcm-xmpp.googleapis.com,+.mtalk.google.com": *dns_ru
     # NTP — российским резолвером и НАПРЯМУЮ. Так встроенный ntp: выше и
