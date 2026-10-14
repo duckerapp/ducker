@@ -387,7 +387,10 @@ internal fun DuckerSheet(
                             // строка в поле — без этого панель прыгала вверх рывком (D-101). Стоит
                             // внутри отступа клавиатуры: за клавиатурой панель и так едет кадр в кадр,
                             // пружина там только отставала бы.
-                            .animateContentSize(spring(stiffness = Spring.StiffnessMediumLow))
+                            // Held at the bottom while the height rides, like the sheet itself: the rows below
+                            // a change stay still, and only the sheet's top moves. Held at the top, the save
+                            // button hopped whenever the spring and a block's own animation drifted apart (D-314).
+                            .animateContentSize(spring(stiffness = Spring.StiffnessMediumLow), alignment = Alignment.BottomStart)
                             .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
