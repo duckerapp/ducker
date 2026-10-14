@@ -224,9 +224,10 @@ fun SubscriptionsScreen(
     }
 
     menuFor?.let { profile ->
-        // «Продлить» leads where it does on “Главная” and in the expiry notice (D-119); the support
-        // link is an item of its own, so “Продлить” never opens a support chat.
-        val renew = firstProviderLink(profile.buyUrl, profile.profileWebPageUrl)
+        // «Продлить» leads where it does on “Главная” and in the expiry notice (D-119): the provider's
+        // renewal link, else its support — the subscription's page alone renews nothing — else that page
+        // (D-317).
+        val renew = firstProviderLink(profile.buyUrl, profile.supportUrl, profile.profileWebPageUrl)
         val support = providerLink(profile.supportUrl)
         // The active card has «Обновить», «Изменить» and the QR button of its own.
         val main = profile.active

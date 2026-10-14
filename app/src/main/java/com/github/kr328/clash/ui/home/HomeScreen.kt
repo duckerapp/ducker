@@ -1595,7 +1595,7 @@ private fun SubscriptionCard(
     }
 
     // Вторая кнопка — только если провайдер прислал ссылку (D-119).
-    val renew = firstProviderLink(profile.buyUrl, profile.profileWebPageUrl)
+    val renew = firstProviderLink(profile.buyUrl, profile.supportUrl, profile.profileWebPageUrl)
     val support = providerLink(profile.supportUrl)
     val website = providerLink(profile.profileWebPageUrl)
     val link = when {

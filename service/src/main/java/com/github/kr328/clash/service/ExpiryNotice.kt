@@ -132,9 +132,10 @@ object ExpiryNotice {
             .setContentIntent(open)
             .setAutoCancel(true)
 
-        // «Продлить» — куда и на карточке (D-119): страница покупки, иначе страница провайдера.
+        // «Продлить» — куда и на карточке (D-119): страница покупки, иначе поддержка, иначе страница
+        // провайдера (D-317).
         val provider = ProviderInfo.read(context.importedDir.resolve(imported.uuid.toString()))
-        val renew = firstProviderLink(provider.buyUrl, provider.profileWebPageUrl)
+        val renew = firstProviderLink(provider.buyUrl, provider.supportUrl, provider.profileWebPageUrl)
 
         if (renew != null) {
             val intent = PendingIntent.getActivity(
