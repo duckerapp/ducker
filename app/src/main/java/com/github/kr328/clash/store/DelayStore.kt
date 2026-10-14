@@ -162,9 +162,10 @@ class DelayStore(context: Context) {
          * value and the stored one of each node.
          *
          * Once — when a node has no result yet, when a result is [outdated], or when a node is
-         * [silent] since long enough. Again — only when the check brought nothing at all: that is
-         * a check lost while the tunnel was coming up (D-72), not the nodes. Within one round a
-         * node that did not answer is not asked again: that is its result (D-282, D-318).
+         * [silent] since long enough. A second time when a node is [silent] after the first: one
+         * miss right after the tunnel came up said nothing about a working node (D-318). Again
+         * after that — only when the check brought nothing at all: that is a check lost while the
+         * tunnel was coming up (D-72), not the nodes.
          */
         fun recheck(
             tried: Int,
@@ -172,8 +173,11 @@ class DelayStore(context: Context) {
             outdated: Boolean = false,
             silent: Boolean = false,
         ): Boolean =
-            if (tried == 0) outdated || silent || nodes.any { (core, stored) -> undecided(core, stored) }
-            else nodes.isNotEmpty() && nodes.none { (core, _) -> ofCore(core) > 0 }
+            when {
+                tried == 0 -> outdated || silent || nodes.any { (core, stored) -> undecided(core, stored) }
+                tried == 1 && silent -> true
+                else -> nodes.isNotEmpty() && nodes.none { (core, _) -> ofCore(core) > 0 }
+            }
 
         /**
          * A node reads "нет ответа", and the core has not tested it for [SILENT_RECHECK] ms by

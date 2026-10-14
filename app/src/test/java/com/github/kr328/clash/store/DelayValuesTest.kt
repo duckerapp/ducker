@@ -108,7 +108,9 @@ class DelayValuesTest {
         val silent = DelayStore.NO_ANSWER to DelayStore.NO_ANSWER
 
         assertEquals(true, DelayStore.recheck(tried = 0, nodes = listOf(alive, silent), silent = true))
-        assertEquals(false, DelayStore.recheck(tried = 1, nodes = listOf(alive, silent), silent = true))
+        // Silent after the first check of the round: once more, then that is the result.
+        assertEquals(true, DelayStore.recheck(tried = 1, nodes = listOf(alive, silent), silent = true))
+        assertEquals(false, DelayStore.recheck(tried = 2, nodes = listOf(alive, silent), silent = true))
 
         val now = 100_000L
 

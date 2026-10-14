@@ -301,9 +301,14 @@ class ProxyViewModel : ViewModel() {
                 tried,
                 group.proxies.map { it.delay to known[it.name] },
                 outdated = group.proxies.any { DelayStore.outdated(it.tested, networkChangedAt) },
-                // REJECT never answers: its group would be checked on every opening.
+                // REJECT never answers: its group would be checked on every opening. After the
+                // round's first check its misses are fresh, and any of them is worth the second.
                 silent = group.proxies.any {
-                    it.type !in BUILTIN_PROXY_TYPES && DelayStore.silent(it.delay, known[it.name], it.tested, now)
+                    it.type !in BUILTIN_PROXY_TYPES && if (tried == 0) {
+                        DelayStore.silent(it.delay, known[it.name], it.tested, now)
+                    } else {
+                        it.delay == DelayStore.NO_ANSWER
+                    }
                 },
             )
         }
