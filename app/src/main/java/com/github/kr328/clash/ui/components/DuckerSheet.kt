@@ -40,6 +40,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -367,44 +368,50 @@ internal fun DuckerSheet(
                         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), CircleShape),
                 )
 
-                Column(
-                    // Прокрутка — на случай низкого экрана с открытой клавиатурой.
-                    modifier = Modifier.fillMaxWidth()
-                        .then(
-                            if (tv) Modifier.focusProperties { if (start != null) onEnter = { start.requestFocus() } }.focusGroup()
-                            else Modifier,
-                        )
-                        .verticalScroll(rememberScrollState())
-                        .navigationBarsPadding()
-                        .imePadding()
-                        // Высота меняется плавно: подсказка при загрузке, строка ошибки, лишняя
-                        // строка в поле — без этого панель прыгала вверх рывком (D-101). Стоит
-                        // внутри отступа клавиатуры: за клавиатурой панель и так едет кадр в кадр,
-                        // пружина там только отставала бы.
-                        .animateContentSize(spring(stiffness = Spring.StiffnessMediumLow))
-                        .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    // Цвет текста — под фон панели: окно диалога берёт чёрный по умолчанию, и в
-                    // тёмной теме заголовок и строки-переходы пропадали на фоне.
-                    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
+                // Lookahead hands the height spring below the final height at once, so a block with its
+                // own size animation — the slider under “Свой” (D-311) — and the panel move together on
+                // the same spring. Chasing such a block frame by frame, the panel lagged behind it, and
+                // the rows under it jerked up and back.
+                LookaheadScope {
+                    Column(
+                        // Прокрутка — на случай низкого экрана с открытой клавиатурой.
+                        modifier = Modifier.fillMaxWidth()
+                            .then(
+                                if (tv) Modifier.focusProperties { if (start != null) onEnter = { start.requestFocus() } }.focusGroup()
+                                else Modifier,
                             )
-
-                            if (hint != null) {
+                            .verticalScroll(rememberScrollState())
+                            .navigationBarsPadding()
+                            .imePadding()
+                            // Высота меняется плавно: подсказка при загрузке, строка ошибки, лишняя
+                            // строка в поле — без этого панель прыгала вверх рывком (D-101). Стоит
+                            // внутри отступа клавиатуры: за клавиатурой панель и так едет кадр в кадр,
+                            // пружина там только отставала бы.
+                            .animateContentSize(spring(stiffness = Spring.StiffnessMediumLow))
+                            .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        // Цвет текста — под фон панели: окно диалога берёт чёрный по умолчанию, и в
+                        // тёмной теме заголовок и строки-переходы пропадали на фоне.
+                        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
-                                    text = hint,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    text = title,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
                                 )
-                            }
-                        }
 
-                        content()
+                                if (hint != null) {
+                                    Text(
+                                        text = hint,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+
+                            content()
+                        }
                     }
                 }
             }

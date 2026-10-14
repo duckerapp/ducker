@@ -253,7 +253,9 @@ private fun IntervalPicker(
         "${stringResource(R.string.interval_provider)} · ${hoursLabel(providerInterval)}",
     )
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // The gaps are paddings, not the column's spacing: the slider's gap comes and goes with it,
+    // instead of jumping when the slider leaves the layout.
+    Column {
         Row(
             modifier = Modifier.fillMaxWidth()
                 .height(52.dp)
@@ -318,7 +320,12 @@ private fun IntervalPicker(
         }
 
         AnimatedVisibility(visible = selected == 1) {
-            OwnSlider(interval = interval, enabled = enabled, onInterval = onInterval)
+            OwnSlider(
+                interval = interval,
+                enabled = enabled,
+                onInterval = onInterval,
+                modifier = Modifier.padding(top = 8.dp),
+            )
         }
 
         val hours = when (selected) {
@@ -331,7 +338,7 @@ private fun IntervalPicker(
             Text(
                 text = if (hours == 0) stringResource(R.string.interval_manual_hint)
                 else pluralStringResource(R.plurals.interval_auto_hint, hours, hours),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = scheme.onSurfaceVariant,
             )
@@ -344,14 +351,14 @@ private fun IntervalPicker(
  * (an old one from the provider) sits at the nearest stop and stays as it is until the slider moves.
  */
 @Composable
-private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Unit) {
+private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Unit, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
     val stop = STOPS.indices.minBy { abs(STOPS[it] - interval) }
     val shown = hoursLabel(interval)
 
     Box(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(scheme.surface)
             .padding(horizontal = 16.dp, vertical = 4.dp),
