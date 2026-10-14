@@ -659,7 +659,7 @@ private fun ProfileRow(
         ) {
             CompositionLocalProvider(LocalContentColor provides scheme.onSurface) {
                 Column(
-                    modifier = Modifier.weight(1f).padding(vertical = 10.dp),
+                    modifier = Modifier.weight(1f).padding(vertical = 15.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     ProfileName(profile, favorite, rules)
@@ -1067,7 +1067,7 @@ private val GAP = 12.dp
 
 /** The rows' text and lines start this far inside the backing, the line ends as far from its edge. */
 private val ROW_INSET = 14.dp
-private val ROW_HEIGHT = 64.dp
+private val ROW_HEIGHT = 74.dp
 
 /** The backing's corners — those of the cards, `shapes.large`. */
 private val BACKING_CORNER = 24.dp
