@@ -3,7 +3,6 @@ package config
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"math"
 	"net/netip"
@@ -90,23 +89,6 @@ func validate(rawConfig *config.RawConfig) (*config.Config, error) {
 	rawConfig.Profile.StoreFakeIP = false
 
 	return Parse(rawConfig)
-}
-
-// dnsOffByApp: the app's session override switches the core's DNS off — set only by the load that
-// shows the nodes while the tunnel is off (ClashManager.loadForPreview). patchDns cannot tell
-// this from a profile without a DNS section and gives the config the default fake-ip range,
-// whose pool on the cache file would empty the tunnel's table.
-func dnsOffByApp() bool {
-	var override struct {
-		DNS struct {
-			Enable *bool `json:"enable"`
-		} `json:"dns"`
-	}
-	if json.Unmarshal([]byte(ReadOverride(OverrideSlotSession)), &override) != nil {
-		return false
-	}
-
-	return override.DNS.Enable != nil && !*override.DNS.Enable
 }
 
 // keptFakeIPNames bounds a fake-ip table kept across starts of the tunnel: a start that finds
@@ -261,13 +243,7 @@ func Load(path string) error {
 
 	logDns(rawCfg)
 
-	// The nodes shown while the tunnel is off: that core answers no names, so its fake-ip pool is
-	// made in memory, as a validation's, and the tunnel's table is left alone (D-303).
-	if dnsOffByApp() {
-		rawCfg.Profile.StoreFakeIP = false
-	} else {
-		keepFakeIP(rawCfg)
-	}
+	keepFakeIP(rawCfg)
 
 	cfg, err := Parse(rawCfg)
 	if err != nil {

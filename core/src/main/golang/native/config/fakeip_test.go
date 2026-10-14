@@ -229,8 +229,9 @@ func TestFakeIPKeptAcrossRestart(t *testing.T) {
 	}
 }
 
-// The nodes shown while the tunnel is off come from a load whose DNS the app switched off
-// (ClashManager.loadForPreview). Such a core answers no names and leaves the tunnel's table alone.
+// The nodes shown while the tunnel is off come from a load of the same profile whose DNS server
+// listens nowhere (ClashManager.loadForPreview). Its pool has the tunnel's range and keeps the
+// table (D-304, D-306).
 func TestFakeIPKeptAcrossPreview(t *testing.T) {
 	profile := newFakeIPProfile(t)
 	load(t, profile)
@@ -240,8 +241,9 @@ func TestFakeIPKeptAcrossPreview(t *testing.T) {
 	a := fakeIPOf(t, "a.test")
 
 	LoadDefault()
-	WriteOverride(OverrideSlotSession, `{"dns":{"enable":false}}`)
+	WriteOverride(OverrideSlotSession, `{"dns":{"listen":""}}`)
 	load(t, profile)
+	expectHost(t, "while the nodes are shown", a, "a.test")
 	ClearOverride(OverrideSlotSession)
 
 	restart(t, profile)

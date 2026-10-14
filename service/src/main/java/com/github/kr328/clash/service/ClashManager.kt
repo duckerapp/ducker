@@ -93,7 +93,7 @@ class ClashManager(private val context: Context) : IClashManager,
      *
      * Ядру для этого нужен разобранный конфиг: имена групп и участники живут в нём.
      * Туннель при этом не поднимается, а сессионный оверрайд глушит всё, что слушает
-     * порты, и DNS ядра: от ядра нужны только исходящие соединения до узлов.
+     * порты: от ядра нужны только исходящие соединения до узлов.
      *
      * Загружаем не чаще, чем надо: повторный вызов на том же профиле ничего не делает.
      */
@@ -125,7 +125,9 @@ class ClashManager(private val context: Context) : IClashManager,
             override.tproxyPort = 0
             override.listeners = emptyList()
             override.allowLan = false
-            override.dns.enable = false
+            // The profile's DNS stays on: node names resolve through it as they will with the
+            // tunnel up. Only its server is left without an address (D-306).
+            override.dns.listen = ""
 
             Clash.patchOverride(Clash.OverrideSlot.Session, override)
 
