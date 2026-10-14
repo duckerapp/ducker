@@ -5,6 +5,26 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.33 — 2026-10-14
+
+- Updates from inside the app: ducker checks for a new version, shows it on Home with what's new,
+  downloads it with progress and installs it. It starts working once releases are published.
+- Subscriptions: a new layout — the active subscription as a card on top, the others as rows that
+  can be dragged into order. Auto-update can follow the interval the provider sets.
+- Proxies: delays appear while a check is still running, a node shows «no answer» right after its
+  check, and a delay at the time limit reads «> 5 s». Nodes left with «no answer» after the VPN
+  starts, after a change of network or after a while are checked again by themselves. The sort
+  switch is there with the VPN off too.
+- An update of a subscription no longer breaks open connections; switching to another subscription
+  closes those left on the previous one.
+- «Renew» leads to the provider's support when the provider has no renewal link.
+- The log follows new lines, with a button back to the end, and keeps running while the app is
+  hidden. The device ID is hidden until tapped.
+- The first run opens on the welcome screen without flashes.
+- System colors tint the app with the wallpaper's own color; smoother sheets and lists.
+- Settings → Help: the project's email.
+- Fixed: a large list of links pasted at once failed to be added.
+
 ## 0.4.32 — 2026-10-07
 
 - A new subscription whose config has a mistake by the provider is no longer refused: ducker
