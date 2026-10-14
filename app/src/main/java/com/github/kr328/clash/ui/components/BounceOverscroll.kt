@@ -120,10 +120,11 @@ class BounceOverscroll(private val scope: CoroutineScope) : OverscrollEffect {
         flingStepAt = 0L
         bounced = false
 
-        // Отпустили за краем: бросок наружу гасит пружина, бросок внутрь отдаём списку, пока
-        // пружина возвращает содержимое.
+        // Отпустили за краем: содержимое плавно возвращается, бросок внутрь отдаём списку, пока
+        // пружина его возвращает. The release's speed outward is dropped: thrown on, it carried
+        // the content further out before the return, a jerk after a hard pull (D-315).
         if (offset != 0f && (v == 0f || v.sign == offset.sign)) {
-            settle(v.coerceIn(-MAX_VELOCITY, MAX_VELOCITY))
+            settle(0f)
 
             return
         }
