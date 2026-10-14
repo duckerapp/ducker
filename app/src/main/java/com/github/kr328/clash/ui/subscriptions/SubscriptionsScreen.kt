@@ -101,6 +101,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.runtime.Composable
@@ -527,7 +529,13 @@ private fun ActiveCard(
                     // The logo is on the active card only: the provider's, else ours (D-45).
                     BrandAvatar(shown.brandLogo, Modifier.size(44.dp))
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        ProfileName(shown, favorite = shown.uuid in state.favorites, rules = state.ruleCounts[shown.uuid] ?: 0)
+                        ProfileName(
+                            shown,
+                            favorite = shown.uuid in state.favorites,
+                            rules = state.ruleCounts[shown.uuid] ?: 0,
+                            // A step larger than in the rows.
+                            style = LocalTextStyle.current.let { it.copy(fontSize = (it.fontSize.value + 1).sp) },
+                        )
 
                         // Домена под названием больше нет (D-102). Строка остаётся только для
                         // отказа — у него своя причина: лимит устройств и «панель требует
@@ -693,10 +701,11 @@ private fun ProfileRow(
 
 /** The name with a star when it is a favourite and the rules badge (D-123). */
 @Composable
-private fun ProfileName(profile: Profile, favorite: Boolean, rules: Int) {
+private fun ProfileName(profile: Profile, favorite: Boolean, rules: Int, style: TextStyle = LocalTextStyle.current) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             text = profile.shownName,
+            style = style,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f, fill = false),
             maxLines = 1,
@@ -826,7 +835,8 @@ private fun ActiveDetails(
         val onAction = if (profile.hwidBlocked) scheme.onSurface else scheme.primaryContainer
         val first = focus?.let { Modifier.focusRequester(it) } ?: Modifier
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        // Half as much air again above and below the buttons as the card's other steps.
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 7.dp)) {
             // Своему конфигу обновляться неоткуда: «Обновить» шло по пустой ссылке с ошибкой.
             // Итог — в самой кнопке, как на главной (D-119): «Обновлено» или «Не удалось».
             if (!profile.local) {
