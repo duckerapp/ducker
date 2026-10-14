@@ -7,10 +7,20 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusRequester
 import com.github.kr328.clash.ui.components.tabEntry
 import com.github.kr328.clash.ui.components.keepFocus
+import com.github.kr328.clash.ui.components.ringCorner
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
@@ -31,7 +41,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.RowScope
@@ -55,14 +64,29 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SupportAgent
+import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.zIndex
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.filled.Add
@@ -101,6 +125,7 @@ import com.github.kr328.clash.ui.components.FitLabel
 import com.github.kr328.clash.ui.components.UpdateLabel
 import com.github.kr328.clash.ui.components.UpdateShown
 import com.github.kr328.clash.ui.components.rememberUpdateShown
+import com.github.kr328.clash.common.util.firstProviderLink
 import com.github.kr328.clash.common.util.providerLink
 import com.github.kr328.clash.log.LogScrubber
 import com.github.kr328.clash.service.util.Failure
@@ -113,6 +138,10 @@ import com.github.kr328.clash.ui.components.DuckerCard as Card
 
 /**
  * Третья вкладка: подписки (этап 5).
+ *
+ * The active subscription is a card on top; the others are rows on one shared white backing under
+ * the caption «Другие подписки» (stage 19, package 4). The model hands them over in order: the
+ * active one, favourites, the rest.
  */
 @Composable
 fun SubscriptionsScreen(
@@ -124,8 +153,10 @@ fun SubscriptionsScreen(
     onAdd: () -> Unit,
     onDismissError: () -> Unit,
     modifier: Modifier = Modifier,
-    /** «Поддержка» на карточке ошибки обновления — открыть ссылку провайдера (D-227). */
-    onSupport: (String) -> Unit = {},
+    /** Открыть ссылку провайдера: «Поддержка» на карточке ошибки (D-227), «Продлить» и «Поддержка» в «⋯». */
+    onOpenLink: (String) -> Unit = {},
+    /** A subscription is starred or its star taken off. */
+    onFavorite: (UUID) -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     /** Идёт то, что запустило «потянуть, чтобы обновить» (D-92). */
     refreshing: Boolean = false,
@@ -136,26 +167,40 @@ fun SubscriptionsScreen(
     onMoved: () -> Unit = {},
 ) {
     val list = rememberLazyListState()
+    val bounce = overscrollFor(list)
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
-    val keys by rememberUpdatedState(state.profiles.mapTo(HashSet()) { it.uuid.toString() })
+    val tv = LocalTv.current
+
+    val active = state.profiles.firstOrNull { it.active }
+    val others = state.profiles.filter { !it.active }
+
+    // A row changes places only within its group — a favourite among favourites; the card and the
+    // caption are in no group.
+    val groups by rememberUpdatedState(
+        others.associate<Profile, Any, Boolean> { it.uuid.toString() to (it.uuid in state.favorites) },
+    )
     val move by rememberUpdatedState(onMove)
     val moved by rememberUpdatedState(onMoved)
     val reorder = remember(list) {
         ProfileReorder(
             list = list,
             scope = scope,
-            isProfile = { it in keys },
+            sameGroup = { a, b -> groups[a]?.let { it == groups[b] } == true },
             onMove = { from, to -> move(UUID.fromString(from), UUID.fromString(to)) },
             onDrop = { moved() },
         )
     }
 
-    // Действия неактивной подписки — панелью по «⋯» (D-121). Выбранное действие запускаем,
+    // Действия подписки — панелью по «⋯» (D-121). Выбранное действие запускаем,
     // когда панель уехала: правка и удаление открывают свои панели, и две разом наезжали бы.
     var menuFor by remember { mutableStateOf<Profile?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
     var afterMenu by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val openMenu = { profile: Profile ->
+        menuFor = profile
+        menuOpen = true
+    }
 
     // QR ссылки (этап 10): панель живёт в композиции, пока уезжает вниз.
     var shareFor by remember { mutableStateOf<Profile?>(null) }
@@ -176,15 +221,35 @@ fun SubscriptionsScreen(
     }
 
     menuFor?.let { profile ->
+        // «Продлить» leads where it does on “Главная” and in the expiry notice (D-119); the support
+        // link is an item of its own, so “Продлить” never opens a support chat.
+        val renew = firstProviderLink(profile.buyUrl, profile.profileWebPageUrl)
+        val support = providerLink(profile.supportUrl)
+        // The active card has «Обновить», «Изменить» and the QR button of its own.
+        val main = profile.active
+
         ProfileMenu(
             open = menuOpen,
             name = profile.shownName,
-            local = profile.local,
+            actions = listOfNotNull(
+                MenuAction.Update.takeIf { !main && !profile.local },
+                MenuAction.Edit.takeIf { !main },
+                MenuAction.Renew.takeIf { renew != null },
+                MenuAction.Support.takeIf { support != null },
+                MenuAction.Share.takeIf { !main && !profile.local },
+                MenuAction.Favorite,
+                MenuAction.Delete,
+            ),
+            favorite = profile.uuid in state.favorites,
             onAction = { action ->
                 afterMenu = when (action) {
                     MenuAction.Update -> ({ onUpdate(profile.uuid) })
-                    MenuAction.Share -> ({ share(profile) })
                     MenuAction.Edit -> ({ onEdit(profile) })
+                    MenuAction.Renew -> ({ renew?.let(onOpenLink) })
+                    MenuAction.Support -> ({ support?.let(onOpenLink) })
+                    MenuAction.Share -> ({ share(profile) })
+                    // After the sheet has gone, so the row is seen moving to its group.
+                    MenuAction.Favorite -> ({ onFavorite(profile.uuid) })
                     MenuAction.Delete -> ({ onDelete(profile) })
                 }
                 menuOpen = false
@@ -198,6 +263,30 @@ fun SubscriptionsScreen(
         )
     }
 
+    // A chosen row becomes the card on top. A list scrolled away from the card rides up to it; with
+    // the remote the focus goes to the card's first button, since the focused row is gone.
+    val cardFocus = remember { FocusRequester() }
+    var shownActive by remember { mutableStateOf(active?.uuid) }
+
+    LaunchedEffect(active?.uuid) {
+        val switched = shownActive != null && active != null && active.uuid != shownActive
+
+        shownActive = active?.uuid
+        if (!switched) return@LaunchedEffect
+
+        val card = list.layoutInfo.visibleItemsInfo.firstOrNull { it.key == ACTIVE_KEY }
+
+        if (tv) runCatching { cardFocus.requestFocus() }
+        if (card == null || card.offset < 0) list.animateScrollToItem(0)
+    }
+
+    val direction = LocalLayoutDirection.current
+    val start = 16.dp + contentPadding.calculateStartPadding(direction)
+    val end = 16.dp + contentPadding.calculateEndPadding(direction)
+    val rows by rememberUpdatedState(others.mapTo(HashSet<Any>()) { it.uuid.toString() })
+    val backing = MaterialTheme.colorScheme.surface
+    val edge = MaterialTheme.colorScheme.outlineVariant
+
     PullToRefresh(
         refreshing = refreshing,
         onRefresh = onRefresh,
@@ -206,29 +295,66 @@ fun SubscriptionsScreen(
     ) {
         TvLazyColumn(
             state = list,
-            overscrollEffect = overscrollFor(list),
-            modifier = Modifier.fillMaxSize().screenInsets(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            overscrollEffect = bounce,
+            modifier = Modifier.fillMaxSize().screenInsets().drawBehind {
+                // The rows' white backing: one shape from the first row to the last, drawn by the
+                // list rather than by each row — a neighbour sliding to its new place during a drag
+                // would open a gap in pieces. Taken from the layout's places, which a drag never
+                // changes, and moved with the bounce at the list's edge, which shifts the content
+                // as a layer.
+                val layout = list.layoutInfo
+                var top = Float.POSITIVE_INFINITY
+                var bottom = Float.NEGATIVE_INFINITY
+
+                for (item in layout.visibleItemsInfo) {
+                    if (item.key !in rows) continue
+
+                    val y = (item.offset - layout.viewportStartOffset).toFloat()
+
+                    top = minOf(top, y)
+                    bottom = maxOf(bottom, y + item.size)
+                }
+                if (top >= bottom) return@drawBehind
+
+                val stroke = 1.dp.toPx()
+                val radius = BACKING_CORNER.toPx()
+                val left = (if (layoutDirection == LayoutDirection.Ltr) start else end).toPx()
+                val width = size.width - start.toPx() - end.toPx()
+
+                clipRect {
+                    translate(top = top + (bounce?.offset ?: 0f)) {
+                        drawRoundRect(backing, Offset(left, 0f), Size(width, bottom - top), CornerRadius(radius))
+                        drawRoundRect(
+                            color = edge,
+                            topLeft = Offset(left + stroke / 2, stroke / 2),
+                            size = Size(width - stroke, bottom - top - stroke),
+                            cornerRadius = CornerRadius(radius - stroke / 2),
+                            style = Stroke(stroke),
+                        )
+                    }
+                }
+            },
             // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
-            // панель вкладок и видны в просветах по её бокам (D-74).
+            // панель вкладок и видны в просветах по её бокам (D-74). Between items there are none:
+            // the rows stand edge to edge, every other item brings its own gap below.
             contentPadding = PaddingValues(
-                start = 16.dp + contentPadding.calculateStartPadding(LocalLayoutDirection.current),
-                end = 16.dp + contentPadding.calculateEndPadding(LocalLayoutDirection.current),
+                start = start,
+                end = end,
                 top = 16.dp + contentPadding.calculateTopPadding(),
                 // Плюс над панелью (D-97): с этим запасом последнюю карточку можно
                 // докрутить выше кнопки.
                 bottom = 16.dp + contentPadding.calculateBottomPadding() + ACTION_SIZE + 12.dp,
             ),
         ) {
-            item {
+            item(key = HEADER_KEY) {
                 // От заголовка до первой карточки — как на «Прокси», где под заголовком ещё
                 // стоит строка режимов (без VPN — пустая): два шага списка, а не один (D-104).
-                ScreenHeader(stringResource(R.string.subscriptions_tab), Modifier.padding(bottom = 12.dp))
+                ScreenHeader(stringResource(R.string.subscriptions_tab), Modifier.padding(bottom = GAP * 2))
             }
 
             // Заглушки, а не бесконечная полоска (D-92): так же, как на главной.
             if (!state.loaded) {
-                items(2) { ProfileSkeleton() }
+                items(2) { ProfileSkeleton(Modifier.padding(bottom = GAP)) }
             }
             if (state.updateError.isNotEmpty()) {
                 item {
@@ -245,54 +371,82 @@ fun SubscriptionsScreen(
                             fix == Failure.Fix.Retry -> stringResource(R.string.update) to { onUpdate(failed.uuid) }
                             fix == Failure.Fix.EditLink -> stringResource(R.string.edit) to { onEdit(failed) }
                             fix == Failure.Fix.Support -> providerLink(failed.supportUrl)?.let { link ->
-                                stringResource(R.string.support) to { onSupport(link) }
+                                stringResource(R.string.support) to { onOpenLink(link) }
                             }
                             else -> null
                         },
                         onDismiss = onDismissError,
+                        modifier = Modifier.padding(bottom = GAP),
                     )
                 }
             }
 
-            itemsIndexed(state.profiles, key = { _, it -> it.uuid.toString() }) { index, profile ->
+            if (active != null) {
+                item(key = ACTIVE_KEY) {
+                    ActiveCard(
+                        profile = active,
+                        state = state,
+                        focus = cardFocus,
+                        onUpdate = onUpdate,
+                        onEdit = onEdit,
+                        onShare = share,
+                        onMenu = openMenu,
+                    )
+                }
+
+                if (others.isNotEmpty()) {
+                    item(key = OTHERS_KEY) {
+                        Text(
+                            text = stringResource(R.string.other_subscriptions),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = ROW_INSET, top = 20.dp, bottom = 8.dp),
+                        )
+                    }
+                }
+            }
+
+            itemsIndexed(others, key = { _, it -> it.uuid.toString() }) { index, profile ->
                 val key = profile.uuid.toString()
-                val above = state.profiles.getOrNull(index - 1)
-                val below = state.profiles.getOrNull(index + 1)
+                val favorite = profile.uuid in state.favorites
+                val above = others.getOrNull(index - 1)
+                val below = others.getOrNull(index + 1)
                 val up = stringResource(R.string.move_up)
                 val down = stringResource(R.string.move_down)
+                val lifted = { p: Profile -> p.uuid.toString().let { k -> reorder.dragged == k || reorder.settling == k } }
 
-                ProfileCard(
+                ProfileRow(
                     // Соседи расступаются плавно только при перестановке: в остальное время сдвиг
                     // спорил бы с ростом карточки при смене активной (D-121). Поднятая и
-                    // доезжающая карточки едут сами.
+                    // доезжающая строки едут сами. The subscription that was active comes in as
+                    // a row and fades in at its place.
                     modifier = Modifier.animateItem(
-                        fadeInSpec = null,
+                        fadeInSpec = tween(ROW_FADE_MS),
                         fadeOutSpec = null,
                         placementSpec = if (reorder.active && reorder.dragged != key && reorder.settling != key) {
                             spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = IntOffset.VisibilityThreshold)
                         } else null,
                     ),
                     reorder = reorder,
+                    // The line above a row; none beside a lifted one — its place stays blank under it.
+                    line = above != null && !lifted(profile) && !lifted(above),
                     onLift = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                     onStep = { haptic.performHapticFeedback(HapticFeedbackType.SegmentTick) },
-                    // TalkBack перетаскивать не умеет — те же перестановки действиями.
+                    // TalkBack перетаскивать не умеет — те же перестановки действиями, в своей группе.
                     moves = listOfNotNull(
-                        above?.let { CustomAccessibilityAction(up) { onMove(profile.uuid, it.uuid); onMoved(); true } },
-                        below?.let { CustomAccessibilityAction(down) { onMove(profile.uuid, it.uuid); onMoved(); true } },
+                        above?.takeIf { (it.uuid in state.favorites) == favorite }?.let {
+                            CustomAccessibilityAction(up) { onMove(profile.uuid, it.uuid); onMoved(); true }
+                        },
+                        below?.takeIf { (it.uuid in state.favorites) == favorite }?.let {
+                            CustomAccessibilityAction(down) { onMove(profile.uuid, it.uuid); onMoved(); true }
+                        },
                     ),
                     profile = profile,
+                    favorite = favorite,
                     updating = state.updating == profile.uuid,
-                    failed = state.updateError.isNotEmpty() && state.updateErrorFor == profile.uuid,
                     rules = state.ruleCounts[profile.uuid] ?: 0,
                     onSelect = { onSelect(profile) },
-                    onUpdate = { onUpdate(profile.uuid) },
-                    onEdit = { onEdit(profile) },
-                    onDelete = { onDelete(profile) },
-                    onShare = { share(profile) },
-                    onMenu = {
-                        menuFor = profile
-                        menuOpen = true
-                    },
+                    onMenu = { openMenu(profile) },
                 )
             }
 
@@ -313,161 +467,244 @@ fun SubscriptionsScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * The active subscription: the full card (D-121) — expiry, traffic, «Обновить», «Изменить» and
+ * “⋯” with the rest. Filled the way a chosen node is on “Прокси” (D-101): black in the light theme,
+ * white in the dark one. Отказ панели важнее выбора — такая карточка остаётся красной.
+ */
 @Composable
-private fun ProfileCard(
+private fun ActiveCard(
+    profile: Profile,
+    state: SubscriptionsState,
+    /** The remote's place on the card after another subscription is chosen. */
+    focus: FocusRequester,
+    onUpdate: (UUID) -> Unit,
+    onEdit: (Profile) -> Unit,
+    onShare: (Profile) -> Unit,
+    onMenu: (Profile) -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val tv = LocalTv.current
+
+    val container = if (profile.hwidBlocked) scheme.errorContainer else scheme.primaryContainer
+    val content = if (profile.hwidBlocked) scheme.onErrorContainer else scheme.onPrimaryContainer
+    val border = if (profile.hwidBlocked) scheme.outlineVariant else scheme.primary
+
+    Card(
+        // Повторное касание по выбранной ничего не делает: смена профиля перезагружает конфиг
+        // в работающем туннеле. Пульт входит на «Подписки» на неё (этап 6), но сама она фокус
+        // не берёт — Compose не водит стрелками внутрь элемента, который сам в фокусе, а
+        // нужны её кнопки.
+        modifier = Modifier.fillMaxWidth()
+            .tabEntry()
+            .focusProperties { if (tv) canFocus = false }
+            .selectable(selected = true, role = Role.RadioButton, onClick = {}),
+        colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
+        border = BorderStroke(1.dp, border),
+    ) {
+        // Another subscription chosen: the card stays in place, its content fades through to the
+        // new one (Material's timings) and the height flows to it.
+        AnimatedContent(
+            targetState = profile,
+            contentKey = { it.uuid },
+            transitionSpec = {
+                fadeIn(tween(CARD_FADE_IN_MS, delayMillis = CARD_FADE_OUT_MS)) togetherWith
+                    fadeOut(tween(CARD_FADE_OUT_MS)) using
+                    SizeTransform(clip = false) { _, _ -> spring(stiffness = Spring.StiffnessMediumLow) }
+            },
+            label = "activeCard",
+        ) { shown ->
+            Column(
+                modifier = Modifier.animateContentSize(spring(stiffness = Spring.StiffnessMediumLow)).padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    // The logo is on the active card only: the provider's, else ours (D-45).
+                    BrandAvatar(shown.brandLogo, Modifier.size(44.dp))
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        ProfileName(shown, favorite = shown.uuid in state.favorites, rules = state.ruleCounts[shown.uuid] ?: 0)
+
+                        // Домена под названием больше нет (D-102). Строка остаётся только для
+                        // отказа — у него своя причина: лимит устройств и «панель требует
+                        // идентификатор» — разные вещи, и чинятся по-разному.
+                        if (shown.hwidBlocked || shown.hwidReason == "not_supported") {
+                            Text(
+                                text = stringResource(hwidLimit(shown)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = LocalContentColor.current.copy(alpha = 0.7f),
+                            )
+                        }
+                    }
+
+                    // «Поделиться» — в свободном углу; своему конфигу делиться нечем.
+                    if (!shown.local) {
+                        IconButton(onClick = { onShare(shown) }) {
+                            Icon(Icons.Default.QrCode2, contentDescription = stringResource(R.string.share_qr))
+                        }
+                    }
+                }
+
+                ActiveDetails(
+                    profile = shown,
+                    updating = state.updating == shown.uuid,
+                    failed = state.updateError.isNotEmpty() && state.updateErrorFor == shown.uuid,
+                    // The leaving content keeps no requester: one node takes the focus.
+                    focus = focus.takeIf { shown.uuid == profile.uuid },
+                    onUpdate = { onUpdate(shown.uuid) },
+                    onEdit = { onEdit(shown) },
+                    onMenu = { onMenu(shown) },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * A subscription that is not active: one row on the shared backing, without a logo (stage 19,
+ * package 4). Touching it makes it active; “⋯” opens its actions (D-121).
+ */
+@Composable
+private fun ProfileRow(
     modifier: Modifier,
     reorder: ProfileReorder,
+    /** A line above the row, inset under the text at both ends. */
+    line: Boolean,
     onLift: () -> Unit,
     onStep: () -> Unit,
     moves: List<CustomAccessibilityAction>,
     profile: Profile,
+    favorite: Boolean,
     updating: Boolean,
-    /** Последнее обновление этой подписки не удалось — «Не удалось» на её кнопке. */
-    failed: Boolean,
     /** Свои правила подписки — маленьким значком у имени (D-123). */
     rules: Int,
     onSelect: () -> Unit,
-    onUpdate: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onShare: () -> Unit,
     onMenu: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
-    val selected = profile.active
-
-    // Выбранная подписка заливается, как выбранный узел на «Прокси» (D-101): чёрным в светлой
-    // теме, белым в тёмной. Прежде её отличала только точка переключателя в углу. Отказ
-    // панели важнее выбора — такая карточка остаётся красной.
-    //
-    // Заливка переливается, а текст меняет цвет ровно на середине: если перекрашивать оба
-    // плавно, они сходятся в сером, и на миг текст пропадает.
-    val fill by animateFloatAsState(if (selected) 1f else 0f, tween(240), label = "profileFill")
-    val filled = fill > 0.5f
-
-    val container = when {
-        profile.hwidBlocked -> scheme.errorContainer
-        else -> lerp(scheme.surface, scheme.primaryContainer, fill)
-    }
-    val content = when {
-        profile.hwidBlocked -> scheme.onErrorContainer
-        filled -> scheme.onPrimaryContainer
-        else -> scheme.onSurface
-    }
-    val border = if (profile.hwidBlocked) scheme.outlineVariant
-    else lerp(scheme.outlineVariant, scheme.primary, fill)
-
-    // Долгое нажатие поднимает карточку (этап 13, пакет 5): тень и чуть крупнее, поверх соседей.
     val key = profile.uuid.toString()
     val lifted = reorder.dragged == key
     val lift by animateFloatAsState(if (lifted) 1f else 0f, tween(LIFT_MS), label = "lift")
     val shape = MaterialTheme.shapes.large
 
-    // Пульт (этап 6): фокус, взятый карточкой, к её кнопкам уже не пускает — Compose не водит
-    // стрелками внутрь элемента, который сам в фокусе. Активной он и не нужен: нажатие по ней
-    // ничего не делает, — фокус сразу у её кнопок. У остальных ОК — выбрать, вправо — «⋯».
+    // The row is lifted with the finger still down: its press highlight would stay on the card all
+    // the way, a grey card. The press is called off at the lift.
+    val interactions = remember { MutableInteractionSource() }
+    var press by remember { mutableStateOf<PressInteraction.Press?>(null) }
+
+    LaunchedEffect(interactions) {
+        interactions.interactions.collect {
+            when (it) {
+                is PressInteraction.Press -> press = it
+                is PressInteraction.Release, is PressInteraction.Cancel -> press = null
+            }
+        }
+    }
+    LaunchedEffect(lifted) {
+        if (lifted) press?.let { interactions.emit(PressInteraction.Cancel(it)) }
+    }
+
+    // Пульт (этап 6): фокус, взятый строкой, к её «⋯» уже не пускает — Compose не водит
+    // стрелками внутрь элемента, который сам в фокусе. ОК — выбрать, вправо — «⋯».
     val self = remember { FocusRequester() }
     val menu = remember { FocusRequester() }
     val tv = LocalTv.current
 
-    Card(
-        // Выбор — касанием по карточке, как узел на «Прокси». Повторное касание по уже
-        // выбранной ничего не делает: смена профиля перезагружает конфиг в работающем туннеле.
-        modifier = modifier.fillMaxWidth()
-            .zIndex(if (lifted || reorder.settling == key) 1f else 0f)
-            .graphicsLayer {
-                translationY = reorder.offset(key)
-                scaleX = 1f + LIFT_SCALE * lift
-                scaleY = scaleX
-                shadowElevation = LIFT_SHADOW.toPx() * lift
-                this.shape = shape
-            }
-            .clip(shape)
-            // Пульт входит на «Подписки» на активную (этап 6).
-            .then(if (selected) Modifier.tabEntry() else Modifier)
-            .focusRequester(self)
-            .focusProperties {
-                if (!tv) return@focusProperties
+    Box(modifier.fillMaxWidth().zIndex(if (lifted || reorder.settling == key) 1f else 0f)) {
+        if (line) HorizontalDivider(Modifier.padding(horizontal = ROW_INSET), color = scheme.outlineVariant)
 
-                canFocus = !selected
-                if (!selected) right = menu
-            }
-            .selectable(selected = selected, role = Role.RadioButton, onClick = { if (!selected) onSelect() })
-            .semantics { customActions = moves }
-            .reorderable(reorder, key, scale = { 1f + LIFT_SCALE * lift }, onLift = onLift, onStep = onStep),
-        colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
-        border = BorderStroke(1.dp, border),
-    ) {
-        // Полная карточка — только у активной подписки; остальные — строкой (D-121): при
-        // пяти подписках огромные карточки заставляли листать. Смена активной — перетеканием
-        // высоты, а не скачком.
-        Column(
-            modifier = Modifier.animateContentSize(spring(stiffness = Spring.StiffnessMediumLow)).padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        // Долгое нажатие поднимает строку (этап 13, пакет 5): она становится карточкой — своя
+        // подложка, рамка, тень, чуть крупнее — и едет над соседями; под ней остаётся пустое
+        // место на общей подложке.
+        Row(
+            modifier = Modifier.fillMaxWidth()
+                .graphicsLayer {
+                    translationY = reorder.offset(key)
+                    scaleX = 1f + LIFT_SCALE * lift
+                    scaleY = scaleX
+                    shadowElevation = LIFT_SHADOW.toPx() * lift
+                    this.shape = shape
+                }
+                // Opaque at once, not faded in: a row dragged off at once would show its neighbour
+                // through itself. At the lift and after the drop it is over its own white place.
+                .then(if (lifted || reorder.settling == key) Modifier.background(scheme.surface, shape) else Modifier)
+                .border(1.dp, scheme.outlineVariant.copy(alpha = lift), shape)
+                .clip(shape)
+                .then(if (tv) Modifier.ringCorner(BACKING_CORNER) else Modifier)
+                .focusRequester(self)
+                .focusProperties { if (tv) right = menu }
+                .selectable(
+                    selected = false,
+                    interactionSource = interactions,
+                    indication = LocalIndication.current,
+                    role = Role.RadioButton,
+                    onClick = onSelect,
+                )
+                .semantics { customActions = moves }
+                .reorderable(reorder, key, scale = { 1f + LIFT_SCALE * lift }, onLift = onLift, onStep = onStep)
+                .heightIn(min = ROW_HEIGHT)
+                .padding(start = ROW_INSET),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = if (selected) 4.dp else 0.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                BrandAvatar(profile.brandLogo, Modifier.size(if (selected) 44.dp else 36.dp))
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = profile.shownName,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.weight(1f, fill = false),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+            CompositionLocalProvider(LocalContentColor provides scheme.onSurface) {
+                Column(
+                    modifier = Modifier.weight(1f).padding(vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    ProfileName(profile, favorite, rules)
 
-                        if (rules > 0) RulesBadge(rules)
-                    }
+                    Text(
+                        text = profileSummary(profile, updating),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (!profile.imported) scheme.error
+                        else LocalContentColor.current.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
 
-                    if (!selected) {
-                        Text(
-                            text = profileSummary(profile, updating),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (!profile.imported) scheme.error
-                            else LocalContentColor.current.copy(alpha = 0.7f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-
-                    // Домена под названием больше нет (D-102): название и так узнаётся,
-                    // а адрес провайдера на скриншоте в поддержку ни к чему. Строка остаётся
-                    // только для отказа — у него своя причина: лимит устройств и «панель
-                    // требует идентификатор» — разные вещи, и чинятся по-разному.
+                    // The panel's refusal: on the card it is red all over, in a row — its line.
                     if (profile.hwidBlocked || profile.hwidReason == "not_supported") {
                         Text(
-                            text = stringResource(
-                                if (profile.hwidReason == "not_supported") R.string.limit_hwid_required
-                                else R.string.limit_max_devices
-                            ),
+                            text = stringResource(hwidLimit(profile)),
                             style = MaterialTheme.typography.bodySmall,
-                            color = LocalContentColor.current.copy(alpha = 0.7f),
+                            color = scheme.error,
                         )
                     }
                 }
 
-                if (!selected) {
-                    IconButton(onClick = onMenu, modifier = Modifier.focusRequester(menu).focusProperties { if (tv) left = self }) {
-                        Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(R.string.more_actions))
-                    }
-                } else if (!profile.local) {
-                    // У активной меню нет — её действия в карточке; «поделиться» — в свободном углу.
-                    IconButton(onClick = onShare) {
-                        Icon(Icons.Default.QrCode2, contentDescription = stringResource(R.string.share_qr))
-                    }
+                IconButton(onClick = onMenu, modifier = Modifier.focusRequester(menu).focusProperties { if (tv) left = self }) {
+                    Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(R.string.more_actions))
                 }
             }
-
-            if (selected) ActiveDetails(profile, updating, failed, filled, fill, onUpdate, onEdit, onDelete)
         }
     }
 }
+
+/** The name with a star when it is a favourite and the rules badge (D-123). */
+@Composable
+private fun ProfileName(profile: Profile, favorite: Boolean, rules: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = profile.shownName,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f, fill = false),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        if (favorite) {
+            Icon(Icons.Filled.Star, contentDescription = stringResource(R.string.favorite_marked), modifier = Modifier.size(14.dp))
+        }
+        if (rules > 0) RulesBadge(rules)
+    }
+}
+
+private fun hwidLimit(profile: Profile): Int =
+    if (profile.hwidReason == "not_supported") R.string.limit_hwid_required else R.string.limit_max_devices
 
 /** У подписки есть свои правила: значок и число, в цвет текста карточки (D-123). */
 @Composable
@@ -509,18 +746,17 @@ private fun profileSummary(profile: Profile, updating: Boolean): String {
     return parts.joinToString(" · ")
 }
 
-/** Подробности активной подписки: срок, трафик и три действия. */
+/** Подробности активной подписки: срок, трафик и действия. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ActiveDetails(
     profile: Profile,
     updating: Boolean,
     failed: Boolean,
-    filled: Boolean,
-    fill: Float,
+    focus: FocusRequester?,
     onUpdate: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit,
+    onMenu: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
 
@@ -531,13 +767,12 @@ private fun ActiveDetails(
         val loaded = profile.imported
 
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // На залитой карточке красный теряется, там хватает самих слов.
             Text(
                 stringResource(
                     if (loaded) R.string.ducker_active else R.string.profile_not_loaded
                 ),
                 style = MaterialTheme.typography.labelMedium,
-                // На залитой карточке красный теряется, там хватает самих слов.
-                color = if (!loaded && !filled) scheme.error else LocalContentColor.current,
             )
             if (loaded && profile.expire > 0 && !profile.local) {
                 Text(stringResource(R.string.valid_until, formatDate(profile.expire)),
@@ -575,20 +810,14 @@ private fun ActiveDetails(
                 color = LocalContentColor.current.copy(alpha = 0.7f),
             )
         }
-        // Три действия одной строкой вместо карандаша в углу (D-101). Удаление — только
-        // значком: оно редкое и всё равно переспрашивает, а место нужно двум частым.
+        // Действия одной строкой вместо карандаша в углу (D-101). Последнее — «⋯» на месте
+        // корзины (stage 19, package 4): удаление, избранное, «Продлить» и остальное — в меню.
         //
         // Кнопки залиты (D-102): прозрачные с тонкой обводкой сливались с чёрной
-        // карточкой. На выбранной — белые (в тёмной теме — чёрные), на обычной — серые,
-        // как «Обновить» на главной; перетекают вместе с заливкой карточки.
-        val action = when {
-            profile.hwidBlocked -> scheme.surface
-            else -> lerp(scheme.surfaceVariant, scheme.onPrimaryContainer, fill)
-        }
-        val onAction = when {
-            profile.hwidBlocked -> scheme.onSurface
-            else -> lerp(scheme.onSurface, scheme.primaryContainer, fill)
-        }
+        // карточкой — белые (в тёмной теме — чёрные).
+        val action = if (profile.hwidBlocked) scheme.surface else scheme.onPrimaryContainer
+        val onAction = if (profile.hwidBlocked) scheme.onSurface else scheme.primaryContainer
+        val first = focus?.let { Modifier.focusRequester(it) } ?: Modifier
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             // Своему конфигу обновляться неоткуда: «Обновить» шло по пустой ссылке с ошибкой.
@@ -600,20 +829,21 @@ private fun ActiveDetails(
 
                 // С пульта на время обновления кнопка держит фокус (D-158).
                 CardAction(onClick = { if (active) onUpdate() }, container = action, content = onAction,
-                    enabled = keepFocus(active), modifier = Modifier.weight(1f)) {
+                    enabled = keepFocus(active), modifier = first.weight(1f)) {
                     UpdateLabel(shown, LocalTextStyle.current, 18.dp)
                 }
             }
 
-            CardAction(onClick = onEdit, container = action, content = onAction, modifier = Modifier.weight(1f)) {
+            CardAction(onClick = onEdit, container = action, content = onAction,
+                modifier = (if (profile.local) first else Modifier).weight(1f)) {
                 Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                 FitLabel(stringResource(R.string.edit), LocalTextStyle.current, Modifier.padding(start = 6.dp))
             }
 
-            CardAction(onClick = onDelete, container = action, content = onAction, modifier = Modifier.width(48.dp)) {
+            CardAction(onClick = onMenu, container = action, content = onAction, modifier = Modifier.width(48.dp)) {
                 Icon(
-                    Icons.Default.DeleteOutline,
-                    contentDescription = stringResource(R.string.delete),
+                    Icons.Default.MoreHoriz,
+                    contentDescription = stringResource(R.string.more_actions),
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -621,25 +851,42 @@ private fun ActiveDetails(
     }
 }
 
-private enum class MenuAction { Update, Share, Edit, Delete }
+private enum class MenuAction { Update, Edit, Renew, Support, Share, Favorite, Delete }
 
-/** Действия неактивной подписки — панелью снизу (D-121). */
+/** Действия подписки — панелью снизу (D-121); у активной — те, которых нет на карточке. */
 @Composable
 private fun ProfileMenu(
     open: Boolean,
     name: String,
-    local: Boolean,
+    actions: List<MenuAction>,
+    favorite: Boolean,
     onAction: (MenuAction) -> Unit,
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
 ) {
     DuckerSheet(open = open, title = name, busy = false, onDismiss = onDismiss, onClosed = onClosed) {
         Column {
-            if (!local) MenuLine(Icons.Default.Refresh, stringResource(R.string.update)) { onAction(MenuAction.Update) }
-            if (!local) MenuLine(Icons.Default.QrCode2, stringResource(R.string.share_qr)) { onAction(MenuAction.Share) }
-            MenuLine(Icons.Outlined.Edit, stringResource(R.string.edit)) { onAction(MenuAction.Edit) }
-            MenuLine(Icons.Default.DeleteOutline, stringResource(R.string.delete), MaterialTheme.colorScheme.error) {
-                onAction(MenuAction.Delete)
+            for (action in actions) {
+                val click = { onAction(action) }
+
+                when (action) {
+                    MenuAction.Update -> MenuLine(Icons.Default.Refresh, stringResource(R.string.update), onClick = click)
+                    MenuAction.Edit -> MenuLine(Icons.Outlined.Edit, stringResource(R.string.edit), onClick = click)
+                    MenuAction.Renew -> MenuLine(Icons.Default.CreditCard, stringResource(R.string.renew), onClick = click)
+                    MenuAction.Support -> MenuLine(Icons.Default.SupportAgent, stringResource(R.string.support), onClick = click)
+                    MenuAction.Share -> MenuLine(Icons.Default.QrCode2, stringResource(R.string.share_qr), onClick = click)
+                    MenuAction.Favorite -> MenuLine(
+                        if (favorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                        stringResource(if (favorite) R.string.unfavorite else R.string.favorite),
+                        onClick = click,
+                    )
+                    MenuAction.Delete -> MenuLine(
+                        Icons.Default.DeleteOutline,
+                        stringResource(R.string.delete),
+                        MaterialTheme.colorScheme.error,
+                        onClick = click,
+                    )
+                }
             }
         }
     }
@@ -705,10 +952,11 @@ private fun UpdateErrorCard(
     failure: Failure?,
     action: Pair<String, () -> Unit>?,
     onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
 
-    Card(Modifier.fillMaxWidth()) {
+    Card(modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(start = 14.dp, top = 14.dp, bottom = 14.dp, end = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -760,8 +1008,8 @@ private fun UpdateErrorCard(
 
 /** Заглушка карточки подписки (D-92). */
 @Composable
-private fun ProfileSkeleton() {
-    Card(Modifier.fillMaxWidth()) {
+private fun ProfileSkeleton(modifier: Modifier = Modifier) {
+    Card(modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Skeleton(height = 44.dp, width = 44.dp)
@@ -801,6 +1049,25 @@ fun AddSubscriptionButton() {
 }
 
 private const val UNLIMITED = "∞"
+
+/** Keys of the list items that are not subscriptions; a subscription's key is its number. */
+private const val HEADER_KEY = "header"
+private const val ACTIVE_KEY = "active"
+private const val OTHERS_KEY = "others"
+
+/** The list's step: below the header (twice), the skeletons and the error card. */
+private val GAP = 12.dp
+
+/** The rows' text and lines start this far inside the backing, the line ends as far from its edge. */
+private val ROW_INSET = 14.dp
+private val ROW_HEIGHT = 64.dp
+
+/** The backing's corners — those of the cards, `shapes.large`. */
+private val BACKING_CORNER = 24.dp
+
+private const val ROW_FADE_MS = 220
+private const val CARD_FADE_OUT_MS = 90
+private const val CARD_FADE_IN_MS = 210
 
 /** Поднятая карточка: насколько крупнее, какая тень, за сколько поднимается. */
 private const val LIFT_SCALE = 0.03f

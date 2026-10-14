@@ -28,12 +28,15 @@ import kotlinx.coroutines.launch
  * Где карточка на экране — это место, где её подняли, плюс путь пальца. Поэтому ни обмен местами,
  * ни прокрутка не уводят её из-под пальца: меняется только то, насколько она смещена от своего
  * места в списке. Ключи — ключи элементов списка, у подписок это номер строкой.
+ *
+ * [sameGroup] says whether two list items may change places: a row moves only among the rows of
+ * its own group — a favourite among favourites (stage 19, package 4).
  */
 @Stable
 internal class ProfileReorder(
     private val list: LazyListState,
     private val scope: CoroutineScope,
-    private val isProfile: (Any) -> Boolean,
+    private val sameGroup: (Any, Any) -> Boolean,
     private val onMove: (from: String, to: String) -> Unit,
     private val onDrop: () -> Unit,
 ) {
@@ -99,8 +102,8 @@ internal class ProfileReorder(
         val info = item(key) ?: return false
         val middle = start + moved + info.size / 2
         val items = list.layoutInfo.visibleItemsInfo
-        val next = items.firstOrNull { it.index == info.index + 1 }?.takeIf { isProfile(it.key) }
-        val prev = items.firstOrNull { it.index == info.index - 1 }?.takeIf { isProfile(it.key) }
+        val next = items.firstOrNull { it.index == info.index + 1 }?.takeIf { sameGroup(key, it.key) }
+        val prev = items.firstOrNull { it.index == info.index - 1 }?.takeIf { sameGroup(key, it.key) }
 
         val target = when {
             next != null && middle > next.offset + next.size / 2 -> next

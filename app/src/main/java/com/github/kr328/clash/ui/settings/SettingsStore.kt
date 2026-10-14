@@ -57,6 +57,11 @@ class SettingsStore(context: Context) {
         get() = prefs.getStringSet(KEY_FAVORITES, null)?.toSet() ?: emptySet()
         set(value) = prefs.edit().putStringSet(KEY_FAVORITES, value.toSet()).apply()
 
+    /** Subscriptions marked as favourites, by number: on “Подписки” they come first after the active one. */
+    var favoriteProfiles: Set<String>
+        get() = prefs.getStringSet(KEY_FAVORITE_PROFILES, null)?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(KEY_FAVORITE_PROFILES, value.toSet()).apply()
+
     /** Размер шрифта в редакторе конфига, sp (D-124): кому-то мелко, кому-то нужно больше строк. */
     var configTextSize: Float
         get() = prefs.getFloat(KEY_CONFIG_TEXT, CONFIG_TEXT_DEFAULT)
@@ -74,6 +79,7 @@ class SettingsStore(context: Context) {
         private const val KEY_HIDE_RECENTS = "hide_from_recents"
         private const val KEY_EXTERNAL_CONTROL = "allow_external_control"
         private const val KEY_FAVORITES = "favorite_nodes"
+        private const val KEY_FAVORITE_PROFILES = "favorite_profiles"
         private const val KEY_BETA = "beta_updates"
 
         const val THEME_SYSTEM = "system"

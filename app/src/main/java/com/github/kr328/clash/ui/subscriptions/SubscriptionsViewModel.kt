@@ -23,6 +23,7 @@ import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.SubscriptionHeaders
 import com.github.kr328.clash.remote.Remote
 import com.github.kr328.clash.store.AppStore
+import com.github.kr328.clash.ui.settings.SettingsStore
 import com.github.kr328.clash.util.stopClashService
 import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.util.withProfile
@@ -47,7 +48,10 @@ import java.io.IOException
 import java.util.UUID
 
 data class SubscriptionsState(
+    /** In screen order: the active one, then favourites, then the rest (stage 19, package 4). */
     val profiles: List<Profile> = emptyList(),
+    /** Subscriptions marked with a star in their “⋯”. */
+    val favorites: Set<UUID> = emptySet(),
     /** Какая подписка сейчас обновляется — на её карточке показываем это. */
     val updating: UUID? = null,
     val sendHwid: Boolean = true,
@@ -166,11 +170,17 @@ class SubscriptionsViewModel : ViewModel() {
     private val _state = MutableStateFlow(SubscriptionsState())
     val state: StateFlow<SubscriptionsState> = _state.asStateFlow()
 
+    /** The order set by dragging — this is what is stored; the screen splits it into groups. */
+    private var manual: List<Profile> = emptyList()
+
     fun refresh(context: Context) {
         viewModelScope.launch {
             val order = withContext(Dispatchers.IO) { AppStore(context).profileOrder }
-            val profiles = runCatching { withProfile { queryAll() } }.getOrDefault(emptyList())
+            val favorites = withContext(Dispatchers.IO) { SettingsStore(context).favoriteProfiles }
+                .mapNotNullTo(HashSet()) { runCatching { UUID.fromString(it) }.getOrNull() }
+            manual = runCatching { withProfile { queryAll() } }.getOrDefault(emptyList())
                 .inOrder(order.split(',')) { it.uuid.toString() }
+            val profiles = manual.shown(favorites)
 
             val sendHwid = withContext(Dispatchers.IO) { ServiceStore(context).sendHwid }
             val counts = withContext(Dispatchers.IO) {
@@ -182,6 +192,7 @@ class SubscriptionsViewModel : ViewModel() {
             _state.update {
                 it.copy(
                     profiles = profiles,
+                    favorites = favorites,
                     ruleCounts = counts,
                     sendHwid = sendHwid,
                     hwid = SubscriptionHeaders.hwidOf(context),
@@ -712,24 +723,33 @@ class SubscriptionsViewModel : ViewModel() {
         }
     }
 
-    /** Подписку [from] перетащили на место [to]: пока палец на экране — только в списке на экране. */
-    fun move(from: UUID, to: UUID) = _state.update {
-        val list = it.profiles.toMutableList()
-        val target = list.indexOfFirst { p -> p.uuid == to }
-        val moved = list.indexOfFirst { p -> p.uuid == from }
+    /**
+     * Подписку [from] перетащили на место [to]: пока палец на экране — только в списке на экране.
+     * Both are in the same group, so the move in the stored order keeps the other groups' places.
+     */
+    fun move(from: UUID, to: UUID) {
+        manual = manual.moved(from, to) { it.uuid }
 
-        if (target < 0 || moved < 0) return@update it
-
-        list.add(target, list.removeAt(moved))
-        it.copy(profiles = list)
+        _state.update { it.copy(profiles = manual.shown(it.favorites)) }
     }
 
     /** Палец отпустили — порядок запоминается. */
     fun saveOrder(context: Context) {
-        val order = _state.value.profiles.joinToString(",") { it.uuid.toString() }
+        val order = manual.joinToString(",") { it.uuid.toString() }
 
         viewModelScope.launch(Dispatchers.IO) { AppStore(context).profileOrder = order }
     }
+
+    fun toggleFavorite(context: Context, uuid: UUID) {
+        val favorites = _state.value.favorites.let { if (uuid in it) it - uuid else it + uuid }
+
+        _state.update { it.copy(favorites = favorites, profiles = manual.shown(favorites)) }
+        viewModelScope.launch(Dispatchers.IO) {
+            SettingsStore(context).favoriteProfiles = favorites.mapTo(HashSet()) { it.toString() }
+        }
+    }
+
+    private fun List<Profile>.shown(favorites: Set<UUID>) = grouped({ it.active }, { it.uuid in favorites })
 
     fun setActive(context: Context, profile: Profile) {
         viewModelScope.launch {
@@ -864,6 +884,26 @@ internal fun <T> List<T>.inOrder(order: List<String>, key: (T) -> String): List<
     val place = order.withIndex().associate { it.value to it.index }
 
     return sortedBy { place[key(it)] ?: Int.MAX_VALUE }
+}
+
+/**
+ * The screen's order (stage 19, package 4): the active one, then favourites, then the rest. The sort
+ * is stable, so each group keeps the stored order.
+ */
+internal fun <T> List<T>.grouped(active: (T) -> Boolean, favorite: (T) -> Boolean): List<T> =
+    sortedBy { if (active(it)) 0 else if (favorite(it)) 1 else 2 }
+
+/**
+ * [from] takes the place of [to]: before it when dragged up, after it when dragged down. Others
+ * keep their order; an unknown key leaves the list as it is.
+ */
+internal fun <T, K> List<T>.moved(from: K, to: K, key: (T) -> K): List<T> {
+    val target = indexOfFirst { key(it) == to }
+    val moved = indexOfFirst { key(it) == from }
+
+    if (target < 0 || moved < 0) return this
+
+    return toMutableList().apply { add(target, removeAt(moved)) }
 }
 
 /**

@@ -264,6 +264,9 @@
     <string name="delay_failed">no answer</string>
     <string name="delay_slow">&gt; %d s</string>
     <string name="favorite">Favorite</string>
+    <string name="unfavorite">Remove from favorites</string>
+    <string name="favorite_marked">Favorite</string>
+    <string name="other_subscriptions">Other subscriptions</string>
     <!-- Monochrome home screen (D-65) -->
     <string name="hero_protected">Protected</string>
     <string name="hero_protected_hint">VPN is active</string>

@@ -254,6 +254,9 @@
     <string name="delay_failed">нет ответа</string>
     <string name="delay_slow">&gt; %d с</string>
     <string name="favorite">В избранное</string>
+    <string name="unfavorite">Убрать из избранного</string>
+    <string name="favorite_marked">В избранном</string>
+    <string name="other_subscriptions">Другие подписки</string>
     <!-- Главная в чёрно-белом стиле (D-65) -->
     <string name="hero_protected">Защищено</string>
     <string name="hero_protected_hint">VPN работает</string>
