@@ -305,7 +305,7 @@ class ProxyViewModel : ViewModel() {
                 // round's first check its misses are fresh, and any of them is worth the second.
                 silent = group.proxies.any {
                     it.type !in BUILTIN_PROXY_TYPES && if (tried == 0) {
-                        DelayStore.silent(it.delay, known[it.name], it.tested, now)
+                        DelayStore.silent(it.delay, known[it.name], it.tested, now, switchedAt + SETTLE)
                     } else {
                         it.delay == DelayStore.NO_ANSWER
                     }

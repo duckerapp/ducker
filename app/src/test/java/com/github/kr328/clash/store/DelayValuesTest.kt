@@ -120,6 +120,10 @@ class DelayValuesTest {
         // A miss remembered from before the core started.
         assertEquals(true, DelayStore.silent(DelayStore.UNKNOWN, DelayStore.NO_ANSWER, tested = 0, now))
 
+        // Fresh, but taken while the tunnel was coming up: the core's own check at config load.
+        assertEquals(true, DelayStore.silent(DelayStore.NO_ANSWER, null, tested = 98_000, now, settledAt = 99_000))
+        assertEquals(false, DelayStore.silent(DelayStore.NO_ANSWER, null, tested = 99_500, now, settledAt = 99_000))
+
         assertEquals(false, DelayStore.silent(70, DelayStore.NO_ANSWER, tested = 30_000, now))
         assertEquals(false, DelayStore.silent(DelayStore.UNKNOWN, 120, tested = 0, now))
     }

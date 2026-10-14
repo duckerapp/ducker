@@ -181,13 +181,16 @@ class DelayStore(context: Context) {
 
         /**
          * A node reads "нет ответа", and the core has not tested it for [SILENT_RECHECK] ms by
-         * [now] — or not at all since it started (the store remembers the miss of an earlier
-         * run). Such a label stayed until a tap: groups like "⚡ AUTO" are tested only by a
-         * check of the list they are in, and one miss right after the tunnel came up was enough
-         * (D-318). [core] is [ofCore] of the core's value, [tested] its time of test.
+         * [now], or not since the tunnel settled at [settledAt], or not at all since it started
+         * (the store remembers the miss of an earlier run). Such a label stayed until a tap:
+         * groups like "⚡ AUTO" are tested only by a check of the list they are in, and the core
+         * checks those lists the moment it loads the config — a group in them then fails at once,
+         * before the tunnel is up for it (D-318). [core] is [ofCore] of the core's value,
+         * [tested] its time of test; all times are ms since the epoch.
          */
-        fun silent(core: Int, stored: Int?, tested: Long, now: Long): Boolean =
-            (core == NO_ANSWER || core == UNKNOWN && stored == NO_ANSWER) && now - tested >= SILENT_RECHECK
+        fun silent(core: Int, stored: Int?, tested: Long, now: Long, settledAt: Long = 0): Boolean =
+            (core == NO_ANSWER || core == UNKNOWN && stored == NO_ANSWER) &&
+                (now - tested >= SILENT_RECHECK || tested < settledAt)
 
         /** How long a "нет ответа" stands before an opening of the tab asks the node again. */
         const val SILENT_RECHECK = 60_000L
