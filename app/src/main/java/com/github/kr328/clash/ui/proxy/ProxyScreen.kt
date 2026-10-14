@@ -242,25 +242,25 @@ fun ProxyScreen(
             ) {
                 item {
                     ScreenHeader(stringResource(R.string.proxies_tab)) {
-                        if (state.running) {
-                            // Global — в шапке, а не отдельным рядом над списком (D-136).
-                            if (state.modeSwitch) GlobalChip(state.mode, onMode)
+                        // Global — в шапке, а не отдельным рядом над списком (D-136).
+                        if (state.running && state.modeSwitch) GlobalChip(state.mode, onMode)
 
-                            val byDelay = state.sort == ProxySort.Delay
+                        // With the VPN off too: the tab loads the profile into the core without the
+                        // tunnel, and the core sorts that list by delay as well (D-319).
+                        val byDelay = state.sort == ProxySort.Delay
 
-                            // Просто текст, без подложки: это переключатель вида, а не действие.
-                            TextButton(
-                                onClick = { onSort(if (byDelay) ProxySort.Default else ProxySort.Delay) },
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                                contentPadding = PaddingValues(horizontal = 8.dp),
-                            ) {
-                                Text(
-                                    stringResource(if (byDelay) R.string.sort_delay else R.string.sort_default),
-                                    style = MaterialTheme.typography.labelLarge,
-                                )
-                            }
+                        // Просто текст, без подложки: это переключатель вида, а не действие.
+                        TextButton(
+                            onClick = { onSort(if (byDelay) ProxySort.Default else ProxySort.Delay) },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                        ) {
+                            Text(
+                                stringResource(if (byDelay) R.string.sort_delay else R.string.sort_default),
+                                style = MaterialTheme.typography.labelLarge,
+                            )
                         }
                     }
                 }
