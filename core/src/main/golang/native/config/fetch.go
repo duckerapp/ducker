@@ -12,7 +12,6 @@ import (
 	"os"
 	P "path"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
@@ -27,21 +26,19 @@ import (
 )
 
 type Status struct {
-	Action            string            `json:"action"`
-	Args              []string          `json:"args"`
-	Progress          int               `json:"progress"`
-	MaxProgress       int               `json:"max"`
-	Headers           map[string]string `json:"headers,omitempty"`
-	SubUpload         *int64            `json:"subUpload,omitempty"`
-	SubDownload       *int64            `json:"subDownload,omitempty"`
-	SubTotal          *int64            `json:"subTotal,omitempty"`
-	SubExpire         *int64            `json:"subExpire,omitempty"`
-	SubUpdateInterval *int64            `json:"subUpdateInterval,omitempty"`
+	Action      string            `json:"action"`
+	Args        []string          `json:"args"`
+	Progress    int               `json:"progress"`
+	MaxProgress int               `json:"max"`
+	Headers     map[string]string `json:"headers,omitempty"`
+	SubUpload   *int64            `json:"subUpload,omitempty"`
+	SubDownload *int64            `json:"subDownload,omitempty"`
+	SubTotal    *int64            `json:"subTotal,omitempty"`
+	SubExpire   *int64            `json:"subExpire,omitempty"`
 }
 
 type fetchHeader struct {
-	SubscriptionUserInfo  string
-	ProfileUpdateInterval string
+	SubscriptionUserInfo string
 	// All — заголовки ответа, которые нужны интерфейсу: название профиля, объявление,
 	// ссылки провайдера, состояние лимита устройств, брендинг. Список закрытый и лежит
 	// в одном месте (interestingHeaders), чтобы добавить новый стоило одной строки.
@@ -129,9 +126,8 @@ func openUrl(ctx context.Context, url string, subscription bool) (io.ReadCloser,
 	}
 
 	header := fetchHeader{
-		SubscriptionUserInfo:  response.Header.Get("subscription-userinfo"),
-		ProfileUpdateInterval: response.Header.Get("profile-update-interval"),
-		All:                   collectHeaders(response.Header),
+		SubscriptionUserInfo: response.Header.Get("subscription-userinfo"),
+		All:                  collectHeaders(response.Header),
 	}
 
 	// ducker: страница ошибки — не конфиг (F-155). Без проверки тело 503 или 404 уходило
@@ -178,24 +174,6 @@ func fetch(url *U.URL, file string, subscription bool) (fetchHeader, error) {
 	return header, writeDownload(file, reader, subscription)
 }
 
-func parseProfileUpdateInterval(value string) (int64, bool) {
-	hours, err := strconv.ParseInt(strings.TrimSpace(value), 10, 64)
-	if err != nil {
-		return 0, false
-	}
-
-	if hours <= 0 {
-		return 0, true
-	}
-
-	interval := time.Duration(hours) * time.Hour
-	if interval < 15*time.Minute {
-		interval = 15 * time.Minute
-	}
-
-	return int64(interval / time.Millisecond), true
-}
-
 // reportHeaders отправляет наверх заголовки ответа подписки. Вызывается сразу после
 // загрузки, до проверки конфига: иначе при отказе панели (лимит устройств) причина
 // не доедет до интерфейса и придётся гадать по тексту ошибки (FACTS.md, F-19).
@@ -216,9 +194,9 @@ func reportHeaders(header fetchHeader, reportStatus func(string)) {
 }
 
 func reportSubscriptionInfo(header fetchHeader, reportStatus func(string)) {
+	// The provider's update hours travel with the other headers (reportHeaders, D-311).
 	userinfo := header.SubscriptionUserInfo
-	updateIntervalHeader := header.ProfileUpdateInterval
-	if userinfo == "" && updateIntervalHeader == "" {
+	if userinfo == "" {
 		return
 	}
 
@@ -229,18 +207,12 @@ func reportSubscriptionInfo(header fetchHeader, reportStatus func(string)) {
 		MaxProgress: -1,
 	}
 
-	if userinfo != "" {
-		info := provider.NewSubscriptionInfo(userinfo)
-		expire := info.Expire * 1000
-		status.SubUpload = &info.Upload
-		status.SubDownload = &info.Download
-		status.SubTotal = &info.Total
-		status.SubExpire = &expire
-	}
-
-	if interval, ok := parseProfileUpdateInterval(updateIntervalHeader); ok {
-		status.SubUpdateInterval = &interval
-	}
+	info := provider.NewSubscriptionInfo(userinfo)
+	expire := info.Expire * 1000
+	status.SubUpload = &info.Upload
+	status.SubDownload = &info.Download
+	status.SubTotal = &info.Total
+	status.SubExpire = &expire
 
 	bytes, _ := json.Marshal(&status)
 	reportStatus(string(bytes))

@@ -15,7 +15,6 @@ data class FetchStatus(
     val subDownload: Long? = null,
     val subTotal: Long? = null,
     val subExpire: Long? = null,
-    val subUpdateInterval: Long? = null,
     /**
      * Заголовки ответа подписки: название профиля, объявление, ссылки провайдера,
      * состояние лимита устройств, брендинг `ducker-*`. Приходят одним статусом
