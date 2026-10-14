@@ -103,6 +103,26 @@ class DelayValuesTest {
     }
 
     @Test
+    fun `a node silent for a minute is asked again once`() {
+        val alive = 70 to 70
+        val silent = DelayStore.NO_ANSWER to DelayStore.NO_ANSWER
+
+        assertEquals(true, DelayStore.recheck(tried = 0, nodes = listOf(alive, silent), silent = true))
+        assertEquals(false, DelayStore.recheck(tried = 1, nodes = listOf(alive, silent), silent = true))
+
+        val now = 100_000L
+
+        assertEquals(true, DelayStore.silent(DelayStore.NO_ANSWER, DelayStore.NO_ANSWER, tested = 30_000, now))
+        // Just asked, by a tap or the tab: that is the answer for now.
+        assertEquals(false, DelayStore.silent(DelayStore.NO_ANSWER, DelayStore.NO_ANSWER, tested = 70_000, now))
+        // A miss remembered from before the core started.
+        assertEquals(true, DelayStore.silent(DelayStore.UNKNOWN, DelayStore.NO_ANSWER, tested = 0, now))
+
+        assertEquals(false, DelayStore.silent(70, DelayStore.NO_ANSWER, tested = 30_000, now))
+        assertEquals(false, DelayStore.silent(DelayStore.UNKNOWN, 120, tested = 0, now))
+    }
+
+    @Test
     fun `a result taken before the last change of network belongs to another network`() {
         assertEquals(true, DelayStore.outdated(tested = 1_000, changedAt = 5_000))
         assertEquals(false, DelayStore.outdated(tested = 5_000, changedAt = 5_000))

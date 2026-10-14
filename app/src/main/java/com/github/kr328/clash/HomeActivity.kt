@@ -563,7 +563,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // запускал бы замер задержек, которого никто не просил (D-76).
                 LaunchedEffect(pagerState.settledPage) {
                     when (pagerState.settledPage) {
-                        1 -> proxyViewModel.refresh(this@HomeActivity)
+                        1 -> proxyViewModel.open(this@HomeActivity)
                         2 -> subscriptionsViewModel.refresh(this@HomeActivity)
                     }
                 }
@@ -573,7 +573,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // the delays of the mobile network (D-299). The first start is the effect above.
                 LaunchedEffect(starts.intValue) {
                     if (starts.intValue > 1 && pagerState.settledPage == 1) {
-                        proxyViewModel.refresh(this@HomeActivity)
+                        proxyViewModel.open(this@HomeActivity)
                     }
                 }
 

@@ -161,14 +161,32 @@ class DelayStore(context: Context) {
          * Whether the tab checks a group by itself after [tried] checks; [nodes] are the core's
          * value and the stored one of each node.
          *
-         * Once — when a node has no result yet, or when a result is [outdated]. Again — only
-         * when the check brought nothing at all: that is a check lost while the tunnel was coming
-         * up (D-72), not the nodes. A node that did not answer is not asked again: that is its
-         * result (D-282).
+         * Once — when a node has no result yet, when a result is [outdated], or when a node is
+         * [silent] since long enough. Again — only when the check brought nothing at all: that is
+         * a check lost while the tunnel was coming up (D-72), not the nodes. Within one round a
+         * node that did not answer is not asked again: that is its result (D-282, D-318).
          */
-        fun recheck(tried: Int, nodes: List<Pair<Int, Int?>>, outdated: Boolean = false): Boolean =
-            if (tried == 0) outdated || nodes.any { (core, stored) -> undecided(core, stored) }
+        fun recheck(
+            tried: Int,
+            nodes: List<Pair<Int, Int?>>,
+            outdated: Boolean = false,
+            silent: Boolean = false,
+        ): Boolean =
+            if (tried == 0) outdated || silent || nodes.any { (core, stored) -> undecided(core, stored) }
             else nodes.isNotEmpty() && nodes.none { (core, _) -> ofCore(core) > 0 }
+
+        /**
+         * A node reads "нет ответа", and the core has not tested it for [SILENT_RECHECK] ms by
+         * [now] — or not at all since it started (the store remembers the miss of an earlier
+         * run). Such a label stayed until a tap: groups like "⚡ AUTO" are tested only by a
+         * check of the list they are in, and one miss right after the tunnel came up was enough
+         * (D-318). [core] is [ofCore] of the core's value, [tested] its time of test.
+         */
+        fun silent(core: Int, stored: Int?, tested: Long, now: Long): Boolean =
+            (core == NO_ANSWER || core == UNKNOWN && stored == NO_ANSWER) && now - tested >= SILENT_RECHECK
+
+        /** How long a "нет ответа" stands before an opening of the tab asks the node again. */
+        const val SILENT_RECHECK = 60_000L
 
         /**
          * A result taken at [tested] is one of another network: the network under the tunnel

@@ -114,6 +114,16 @@ class ProxyViewModel : ViewModel() {
     /** Отложенный или идущий автозамер: второй поверх него не запускаем. */
     private var autoJob: Job? = null
 
+    /**
+     * The person came to the tab, or back to the app with it on screen: a new round of the tab's
+     * own checks, so a "нет ответа" that has stood for a while is asked again once (D-318).
+     */
+    fun open(context: Context) {
+        attempts.clear()
+
+        refresh(context)
+    }
+
     fun refresh(context: Context) {
         viewModelScope.launch {
             // Признак работы берём у службы: `queryTunnelState` при выключенном туннеле
@@ -282,6 +292,8 @@ class ProxyViewModel : ViewModel() {
         known: Map<String, Int>,
         canCheck: Boolean,
     ) {
+        val now = System.currentTimeMillis()
+
         val pending = groups.filter { group ->
             val tried = attempts[group.name] ?: 0
 
@@ -289,6 +301,10 @@ class ProxyViewModel : ViewModel() {
                 tried,
                 group.proxies.map { it.delay to known[it.name] },
                 outdated = group.proxies.any { DelayStore.outdated(it.tested, networkChangedAt) },
+                // REJECT never answers: its group would be checked on every opening.
+                silent = group.proxies.any {
+                    it.type !in BUILTIN_PROXY_TYPES && DelayStore.silent(it.delay, known[it.name], it.tested, now)
+                },
             )
         }
 
