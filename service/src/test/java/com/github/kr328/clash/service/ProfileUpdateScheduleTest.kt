@@ -1,5 +1,8 @@
 package com.github.kr328.clash.service
 
+import com.github.kr328.clash.service.data.Imported
+import com.github.kr328.clash.service.model.Profile
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,8 +27,24 @@ class ProfileUpdateScheduleTest {
     }
 
     @Test
-    fun `ordinary updates respect the four hour minimum`() {
-        assertEquals(now + hours(3), nextProfileUpdateAt(hours(1), now - hours(1), now))
+    fun `short intervals are kept down to an hour`() {
+        assertEquals(now + hours(1), nextProfileUpdateAt(hours(2), now - hours(1), now))
+        assertEquals(now + hours(1), nextProfileUpdateAt(hours(1), now, now))
+        assertEquals(now + hours(1), nextProfileUpdateAt(TimeUnit.MINUTES.toMillis(15), now, now))
+    }
+
+    private fun imported(interval: Long, followProvider: Boolean) = Imported(
+        UUID(0, 1), "name", Profile.Type.Url, "https://example.org", interval,
+        0, 0, 0, 0, 0, followProvider = followProvider,
+    )
+
+    @Test
+    fun `the provider's hours win only while followed and sent`() {
+        assertEquals(hours(12), imported(hours(8), followProvider = true).updateInterval(12))
+        assertEquals(hours(1), imported(hours(8), followProvider = true).updateInterval(1))
+        assertEquals(hours(8), imported(hours(8), followProvider = true).updateInterval(0))
+        assertEquals(hours(3), imported(hours(3), followProvider = false).updateInterval(12))
+        assertEquals(0L, imported(0, followProvider = false).updateInterval(12))
     }
 
     @Test

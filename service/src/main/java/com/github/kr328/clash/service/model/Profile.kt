@@ -51,6 +51,10 @@ data class Profile(
     val usedTemplate: Boolean = false,
     val lastError: String = "",
     val templateFromConfig: Boolean = false,
+    /** “Провайдер” is chosen: the provider's hours win over [interval] while it sends them (D-311). */
+    val followProvider: Boolean = false,
+    /** The provider's `profile-update-interval` of the last download, in milliseconds; 0 — not sent. */
+    val providerInterval: Long = 0,
 ) : Parcelable {
     enum class Type {
         File, Url, External

@@ -74,7 +74,11 @@ data class SubscriptionsState(
     /** Название от провайдера — подсказка в пустом поле имени: оно вернётся, если стереть своё. */
     val editTitle: String = "",
     val editLink: String = "",
+    /** The person's own hours; 0 — “Вручную”. */
     val editInterval: Long = 0,
+    /** “Провайдер” is chosen; it shows only while [editProviderInterval] is above zero (D-286). */
+    val editFollow: Boolean = false,
+    val editProviderInterval: Long = 0,
     val editError: String = "",
     val editBusy: Boolean = false,
     /** Какую подписку собираемся удалить. Пусто — вопрос не задан. */
@@ -252,8 +256,9 @@ class SubscriptionsViewModel : ViewModel() {
                             // Ядро создаёт профиль с interval = 0, то есть без автообновления,
                             // и человек об этом не узнает, пока узлы не протухнут. Ставим сами,
                             // до commit: патч правит ещё не импортированный профиль, поэтому
-                            // лишней загрузки не будет.
-                            patch(created, name, raw, UPDATE_INTERVAL, null)
+                            // лишней загрузки не будет. A new subscription follows its provider's
+                            // hours; the eight are what it keeps while the provider sends none (D-286).
+                            patch(created, name, raw, UPDATE_INTERVAL, true, null)
                         }
                     } else {
                         // As a file: a long list does not fit into the arguments of a command (F-268).
@@ -665,6 +670,8 @@ class SubscriptionsViewModel : ViewModel() {
                     editTitle = profile.profileTitle,
                     editLink = profile.source,
                     editInterval = profile.interval,
+                    editFollow = profile.followProvider,
+                    editProviderInterval = profile.providerInterval,
                     editError = "",
                     editBusy = false,
                 )
@@ -676,7 +683,10 @@ class SubscriptionsViewModel : ViewModel() {
 
     fun setEditLink(value: String) = _state.update { it.copy(editLink = value) }
 
-    fun setEditInterval(value: Long) = _state.update { it.copy(editInterval = value) }
+    /** “Вручную” (0) or the person's own hours: either way the provider's are no longer followed. */
+    fun setEditInterval(value: Long) = _state.update { it.copy(editInterval = value, editFollow = false) }
+
+    fun followEditProvider() = _state.update { it.copy(editFollow = true) }
 
     /**
      * Сохраняет правку. `patch` кладёт изменения в ожидающий профиль, а `commit` их
@@ -701,7 +711,7 @@ class SubscriptionsViewModel : ViewModel() {
         viewModelScope.launch {
             val result = runCatching {
                 withProfile {
-                    patch(uuid, name, link, current.editInterval, null)
+                    patch(uuid, name, link, current.editInterval, current.editFollow, null)
                     commit(uuid)
                 }
             }

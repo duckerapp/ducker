@@ -26,6 +26,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 /** Тот же текст, что у ядра (`convert/convert.go`): по нему `Failure` узнаёт «это не ссылки». */
 private const val NOT_LINKS = "содержимое не похоже на список ссылок протоколов"
@@ -122,7 +123,7 @@ class ProfileManager(private val context: Context) : IProfileManager,
         return newUUID
     }
 
-    override suspend fun patch(uuid: UUID, name: String, source: String, interval: Long, ageSecretKey: String?) {
+    override suspend fun patch(uuid: UUID, name: String, source: String, interval: Long, followProvider: Boolean, ageSecretKey: String?) {
         val pending = PendingDao().queryByUUID(uuid)
 
         if (pending == null) {
@@ -143,6 +144,7 @@ class ProfileManager(private val context: Context) : IProfileManager,
                     download = 0,
                     expire = 0,
                     ageSecretKey = ageSecretKey,
+                    followProvider = followProvider,
                 )
             )
         } else {
@@ -155,6 +157,7 @@ class ProfileManager(private val context: Context) : IProfileManager,
                 download = 0,
                 expire = 0,
                 ageSecretKey = ageSecretKey,
+                followProvider = followProvider,
             )
 
             PendingDao().update(newPending)
@@ -230,6 +233,7 @@ class ProfileManager(private val context: Context) : IProfileManager,
         val download = pending?.download ?: imported?.download ?: return null
         val total = pending?.total ?: imported?.total ?: return null
         val expire = pending?.expire ?: imported?.expire ?: return null
+        val followProvider = pending?.followProvider ?: imported?.followProvider ?: return null
 
         // Сведения от провайдера лежат файлом в каталоге профиля (D-32), а не в базе.
         val provider = ProviderInfo.read(context.importedDir.resolve(uuid.toString()))
@@ -265,6 +269,8 @@ class ProfileManager(private val context: Context) : IProfileManager,
             usedTemplate = provider.usedTemplate,
             lastError = provider.lastError,
             templateFromConfig = provider.templateFromConfig,
+            followProvider = followProvider,
+            providerInterval = TimeUnit.HOURS.toMillis(provider.updateIntervalHours.toLong()),
         )
     }
 

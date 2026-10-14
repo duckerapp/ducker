@@ -216,9 +216,9 @@
     <string name="subscription_link_edit_hint">Если провайдер сменил ссылку, вставьте новую — подписка скачается заново</string>
     <string name="subscription_interval">Автообновление</string>
     <string name="interval_manual">Вручную</string>
-    <string name="interval_4h">4 ч</string>
-    <string name="interval_8h">8 ч</string>
-    <string name="interval_24h">24 ч</string>
+    <string name="interval_own">Свой</string>
+    <string name="interval_provider">Провайдер</string>
+    <string name="interval_hours">%d ч</string>
     <string name="interval_manual_hint">Только кнопкой «Обновить»</string>
     <plurals name="interval_auto_hint">
         <item quantity="one">Сама, каждый %d час</item>

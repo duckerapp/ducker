@@ -75,21 +75,19 @@ object ProfileProcessor {
                         context.processingDir.copyRecursively(context.importedDir.resolve(snapshot.uuid.toString()))
 
                         val old = ImportedDao().queryByUUID(snapshot.uuid)
-                        val updateInterval = subscriptionInfo?.subUpdateInterval
-                            ?.takeIf { old == null && snapshot.interval == 0L }
-                            ?: snapshot.interval
                         val new = Imported(
                             snapshot.uuid,
                             snapshot.name,
                             snapshot.type,
                             snapshot.source,
-                            updateInterval,
+                            snapshot.interval,
                             subscriptionInfo?.subUpload ?: 0,
                             subscriptionInfo?.subDownload ?: 0,
                             subscriptionInfo?.subTotal ?: 0,
                             subscriptionInfo?.subExpire ?: 0,
                             old?.createdAt ?: System.currentTimeMillis(),
-                            ageSecretKey = snapshot.ageSecretKey
+                            ageSecretKey = snapshot.ageSecretKey,
+                            followProvider = snapshot.followProvider,
                         )
                         if (old != null) {
                             ImportedDao().update(new)

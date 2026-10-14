@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -27,6 +28,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,6 +54,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
@@ -59,14 +64,14 @@ import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.FitLabel
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
-/** Варианты автообновления. Ноль — только вручную. */
-private val INTERVALS = listOf(
-    0L to R.string.interval_manual,
-    TimeUnit.HOURS.toMillis(4) to R.string.interval_4h,
-    TimeUnit.HOURS.toMillis(8) to R.string.interval_8h,
-    TimeUnit.HOURS.toMillis(24) to R.string.interval_24h,
-)
+/** The stops of the own hours' slider (D-286). */
+private val STOPS = listOf(2L, 3L, 4L, 6L, 8L, 12L, 24L, 48L, 72L, 144L).map { TimeUnit.HOURS.toMillis(it) }
+
+/** Where “Свой” starts when it was not chosen before (D-286). */
+private val OWN_START = TimeUnit.HOURS.toMillis(8)
 
 /**
  * Правка подписки (этап 8.3, замена экрана свойств CMFA).
@@ -91,12 +96,18 @@ fun EditSubscriptionDialog(
     /** Свой конфиг без ссылки (D-125): ни ссылки, ни автообновления у него нет. */
     local: Boolean,
     link: String,
+    /** The person's own hours; 0 — “Вручную”. */
     interval: Long,
+    /** “Провайдер” is chosen; it counts only while [providerInterval] is above zero. */
+    follow: Boolean,
+    /** The provider's hours of the last download; 0 — none sent, and there is no “Провайдер”. */
+    providerInterval: Long,
     error: String,
     busy: Boolean,
     onName: (String) -> Unit,
     onLink: (String) -> Unit,
     onInterval: (Long) -> Unit,
+    onFollow: () -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
@@ -138,7 +149,14 @@ fun EditSubscriptionDialog(
         if (!local) SubscriptionHttpWarning(link)
 
         if (!local) Labeled(stringResource(R.string.subscription_interval)) {
-            IntervalPicker(interval = interval, enabled = !busy, onInterval = onInterval)
+            IntervalPicker(
+                interval = interval,
+                follow = follow,
+                providerInterval = providerInterval,
+                enabled = !busy,
+                onInterval = onInterval,
+                onFollow = onFollow,
+            )
         }
 
         // Свои правила поверх правил провайдера (D-123) и сам конфиг (D-124) — своими экранами.
@@ -194,27 +212,46 @@ private fun Labeled(label: String, content: @Composable () -> Unit) {
  *
  * Выбор — чёрная пилюля, которая переезжает к нажатому сегменту, как подсветка на панели
  * вкладок. Под переключателем — что выбор значит словами: «2 ч» сам по себе не говорит,
- * что подписка обновится без человека. Провайдер может прислать свой интервал
- * (`profile-update-interval`), которого среди сегментов нет, — тогда пилюли нет, а строка
- * под ней называет его.
+ * что подписка обновится без человека.
+ *
+ * “Вручную · Свой · Провайдер” (D-286): “Провайдер · N ч” only when the provider sent its hours, and
+ * under a chosen “Свой · N ч” a slider over [STOPS].
  */
 @Composable
-private fun IntervalPicker(interval: Long, enabled: Boolean, onInterval: (Long) -> Unit) {
+private fun IntervalPicker(
+    interval: Long,
+    follow: Boolean,
+    providerInterval: Long,
+    enabled: Boolean,
+    onInterval: (Long) -> Unit,
+    onFollow: () -> Unit,
+) {
     val scheme = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
-    val selected = INTERVALS.indexOfFirst { it.first == interval }
+    val sent = providerInterval > 0
+    val count = if (sent) 3 else 2
+    val selected = when {
+        follow && sent -> 2
+        interval == 0L -> 0
+        else -> 1
+    }
 
-    // Интервал не из списка — пилюля гаснет.
     val position by animateFloatAsState(
-        targetValue = selected.coerceAtLeast(0).toFloat(),
+        targetValue = selected.toFloat(),
         animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
         label = "intervalPosition",
     )
-    val shown by animateFloatAsState(if (selected >= 0) 1f else 0f, label = "intervalShown")
     val pill = scheme.primaryContainer
     // Пульт (этап 6) входит в переключатель на выбранный сегмент, а не на ближайший к центру.
-    val segments = remember { List(INTERVALS.size) { FocusRequester() } }
+    val segments = remember { List(3) { FocusRequester() } }
     val tv = LocalTv.current
+
+    val own = stringResource(R.string.interval_own)
+    val labels = listOf(
+        stringResource(R.string.interval_manual),
+        if (selected == 1) "$own · ${hoursLabel(interval)}" else own,
+        "${stringResource(R.string.interval_provider)} · ${hoursLabel(providerInterval)}",
+    )
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
@@ -228,24 +265,23 @@ private fun IntervalPicker(interval: Long, enabled: Boolean, onInterval: (Long) 
                 // Пилюля рисуется, а не компонуется: едет каждый кадр, и перекладывать
                 // ради этого сегменты незачем.
                 .drawBehind {
-                    val width = size.width / INTERVALS.size
+                    val width = size.width / count
                     drawRoundRect(
                         color = pill,
                         topLeft = Offset(position * width, 0f),
                         size = Size(width, size.height),
                         cornerRadius = CornerRadius(size.height / 2f),
-                        alpha = shown,
                     )
                 }
                 .selectableGroup()
                 .then(
                     if (tv) {
-                        Modifier.focusProperties { onEnter = { if (selected >= 0) segments[selected].requestFocus() } }
+                        Modifier.focusProperties { onEnter = { segments[selected].requestFocus() } }
                             .focusGroup()
                     } else Modifier,
                 ),
         ) {
-            INTERVALS.forEachIndexed { index, (value, label) ->
+            repeat(count) { index ->
                 val on = index == selected
 
                 Box(
@@ -258,7 +294,11 @@ private fun IntervalPicker(interval: Long, enabled: Boolean, onInterval: (Long) 
                             role = Role.RadioButton,
                             onClick = {
                                 if (!on) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                                onInterval(value)
+                                when (index) {
+                                    0 -> onInterval(0)
+                                    1 -> onInterval(if (interval > 0) interval else OWN_START)
+                                    else -> onFollow()
+                                }
                             },
                         ),
                     contentAlignment = Alignment.Center,
@@ -267,17 +307,25 @@ private fun IntervalPicker(interval: Long, enabled: Boolean, onInterval: (Long) 
                     // так в каждом кадре, пока она едет. Перекраска по выбору гасила
                     // надпись на полпути — чёрное на чёрном. В тёмной теме так же, наоборот.
                     FitLabel(
-                        text = stringResource(label),
+                        text = labels[index],
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
-                        modifier = Modifier.graphicsLayer { blendMode = BlendMode.Difference },
+                        modifier = Modifier.padding(horizontal = 6.dp)
+                            .graphicsLayer { blendMode = BlendMode.Difference },
                         color = Color.White,
                     )
                 }
             }
         }
 
-        // Ноль часов — «вручную»; интервал короче часа округляется до часа.
-        val hours = if (interval == 0L) 0 else TimeUnit.MILLISECONDS.toHours(interval).toInt().coerceAtLeast(1)
+        AnimatedVisibility(visible = selected == 1) {
+            OwnSlider(interval = interval, enabled = enabled, onInterval = onInterval)
+        }
+
+        val hours = when (selected) {
+            0 -> 0
+            1 -> wholeHours(interval)
+            else -> wholeHours(providerInterval)
+        }
 
         Crossfade(hours, label = "intervalHint") { hours ->
             Text(
@@ -290,3 +338,52 @@ private fun IntervalPicker(interval: Long, enabled: Boolean, onInterval: (Long) 
         }
     }
 }
+
+/**
+ * The own hours, stop by stop, with a tick under the finger at each. An interval that is not a stop
+ * (an old one from the provider) sits at the nearest stop and stays as it is until the slider moves.
+ */
+@Composable
+private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val haptics = LocalHapticFeedback.current
+    val stop = STOPS.indices.minBy { abs(STOPS[it] - interval) }
+    val shown = hoursLabel(interval)
+
+    Box(
+        modifier = Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(scheme.surface)
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        Slider(
+            value = stop.toFloat(),
+            onValueChange = { value ->
+                val index = value.roundToInt().coerceIn(STOPS.indices)
+                if (index != stop) {
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                    onInterval(STOPS[index])
+                }
+            },
+            valueRange = 0f..STOPS.lastIndex.toFloat(),
+            steps = STOPS.size - 2,
+            enabled = enabled,
+            colors = SliderDefaults.colors(
+                thumbColor = scheme.primary,
+                activeTrackColor = scheme.primary,
+                activeTickColor = scheme.onPrimary,
+                inactiveTrackColor = scheme.surfaceContainerHighest,
+                inactiveTickColor = scheme.onSurfaceVariant,
+            ),
+            // The stops are uneven hours: read them as hours, not as a share of the track.
+            modifier = Modifier.fillMaxWidth().semantics { stateDescription = shown },
+        )
+    }
+}
+
+/** Ноль часов — «вручную»; интервал короче часа округляется до часа. */
+private fun wholeHours(interval: Long): Int =
+    if (interval == 0L) 0 else TimeUnit.MILLISECONDS.toHours(interval).toInt().coerceAtLeast(1)
+
+@Composable
+private fun hoursLabel(interval: Long): String = stringResource(R.string.interval_hours, wholeHours(interval))

@@ -19,6 +19,7 @@ import com.github.kr328.clash.service.data.Imported
 import com.github.kr328.clash.service.data.ImportedDao
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.service.store.ServiceStore
+import com.github.kr328.clash.service.util.ProviderInfo
 import com.github.kr328.clash.service.util.importedDir
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -121,7 +122,7 @@ class ProfileReceiver : BroadcastReceiver() {
         }
 
         fun scheduleRetry(context: Context, imported: Imported) {
-            if (imported.interval < TimeUnit.MINUTES.toMillis(15)) {
+            if (updateIntervalOf(context, imported) < TimeUnit.MINUTES.toMillis(15)) {
                 cancelNext(context, imported)
                 return
             }
@@ -143,15 +144,18 @@ class ProfileReceiver : BroadcastReceiver() {
                 .resolve("config.yaml")
                 .lastModified()
 
-            // Не чаще раза в 4 часа (D-125): варианта «2 ч» больше нет, а у выбравших его раньше
-            // и у провайдеров, советующих «1 ч», автообновление идёт так же. После ошибки —
-            // отдельная пауза от текущего времени: старый файл не должен дать цикл без задержки.
-            val next = nextProfileUpdateAt(imported.interval, last, current, failures) ?: return
+            // После ошибки — отдельная пауза от текущего времени: старый файл не должен дать цикл
+            // без задержки.
+            val next = nextProfileUpdateAt(updateIntervalOf(context, imported), last, current, failures) ?: return
 
             // Окно в час, как у уведомлений о сроке: неточный set уплывает на ¾ срока (F-180).
             context.getSystemService<AlarmManager>()
                 ?.setWindow(AlarmManager.RTC, next, TimeUnit.HOURS.toMillis(1), intent)
         }
+
+        /** The provider's hours are read at every scheduling, so a changed header is picked up (D-311). */
+        private fun updateIntervalOf(context: Context, imported: Imported): Long =
+            imported.updateInterval(ProviderInfo.read(context.importedDir.resolve(imported.uuid.toString())).updateIntervalHours)
 
         private suspend fun reset() = lock.withLock {
             initialized = false

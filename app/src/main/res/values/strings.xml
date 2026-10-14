@@ -226,9 +226,9 @@
     <string name="subscription_link_edit_hint">If your provider changed the link, paste the new one — the subscription will download again</string>
     <string name="subscription_interval">Auto-update</string>
     <string name="interval_manual">Manual</string>
-    <string name="interval_4h">4 h</string>
-    <string name="interval_8h">8 h</string>
-    <string name="interval_24h">24 h</string>
+    <string name="interval_own">Own</string>
+    <string name="interval_provider">Provider</string>
+    <string name="interval_hours">%d h</string>
     <string name="interval_manual_hint">Only with the Update button</string>
     <plurals name="interval_auto_hint">
         <item quantity="one">Automatically, every hour</item>

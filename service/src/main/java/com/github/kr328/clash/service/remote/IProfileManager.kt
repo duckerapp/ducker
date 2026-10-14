@@ -25,7 +25,7 @@ interface IProfileManager {
     suspend fun commit(uuid: UUID, callback: IFetchObserver? = null)
     suspend fun release(uuid: UUID)
     suspend fun delete(uuid: UUID)
-    suspend fun patch(uuid: UUID, name: String, source: String, interval: Long, ageSecretKey: String?)
+    suspend fun patch(uuid: UUID, name: String, source: String, interval: Long, followProvider: Boolean, ageSecretKey: String?)
     suspend fun update(uuid: UUID)
     suspend fun queryByUUID(uuid: UUID): Profile?
     suspend fun queryAll(): List<Profile>

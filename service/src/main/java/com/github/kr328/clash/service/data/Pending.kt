@@ -20,4 +20,6 @@ data class Pending(
     @ColumnInfo(name = "expire") val expire: Long,
     @ColumnInfo(name = "createdAt") val createdAt: Long = System.currentTimeMillis(),
     @ColumnInfo(name = "ageSecretKey") val ageSecretKey: String? = null,
+    /** Update on the provider's `profile-update-interval` when it sends one; [interval] otherwise (D-311). */
+    @ColumnInfo(name = "followProvider", defaultValue = "0") val followProvider: Boolean = false,
 )
