@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -70,6 +69,12 @@ import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.FitLabel
 import java.util.concurrent.TimeUnit
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.util.lerp
+import kotlin.math.floor
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -258,16 +263,23 @@ private fun IntervalPicker(
     if (selected == 1) lastOwn[0] = interval
 
     val own = stringResource(R.string.interval_own)
+    // “Свой” always names its hours — its own, or the last ones after “Вручную” — and its place is sized
+    // for the longest, so the segments do not shift while the slider moves.
     val labels = listOf(
         stringResource(R.string.interval_manual),
-        if (selected == 1) "$own · ${hoursLabel(interval)}" else own,
+        "$own · ${hoursLabel(if (interval > 0) interval else lastOwn[0])}",
         "${stringResource(R.string.interval_provider)} · ${hoursLabel(providerInterval)}",
     )
+    val widest = listOf(labels[0], "$own · ${hoursLabel(STOPS.last())}", labels[2])
+    val style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium)
+
+    // Left and width of every segment, from the last layout; the pill rides between them.
+    var spans by remember { mutableStateOf(FloatArray(0)) }
 
     // The gaps are paddings, not the column's spacing: the slider's gap comes and goes with it,
     // instead of jumping when the slider leaves the layout.
     Column {
-        Row(
+        Layout(
             modifier = Modifier.fillMaxWidth()
                 .height(52.dp)
                 .alpha(if (enabled) 1f else 0.5f)
@@ -278,10 +290,10 @@ private fun IntervalPicker(
                 // Пилюля рисуется, а не компонуется: едет каждый кадр, и перекладывать
                 // ради этого сегменты незачем.
                 .drawBehind {
-                    val width = size.width / count
+                    val (left, width) = pillSpan(spans, position)
                     drawRoundRect(
                         color = pill,
-                        topLeft = Offset(position * width, 0f),
+                        topLeft = Offset(left, 0f),
                         size = Size(width, size.height),
                         cornerRadius = CornerRadius(size.height / 2f),
                     )
@@ -293,56 +305,93 @@ private fun IntervalPicker(
                             .focusGroup()
                     } else Modifier,
                 ),
-        ) {
-            repeat(count) { index ->
-                val on = index == selected
-
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxHeight()
-                        .focusRequester(segments[index])
-                        .clip(CircleShape)
-                        .selectable(
-                            selected = on,
-                            enabled = enabled,
-                            role = Role.RadioButton,
-                            onClick = {
-                                if (!on) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                                when (index) {
-                                    0 -> onInterval(0)
-                                    1 -> onInterval(if (interval > 0) interval else OWN_START)
-                                    else -> onFollow()
-                                }
-                            },
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    // The label twice: in the backing's ink, and in the pill's over it, drawn only where
-                    // the pill is — readable in every frame while the pill rides under it. Recoloring
-                    // by choice blacked the label out halfway; “difference” of white, used before, gave
-                    // the pill's complement, pink on a green-tinted pill (D-312).
-                    val label: @Composable (Color) -> Unit = { color ->
-                        FitLabel(
-                            text = labels[index],
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
-                            modifier = Modifier.padding(horizontal = 6.dp),
-                            color = color,
-                        )
-                    }
-
-                    label(scheme.onSurface)
+            content = {
+                repeat(count) { index ->
+                    val on = index == selected
 
                     Box(
-                        modifier = Modifier.matchParentSize()
-                            .clearAndSetSemantics {}
-                            .drawWithContent {
-                                val left = (position - index) * size.width
-                                clipRect(left = left, right = left + size.width) { this@drawWithContent.drawContent() }
-                            },
+                        modifier = Modifier
+                            .focusRequester(segments[index])
+                            .clip(CircleShape)
+                            .selectable(
+                                selected = on,
+                                enabled = enabled,
+                                role = Role.RadioButton,
+                                onClick = {
+                                    if (!on) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                    when (index) {
+                                        0 -> onInterval(0)
+                                        1 -> onInterval(if (interval > 0) interval else lastOwn[0])
+                                        else -> onFollow()
+                                    }
+                                },
+                            ),
                         contentAlignment = Alignment.Center,
                     ) {
-                        label(scheme.onPrimaryContainer)
+                        // Unseen, it only gives the segment its width: the longest label with even room
+                        // at both ends.
+                        Text(
+                            text = widest[index],
+                            style = style,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(horizontal = 14.dp).alpha(0f).clearAndSetSemantics {},
+                        )
+
+                        // The label twice: in the backing's ink, and in the pill's over it, drawn only where
+                        // the pill is — readable in every frame while the pill rides under it. Recoloring
+                        // by choice blacked the label out halfway; “difference” of white, used before, gave
+                        // the pill's complement, pink on a green-tinted pill (D-312).
+                        val label: @Composable (Color) -> Unit = { color ->
+                            FitLabel(
+                                text = labels[index],
+                                style = style,
+                                modifier = Modifier.padding(horizontal = 6.dp),
+                                color = color,
+                            )
+                        }
+
+                        label(scheme.onSurface)
+
+                        Box(
+                            modifier = Modifier.matchParentSize()
+                                .clearAndSetSemantics {}
+                                .drawWithContent {
+                                    val (left, width) = pillSpan(spans, position)
+                                    val from = left - spans.getOrElse(index * 2) { 0f }
+                                    clipRect(left = from, right = from + width) { this@drawWithContent.drawContent() }
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            label(scheme.onPrimaryContainer)
+                        }
                     }
                 }
+            },
+        ) { measurables, constraints ->
+            // Every segment is as wide as its label, and what is left over is shared equally: the same
+            // room around every label. Too narrow a screen shares the width by the labels' widths, and
+            // the labels shrink.
+            val total = constraints.maxWidth
+            val wanted = measurables.map { it.maxIntrinsicWidth(constraints.maxHeight) }
+            val free = total - wanted.sum()
+            val widths = wanted.map { if (free >= 0) it + free / wanted.size else it * total / wanted.sum() }
+                .toMutableList()
+            widths[widths.lastIndex] += total - widths.sum()
+
+            val placeables = measurables.mapIndexed { i, it -> it.measure(Constraints.fixed(widths[i], constraints.maxHeight)) }
+            val next = FloatArray(widths.size * 2)
+            var x = 0
+            widths.forEachIndexed { i, width ->
+                next[i * 2] = x.toFloat()
+                next[i * 2 + 1] = width.toFloat()
+                x += width
+            }
+            if (!next.contentEquals(spans)) spans = next
+
+            layout(total, constraints.maxHeight) {
+                var at = 0
+                placeables.forEach { it.place(at, 0); at += it.width }
             }
         }
 
@@ -452,6 +501,16 @@ private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Un
             modifier = Modifier.fillMaxWidth().semantics { stateDescription = shown },
         )
     }
+}
+
+/** The pill between the segments at [position]: left and width, from [spans] of [IntervalPicker]. */
+private fun pillSpan(spans: FloatArray, position: Float): Pair<Float, Float> {
+    val count = spans.size / 2
+    if (count < 2) return (spans.getOrElse(0) { 0f }) to (spans.getOrElse(1) { 0f })
+
+    val from = floor(position).toInt().coerceIn(0, count - 2)
+    val part = position - from
+    return lerp(spans[from * 2], spans[from * 2 + 2], part) to lerp(spans[from * 2 + 1], spans[from * 2 + 3], part)
 }
 
 /** Ноль часов — «вручную»; интервал короче часа округляется до часа. */
