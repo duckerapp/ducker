@@ -189,6 +189,7 @@ fun SubscriptionsScreen(
             sameGroup = { a, b -> groups[a]?.let { it == groups[b] } == true },
             onMove = { from, to -> move(UUID.fromString(from), UUID.fromString(to)) },
             onDrop = { moved() },
+            putDown = LIFT_MS,
         )
     }
 
@@ -587,7 +588,13 @@ private fun ProfileRow(
     val scheme = MaterialTheme.colorScheme
     val key = profile.uuid.toString()
     val lifted = reorder.dragged == key
-    val lift by animateFloatAsState(if (lifted) 1f else 0f, tween(LIFT_MS), label = "lift")
+
+    // Released, the card rides to its place still lifted and only there is put down. Until it is
+    // flat it stays opaque and above its neighbours: a shadow under a see-through card showed as a
+    // grey plate, and the lines beside its place came back over its edges.
+    val up = lifted || (reorder.settling == key && reorder.arrived != key)
+    val lift by animateFloatAsState(if (up) 1f else 0f, tween(LIFT_MS), label = "lift")
+    val raised = lifted || reorder.settling == key || lift > 0f
     val shape = MaterialTheme.shapes.large
 
     // The row is lifted with the finger still down: its press highlight would stay on the card all
@@ -613,7 +620,7 @@ private fun ProfileRow(
     val menu = remember { FocusRequester() }
     val tv = LocalTv.current
 
-    Box(modifier.fillMaxWidth().zIndex(if (lifted || reorder.settling == key) 1f else 0f)) {
+    Box(modifier.fillMaxWidth().zIndex(if (raised) 1f else 0f)) {
         if (line) HorizontalDivider(Modifier.padding(horizontal = ROW_INSET), color = scheme.outlineVariant)
 
         // Долгое нажатие поднимает строку (этап 13, пакет 5): она становится карточкой — своя
@@ -629,8 +636,8 @@ private fun ProfileRow(
                     this.shape = shape
                 }
                 // Opaque at once, not faded in: a row dragged off at once would show its neighbour
-                // through itself. At the lift and after the drop it is over its own white place.
-                .then(if (lifted || reorder.settling == key) Modifier.background(scheme.surface, shape) else Modifier)
+                // through itself. At the lift and when flat again it is over its own white place.
+                .then(if (raised) Modifier.background(scheme.surface, shape) else Modifier)
                 .border(1.dp, scheme.outlineVariant.copy(alpha = lift), shape)
                 .clip(shape)
                 .then(if (tv) Modifier.ringCorner(BACKING_CORNER) else Modifier)

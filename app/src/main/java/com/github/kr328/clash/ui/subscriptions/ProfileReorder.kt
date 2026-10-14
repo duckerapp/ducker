@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -39,13 +40,22 @@ internal class ProfileReorder(
     private val sameGroup: (Any, Any) -> Boolean,
     private val onMove: (from: String, to: String) -> Unit,
     private val onDrop: () -> Unit,
+    /** How long a card takes to be put down once at its place, ms. */
+    private val putDown: Int,
 ) {
     /** Поднятая карточка; `null` — ничего не тащат. */
     var dragged by mutableStateOf<Any?>(null)
         private set
 
-    /** Отпущенная карточка, которая доезжает на своё место. */
+    /** Отпущенная карточка, которая доезжает на своё место, а доехав — опускается. */
     var settling by mutableStateOf<Any?>(null)
+        private set
+
+    /**
+     * The released card is at its place and is being put down: shadow and size go back while it
+     * still covers its place; [settling] ends when it is flat.
+     */
+    var arrived by mutableStateOf<Any?>(null)
         private set
 
     /** Идёт перестановка — соседи переезжают плавно, а не скачком. */
@@ -85,13 +95,22 @@ internal class ProfileReorder(
         val rest = offset(key)
 
         dragged = null
+        arrived = null
         settling = key
 
         scope.launch {
             settle.snapTo(rest)
             settle.animateTo(0f, spring(stiffness = Spring.StiffnessMediumLow))
 
-            if (settling == key) settling = null
+            if (settling != key) return@launch
+
+            arrived = key
+            delay(putDown.toLong())
+
+            if (settling == key) {
+                settling = null
+                arrived = null
+            }
         }
 
         onDrop()
