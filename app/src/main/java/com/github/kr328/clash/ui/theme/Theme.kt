@@ -3,25 +3,30 @@ package com.github.kr328.clash.ui.theme
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.runtime.CompositionLocalProvider
 import android.app.Activity
-import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.app.WallpaperManager
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowCompat
+import kotlin.math.min
 
 /**
  * Палитра ducker: чёрно-белая (D-65).
@@ -111,33 +116,81 @@ private val DarkColors = darkColorScheme(
 )
 
 /**
- * Цвета системы, но в нашей раскладке (D-139). Как есть Material You красил выбранное ярким
- * акцентом на бледной подложке: включённая карточка становилась сиреневой, кнопка — синей.
- * Здесь фон, текст и рамки — тонированные серые системы, а всё залитое и выбранное — один
- * глубокий тон обоев вместо нашего чёрного (в тёмной теме — светлый вместо белого).
+ * Цвета системы, но в нашей раскладке (D-139): our black and white tinted with the wallpaper's own
+ * color (D-312). The system's palette was not used: on a grey-blue wallpaper the `VIBRANT` style
+ * made a bright blue out of it (F-278). The greys keep their tones and take the wallpaper's hue
+ * barely; everything filled and selected is one deep tone of that hue instead of our black (in the
+ * dark theme, a light one instead of white). The chroma is capped and never above the wallpaper's
+ * own, so a grey wallpaper gives a grey app. The error colors stay as they are.
  */
-@RequiresApi(Build.VERSION_CODES.S)
-private fun softDynamic(context: Context, dark: Boolean): ColorScheme {
-    fun tone(id: Int) = Color(context.getColor(id))
+private fun wallpaperTinted(base: ColorScheme, wallpaper: Int, dark: Boolean): ColorScheme {
+    val seed = FloatArray(3).also { ColorUtils.colorToM3HCT(wallpaper, it) }
+    val hue = seed[0]
+    val greyChroma = min(seed[1], 4f)
 
-    val system = if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    val ink = tone(if (dark) android.R.color.system_accent1_100 else android.R.color.system_accent1_800)
-    val onInk = tone(if (dark) android.R.color.system_accent1_900 else android.R.color.system_neutral1_10)
+    fun hct(chroma: Float, tone: Float) = Color(ColorUtils.M3HCTToColor(hue, chroma, tone))
+    fun grey(color: Color): Color {
+        val own = FloatArray(3).also { ColorUtils.colorToM3HCT(color.toArgb(), it) }
+        return hct(greyChroma, own[2])
+    }
 
-    return system.copy(
+    val ink = hct(min(seed[1], 16f), if (dark) 90f else 20f)
+    val onInk = grey(base.onPrimary)
+
+    return base.copy(
         primary = ink,
         onPrimary = onInk,
         primaryContainer = ink,
         onPrimaryContainer = onInk,
+        inversePrimary = grey(base.inversePrimary),
         secondary = ink,
         onSecondary = onInk,
         secondaryContainer = ink,
         onSecondaryContainer = onInk,
+        tertiary = grey(base.tertiary),
+        onTertiary = grey(base.onTertiary),
+        tertiaryContainer = grey(base.tertiaryContainer),
+        onTertiaryContainer = grey(base.onTertiaryContainer),
+        background = grey(base.background),
+        onBackground = grey(base.onBackground),
+        surface = grey(base.surface),
+        onSurface = grey(base.onSurface),
+        surfaceVariant = grey(base.surfaceVariant),
+        onSurfaceVariant = grey(base.onSurfaceVariant),
         surfaceTint = ink,
-        // Карточки светлее фона, как в нашей палитре: у Material они одного тона.
-        background = if (dark) system.surfaceContainerLowest else system.surfaceContainer,
-        surface = if (dark) system.surfaceContainerLow else system.surfaceContainerLowest,
+        outline = grey(base.outline),
+        outlineVariant = grey(base.outlineVariant),
+        inverseSurface = grey(base.inverseSurface),
+        inverseOnSurface = grey(base.inverseOnSurface),
+        surfaceContainer = grey(base.surfaceContainer),
+        surfaceContainerHigh = grey(base.surfaceContainerHigh),
+        surfaceContainerLow = grey(base.surfaceContainerLow),
+        surfaceContainerLowest = grey(base.surfaceContainerLowest),
+        surfaceContainerHighest = grey(base.surfaceContainerHighest),
     )
+}
+
+/**
+ * The home screen wallpaper's main color, and again whenever it changes; `null` when the wallpaper
+ * gives none (a live one may not) — then the palette stays black and white. API 27, no permission.
+ */
+@Composable
+private fun rememberWallpaperColor(): Int? {
+    val context = LocalContext.current
+    val manager = remember(context) { WallpaperManager.getInstance(context) }
+    var color by remember(manager) {
+        mutableStateOf(runCatching { manager.getWallpaperColors(WallpaperManager.FLAG_SYSTEM)?.primaryColor?.toArgb() }.getOrNull())
+    }
+
+    DisposableEffect(manager) {
+        val listener = WallpaperManager.OnColorsChangedListener { colors, which ->
+            if (which and WallpaperManager.FLAG_SYSTEM != 0) color = colors?.primaryColor?.toArgb()
+        }
+        manager.addOnColorsChangedListener(listener, Handler(Looper.getMainLooper()))
+        onDispose { manager.removeOnColorsChangedListener(listener) }
+    }
+
+    return color
 }
 
 /** Скругления, общие для карточек, кнопок и нижней панели. */
@@ -154,7 +207,7 @@ fun DuckerTheme(
     dark: Boolean = isSystemInDarkTheme(),
     oled: Boolean = false,
     /**
-     * Цвета системы (Material You), приглушённые до нашей раскладки ([softDynamic]).
+     * Цвета системы: наша раскладка в оттенке обоев ([wallpaperTinted]).
      * По умолчанию выключены (D-21).
      */
     dynamicColor: Boolean = false,
@@ -167,13 +220,9 @@ fun DuckerTheme(
     tv: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val context = LocalContext.current
-
-    val palette = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> softDynamic(context, dark)
-        dark -> DarkColors
-        else -> LightColors
-    }
+    val base = if (dark) DarkColors else LightColors
+    val wallpaper = if (dynamicColor) rememberWallpaperColor() else null
+    val palette = if (wallpaper != null) wallpaperTinted(base, wallpaper, dark) else base
     // OLED применяется и к системной палитре: это две независимые настройки.
     val colors = if (dark && oled) {
         palette.copy(background = Color.Black, surface = Color.Black)
