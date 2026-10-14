@@ -9,8 +9,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -33,6 +33,8 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.FocusRequester
@@ -42,11 +44,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -54,6 +59,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -246,6 +252,11 @@ private fun IntervalPicker(
     val segments = remember { List(3) { FocusRequester() } }
     val tv = LocalTv.current
 
+    // While it closes after “Вручную”, the slider keeps the last own hours instead of running to the
+    // first stop: not state, as the picker recomposes with every change of [interval] anyway.
+    val lastOwn = remember { LongArray(1) { OWN_START } }
+    if (selected == 1) lastOwn[0] = interval
+
     val own = stringResource(R.string.interval_own)
     val labels = listOf(
         stringResource(R.string.interval_manual),
@@ -305,23 +316,39 @@ private fun IntervalPicker(
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    // Белое с «разницей»: над фоном выходит чёрное, над пилюлей — белое, и
-                    // так в каждом кадре, пока она едет. Перекраска по выбору гасила
-                    // надпись на полпути — чёрное на чёрном. В тёмной теме так же, наоборот.
-                    FitLabel(
-                        text = labels[index],
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
-                        modifier = Modifier.padding(horizontal = 6.dp)
-                            .graphicsLayer { blendMode = BlendMode.Difference },
-                        color = Color.White,
-                    )
+                    // The label twice: in the backing's ink, and in the pill's over it, drawn only where
+                    // the pill is — readable in every frame while the pill rides under it. Recoloring
+                    // by choice blacked the label out halfway; “difference” of white, used before, gave
+                    // the pill's complement, pink on a green-tinted pill (D-312).
+                    val label: @Composable (Color) -> Unit = { color ->
+                        FitLabel(
+                            text = labels[index],
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
+                            modifier = Modifier.padding(horizontal = 6.dp),
+                            color = color,
+                        )
+                    }
+
+                    label(scheme.onSurface)
+
+                    Box(
+                        modifier = Modifier.matchParentSize()
+                            .clearAndSetSemantics {}
+                            .drawWithContent {
+                                val left = (position - index) * size.width
+                                clipRect(left = left, right = left + size.width) { this@drawWithContent.drawContent() }
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        label(scheme.onPrimaryContainer)
+                    }
                 }
             }
         }
 
-        AnimatedVisibility(visible = selected == 1) {
+        Unfold(visible = selected == 1) {
             OwnSlider(
-                interval = interval,
+                interval = if (selected == 1) interval else lastOwn[0],
                 enabled = enabled,
                 onInterval = onInterval,
                 modifier = Modifier.padding(top = 8.dp),
@@ -343,6 +370,45 @@ private fun IntervalPicker(
                 color = scheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+/**
+ * Opens and closes [content] on the spring of the sheet's height (`DuckerSheet`) and the same way: an
+ * [Animatable] that an effect starts, so after a tap that turns them around halfway both start again
+ * on the same frame. `AnimatedVisibility` restarted a frame earlier than the sheet, and on quick taps
+ * the rows below jumped (D-313). In lookahead the block is at its final height at once, which the sheet
+ * takes as its target. The content keeps its place on screen and is uncovered or covered from above,
+ * the way the sheet's top moves.
+ */
+@Composable
+private fun Unfold(visible: Boolean, content: @Composable () -> Unit) {
+    val progress = remember { Animatable(if (visible) 1f else 0f) }
+    val open by remember { derivedStateOf { progress.value > 0f } }
+
+    LaunchedEffect(visible) {
+        progress.animateTo(
+            targetValue = if (visible) 1f else 0f,
+            animationSpec = spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = 0.001f),
+        )
+    }
+
+    if (!visible && !open) return
+
+    Box(
+        modifier = Modifier.fillMaxWidth()
+            .clipToBounds()
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                val height = when {
+                    isLookingAhead -> if (visible) placeable.height else 0
+                    else -> (placeable.height * progress.value).roundToInt()
+                }
+                layout(placeable.width, height) { placeable.place(0, height - placeable.height) }
+            }
+            .graphicsLayer { alpha = progress.value },
+    ) {
+        content()
     }
 }
 
