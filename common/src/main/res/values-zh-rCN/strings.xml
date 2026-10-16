@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="receive_clash_broadcasts">接收 ducker 事件</string>
+    <string name="receive_broadcasts_of_clash">允许应用获知 VPN 何时开启或关闭，以及订阅何时更改</string>
+    <string name="unit_b">B</string>
+    <string name="unit_kb">KB</string>
+    <string name="unit_mb">MB</string>
+    <string name="unit_gb">GB</string>
+    <string name="unit_tb">TB</string>
+    <string name="size_format">%1$s %2$s</string>
+    <string name="speed_per_second">%s/s</string>
+</resources>

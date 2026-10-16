@@ -72,8 +72,10 @@ class SettingsViewModel : ViewModel() {
 
                 SettingsState(
                     theme = ours.theme,
+                    // The whole tag: "zh-CN" and "pt-BR" are chosen with their region, and Android
+                    // keeps Indonesian as "in" — the tag reads "id" again (D-320).
                     language = AppCompatDelegate.getApplicationLocales()
-                        .takeIf { !it.isEmpty }?.get(0)?.language.orEmpty(),
+                        .takeIf { !it.isEmpty }?.get(0)?.toLanguageTag().orEmpty(),
                     oled = ours.oled,
                     dynamicColor = ours.dynamicColor,
                     allowExternalControl = ours.allowExternalControl,

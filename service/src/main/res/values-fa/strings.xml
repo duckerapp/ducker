@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clash_service_status_channel">وضعیت VPN</string>
+    <string name="profile_service_status">به‌روزرسانی اشتراک‌ها</string>
+    <string name="profile_process_status">روند به‌روزرسانی اشتراک</string>
+    <string name="profile_process_result">نتیجه به‌روزرسانی اشتراک</string>
+    <string name="update_successfully">اشتراک به‌روز شد</string>
+    <string name="update_failure">اشتراک به‌روز نشد</string>
+    <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="subscription_http_status">خطای سرور اشتراک %1$d</string>
+    <string name="subscription_http_not_found">اشتراکی در این لینک وجود ندارد (خطای %1$d). لینک را بررسی کنید یا از ارائه‌دهنده خود بپرسید</string>
+    <string name="subscription_http_denied">دسترسی رد شد (خطای %1$d). ممکن است اشتراک غیرفعال شده باشد — از ارائه‌دهنده خود بپرسید</string>
+    <string name="subscription_http_busy">تعداد درخواست‌ها بیش از حد است (خطای %1$d). چند دقیقه دیگر دوباره تلاش کنید</string>
+    <string name="subscription_http_server">سرور اشتراک در دسترس نیست (خطای %1$d). بعداً دوباره تلاش کنید</string>
+    <string name="disconnect">قطع اتصال</string>
+    <string name="running">در حال اجرا</string>
+    <string name="loading">در حال راه‌اندازی…</string>
+    <string name="profile_updater">در حال به‌روزرسانی اشتراک‌ها</string>
+    <string name="profile_updating">در حال به‌روزرسانی اشتراک</string>
+    <string name="expiry_channel">پایان اعتبار اشتراک</string>
+    <plurals name="expiry_title">
+        <item quantity="one">اعتبار اشتراک تا %d روز دیگر تمام می‌شود</item>
+        <item quantity="other">اعتبار اشتراک تا %d روز دیگر تمام می‌شود</item>
+    </plurals>
+    <string name="expiry_text">«%1$s» تا %2$s معتبر است. برای ادامه کار VPN، آن را تمدید کنید.</string>
+    <string name="expiry_renew">تمدید</string>
+    <string name="subscription_profile_too_large">حجم اشتراک بیش از حد بزرگ است (بیشتر از 16 مگابایت). به ارائه‌دهنده خود اطلاع دهید</string>
+    <string name="subscription_provider_too_large">فهرست قوانین یا سرورها در اشتراک بیش از حد بزرگ است (بیشتر از 64 مگابایت). به ارائه‌دهنده خود اطلاع دهید</string>
+    <string name="subscription_download_failed">دانلود اشتراک ممکن نشد. اتصال اینترنت را بررسی و دوباره تلاش کنید</string>
+    <string name="subscription_redirects">لینک اشتراک مدام به آدرس‌های دیگر تغییر مسیر می‌دهد. به ارائه‌دهنده خود اطلاع دهید</string>
+    <string name="subscription_bad_link">لینک باید با https:// شروع شود</string>
+    <string name="subscription_not_links">این نه لینک اشتراک است و نه فهرست سرورها. لینک دریافتی از ارائه‌دهنده را جای‌گذاری کنید</string>
+    <string name="subscription_no_servers">این اشتراک هیچ سروری ندارد. به ارائه‌دهنده خود اطلاع دهید</string>
+    <string name="subscription_bad_config">لینک چیزی غیر از اشتراک برگرداند، یا کانفیگ آن خطا دارد. لینک را بررسی کنید یا به ارائه‌دهنده خود اطلاع دهید</string>
+    <string name="subscription_limit_devices">ظرفیت دستگاه‌ها پر شده است</string>
+    <string name="subscription_limit_hwid">ارائه‌دهنده به شناسه دستگاه نیاز دارد</string>
+    <string name="subscription_limit_other">این اشتراک در این دستگاه در دسترس نیست</string>
+    <string name="vpn_config_failed">کانفیگ اشتراک بارگذاری نشد. اشتراک را به‌روزرسانی کنید؛ اگر کمکی نکرد، به ارائه‌دهنده خود اطلاع دهید</string>
+    <string name="config_reload_failed">VPN با همان تنظیمات قبلی به کار خود ادامه می‌دهد. قوانین و ویرایش‌های کانفیگ خود را بررسی کنید</string>
+    <string name="vpn_no_profile">اشتراکی انتخاب نشده است. ducker را باز و یک اشتراک انتخاب کنید</string>
+    <string name="vpn_rejected">Android اجازه راه‌اندازی VPN را نداد. آن را با دکمه داخل برنامه روشن کنید؛ اگر کمکی نکرد، در تنظیمات بررسی کنید که VPN دیگری به‌عنوان «VPN همیشه روشن» تنظیم نشده باشد</string>
+    <string name="failure_try_again">تلاش مجدد</string>
+    <string name="vpn_failure_channel">خطاهای VPN</string>
+    <string name="vpn_failure_title">VPN راه‌اندازی نشد</string>
+</resources>

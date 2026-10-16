@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clash_service_status_channel">Estado de la VPN</string>
+    <string name="profile_service_status">Actualizaciones de suscripciones</string>
+    <string name="profile_process_status">Progreso de actualización de suscripciones</string>
+    <string name="profile_process_result">Resultados de actualización de suscripciones</string>
+    <string name="update_successfully">Suscripción actualizada</string>
+    <string name="update_failure">La suscripción no se actualizó</string>
+    <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="subscription_http_status">Error del servidor de suscripción: %1$d</string>
+    <string name="subscription_http_not_found">No hay ninguna suscripción en este enlace (error %1$d). Revisa el enlace o consulta al proveedor</string>
+    <string name="subscription_http_denied">Acceso denegado (error %1$d). La suscripción puede estar desactivada; consulta al proveedor</string>
+    <string name="subscription_http_busy">Demasiadas solicitudes (error %1$d). Inténtalo de nuevo en unos minutos</string>
+    <string name="subscription_http_server">El servidor de suscripción no está disponible (error %1$d). Inténtalo más tarde</string>
+    <string name="disconnect">Desconectar</string>
+    <string name="running">En funcionamiento</string>
+    <string name="loading">Iniciando…</string>
+    <string name="profile_updater">Actualizando suscripciones</string>
+    <string name="profile_updating">Actualizando suscripción</string>
+    <string name="expiry_channel">Vencimiento de suscripciones</string>
+    <plurals name="expiry_title">
+        <item quantity="one">Días restantes de suscripción: %d</item>
+        <item quantity="many">Días restantes de suscripción: %d</item>
+        <item quantity="other">Días restantes de suscripción: %d</item>
+    </plurals>
+    <string name="expiry_text">“%1$s” es válida hasta el %2$s. Renuévala para seguir usando la VPN.</string>
+    <string name="expiry_renew">Renovar</string>
+    <string name="subscription_profile_too_large">La suscripción es demasiado grande (más de 16 MB). Avisa al proveedor</string>
+    <string name="subscription_provider_too_large">Una lista de reglas o servidores de la suscripción es demasiado grande (más de 64 MB). Avisa al proveedor</string>
+    <string name="subscription_download_failed">No se pudo descargar la suscripción. Revisa la conexión e inténtalo de nuevo</string>
+    <string name="subscription_redirects">El enlace de suscripción redirige continuamente a otras direcciones. Avisa al proveedor</string>
+    <string name="subscription_bad_link">El enlace debe empezar por https://</string>
+    <string name="subscription_not_links">Esto no es un enlace de suscripción ni una lista de servidores. Pega el enlace de tu proveedor</string>
+    <string name="subscription_no_servers">La suscripción no contiene servidores. Avisa al proveedor</string>
+    <string name="subscription_bad_config">El enlace devolvió algo distinto de una suscripción o su configuración tiene un error. Revisa el enlace o avisa al proveedor</string>
+    <string name="subscription_limit_devices">Se alcanzó el límite de dispositivos</string>
+    <string name="subscription_limit_hwid">El proveedor requiere un ID de dispositivo</string>
+    <string name="subscription_limit_other">Esta suscripción no está disponible en este dispositivo</string>
+    <string name="vpn_config_failed">No se cargó la configuración de la suscripción. Actualízala; si no se soluciona, avisa al proveedor</string>
+    <string name="config_reload_failed">La VPN sigue funcionando con los ajustes anteriores. Revisa tus reglas y los cambios en la configuración</string>
+    <string name="vpn_no_profile">No hay ninguna suscripción seleccionada. Abre ducker y elige una</string>
+    <string name="vpn_rejected">Android no permitió iniciar la VPN. Actívala con el botón de la aplicación; si no funciona, comprueba en los ajustes si otra VPN tiene activada la opción “VPN siempre activada”</string>
+    <string name="failure_try_again">Reintentar</string>
+    <string name="vpn_failure_channel">Fallos de VPN</string>
+    <string name="vpn_failure_title">La VPN no se inició</string>
+</resources>

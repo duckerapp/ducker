@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="receive_clash_broadcasts">Recevoir les événements de ducker</string>
+    <string name="receive_broadcasts_of_clash">Permet à une application de savoir quand le VPN est activé ou désactivé et quand les abonnements changent</string>
+    <string name="unit_b">o</string>
+    <string name="unit_kb">Ko</string>
+    <string name="unit_mb">Mo</string>
+    <string name="unit_gb">Go</string>
+    <string name="unit_tb">To</string>
+    <string name="size_format">%1$s %2$s</string>
+    <string name="speed_per_second">%s/s</string>
+</resources>

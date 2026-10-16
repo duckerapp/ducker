@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clash_service_status_channel">Trạng thái VPN</string>
+    <string name="profile_service_status">Cập nhật gói đăng ký</string>
+    <string name="profile_process_status">Tiến trình cập nhật gói đăng ký</string>
+    <string name="profile_process_result">Kết quả cập nhật gói đăng ký</string>
+    <string name="update_successfully">Đã cập nhật gói đăng ký</string>
+    <string name="update_failure">Chưa cập nhật được gói đăng ký</string>
+    <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="subscription_http_status">Lỗi máy chủ gói đăng ký %1$d</string>
+    <string name="subscription_http_not_found">Không có gói đăng ký tại liên kết này (lỗi %1$d). Kiểm tra liên kết hoặc liên hệ nhà cung cấp</string>
+    <string name="subscription_http_denied">Truy cập bị từ chối (lỗi %1$d). Gói đăng ký có thể đã bị vô hiệu hóa; hãy liên hệ nhà cung cấp</string>
+    <string name="subscription_http_busy">Quá nhiều yêu cầu (lỗi %1$d). Hãy thử lại sau vài phút</string>
+    <string name="subscription_http_server">Máy chủ gói đăng ký không hoạt động (lỗi %1$d). Hãy thử lại sau</string>
+    <string name="disconnect">Ngắt kết nối</string>
+    <string name="running">Đang chạy</string>
+    <string name="loading">Đang khởi động…</string>
+    <string name="profile_updater">Đang cập nhật gói đăng ký</string>
+    <string name="profile_updating">Đang cập nhật gói đăng ký</string>
+    <string name="expiry_channel">Gói đăng ký sắp hết hạn</string>
+    <plurals name="expiry_title">
+        <item quantity="other">Gói đăng ký sẽ hết hạn sau %d ngày</item>
+    </plurals>
+    <string name="expiry_text">“%1$s” có hiệu lực đến %2$s. Hãy gia hạn để tiếp tục dùng VPN.</string>
+    <string name="expiry_renew">Gia hạn</string>
+    <string name="subscription_profile_too_large">Gói đăng ký quá lớn (trên 16 MB). Hãy báo cho nhà cung cấp</string>
+    <string name="subscription_provider_too_large">Danh sách quy tắc hoặc máy chủ trong gói đăng ký quá lớn (trên 64 MB). Hãy báo cho nhà cung cấp</string>
+    <string name="subscription_download_failed">Không thể tải gói đăng ký. Kiểm tra kết nối rồi thử lại</string>
+    <string name="subscription_redirects">Liên kết gói đăng ký liên tục chuyển hướng đến địa chỉ khác. Hãy báo cho nhà cung cấp</string>
+    <string name="subscription_bad_link">Liên kết phải bắt đầu bằng https://</string>
+    <string name="subscription_not_links">Đây không phải liên kết gói đăng ký hay danh sách máy chủ. Hãy dán liên kết từ nhà cung cấp</string>
+    <string name="subscription_no_servers">Gói đăng ký không có máy chủ. Hãy báo cho nhà cung cấp</string>
+    <string name="subscription_bad_config">Liên kết trả về nội dung không phải gói đăng ký hoặc cấu hình có lỗi. Kiểm tra liên kết hoặc báo cho nhà cung cấp</string>
+    <string name="subscription_limit_devices">Đã đạt giới hạn thiết bị</string>
+    <string name="subscription_limit_hwid">Nhà cung cấp yêu cầu ID thiết bị</string>
+    <string name="subscription_limit_other">Không thể dùng gói đăng ký này trên thiết bị này</string>
+    <string name="vpn_config_failed">Không tải được cấu hình gói đăng ký. Hãy cập nhật gói đăng ký; nếu vẫn không được, hãy báo cho nhà cung cấp</string>
+    <string name="config_reload_failed">VPN vẫn hoạt động với cài đặt trước đó. Hãy kiểm tra quy tắc và các chỉnh sửa cấu hình</string>
+    <string name="vpn_no_profile">Chưa chọn gói đăng ký. Mở ducker rồi chọn một gói</string>
+    <string name="vpn_rejected">Android không cho khởi động VPN. Hãy bật bằng nút trong ứng dụng; nếu vẫn không được, kiểm tra trong cài đặt xem VPN khác có được đặt làm “VPN luôn bật” hay không</string>
+    <string name="failure_try_again">Thử lại</string>
+    <string name="vpn_failure_channel">Lỗi VPN</string>
+    <string name="vpn_failure_title">Không khởi động được VPN</string>
+</resources>

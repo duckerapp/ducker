@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clash_service_status_channel">VPN durumu</string>
+    <string name="profile_service_status">Abonelik güncellemeleri</string>
+    <string name="profile_process_status">Abonelik güncelleme ilerlemesi</string>
+    <string name="profile_process_result">Abonelik güncelleme sonuçları</string>
+    <string name="update_successfully">Abonelik güncellendi</string>
+    <string name="update_failure">Abonelik güncellenemedi</string>
+    <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="subscription_http_status">Abonelik sunucusu hatası %1$d</string>
+    <string name="subscription_http_not_found">Bu bağlantıda abonelik yok (hata %1$d). Bağlantıyı kontrol edin veya sağlayıcınıza danışın</string>
+    <string name="subscription_http_denied">Erişim reddedildi (hata %1$d). Abonelik devre dışı bırakılmış olabilir; sağlayıcınıza danışın</string>
+    <string name="subscription_http_busy">Çok fazla istek gönderildi (hata %1$d). Birkaç dakika sonra tekrar deneyin</string>
+    <string name="subscription_http_server">Abonelik sunucusuna erişilemiyor (hata %1$d). Daha sonra tekrar deneyin</string>
+    <string name="disconnect">Bağlantıyı kes</string>
+    <string name="running">Çalışıyor</string>
+    <string name="loading">Başlatılıyor…</string>
+    <string name="profile_updater">Abonelikler güncelleniyor</string>
+    <string name="profile_updating">Abonelik güncelleniyor</string>
+    <string name="expiry_channel">Abonelik süresi dolmak üzere</string>
+    <plurals name="expiry_title">
+        <item quantity="one">Aboneliğin süresi %d gün sonra dolacak</item>
+        <item quantity="other">Aboneliğin süresi %d gün sonra dolacak</item>
+    </plurals>
+    <string name="expiry_text">“%1$s”, %2$s tarihine kadar geçerli. VPN kullanmaya devam etmek için aboneliği yenileyin.</string>
+    <string name="expiry_renew">Yenile</string>
+    <string name="subscription_profile_too_large">Abonelik çok büyük (16 MB üzerinde). Sağlayıcınıza bildirin</string>
+    <string name="subscription_provider_too_large">Abonelikteki bir kural veya sunucu listesi çok büyük (64 MB üzerinde). Sağlayıcınıza bildirin</string>
+    <string name="subscription_download_failed">Abonelik indirilemedi. Bağlantınızı kontrol edip tekrar deneyin</string>
+    <string name="subscription_redirects">Abonelik bağlantısı sürekli başka adreslere yönlendiriyor. Sağlayıcınıza bildirin</string>
+    <string name="subscription_bad_link">Bağlantı https:// ile başlamalı</string>
+    <string name="subscription_not_links">Bu bir abonelik bağlantısı veya sunucu listesi değil. Sağlayıcınızdan aldığınız bağlantıyı yapıştırın</string>
+    <string name="subscription_no_servers">Abonelikte sunucu yok. Sağlayıcınıza bildirin</string>
+    <string name="subscription_bad_config">Bağlantı abonelik dışında bir içerik döndürdü veya yapılandırmasında hata var. Bağlantıyı kontrol edin ya da sağlayıcınıza bildirin</string>
+    <string name="subscription_limit_devices">Cihaz sınırına ulaşıldı</string>
+    <string name="subscription_limit_hwid">Sağlayıcı cihaz kimliği istiyor</string>
+    <string name="subscription_limit_other">Bu abonelik bu cihazda kullanılamıyor</string>
+    <string name="vpn_config_failed">Aboneliğin yapılandırması yüklenemedi. Aboneliği güncelleyin; sorun sürerse sağlayıcınıza bildirin</string>
+    <string name="config_reload_failed">VPN önceki ayarlarla çalışmaya devam ediyor. Kurallarınızı ve yapılandırma değişikliklerinizi kontrol edin</string>
+    <string name="vpn_no_profile">Abonelik seçilmedi. ducker uygulamasını açıp bir abonelik seçin</string>
+    <string name="vpn_rejected">Android VPN başlatılmasına izin vermedi. Uygulamadaki düğmeyle açın; sorun sürerse ayarlarda başka bir VPN için “Her zaman açık VPN” seçeneğinin etkin olup olmadığını kontrol edin</string>
+    <string name="failure_try_again">Tekrar dene</string>
+    <string name="vpn_failure_channel">VPN hataları</string>
+    <string name="vpn_failure_title">VPN başlatılamadı</string>
+</resources>

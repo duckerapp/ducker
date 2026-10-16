@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clash_service_status_channel">État du VPN</string>
+    <string name="profile_service_status">Mises à jour des abonnements</string>
+    <string name="profile_process_status">Progression des mises à jour d’abonnements</string>
+    <string name="profile_process_result">Résultats des mises à jour d’abonnements</string>
+    <string name="update_successfully">Abonnement mis à jour</string>
+    <string name="update_failure">L’abonnement n’a pas été mis à jour</string>
+    <string name="format_update_failure">%1$s : %2$s</string>
+    <string name="subscription_http_status">Erreur du serveur d’abonnement : %1$d</string>
+    <string name="subscription_http_not_found">Aucun abonnement à ce lien (erreur %1$d). Vérifiez le lien ou contactez votre fournisseur</string>
+    <string name="subscription_http_denied">Accès refusé (erreur %1$d). L’abonnement est peut-être désactivé : contactez votre fournisseur</string>
+    <string name="subscription_http_busy">Trop de requêtes (erreur %1$d). Réessayez dans quelques minutes</string>
+    <string name="subscription_http_server">Le serveur d’abonnement est indisponible (erreur %1$d). Réessayez plus tard</string>
+    <string name="disconnect">Déconnecter</string>
+    <string name="running">En cours d’exécution</string>
+    <string name="loading">Démarrage…</string>
+    <string name="profile_updater">Mise à jour des abonnements</string>
+    <string name="profile_updating">Mise à jour de l’abonnement</string>
+    <string name="expiry_channel">Fin d’abonnement</string>
+    <plurals name="expiry_title">
+        <item quantity="one">Jours d’abonnement restants : %d</item>
+        <item quantity="many">Jours d’abonnement restants : %d</item>
+        <item quantity="other">Jours d’abonnement restants : %d</item>
+    </plurals>
+    <string name="expiry_text">« %1$s » est valable jusqu’au %2$s. Renouvelez cet abonnement pour continuer à utiliser le VPN.</string>
+    <string name="expiry_renew">Renouveler</string>
+    <string name="subscription_profile_too_large">L’abonnement est trop volumineux (plus de 16 Mo). Prévenez votre fournisseur</string>
+    <string name="subscription_provider_too_large">Une liste de règles ou de serveurs de l’abonnement est trop volumineuse (plus de 64 Mo). Prévenez votre fournisseur</string>
+    <string name="subscription_download_failed">Impossible de télécharger l’abonnement. Vérifiez votre connexion et réessayez</string>
+    <string name="subscription_redirects">Le lien de l’abonnement redirige sans cesse vers d’autres adresses. Prévenez votre fournisseur</string>
+    <string name="subscription_bad_link">Le lien doit commencer par https://</string>
+    <string name="subscription_not_links">Ce n’est ni un lien d’abonnement ni une liste de serveurs. Collez le lien de votre fournisseur</string>
+    <string name="subscription_no_servers">L’abonnement ne contient aucun serveur. Prévenez votre fournisseur</string>
+    <string name="subscription_bad_config">Le lien a renvoyé autre chose qu’un abonnement, ou sa configuration contient une erreur. Vérifiez le lien ou prévenez votre fournisseur</string>
+    <string name="subscription_limit_devices">Limite d’appareils atteinte</string>
+    <string name="subscription_limit_hwid">Le fournisseur exige un identifiant d’appareil</string>
+    <string name="subscription_limit_other">Cet abonnement n’est pas disponible sur cet appareil</string>
+    <string name="vpn_config_failed">La configuration de l’abonnement n’a pas été chargée. Mettez l’abonnement à jour ; si le problème persiste, prévenez votre fournisseur</string>
+    <string name="config_reload_failed">Le VPN continue de fonctionner avec les paramètres précédents. Vérifiez vos règles et les modifications de la configuration</string>
+    <string name="vpn_no_profile">Aucun abonnement sélectionné. Ouvrez ducker et choisissez-en un</string>
+    <string name="vpn_rejected">Android a empêché le démarrage du VPN. Activez-le avec le bouton de l’application ; si cela ne suffit pas, vérifiez dans les paramètres si un autre VPN est défini comme « VPN permanent »</string>
+    <string name="failure_try_again">Réessayer</string>
+    <string name="vpn_failure_channel">Échecs du VPN</string>
+    <string name="vpn_failure_title">Le VPN n’a pas démarré</string>
+</resources>

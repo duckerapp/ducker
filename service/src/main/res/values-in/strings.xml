@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clash_service_status_channel">Status VPN</string>
+    <string name="profile_service_status">Pembaruan langganan</string>
+    <string name="profile_process_status">Progres pembaruan langganan</string>
+    <string name="profile_process_result">Hasil pembaruan langganan</string>
+    <string name="update_successfully">Langganan diperbarui</string>
+    <string name="update_failure">Langganan tidak diperbarui</string>
+    <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="subscription_http_status">Kesalahan server langganan %1$d</string>
+    <string name="subscription_http_not_found">Tidak ada langganan di tautan ini (error %1$d). Periksa tautan atau hubungi penyedia</string>
+    <string name="subscription_http_denied">Akses ditolak (error %1$d). Langganan mungkin dinonaktifkan. Hubungi penyedia</string>
+    <string name="subscription_http_busy">Terlalu banyak permintaan (error %1$d). Coba lagi dalam beberapa menit</string>
+    <string name="subscription_http_server">Server langganan tidak tersedia (error %1$d). Coba lagi nanti</string>
+    <string name="disconnect">Putuskan</string>
+    <string name="running">Berjalan</string>
+    <string name="loading">Memulai…</string>
+    <string name="profile_updater">Memperbarui langganan</string>
+    <string name="profile_updating">Memperbarui langganan</string>
+    <string name="expiry_channel">Langganan akan berakhir</string>
+    <plurals name="expiry_title">
+        <item quantity="other">Langganan berakhir dalam %d hari</item>
+    </plurals>
+    <string name="expiry_text">“%1$s” berlaku hingga %2$s. Perpanjang agar VPN tetap berfungsi.</string>
+    <string name="expiry_renew">Perpanjang</string>
+    <string name="subscription_profile_too_large">Langganan terlalu besar (lebih dari 16 MB). Beri tahu penyedia</string>
+    <string name="subscription_provider_too_large">Daftar aturan atau server dalam langganan terlalu besar (lebih dari 64 MB). Beri tahu penyedia</string>
+    <string name="subscription_download_failed">Tidak dapat mengunduh langganan. Periksa koneksi dan coba lagi</string>
+    <string name="subscription_redirects">Tautan langganan terus mengalihkan ke alamat lain. Beri tahu penyedia</string>
+    <string name="subscription_bad_link">Tautan harus diawali https://</string>
+    <string name="subscription_not_links">Ini bukan tautan langganan maupun daftar server. Tempel tautan dari penyedia</string>
+    <string name="subscription_no_servers">Langganan tidak berisi server. Beri tahu penyedia</string>
+    <string name="subscription_bad_config">Tautan mengembalikan konten selain langganan atau konfigurasinya bermasalah. Periksa tautan atau beri tahu penyedia</string>
+    <string name="subscription_limit_devices">Batas perangkat tercapai</string>
+    <string name="subscription_limit_hwid">Penyedia memerlukan ID perangkat</string>
+    <string name="subscription_limit_other">Langganan ini tidak tersedia di perangkat ini</string>
+    <string name="vpn_config_failed">Konfigurasi langganan tidak dapat dimuat. Perbarui langganan; jika masih gagal, beri tahu penyedia</string>
+    <string name="config_reload_failed">VPN tetap berjalan dengan pengaturan sebelumnya. Periksa aturan dan perubahan konfigurasi Anda</string>
+    <string name="vpn_no_profile">Belum ada langganan yang dipilih. Buka ducker dan pilih salah satu</string>
+    <string name="vpn_rejected">Android tidak mengizinkan VPN dimulai. Aktifkan dengan tombol di aplikasi; jika masih gagal, periksa di pengaturan apakah VPN lain ditetapkan sebagai “VPN selalu aktif”</string>
+    <string name="failure_try_again">Coba lagi</string>
+    <string name="vpn_failure_channel">Kesalahan VPN</string>
+    <string name="vpn_failure_title">VPN tidak dapat dimulai</string>
+</resources>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clash_service_status_channel">حالة VPN</string>
+    <string name="profile_service_status">تحديثات الاشتراكات</string>
+    <string name="profile_process_status">تقدم تحديث الاشتراك</string>
+    <string name="profile_process_result">نتائج تحديث الاشتراكات</string>
+    <string name="update_successfully">تم تحديث الاشتراك</string>
+    <string name="update_failure">لم يتم تحديث الاشتراك</string>
+    <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="subscription_http_status">خطأ في خادم الاشتراك: %1$d</string>
+    <string name="subscription_http_not_found">لا يوجد اشتراك على هذا الرابط (خطأ %1$d). تحقق من الرابط أو اسأل مزوّد الخدمة</string>
+    <string name="subscription_http_denied">تم رفض الوصول (خطأ %1$d). قد يكون الاشتراك معطّلًا؛ اسأل مزوّد الخدمة</string>
+    <string name="subscription_http_busy">طلبات كثيرة جدًا (خطأ %1$d). حاول مجددًا بعد بضع دقائق</string>
+    <string name="subscription_http_server">خادم الاشتراك متوقف (خطأ %1$d). حاول مجددًا لاحقًا</string>
+    <string name="disconnect">قطع الاتصال</string>
+    <string name="running">قيد التشغيل</string>
+    <string name="loading">جارٍ البدء…</string>
+    <string name="profile_updater">جارٍ تحديث الاشتراكات</string>
+    <string name="profile_updating">جارٍ تحديث الاشتراك</string>
+    <string name="expiry_channel">اقتراب انتهاء الاشتراك</string>
+    <plurals name="expiry_title">
+        <item quantity="zero">الأيام المتبقية للاشتراك: %d</item>
+        <item quantity="one">الأيام المتبقية للاشتراك: %d</item>
+        <item quantity="two">الأيام المتبقية للاشتراك: %d</item>
+        <item quantity="few">الأيام المتبقية للاشتراك: %d</item>
+        <item quantity="many">الأيام المتبقية للاشتراك: %d</item>
+        <item quantity="other">الأيام المتبقية للاشتراك: %d</item>
+    </plurals>
+    <string name="expiry_text">«%1$s» صالح حتى %2$s. جدّده ليواصل VPN العمل.</string>
+    <string name="expiry_renew">تجديد</string>
+    <string name="subscription_profile_too_large">الاشتراك كبير جدًا (أكثر من 16 MB). أبلغ مزوّد الخدمة</string>
+    <string name="subscription_provider_too_large">إحدى قوائم القواعد أو الخوادم في الاشتراك كبيرة جدًا (أكثر من 64 MB). أبلغ مزوّد الخدمة</string>
+    <string name="subscription_download_failed">تعذّر تنزيل الاشتراك. تحقق من الاتصال وحاول مجددًا</string>
+    <string name="subscription_redirects">رابط الاشتراك يعيد التوجيه باستمرار إلى عناوين أخرى. أبلغ مزوّد الخدمة</string>
+    <string name="subscription_bad_link">يجب أن يبدأ الرابط بـ https://</string>
+    <string name="subscription_not_links">هذا ليس رابط اشتراك ولا قائمة خوادم. الصق الرابط من مزوّد الخدمة</string>
+    <string name="subscription_no_servers">لا يحتوي الاشتراك على خوادم. أبلغ مزوّد الخدمة</string>
+    <string name="subscription_bad_config">أعاد الرابط محتوى غير الاشتراك، أو يوجد خطأ في ملف إعداداته. تحقق من الرابط أو أبلغ مزوّد الخدمة</string>
+    <string name="subscription_limit_devices">تم بلوغ الحد الأقصى للأجهزة</string>
+    <string name="subscription_limit_hwid">مزوّد الخدمة يطلب معرّف الجهاز</string>
+    <string name="subscription_limit_other">هذا الاشتراك غير متاح على هذا الجهاز</string>
+    <string name="vpn_config_failed">لم يتم تحميل ملف إعدادات الاشتراك. حدّث الاشتراك؛ وإذا استمرت المشكلة، فأبلغ مزوّد الخدمة</string>
+    <string name="config_reload_failed">يواصل VPN العمل بالإعدادات السابقة. تحقق من قواعدك وتعديلات ملف الإعدادات</string>
+    <string name="vpn_no_profile">لم يتم اختيار اشتراك. افتح ducker واختر اشتراكًا</string>
+    <string name="vpn_rejected">لم يسمح Android بتشغيل VPN. شغّله بزر التطبيق؛ وإذا لم ينجح ذلك، فتحقق في الإعدادات مما إذا كان اتصال VPN آخر مضبوطًا على خيار «شبكة VPN قيد التشغيل دائمًا»</string>
+    <string name="failure_try_again">حاول مجددًا</string>
+    <string name="vpn_failure_channel">أخطاء VPN</string>
+    <string name="vpn_failure_title">لم يبدأ VPN</string>
+</resources>

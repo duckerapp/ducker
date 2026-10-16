@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="receive_clash_broadcasts">استقبال أحداث ducker</string>
+    <string name="receive_broadcasts_of_clash">يُعلم التطبيق عند تشغيل VPN أو قطع اتصاله وعند تغيّر الاشتراكات</string>
+    <string name="unit_b">B</string>
+    <string name="unit_kb">KB</string>
+    <string name="unit_mb">MB</string>
+    <string name="unit_gb">GB</string>
+    <string name="unit_tb">TB</string>
+    <string name="size_format">%1$s %2$s</string>
+    <string name="speed_per_second">%s/ث</string>
+</resources>
