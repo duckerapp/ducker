@@ -409,6 +409,7 @@ private fun HomeRegular(
     // карточки видно только отсюда.
     var picking by remember { mutableStateOf(false) }
     var pickerMounted by remember { mutableStateOf(false) }
+    var pendingPick by remember { mutableStateOf<Pair<String, String>?>(null) }
     val tv = LocalTv.current
     // Display-size changes alter the logical window height; text keeps the system's own scale.
     val compact = !tv && LocalConfiguration.current.screenHeightDp < 840
@@ -582,10 +583,19 @@ private fun HomeRegular(
             onPick = { group, name ->
                 // A service-specific group must not replace the main connection's node label.
                 if (group == state.groups.firstOrNull()?.name) onPreviewNode(name)
-                onPickNode(group, name)
+                // A pick closes the sheet and is applied once it has gone: applying rebuilds the proxy
+                // tab and would cost the closing frames (D-91), as with the old panel (D-116).
+                pendingPick = group to name
+                picking = false
             },
             onDismiss = { picking = false },
-            onClosed = { pickerMounted = false },
+            onClosed = {
+                pickerMounted = false
+                pendingPick?.let { (group, name) ->
+                    pendingPick = null
+                    onPickNode(group, name)
+                }
+            },
         )
     }
 }
