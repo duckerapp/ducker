@@ -448,6 +448,7 @@ private fun ActiveCard(
             .focusProperties { if (tv) canFocus = false }
             .selectable(selected = true, role = Role.RadioButton, onClick = {}),
         colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
+        resizing = true,
     ) {
         // Another subscription chosen: the card stays in place, its content fades through to the
         // new one (Material's timings) and the height flows to it.

@@ -89,6 +89,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
@@ -130,7 +131,22 @@ internal val DuckerCardShadow = Shadow(
     offset = DpOffset(0.dp, 3.dp),
 )
 
-/** [surfaceModifier] keeps clipped press feedback inside the card's outer shadow. */
+/**
+ * The shadow of a surface whose size animates. [dropShadow] keeps one blurred mask per size in a
+ * window-wide cache that is emptied only when the app goes to the background, so each frame of a
+ * height animation would blur a new mask and keep it. The platform outline shadow has no mask; its
+ * values were matched to [DuckerCardShadow] on the config editor.
+ */
+internal fun Modifier.resizingShadow(shape: Shape): Modifier = shadow(
+    3.dp, shape, clip = false,
+    ambientColor = Color.Black.copy(alpha = 0.5f),
+    spotColor = Color.Black.copy(alpha = 0.5f),
+)
+
+/**
+ * [surfaceModifier] keeps clipped press feedback inside the card's outer shadow.
+ * [resizing] — the card's height animates, see [resizingShadow].
+ */
 @Composable
 fun DuckerCard(
     modifier: Modifier = Modifier,
@@ -140,10 +156,13 @@ fun DuckerCard(
     shape: Shape = MaterialTheme.shapes.large,
     border: BorderStroke? = null,
     surfaceModifier: Modifier = Modifier,
+    resizing: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
-        modifier = modifier.dropShadow(shape, DuckerCardShadow).then(surfaceModifier),
+        modifier = modifier
+            .then(if (resizing) Modifier.resizingShadow(shape) else Modifier.dropShadow(shape, DuckerCardShadow))
+            .then(surfaceModifier),
         shape = shape,
         colors = colors,
         border = border,

@@ -45,7 +45,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.alpha
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.CompositionLocalProvider
@@ -107,6 +106,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.DuckerCardShadow
+import com.github.kr328.clash.ui.components.resizingShadow
 import com.github.kr328.clash.ui.components.LeaveSheet
 import com.github.kr328.clash.ui.components.FitLabel
 import com.github.kr328.clash.ui.components.SheetButton
@@ -448,11 +448,7 @@ fun ConfigScreen(
                 modifier = Modifier.weight(1f).fillMaxWidth()
                     .padding(start = 16.dp, end = 16.dp, top = if (compact) 8.dp else 12.dp, bottom = if (compact) 8.dp else if (bare) 16.dp else 0.dp)
                     // The editor resizes with the IME; keep its shadow on the platform outline.
-                    .shadow(
-                        3.dp, MaterialTheme.shapes.large, clip = false,
-                        ambientColor = Color.Black.copy(alpha = 0.5f),
-                        spotColor = Color.Black.copy(alpha = 0.5f),
-                    )
+                    .resizingShadow(MaterialTheme.shapes.large)
                     .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surface)
                     .then(

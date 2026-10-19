@@ -767,7 +767,7 @@ private fun BackgroundCard(allowed: Boolean, onAllow: () -> Unit, onVendor: (Sho
         ) { stepsOpen = !stepsOpen }
     } else Modifier
 
-    Card(modifier = Modifier.fillMaxWidth(), surfaceModifier = fold) {
+    Card(modifier = Modifier.fillMaxWidth(), surfaceModifier = fold, resizing = true) {
         // Отступы — у самих строк, а не общим spacedBy: общий оставался бы, пока шаги
         // сворачиваются, и в последнем кадре карточка прыгала на 12 dp (D-140).
         Column(modifier = Modifier.padding(16.dp)) {
@@ -830,7 +830,7 @@ private fun ExpandableCard(
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), resizing = true) {
         Column {
             Row(
                 modifier = Modifier.fillMaxWidth()

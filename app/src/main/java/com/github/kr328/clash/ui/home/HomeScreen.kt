@@ -849,6 +849,8 @@ private fun HeroCard(
         modifier = modifier.fillMaxWidth().then(if (tv) Modifier.ringHold(progress.isRunning) else Modifier),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = null,
+        // The remote's node panel unfolds inside this card.
+        resizing = tv,
     ) {
         Box(Modifier.fillMaxWidth().padding(HERO_RING).clip(HeroInner).onGloballyPositioned { card = it }) {
             HeroFace(
