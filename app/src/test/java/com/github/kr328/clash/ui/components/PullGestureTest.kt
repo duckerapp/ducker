@@ -33,34 +33,42 @@ class PullGestureTest {
         onRefresh = { refreshes++ }
     }
 
-    private fun finger(consumed: Float, available: Float) =
+    private fun step(consumed: Float, available: Float) =
         pull.onPostScroll(Offset(0f, consumed), Offset(0f, available), NestedScrollSource.UserInput).y
 
     @Test
-    fun `a drag from the top pulls, a short one hides on release`() {
-        pull.start()
-        assertEquals(40f, finger(0f, 40f))
+    fun `a drag from the top pulls, a short one hides at its fling`() = runBlocking {
+        pull.down()
+        assertEquals(40f, step(0f, 40f))
         assertEquals(0.2f, circle.distanceFraction)
 
-        pull.release()
+        pull.up()
+        // The drag's last step comes after the finger's up and still belongs to the pull.
+        step(0f, 10f)
+        assertEquals(0.25f, circle.distanceFraction)
+
+        pull.onPreFling(Velocity.Zero)
         assertEquals(listOf("hidden"), circle.calls)
         assertEquals(0, refreshes)
+        delay(200)
+        assertEquals(listOf("hidden"), circle.calls)
     }
 
     @Test
     fun `a drag that scrolled up to the top leaves the rest to the list`() {
-        pull.start()
-        assertEquals(0f, finger(30f, 0f))
-        assertEquals(0f, finger(10f, 40f))
+        pull.down()
+        assertEquals(0f, step(30f, 0f))
+        assertEquals(0f, step(10f, 40f))
         assertEquals(0f, circle.distanceFraction)
         assertFalse(pull.pulling)
     }
 
     @Test
-    fun `a full pull refreshes and a refresh that never starts hides the circle`() = runBlocking {
-        pull.start()
-        finger(0f, 250f)
-        pull.release()
+    fun `a full pull refreshes, and a refresh that never starts hides the circle`() = runBlocking {
+        pull.down()
+        step(0f, 250f)
+        pull.up()
+        assertEquals(Velocity(0f, 300f), pull.onPreFling(Velocity(0f, 300f)))
         assertEquals(1, refreshes)
         assertEquals(listOf("threshold"), circle.calls)
 
@@ -69,17 +77,43 @@ class PullGestureTest {
     }
 
     @Test
-    fun `the finger going back up gives the pull back first, and a fling down after it is eaten`() = runBlocking {
-        pull.start()
-        finger(0f, 60f)
-        val back = pull.onPreScroll(Offset(0f, -100f), NestedScrollSource.UserInput).y
-        assertEquals(-60f, back)
-        assertFalse(pull.pulling)
+    fun `without a fling the finger's up releases a moment later`() = runBlocking {
+        pull.down()
+        step(0f, 60f)
+        pull.up()
+        assertEquals(emptyList(), circle.calls)
 
-        pull.start()
-        finger(0f, 20f)
-        pull.release()
-        assertEquals(Velocity(0f, 300f), pull.onPreFling(Velocity(0f, 300f)))
-        assertTrue(pull.onPreFling(Velocity(0f, 300f)) == Velocity.Zero)
+        delay(200)
+        assertEquals(listOf("hidden"), circle.calls)
+        assertEquals(Velocity.Zero, pull.onPreFling(Velocity(0f, 300f)))
+    }
+
+    @Test
+    fun `a drag catches the circle on its way back and the finger going up gives the pull back`() {
+        circle.distanceFraction = 0.5f
+        pull.down()
+        step(0f, 10f)
+        assertEquals(0.55f, circle.distanceFraction, 1e-6f)
+
+        assertEquals(-110f, pull.onPreScroll(Offset(0f, -200f), NestedScrollSource.UserInput).y)
+        assertFalse(pull.pulling)
+    }
+
+    @Test
+    fun `a check started elsewhere stays off the circle, and a pull during it adopts it`() = runBlocking {
+        pull.refreshing = true
+        assertFalse(pull.own)
+
+        pull.down()
+        step(0f, 250f)
+        pull.up()
+        pull.onPreFling(Velocity.Zero)
+        assertEquals(0, refreshes)
+        assertTrue(pull.own)
+
+        pull.refreshing = false
+        pull.finished()
+        assertFalse(pull.own)
+        assertEquals(listOf("threshold", "hidden"), circle.calls)
     }
 }

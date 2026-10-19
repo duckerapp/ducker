@@ -581,21 +581,21 @@ fun PullToRefresh(
         pull.threshold = threshold
     }
     LaunchedEffect(refreshing) {
-        if (refreshing) state.animateToThreshold() else if (!pull.pulling) state.animateToHidden()
+        if (!refreshing) pull.finished()
     }
 
     Box(
         modifier
-            // The finger's own up, not the list's fling: a drag can end without one (the content
-            // past its edge, the pager taking the gesture), and the circle stayed where it was let go.
+            // The finger only tells when a drag begins and when it is over; the release itself is the
+            // list's fling (onPreFling), which comes after the drag's last step.
             .pointerInput(pull) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                    pull.start()
+                    pull.down()
                     do {
                         val event = awaitPointerEvent(PointerEventPass.Initial)
                     } while (event.changes.any { it.pressed })
-                    pull.release()
+                    pull.up()
                 }
             }
             .nestedScroll(pull),
@@ -605,7 +605,9 @@ fun PullToRefresh(
         if (!keys) {
             PullToRefreshDefaults.Indicator(
                 state = state,
-                isRefreshing = refreshing,
+                // Only a refresh the pull asked for: a check from the group's button or one that starts by
+                // itself has its own progress, and a minute-long check kept the circle up as if stuck.
+                isRefreshing = pull.own && refreshing,
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = top),
             )
         }
@@ -613,11 +615,18 @@ fun PullToRefresh(
 }
 
 /**
- * The pull of [PullToRefresh], in place of Material's `pullToRefresh`: only a drag that began with
- * the list at its top pulls the circle — a drag that scrolls up to the top leaves the rest to the
- * list's edge spring; a release is taken from the finger ([release]); and a refresh that does not
- * start (nothing to update) does not leave the circle at its threshold. Distances as in Material:
- * the circle follows half the finger, [threshold] is a full pull.
+ * The pull of [PullToRefresh], in place of Material's `pullToRefresh`. Distances as there: the circle
+ * follows half the finger, [threshold] is a full pull.
+ *
+ * - Only a drag that began with the list at its top pulls; a drag that scrolls up to the top leaves the
+ *   rest to the list's edge spring.
+ * - A drag that catches the circle on its way back carries it on from where it is.
+ * - The release is the drag's fling, which arrives after its last step: a release taken at the finger's
+ *   up came before that step, and the step pulled the circle out again, to stay. Should no fling come,
+ *   the finger's up releases a moment later.
+ * - The circle shows only a refresh the pull asked for ([own]). Pulled while one is already running,
+ *   it adopts that one instead of starting another; a refresh that does not start (nothing to update)
+ *   does not leave it at its threshold.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 internal class PullGesture(
@@ -627,6 +636,10 @@ internal class PullGesture(
     var enabled = true
     var refreshing by mutableStateOf(false)
     var onRefresh: () -> Unit = {}
+
+    /** The circle stands for the running refresh: the pull asked for it, or adopted it. */
+    var own by mutableStateOf(false)
+        private set
     var threshold = 1f
 
     /** Finger travel the circle has taken in this drag, px. */
@@ -635,31 +648,22 @@ internal class PullGesture(
     /** Whether this drag pulls: decided by its first move — the list could not scroll up, the finger went down. */
     private var armed: Boolean? = null
 
-    /** The drag pulled: a fling downward after it belongs to the pull, not to the list's edge. */
-    private var ateFling = false
+    private var fingerDown = false
 
     val pulling get() = pulled > 0f
 
-    fun start() {
+    fun down() {
         armed = null
-        ateFling = false
+        fingerDown = true
     }
 
-    fun release() {
-        armed = null
+    fun up() {
+        fingerDown = false
         if (pulled <= 0f) return
 
-        val full = pulled * DRAG >= threshold
-        pulled = 0f
-        ateFling = true
-
         scope.launch {
-            if (!full) return@launch state.animateToHidden()
-
-            onRefresh()
-            state.animateToThreshold()
-            val started = withTimeoutOrNull(REFRESH_START_MS) { snapshotFlow { refreshing }.first { it } }
-            if (started == null) state.animateToHidden()
+            delay(UP_GRACE_MS)
+            if (!fingerDown) release()
         }
     }
 
@@ -675,8 +679,11 @@ internal class PullGesture(
     }
 
     override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-        if (source != NestedScrollSource.UserInput || !enabled || refreshing) return Offset.Zero
-        if (armed == null && (consumed.y != 0f || available.y != 0f)) armed = consumed.y == 0f && available.y > 0f
+        if (source != NestedScrollSource.UserInput || !enabled || own) return Offset.Zero
+        if (armed == null && (consumed.y != 0f || available.y != 0f)) {
+            armed = consumed.y == 0f && available.y > 0f
+            if (armed == true) pulled = state.distanceFraction * threshold / DRAG
+        }
         if (armed != true || available.y <= 0f) return Offset.Zero
 
         pulled += available.y
@@ -686,10 +693,35 @@ internal class PullGesture(
     }
 
     override suspend fun onPreFling(available: Velocity): Velocity {
-        val eaten = ateFling && available.y > 0f
-        ateFling = false
+        val pulledHere = pulling
+        release()
 
-        return if (eaten) Velocity(0f, available.y) else Velocity.Zero
+        // A fling down after a pull belongs to the pull, not to the list's edge.
+        return if (pulledHere && available.y > 0f) Velocity(0f, available.y) else Velocity.Zero
+    }
+
+    private fun release() {
+        if (pulled <= 0f) return
+
+        val full = pulled * DRAG >= threshold
+        pulled = 0f
+
+        scope.launch {
+            if (!full) return@launch state.animateToHidden()
+
+            own = true
+            if (!refreshing) onRefresh()
+            state.animateToThreshold()
+            val started = withTimeoutOrNull(REFRESH_START_MS) { snapshotFlow { refreshing }.first { it } }
+            if (started == null) finished()
+        }
+    }
+
+    /** The refresh is over (or never began): the circle goes, unless a finger is pulling it again. */
+    fun finished() {
+        if (!own) return
+        own = false
+        if (!pulling) scope.launch { state.animateToHidden() }
     }
 
     private fun follow() {
@@ -699,6 +731,7 @@ internal class PullGesture(
 
     private companion object {
         const val DRAG = 0.5f
+        const val UP_GRACE_MS = 100L
         const val REFRESH_START_MS = 500L
     }
 }
