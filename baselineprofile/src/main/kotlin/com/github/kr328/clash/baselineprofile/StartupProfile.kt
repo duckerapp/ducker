@@ -138,14 +138,25 @@ class StartupProfile {
         device.pressBack()
         need(By.text("Edit"))
 
-        // Настройки открываются шестерёнкой в шапке главной; из них — «Приложения».
         reach(By.desc("Settings")) { tab(0) }
-        reach(By.text("Apps")) { tap(By.desc("Settings")) }
+
+        // Quick node selection: the sheet opens from the node row on Home, which shows the node
+        // chosen above. Only up the list: a pull down at its top would drag the sheet closed.
+        reach(By.text("All nodes")) { tap(By.text(node)) }
+        device.swipe(width / 2, middle + middle / 2, width / 2, middle, 8)
+        tap(By.text("Close"))
+        need(By.desc("Settings"))
+
+        // Настройки открываются шестерёнкой в шапке главной; «Приложения» — на странице «Connection».
+        reach(By.text("Connection")) { tap(By.desc("Settings")) }
+        reach(By.text("Apps")) { tap(By.text("Connection")) }
         scroll()
         reach(By.text(Pattern.compile("Bypass VPN|Via VPN"))) { tap(By.text("Apps")) }
         scroll()
         device.pressBack()
         need(By.text("Apps"))
+        device.pressBack()
+        need(By.text("Connection"))
         device.pressBack()
 
         reach(By.desc("Connect")) { device.findObject(By.desc("Disconnect"))?.click() }
