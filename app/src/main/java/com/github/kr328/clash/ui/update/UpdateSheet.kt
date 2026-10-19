@@ -1,19 +1,24 @@
 package com.github.kr328.clash.ui.update
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.SheetButton
+import com.github.kr328.clash.ui.components.airShadow
 import com.github.kr328.clash.ui.components.formatBytes
 import com.github.kr328.clash.update.Release
 import com.github.kr328.clash.update.UpdateError
@@ -169,12 +174,19 @@ private fun Notes(notes: Map<String, String>) {
     val text = notes[language] ?: notes["en"].orEmpty()
 
     if (text.isNotBlank()) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        val shape = RoundedCornerShape(20.dp)
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(text = stringResource(R.string.app_update_whats_new), style = MaterialTheme.typography.titleSmall)
+            // On a white backing, like the fields of the other sheets.
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+                    .airShadow(shape)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(16.dp),
             )
         }
     }
