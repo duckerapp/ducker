@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.home
 
+import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.focusRoom
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.ui.input.key.type
@@ -29,8 +30,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.animation.AnimatedContent
@@ -75,19 +74,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DataUsage
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.WarningAmber
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
@@ -134,8 +120,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -155,8 +139,6 @@ import com.github.kr328.clash.ui.components.rememberUpdateShown
 import com.github.kr328.clash.ui.components.HeaderButton
 import com.github.kr328.clash.ui.components.overscrollFor
 import kotlin.math.hypot
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -480,11 +462,11 @@ private fun HomeRegular(
             if (profile.templateFromConfig) {
                 InfoCard(
                     stringResource(R.string.template_config),
-                    Icons.Default.WarningAmber,
+                    Symbols.WarningAmber,
                     action = stringResource(R.string.template_config_copy) to { onCopyError(profile.lastError) },
                 )
             } else {
-                InfoCard(stringResource(R.string.template_used), Icons.Default.Info)
+                InfoCard(stringResource(R.string.template_used), Symbols.Info)
             }
         }
 
@@ -493,7 +475,7 @@ private fun HomeRegular(
         if (state.running && state.lockdownOffline) {
             InfoCard(
                 stringResource(R.string.lockdown_offline),
-                Icons.Default.WarningAmber,
+                Symbols.WarningAmber,
                 action = stringResource(R.string.vpn_settings) to onVpnSettings,
             )
         }
@@ -505,14 +487,14 @@ private fun HomeRegular(
             when (backgroundNotice) {
                 is BackgroundNotice.Restricted -> InfoCard(
                     stringResource(R.string.background_restricted_card),
-                    Icons.Default.ErrorOutline,
+                    Symbols.ErrorOutline,
                     action = stringResource(R.string.background_allow) to backgroundNotice.onAllow,
                     secondary = stringResource(R.string.not_now) to backgroundNotice.onLater,
                 )
 
                 is BackgroundNotice.Shell -> InfoCard(
                     stringResource(R.string.background_hint, stringResource(backgroundNotice.vendor.names)),
-                    Icons.Default.ErrorOutline,
+                    Symbols.ErrorOutline,
                     action = stringResource(R.string.background_hint_action) to backgroundNotice.onSetUp,
                 )
 
@@ -524,7 +506,7 @@ private fun HomeRegular(
             // Сюда попадают, только когда подписки есть, а активной нет — её удалили: без подписок
             // вовсе вместо главной приветствие (D-98). Прежний текст говорил «подписок пока нет».
             EmptyState(
-                icon = Icons.Default.Shield,
+                icon = Symbols.Shield,
                 title = stringResource(R.string.home_no_active_title),
                 message = stringResource(R.string.home_no_active_text),
                 action = stringResource(R.string.home_choose_subscription) to onChooseSubscription,
@@ -656,7 +638,7 @@ private fun BrandHeader(profile: Profile?, onSettings: () -> Unit) {
 
         // Настройки с главной: раньше до них надо было идти через вкладку подписок.
         HeaderButton(
-            icon = Icons.Default.Settings,
+            icon = Symbols.Settings,
             description = stringResource(R.string.settings),
             onClick = onSettings,
         )
@@ -720,7 +702,7 @@ internal fun ThemeButton(
     var center by remember { mutableStateOf(Offset.Zero) }
 
     button(
-        if (dark) Icons.Default.LightMode else Icons.Default.DarkMode,
+        if (dark) Symbols.LightMode else Symbols.DarkMode,
         stringResource(R.string.theme),
         { switch?.toggle(center) },
         Modifier.onGloballyPositioned { center = it.boundsInRoot().center },
@@ -1198,7 +1180,7 @@ private fun PowerButton(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Default.PowerSettingsNew,
+                imageVector = Symbols.PowerSettingsNew,
                 // Без названия TalkBack читал кнопку питания просто «кнопкой».
                 contentDescription = stringResource(if (running) R.string.ducker_disconnect else R.string.ducker_connect),
                 modifier = Modifier.size(if (compact) 44.dp else 48.dp),
@@ -1316,7 +1298,7 @@ private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
         }
 
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            imageVector = Symbols.KeyboardArrowRight,
             contentDescription = null,
             tint = LocalContentColor.current.copy(alpha = 0.7f),
         )
@@ -1360,7 +1342,7 @@ private fun AppUpdateCards(
 
         InfoCard(
             stringResource(R.string.app_update_done_title, updated),
-            Icons.Default.CheckCircle,
+            Symbols.CheckCircle,
             action = whatsNew ?: seen,
             secondary = seen.takeIf { whatsNew != null },
         )
@@ -1373,7 +1355,7 @@ private fun AppUpdateCards(
                 progress != null -> stringResource(R.string.app_update_card_downloading, update, progress)
                 else -> stringResource(R.string.app_update_card, update)
             },
-            Icons.Default.SystemUpdate,
+            Symbols.SystemUpdate,
             // Nothing to press while it downloads: the installation follows by itself.
             action = (stringResource(R.string.update) to onUpdate).takeIf { !installing && progress == null },
         )
@@ -1411,7 +1393,7 @@ private fun AnnouncementCard(text: String) {
                 horizontalArrangement = Arrangement.spacedBy(gap),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Default.Campaign, contentDescription = null, modifier = Modifier.size(iconSize))
+                Icon(Symbols.Campaign, contentDescription = null, modifier = Modifier.size(iconSize))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(text, style = style, maxLines = 3, overflow = TextOverflow.Ellipsis)
                     if (overflows) {
@@ -1443,7 +1425,7 @@ private fun AnnouncementCard(text: String) {
 @Composable
 private fun InfoCard(
     text: String,
-    icon: ImageVector = Icons.Default.Campaign,
+    icon: ImageVector = Symbols.Campaign,
     action: Pair<String, () -> Unit>? = null,
     secondary: Pair<String, () -> Unit>? = null,
 ) {
@@ -1576,7 +1558,7 @@ private fun StopCard(
                 )
 
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.dismiss))
+                    Icon(Symbols.Close, contentDescription = stringResource(R.string.dismiss))
                 }
             }
 
@@ -1625,7 +1607,7 @@ private fun LinkFailedCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(Icons.Default.WarningAmber, contentDescription = null,
+                Icon(Symbols.WarningAmber, contentDescription = null,
                     modifier = Modifier.size(20.dp))
                 Text(stringResource(R.string.link_failed),
                     style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
@@ -1739,9 +1721,9 @@ private fun SubscriptionCard(
     val support = providerLink(profile.supportUrl)
     val website = providerLink(profile.profileWebPageUrl)
     val link = when {
-        left != null && renew != null -> Triple(R.string.renew, Icons.Default.CreditCard, renew)
-        support != null -> Triple(R.string.support, Icons.Default.SupportAgent, support)
-        website != null -> Triple(R.string.provider_site, Icons.Default.Language, website)
+        left != null && renew != null -> Triple(R.string.renew, Symbols.CreditCard, renew)
+        support != null -> Triple(R.string.support, Symbols.SupportAgent, support)
+        website != null -> Triple(R.string.provider_site, Symbols.Language, website)
         else -> null
     }
 

@@ -1,12 +1,12 @@
 package com.github.kr328.clash.ui.settings
 
+import com.github.kr328.clash.ui.components.Symbols
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.github.kr328.clash.ui.components.BackLayer
@@ -35,26 +35,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Insights
-import androidx.compose.material.icons.filled.ToggleOn
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.VpnLock
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.Forum
-import androidx.compose.material.icons.filled.Email
 import com.github.kr328.clash.update.UpdateState
-import androidx.compose.material.icons.filled.Contrast
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -87,8 +68,6 @@ import kotlin.math.roundToInt
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -101,7 +80,6 @@ import com.github.kr328.clash.util.shortcuts
 import com.github.kr328.clash.util.Vendor
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
-import androidx.compose.material.icons.filled.CheckCircle
 import com.github.kr328.clash.ui.components.ScreenFrame
 import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.screenInsets
@@ -244,13 +222,13 @@ fun SettingsScreen(
                             SettingsNavigationGroup(stringResource(R.string.settings_category_interface)) {
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.language), value = language,
-                                    icon = SettingsIcons.Language,
+                                    icon = Symbols.Translate,
                                     onClick = { languageMounted = true; languageOpen = true },
                                 )
                                 SettingsNavigationDivider()
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.settings_appearance), value = theme,
-                                    icon = SettingsIcons.Appearance,
+                                    icon = Symbols.DarkMode,
                                     onClick = { navigate(SettingsPage.Appearance) },
                                 )
                             }
@@ -260,14 +238,14 @@ fun SettingsScreen(
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.section_connection),
                                     subtitle = stringResource(R.string.settings_connection_summary),
-                                    icon = SettingsIcons.Connection,
+                                    icon = Symbols.Link,
                                     onClick = { navigate(SettingsPage.Connection) },
                                 )
                                 SettingsNavigationDivider()
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.section_privacy),
                                     subtitle = stringResource(R.string.settings_privacy_summary),
-                                    icon = SettingsIcons.Privacy,
+                                    icon = Symbols.ShieldLock,
                                     onClick = { navigate(SettingsPage.Privacy) },
                                 )
                             }
@@ -277,7 +255,7 @@ fun SettingsScreen(
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.settings_help),
                                     subtitle = stringResource(R.string.settings_help_summary),
-                                    icon = SettingsIcons.Help,
+                                    icon = Symbols.SupportAgent,
                                     onClick = { navigate(SettingsPage.Help) },
                                 )
                                 SettingsNavigationDivider()
@@ -290,7 +268,7 @@ fun SettingsScreen(
                                         update.checked == true -> stringResource(R.string.app_update_latest)
                                         else -> stringResource(R.string.app_update_check_hint)
                                     },
-                                    icon = SettingsIcons.Update,
+                                    icon = Symbols.Update,
                                     busy = update.checking, onClick = onUpdate, action = true,
                                 )
                                 SettingsSubSwitch(
@@ -303,14 +281,14 @@ fun SettingsScreen(
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.settings_project),
                                     subtitle = stringResource(R.string.settings_project_summary),
-                                    icon = SettingsIcons.Project,
+                                    icon = Symbols.Favorite,
                                     onClick = { navigate(SettingsPage.Project) },
                                 )
                                 SettingsNavigationDivider()
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.settings_about),
                                     subtitle = stringResource(R.string.version_app, state.appVersion),
-                                    icon = SettingsIcons.About,
+                                    icon = Symbols.Info,
                                     onClick = { navigate(SettingsPage.About) },
                                 )
                             }
@@ -320,7 +298,7 @@ fun SettingsScreen(
                         item {
                             ChipsCard(
                                 title = stringResource(R.string.theme),
-                                icon = SettingsIcons.Appearance,
+                                icon = Symbols.DarkMode,
                                 options = listOf(
                                     SettingsStore.THEME_SYSTEM to stringResource(R.string.theme_system),
                                     SettingsStore.THEME_LIGHT to stringResource(R.string.theme_light),
@@ -337,7 +315,7 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.oled_hint),
                                 checked = state.oled,
                                 onChange = onOled,
-                                icon = Icons.Default.Contrast,
+                                icon = Symbols.Contrast,
                             )
                         }
 
@@ -347,7 +325,7 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.dynamic_color_hint),
                                 checked = state.dynamicColor,
                                 onChange = onDynamicColor,
-                                icon = Icons.Default.Palette,
+                                icon = Symbols.Palette,
                             )
                         }
                     }
@@ -361,7 +339,7 @@ fun SettingsScreen(
                                 title = stringResource(R.string.access_control),
                                 subtitle = stringResource(R.string.access_control_hint),
                                 onClick = onAccessControl,
-                                icon = Icons.Default.Apps,
+                                icon = Symbols.Apps,
                             )
                         }
 
@@ -373,7 +351,7 @@ fun SettingsScreen(
                                     title = stringResource(R.string.add_tile),
                                     subtitle = stringResource(R.string.add_tile_hint),
                                     onClick = onAddTile,
-                                    icon = Icons.Default.ToggleOn,
+                                    icon = Symbols.ToggleOn,
                                 )
                             }
                         }
@@ -384,7 +362,7 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.auto_restart_hint),
                                 checked = state.autoRestart,
                                 onChange = onAutoRestart,
-                                icon = Icons.Default.RestartAlt,
+                                icon = Symbols.RestartAlt,
                             )
                         }
 
@@ -395,7 +373,7 @@ fun SettingsScreen(
                                 title = stringResource(R.string.always_on),
                                 subtitle = stringResource(if (state.alwaysOn) R.string.always_on_enabled else R.string.always_on_hint),
                                 onClick = onAlwaysOn,
-                                icon = Icons.Default.VpnLock,
+                                icon = Symbols.VpnLock,
                             )
                         }
 
@@ -405,7 +383,7 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.traffic_notification_hint),
                                 checked = state.trafficNotification,
                                 onChange = onTrafficNotification,
-                                icon = Icons.Default.Notifications,
+                                icon = Symbols.Notifications,
                             )
                         }
                         item { SectionTitle(stringResource(R.string.section_advanced)) }
@@ -414,7 +392,7 @@ fun SettingsScreen(
                             ExpandableCard(
                                 title = stringResource(R.string.advanced),
                                 subtitle = stringResource(R.string.advanced_hint),
-                                icon = Icons.Default.Tune,
+                                icon = Symbols.Tune,
                             ) {
                                 InnerSwitch(
                                     title = stringResource(R.string.ipv6),
@@ -504,7 +482,7 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.hide_recents_hint),
                                 checked = state.hideRecents,
                                 onChange = onHideRecents,
-                                icon = Icons.Default.VisibilityOff,
+                                icon = Symbols.VisibilityOff,
                             )
                         }
 
@@ -514,7 +492,7 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.disguise_hint),
                                 checked = state.disguise,
                                 onChange = onDisguise,
-                                icon = Icons.Default.Calculate,
+                                icon = Symbols.Calculate,
                             )
                         }
 
@@ -524,7 +502,7 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.external_control_hint),
                                 checked = state.allowExternalControl,
                                 onChange = onExternalControl,
-                                icon = Icons.Default.ToggleOn,
+                                icon = Symbols.SmartToy,
                             )
                         }
 
@@ -539,7 +517,7 @@ fun SettingsScreen(
                                 title = stringResource(R.string.logs),
                                 subtitle = stringResource(R.string.logs_hint),
                                 onClick = onLogs,
-                                icon = Icons.Default.BugReport,
+                                icon = Symbols.BugReport,
                             )
                         }
 
@@ -548,7 +526,7 @@ fun SettingsScreen(
                                 title = stringResource(R.string.probe),
                                 subtitle = stringResource(R.string.probe_hint),
                                 onClick = onProbe,
-                                icon = Icons.Default.Speed,
+                                icon = Symbols.Speed,
                             )
                         }
 
@@ -557,7 +535,7 @@ fun SettingsScreen(
                                 title = stringResource(R.string.dashboard),
                                 subtitle = stringResource(R.string.dashboard_hint),
                                 onClick = onDashboard,
-                                icon = Icons.Default.Insights,
+                                icon = Symbols.Monitoring,
                             )
                         }
                         item {
@@ -565,7 +543,7 @@ fun SettingsScreen(
                                 title = stringResource(R.string.community),
                                 subtitle = stringResource(R.string.community_hint),
                                 onClick = { onLink(COMMUNITY) },
-                                icon = Icons.Default.Forum,
+                                icon = Symbols.Forum,
                             )
                         }
 
@@ -574,7 +552,7 @@ fun SettingsScreen(
                                 title = stringResource(R.string.mail),
                                 subtitle = MAIL,
                                 onClick = onMail,
-                                icon = Icons.Default.Email,
+                                icon = Symbols.Email,
                             )
                         }
                     }
@@ -669,7 +647,7 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SettingsIcon(Icons.Default.Fingerprint)
+                SettingsIcon(Symbols.Fingerprint)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.hwid_title),
@@ -769,7 +747,7 @@ private fun BackgroundCard(allowed: Boolean, onAllow: () -> Unit, onVendor: (Sho
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SettingsIcon(Icons.Default.BatteryChargingFull)
+                SettingsIcon(Symbols.BatteryChargingFull)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.background_title), style = MaterialTheme.typography.titleSmall)
                     Text(
@@ -780,7 +758,7 @@ private fun BackgroundCard(allowed: Boolean, onAllow: () -> Unit, onVendor: (Sho
                 }
 
                 if (allowed) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null)
+                    Icon(Symbols.CheckCircle, contentDescription = null)
                 }
             }
 
@@ -845,8 +823,8 @@ private fun ExpandableCard(
                 }
 
                 Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess
-                    else Icons.Default.ExpandMore,
+                    imageVector = if (expanded) Symbols.KeyboardArrowUp
+                    else Symbols.KeyboardArrowDown,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1000,7 +978,7 @@ private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit, icon: 
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+            Icon(Symbols.KeyboardArrowRight, contentDescription = null)
         }
     }
 }
@@ -1131,7 +1109,7 @@ private fun SettingsNavigationRow(
             busy -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
             // The progress takes this place, so the text does not move when it appears.
             action -> Spacer(Modifier.size(20.dp))
-            else -> Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp))
+            else -> Icon(Symbols.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -1215,7 +1193,7 @@ private fun LanguageChoice(label: String, selected: Boolean, onSelect: () -> Uni
             Text(label, style = MaterialTheme.typography.bodyLarge)
             if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (selected) Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(24.dp))
+        if (selected) Icon(Symbols.Check, contentDescription = null, modifier = Modifier.size(24.dp))
         else Spacer(Modifier.size(24.dp))
     }
 }

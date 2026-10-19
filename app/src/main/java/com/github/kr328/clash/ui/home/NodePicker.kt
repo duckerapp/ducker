@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.home
 
+import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.ringCorner
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.ui.focus.focusRequester
@@ -19,8 +20,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -183,7 +182,7 @@ internal fun NodePickerPanel(
                 )
 
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    imageVector = Symbols.KeyboardArrowRight,
                     contentDescription = null,
                     tint = content.copy(alpha = 0.7f),
                 )

@@ -1,12 +1,9 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material.icons.filled.Code
 import androidx.compose.material3.Icon
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.animation.Crossfade
@@ -172,8 +169,8 @@ fun EditSubscriptionDialog(
         }
 
         // Свои правила поверх правил провайдера (D-123) и сам конфиг (D-124) — своими экранами.
-        SheetLink(Icons.Default.Tune, stringResource(R.string.rules_title) + if (rules > 0) " · $rules" else "", !busy, onRules)
-        SheetLink(Icons.Default.Code, stringResource(R.string.config_open), !busy, onConfig)
+        SheetLink(Symbols.Tune, stringResource(R.string.rules_title) + if (rules > 0) " · $rules" else "", !busy, onRules)
+        SheetLink(Symbols.Code, stringResource(R.string.config_open), !busy, onConfig)
 
         SheetButton(
             text = stringResource(R.string.save),
@@ -201,7 +198,7 @@ private fun SheetLink(icon: ImageVector, text: String, enabled: Boolean, onClick
     ) {
         Icon(icon, contentDescription = null)
         Text(text = text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        Icon(Symbols.KeyboardArrowRight, contentDescription = null)
     }
 }
 

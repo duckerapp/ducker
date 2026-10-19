@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.apps
 
+import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,10 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -115,7 +112,7 @@ fun AppsScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Lock,
+                            imageVector = Symbols.Lock,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                         )
@@ -262,7 +259,7 @@ private fun AppItem(app: AppRow, checked: Boolean, onToggle: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Lock,
+                        imageVector = Symbols.Lock,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp),
@@ -279,7 +276,7 @@ private fun AppItem(app: AppRow, checked: Boolean, onToggle: () -> Unit) {
             } else {
                 // Круглая отметка вместо квадратного флажка (этап 13); нажатие ловит вся строка.
                 Icon(
-                    imageVector = if (checked) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                    imageVector = if (checked) Symbols.CheckCircle else Symbols.RadioButtonUnchecked,
                     contentDescription = null,
                     tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                     modifier = Modifier.padding(4.dp),

@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.config
 
+import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvKeys
 import androidx.compose.foundation.border
 import androidx.compose.animation.AnimatedVisibility
@@ -8,10 +9,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.outlined.FileDownload
-import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -25,9 +22,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import android.graphics.Typeface
 import androidx.compose.runtime.withFrameNanos
 import android.os.SystemClock
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.TaskAlt
-import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.github.kr328.clash.ui.components.HeaderButton
 import com.github.kr328.clash.ui.settings.SettingsStore
@@ -50,11 +44,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.filled.TextIncrease
-import androidx.compose.material.icons.filled.TextDecrease
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.RowScope
@@ -75,13 +64,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Redo
-import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -336,13 +318,13 @@ fun ConfigScreen(
                                 }
 
                                 ToolGroup {
-                                    ToolButton(Icons.Default.KeyboardArrowUp, stringResource(R.string.config_search_previous), matches > 0) {
+                                    ToolButton(Symbols.KeyboardArrowUp, stringResource(R.string.config_search_previous), matches > 0) {
                                         editor?.searcher?.takeIf { it.hasQuery() }?.gotoPrevious()
                                     }
-                                    ToolButton(Icons.Default.KeyboardArrowDown, stringResource(R.string.config_search_next), matches > 0) {
+                                    ToolButton(Symbols.KeyboardArrowDown, stringResource(R.string.config_search_next), matches > 0) {
                                         editor?.searcher?.takeIf { it.hasQuery() }?.gotoNext()
                                     }
-                                    ToolButton(Icons.Default.Close, stringResource(R.string.config_search_close), true) { closeSearch() }
+                                    ToolButton(Symbols.Close, stringResource(R.string.config_search_close), true) { closeSearch() }
                                 }
                             }
 
@@ -379,12 +361,12 @@ fun ConfigScreen(
                 } else {
                     val edits: @Composable () -> Unit = {
                         ToolGroup {
-                            ToolButton(Icons.AutoMirrored.Filled.Undo, stringResource(R.string.config_undo), canUndo) { editor?.undo() }
-                            ToolButton(Icons.AutoMirrored.Filled.Redo, stringResource(R.string.config_redo), canRedo) { editor?.redo() }
+                            ToolButton(Symbols.Undo, stringResource(R.string.config_undo), canUndo) { editor?.undo() }
+                            ToolButton(Symbols.Redo, stringResource(R.string.config_redo), canRedo) { editor?.redo() }
                         }
                         ToolGroup {
-                            ToolButton(Icons.Default.TextDecrease, stringResource(R.string.config_text_smaller), textSize > MIN_TEXT) { resize(-1f) }
-                            ToolButton(Icons.Default.TextIncrease, stringResource(R.string.config_text_larger), textSize < MAX_TEXT) { resize(1f) }
+                            ToolButton(Symbols.TextDecrease, stringResource(R.string.config_text_smaller), textSize > MIN_TEXT) { resize(-1f) }
+                            ToolButton(Symbols.TextIncrease, stringResource(R.string.config_text_larger), textSize < MAX_TEXT) { resize(1f) }
                         }
                     }
                     val tools: @Composable () -> Unit = {
@@ -392,10 +374,10 @@ fun ConfigScreen(
                             // Проверка и выравнивание — одна кнопка: выравнивает только то, что ядро
                             // разобрало. В полном экране — только правка, как и без этой кнопки.
                             if (!bare) {
-                                ToolButton(Icons.Default.TaskAlt, stringResource(R.string.config_format), !state.busy && state.text != null && editor != null) { format() }
+                                ToolButton(Symbols.TaskAlt, stringResource(R.string.config_format), !state.busy && state.text != null && editor != null) { format() }
                             }
-                            ToolButton(Icons.AutoMirrored.Filled.List, stringResource(R.string.config_sections), editor != null) { showSections = true }
-                            ToolButton(Icons.Default.Search, stringResource(R.string.config_search), editor != null) { searching = true }
+                            ToolButton(Symbols.List, stringResource(R.string.config_sections), editor != null) { showSections = true }
+                            ToolButton(Symbols.Search, stringResource(R.string.config_search), editor != null) { searching = true }
                         }
                     }
 
@@ -408,7 +390,7 @@ fun ConfigScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                HeaderButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), onBack)
+                                HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack)
                                 Text(
                                     text = state.name,
                                     modifier = Modifier.widthIn(max = 160.dp),
@@ -433,7 +415,7 @@ fun ConfigScreen(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (full) {
                                 ToolGroup {
-                                    ToolButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.config_fullscreen_exit), true) { full = false }
+                                    ToolButton(Symbols.ArrowBack, stringResource(R.string.config_fullscreen_exit), true) { full = false }
                                 }
                             }
                             edits()
@@ -667,7 +649,7 @@ private fun Header(kind: String, name: String, onBack: () -> Unit, onFull: () ->
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        HeaderButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), onBack)
+        HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack)
 
         Column(Modifier.weight(1f).padding(start = 4.dp)) {
             Text(
@@ -685,7 +667,7 @@ private fun Header(kind: String, name: String, onBack: () -> Unit, onFull: () ->
             )
         }
 
-        HeaderButton(Icons.Default.Fullscreen, stringResource(R.string.config_fullscreen), onFull)
+        HeaderButton(Symbols.Fullscreen, stringResource(R.string.config_fullscreen), onFull)
     }
 }
 
@@ -797,7 +779,7 @@ private fun Hint(text: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(Symbols.Info, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
@@ -917,7 +899,7 @@ private fun ResultContent(result: ConfigResult, onLine: (Int) -> Unit, onDismiss
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Icon(
-                imageVector = if (ok) Icons.Default.CheckCircle else Icons.Default.ErrorOutline,
+                imageVector = if (ok) Symbols.CheckCircle else Symbols.ErrorOutline,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
                 tint = color,
@@ -937,7 +919,7 @@ private fun ResultContent(result: ConfigResult, onLine: (Int) -> Unit, onDismiss
                         .clickable(role = Role.Button, onClickLabel = stringResource(R.string.config_result_close), onClick = onDismiss),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.config_result_close), modifier = Modifier.size(18.dp), tint = color)
+                    Icon(Symbols.Close, contentDescription = stringResource(R.string.config_result_close), modifier = Modifier.size(18.dp), tint = color)
                 }
             }
         }
@@ -1051,17 +1033,17 @@ private fun SaveAsSheet(file: Boolean, onPick: (SaveAs) -> Unit, onClosed: () ->
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SaveOption(
-                Icons.Default.AddCircleOutline,
+                Symbols.AddCircleOutline,
                 stringResource(if (file) R.string.config_add_profile else R.string.config_save_profile),
                 stringResource(R.string.config_save_profile_hint),
             ) { pick(SaveAs.Profile) }
             SaveOption(
-                Icons.Outlined.FileDownload,
+                Symbols.FileDownload,
                 stringResource(R.string.config_save_file),
                 stringResource(R.string.config_save_file_hint),
             ) { pick(SaveAs.File) }
             SaveOption(
-                Icons.Outlined.VisibilityOff,
+                Symbols.VisibilityOff,
                 stringResource(R.string.config_save_bare),
                 stringResource(R.string.config_save_bare_hint),
             ) { pick(SaveAs.Bare) }

@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.ui.focus.focusProperties
@@ -13,7 +14,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
@@ -23,7 +23,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
@@ -33,7 +32,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import com.github.kr328.clash.ui.components.DuckerSheet
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.getValue
@@ -62,10 +60,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.animation.core.VisibilityThreshold
-import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.SupportAgent
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -78,12 +72,6 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.zIndex
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.QrCode2
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Subscriptions
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -92,8 +80,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -401,7 +387,7 @@ fun SubscriptionsScreen(
             if (state.loaded && state.profiles.isEmpty()) {
                 item {
                     EmptyState(
-                        icon = Icons.Default.Subscriptions,
+                        icon = Symbols.Article,
                         title = stringResource(R.string.ducker_no_subscription),
                         message = stringResource(R.string.subscriptions_empty),
                     )
@@ -496,7 +482,7 @@ private fun ActiveCard(
                     // «Поделиться» — в свободном углу; своему конфигу делиться нечем.
                     if (!shown.local) {
                         IconButton(onClick = { onShare(shown) }) {
-                            Icon(Icons.Default.QrCode2, contentDescription = stringResource(R.string.share_qr))
+                            Icon(Symbols.QrCode2, contentDescription = stringResource(R.string.share_qr))
                         }
                     }
                 }
@@ -627,7 +613,7 @@ private fun ProfileRow(
                 }
 
                 IconButton(onClick = onMenu, modifier = Modifier.focusRequester(menu).focusProperties { if (tv) left = self }) {
-                    Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(R.string.more_actions))
+                    Icon(Symbols.MoreHoriz, contentDescription = stringResource(R.string.more_actions))
                 }
             }
         }
@@ -654,7 +640,7 @@ private fun ProfileName(
         )
 
         if (favorite) {
-            Icon(Icons.Filled.Star, contentDescription = stringResource(R.string.favorite_marked), modifier = Modifier.size(14.dp))
+            Icon(Symbols.Star, contentDescription = stringResource(R.string.favorite_marked), modifier = Modifier.size(14.dp))
         }
         if (rules > 0) RulesBadge(rules)
     }
@@ -676,7 +662,7 @@ private fun RulesBadge(count: Int) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(Icons.Default.Tune, contentDescription = stringResource(R.string.rules_title), modifier = Modifier.size(12.dp))
+        Icon(Symbols.Tune, contentDescription = stringResource(R.string.rules_title), modifier = Modifier.size(12.dp))
         Text(count.toString(), style = MaterialTheme.typography.labelSmall)
     }
 }
@@ -795,13 +781,13 @@ private fun ActiveDetails(
 
             CardAction(onClick = onEdit, container = action, content = onAction,
                 modifier = (if (profile.local) first else Modifier).weight(1f)) {
-                Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Symbols.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                 FitLabel(stringResource(R.string.edit), LocalTextStyle.current, Modifier.padding(start = 6.dp))
             }
 
             CardAction(onClick = onMenu, container = action, content = onAction, modifier = Modifier.width(48.dp)) {
                 Icon(
-                    Icons.Default.MoreHoriz,
+                    Symbols.MoreHoriz,
                     contentDescription = stringResource(R.string.more_actions),
                     modifier = Modifier.size(20.dp),
                 )
@@ -827,13 +813,13 @@ private fun ProfileMenu(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             for (action in actions) {
                 val icon = when (action) {
-                    MenuAction.Update -> Icons.Default.Refresh
-                    MenuAction.Edit -> Icons.Outlined.Edit
-                    MenuAction.Share -> Icons.Default.QrCode2
-                    MenuAction.Favorite -> if (favorite) Icons.Filled.Star else Icons.Outlined.StarOutline
-                    MenuAction.Renew -> Icons.Default.CreditCard
-                    MenuAction.Support -> Icons.Default.SupportAgent
-                    MenuAction.Delete -> Icons.Default.DeleteOutline
+                    MenuAction.Update -> Symbols.Refresh
+                    MenuAction.Edit -> Symbols.Edit
+                    MenuAction.Share -> Symbols.QrCode2
+                    MenuAction.Favorite -> if (favorite) Symbols.Star else Symbols.StarOutline
+                    MenuAction.Renew -> Symbols.CreditCard
+                    MenuAction.Support -> Symbols.SupportAgent
+                    MenuAction.Delete -> Symbols.DeleteOutline
                 }
                 val label = when (action) {
                     MenuAction.Update -> R.string.update
@@ -931,7 +917,7 @@ private fun UpdateErrorCard(
                 modifier = Modifier.size(36.dp).clip(CircleShape).background(scheme.error.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = scheme.error, modifier = Modifier.size(20.dp))
+                Icon(Symbols.ErrorOutline, contentDescription = null, tint = scheme.error, modifier = Modifier.size(20.dp))
             }
 
             Column(Modifier.weight(1f).padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -966,7 +952,7 @@ private fun UpdateErrorCard(
             }
 
             IconButton(onClick = onDismiss) {
-                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.dismiss), tint = scheme.onSurfaceVariant)
+                Icon(Symbols.Close, contentDescription = stringResource(R.string.dismiss), tint = scheme.onSurfaceVariant)
             }
         }
     }
@@ -1010,7 +996,7 @@ fun AddSubscriptionButton() {
             .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+        Icon(Symbols.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
     }
 }
 

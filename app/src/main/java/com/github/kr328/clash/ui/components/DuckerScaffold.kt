@@ -38,8 +38,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -410,7 +408,7 @@ private fun FloatingDock(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = onPill, modifier = Modifier.size(22.dp))
+                    Icon(Symbols.Add, contentDescription = null, tint = onPill, modifier = Modifier.size(22.dp))
 
                     Spacer(Modifier.width(8.dp))
 
@@ -436,9 +434,9 @@ private const val SHINE_PAUSE_MS = 4000L
 
 /** Вкладки дока — на телефоне и на телевизоре. */
 internal val DockTabItems = listOf(
-    R.string.home_tab to DuckerIcons.Home,
-    R.string.proxies_tab to DuckerIcons.Proxies,
-    R.string.subscriptions_tab to DuckerIcons.Subscriptions,
+    R.string.home_tab to Symbols.Home,
+    R.string.proxies_tab to Symbols.Language,
+    R.string.subscriptions_tab to Symbols.Article,
 )
 
 /**

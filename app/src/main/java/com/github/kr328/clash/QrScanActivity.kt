@@ -1,5 +1,6 @@
 package com.github.kr328.clash
 
+import com.github.kr328.clash.ui.components.Symbols
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -48,11 +49,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.FlashOff
-import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -330,7 +326,7 @@ private fun ScanScreen(
             modifier = Modifier.safeDrawingPadding().padding(12.dp)
                 .clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)),
         ) {
-            Icon(Icons.Default.Close, stringResource(R.string.cancel), tint = Color.White)
+            Icon(Symbols.Close, stringResource(R.string.cancel), tint = Color.White)
         }
     }
 }
@@ -440,14 +436,14 @@ private fun ScanPanel(
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SourceTile(
-                icon = if (torch) Icons.Default.FlashOn else Icons.Default.FlashOff,
+                icon = if (torch) Symbols.FlashOn else Symbols.FlashOff,
                 label = stringResource(R.string.scan_torch),
                 enabled = enabled,
                 onClick = onTorch,
                 modifier = Modifier.weight(1f),
             )
             SourceTile(
-                icon = Icons.Default.PhotoLibrary,
+                icon = Symbols.PhotoLibrary,
                 label = stringResource(R.string.scan_gallery),
                 enabled = enabled,
                 onClick = onGallery,

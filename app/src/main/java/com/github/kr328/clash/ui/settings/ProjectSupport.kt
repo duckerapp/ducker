@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.settings
 
+import com.github.kr328.clash.ui.components.Symbols
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.os.Build
@@ -14,13 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,18 +61,18 @@ internal fun LazyListScope.projectSupportItems(onLink: (String) -> Unit, onMail:
     }
     item(key = "community-heading") { ProjectSection(stringResource(R.string.settings_project_community)) }
     item(key = "telegram-channel") {
-        ProjectLinkRow(stringResource(R.string.channel), Icons.AutoMirrored.Filled.Send, stringResource(R.string.channel_hint)) {
+        ProjectLinkRow(stringResource(R.string.channel), Symbols.Send, stringResource(R.string.channel_hint)) {
             onLink(PROJECT_CHANNEL)
         }
     }
     item(key = "telegram-community") {
-        ProjectLinkRow(stringResource(R.string.community), Icons.Default.Forum, stringResource(R.string.community_hint)) {
+        ProjectLinkRow(stringResource(R.string.community), Symbols.Forum, stringResource(R.string.community_hint)) {
             onLink(COMMUNITY)
         }
     }
     item(key = "source-heading") { ProjectSection(stringResource(R.string.settings_project_source)) }
-    item(key = "github") { ProjectLinkRow("GitHub", Icons.Default.Code) { onLink(PROJECT_GITHUB) } }
-    item(key = "gitlab") { ProjectLinkRow("GitLab", Icons.Default.Code) { onLink(PROJECT_GITLAB) } }
+    item(key = "github") { ProjectLinkRow("GitHub", Symbols.Code) { onLink(PROJECT_GITHUB) } }
+    item(key = "gitlab") { ProjectLinkRow("GitLab", Symbols.Code) { onLink(PROJECT_GITLAB) } }
     item(key = "wallet-heading") { ProjectSection(stringResource(R.string.settings_project_crypto)) }
     DonationWallets.forEach { wallet ->
         item(key = "wallet-${wallet.currency}-${wallet.network}") { WalletCard(wallet) }
@@ -86,7 +80,7 @@ internal fun LazyListScope.projectSupportItems(onLink: (String) -> Unit, onMail:
     item(key = "mail") {
         Button(onClick = onMail, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = MaterialTheme.shapes.extraLarge) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(22.dp))
+                Icon(Symbols.Email, contentDescription = null, modifier = Modifier.size(22.dp))
                 Text(stringResource(R.string.settings_project_mail), style = MaterialTheme.typography.bodyLarge)
             }
         }
@@ -118,7 +112,7 @@ private fun ProjectLinkRow(title: String, icon: ImageVector, subtitle: String? =
                 Text(title, style = MaterialTheme.typography.bodyLarge)
                 if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(20.dp))
+            Icon(Symbols.OpenInNew, contentDescription = null, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -154,7 +148,7 @@ private fun WalletCard(wallet: DonationWallet) {
                     }
                 },
             ) {
-                Icon(Icons.Default.ContentCopy, contentDescription = copyLabel, modifier = Modifier.size(22.dp))
+                Icon(Symbols.ContentCopy, contentDescription = copyLabel, modifier = Modifier.size(22.dp))
             }
         }
     }

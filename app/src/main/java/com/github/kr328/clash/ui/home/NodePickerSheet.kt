@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.home
 
+import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -21,8 +22,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -262,7 +261,7 @@ private fun PickerNode(node: NodeState, selected: Boolean, enabled: Boolean, onC
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (node.favorite) Icon(Icons.Default.Star, contentDescription = stringResource(R.string.favorite), tint = content, modifier = Modifier.size(18.dp))
+        if (node.favorite) Icon(Symbols.Star, contentDescription = stringResource(R.string.favorite), tint = content, modifier = Modifier.size(18.dp))
         Text(
             node.name,
             modifier = Modifier.weight(1f),

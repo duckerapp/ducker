@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.logs
 
+import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.horizontalScroll
@@ -16,8 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
@@ -198,7 +197,7 @@ fun LogsScreen(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
                 ) {
                     FilledIconButton(onClick = { follow = true }) {
-                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(R.string.logs_follow))
+                        Icon(Symbols.KeyboardArrowDown, contentDescription = stringResource(R.string.logs_follow))
                     }
                 }
             }

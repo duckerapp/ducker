@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -15,10 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.FileOpen
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -127,9 +124,9 @@ fun AddSubscriptionDialog(
             SubscriptionHttpWarning(value)
 
             val sources = listOfNotNull(
-                Triple(Icons.Default.ContentPaste, stringResource(R.string.paste), onPaste),
-                Triple(Icons.Default.QrCodeScanner, stringResource(R.string.scan_qr), onScan).takeIf { !tv },
-                Triple(Icons.Default.FileOpen, stringResource(R.string.add_from_file), onFile),
+                Triple(Symbols.ContentPaste, stringResource(R.string.paste), onPaste),
+                Triple(Symbols.QrCodeScanner, stringResource(R.string.scan_qr), onScan).takeIf { !tv },
+                Triple(Symbols.FileOpen, stringResource(R.string.add_from_file), onFile),
             )
             // Ширина — по длине подписей (D-114): «Сканировать QR» втрое длиннее «Файла».
             val weights = labelWeights(sources.map { it.second }, MaterialTheme.typography.labelLarge, TILE_PADDING)

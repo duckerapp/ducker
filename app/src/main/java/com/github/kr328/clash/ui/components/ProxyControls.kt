@@ -74,7 +74,7 @@ internal fun ProxyCheckButton(
             CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             Icon(
-                imageVector = DuckerIcons.Ping,
+                imageVector = Symbols.VitalSigns,
                 contentDescription = null,
                 modifier = Modifier.size(if (compact) 18.dp else 20.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.4f),

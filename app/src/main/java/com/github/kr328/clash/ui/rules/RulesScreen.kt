@@ -1,14 +1,12 @@
 package com.github.kr328.clash.ui.rules
 
+import com.github.kr328.clash.ui.components.Symbols
 import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.TextFields
 import java.util.Locale
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,14 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Android
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Lan
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -129,7 +119,7 @@ fun RulesScreen(
         if (rules.isEmpty()) {
             item {
                 EmptyState(
-                    icon = Icons.Default.Tune,
+                    icon = Symbols.Tune,
                     title = stringResource(R.string.rules_empty_title),
                     message = stringResource(R.string.rules_empty),
                 )
@@ -146,7 +136,7 @@ fun RulesScreen(
                 },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Symbols.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(R.string.rules_add), modifier = Modifier.padding(start = 8.dp))
             }
         }
@@ -205,11 +195,11 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
             } else {
                 IconBadge(
                     when (rule.type) {
-                        UserRule.Type.Site -> Icons.Default.Language
-                        UserRule.Type.Keyword -> Icons.Default.TextFields
-                        UserRule.Type.Geosite -> Icons.Default.Category
-                        UserRule.Type.Geoip -> Icons.Default.Flag
-                        else -> Icons.Default.Lan
+                        UserRule.Type.Site -> Symbols.Language
+                        UserRule.Type.Keyword -> Symbols.TextFields
+                        UserRule.Type.Geosite -> Symbols.Category
+                        UserRule.Type.Geoip -> Symbols.Flag
+                        else -> Symbols.Lan
                     },
                 )
             }
@@ -226,7 +216,7 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
                 if (outside != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Icon(
-                            Icons.Default.Lock,
+                            Symbols.Lock,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -244,7 +234,7 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
             }
 
             IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.rule_remove))
+                Icon(Symbols.Close, contentDescription = stringResource(R.string.rule_remove))
             }
         }
     }
@@ -607,7 +597,7 @@ private fun AppPicker(
 
                         if (outside != null) {
                             Icon(
-                                Icons.Default.Lock,
+                                Symbols.Lock,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
                                 tint = quiet,

@@ -8,9 +8,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.LaunchedEffect
@@ -36,7 +33,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
@@ -65,15 +61,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material.icons.Icons
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.ImeAction
@@ -354,7 +347,7 @@ fun SearchField(
                     horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Search,
+                        imageVector = Symbols.Search,
                         contentDescription = null,
                         modifier = Modifier.size(if (compact) 21.dp else 18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -381,7 +374,7 @@ fun SearchField(
                         if (value.isNotEmpty()) {
                             IconButton(onClick = { onValue("") }) {
                                 Icon(
-                                    imageVector = Icons.Default.Close,
+                                    imageVector = Symbols.Close,
                                     contentDescription = stringResource(R.string.search_clear),
                                     modifier = Modifier.size(18.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -498,7 +491,7 @@ fun ScreenHeader(
     ) {
         if (onBack != null) {
             HeaderButton(
-                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                icon = Symbols.ArrowBack,
                 description = stringResource(R.string.back),
                 onClick = onBack,
             )
@@ -829,9 +822,9 @@ fun UpdateLabel(shown: UpdateShown, style: TextStyle, iconSize: Dp) {
 
             when (state) {
                 UpdateShown.Busy -> CircularProgressIndicator(icon.padding(1.dp), strokeWidth = 2.dp, color = color)
-                UpdateShown.Done -> Icon(Icons.Default.Check, contentDescription = null, modifier = icon)
-                UpdateShown.Failed -> Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = color, modifier = icon)
-                UpdateShown.Idle -> Icon(Icons.Default.Refresh, contentDescription = null, modifier = icon)
+                UpdateShown.Done -> Icon(Symbols.Check, contentDescription = null, modifier = icon)
+                UpdateShown.Failed -> Icon(Symbols.ErrorOutline, contentDescription = null, tint = color, modifier = icon)
+                UpdateShown.Idle -> Icon(Symbols.Refresh, contentDescription = null, modifier = icon)
             }
 
             FitLabel(

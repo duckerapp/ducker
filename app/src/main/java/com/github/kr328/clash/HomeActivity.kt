@@ -1,5 +1,6 @@
 package com.github.kr328.clash
 
+import com.github.kr328.clash.ui.components.Symbols
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.app.ActivityManager
@@ -21,8 +22,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.github.kr328.clash.ui.components.BackLayer
 import com.github.kr328.clash.ui.components.ScreenFrame
 import com.github.kr328.clash.ui.components.TvFocus
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.Icons
 import androidx.compose.ui.focus.focusRequester
 import com.github.kr328.clash.ui.home.ThemeButton
 import com.github.kr328.clash.ui.home.BrandTitle
@@ -819,7 +818,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         ThemeButton { icon, description, onClick, modifier -> TvTool(icon, description, onClick, modifier) }
 
                         TvTool(
-                            icon = Icons.Default.Settings,
+                            icon = Symbols.Settings,
                             description = stringResource(R.string.settings),
                             onClick = {
                                 fromGear = true

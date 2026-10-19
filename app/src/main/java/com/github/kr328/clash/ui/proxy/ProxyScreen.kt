@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.proxy
 
+import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvScrollToStart
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.tvKeys
@@ -42,13 +43,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material.icons.Icons
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -265,7 +259,7 @@ fun ProxyScreen(
                 if (state.loaded && state.groups.isEmpty()) {
                     item {
                         EmptyState(
-                            icon = Icons.Default.Language,
+                            icon = Symbols.Language,
                             title = stringResource(R.string.ducker_no_proxies),
                             message = stringResource(
                                 if (state.running) R.string.proxies_empty_direct else R.string.proxies_empty_stopped
@@ -277,7 +271,7 @@ fun ProxyScreen(
                 if (state.loaded && groups.isEmpty() && state.groups.isNotEmpty()) {
                     item {
                         EmptyState(
-                            icon = Icons.Default.Language,
+                            icon = Symbols.Language,
                             title = stringResource(R.string.proxy_search_empty),
                             message = stringResource(R.string.proxy_search_empty_hint),
                         )
@@ -550,7 +544,7 @@ private fun GroupHeader(
                 AsyncImage(model = icon, contentDescription = null,
                     modifier = Modifier.size(34.dp), onError = { failed = true })
             } else {
-                Icon(Icons.Default.Language, contentDescription = null,
+                Icon(Symbols.Language, contentDescription = null,
                     modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
@@ -579,7 +573,7 @@ private fun GroupHeader(
                     modifier = Modifier.focusRequester(ping).focusProperties { if (tv) left = head },
                 )
             }
-            Icon(if (open) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null,
+            Icon(if (open) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown, contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface)
         }
     }
@@ -683,7 +677,7 @@ private fun ProxyOption(
                 // Звёздочка стоит в правом верхнем углу, на одной линии с названием,
                 // и не ездит вслед за его длиной.
                 Icon(
-                    imageVector = if (proxy.favorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                    imageVector = if (proxy.favorite) Symbols.Star else Symbols.StarOutline,
                     contentDescription = stringResource(R.string.favorite),
                     modifier = Modifier.size(20.dp)
                         .focusRequester(star)
