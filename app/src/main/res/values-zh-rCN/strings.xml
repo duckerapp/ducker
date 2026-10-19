@@ -499,7 +499,7 @@
     <string name="settings_language_system">跟随系统</string>
     <string name="settings_system_language">当前语言：%1$s</string>
     <string name="settings_language_immediate">选择后立即生效</string>
-    <string name="settings_project_thanks">感谢你支持 Ducker</string>
+    <string name="settings_project_thanks">感谢你支持 ducker</string>
     <string name="settings_project_community">社区</string>
     <string name="settings_project_source">源代码</string>
     <string name="settings_project_crypto">加密货币捐赠</string>

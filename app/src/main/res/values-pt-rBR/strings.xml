@@ -507,7 +507,7 @@
     <string name="settings_language_system">Usar o idioma do sistema</string>
     <string name="settings_system_language">Idioma atual: %1$s</string>
     <string name="settings_language_immediate">A seleção é aplicada imediatamente</string>
-    <string name="settings_project_thanks">Obrigado por apoiar o Ducker</string>
+    <string name="settings_project_thanks">Obrigado por apoiar o ducker</string>
     <string name="settings_project_community">Comunidade</string>
     <string name="settings_project_source">Código-fonte</string>
     <string name="settings_project_crypto">Doar criptomoedas</string>

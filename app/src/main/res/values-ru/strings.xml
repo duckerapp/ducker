@@ -533,7 +533,7 @@
     <string name="settings_language_system">Как в системе</string>
     <string name="settings_system_language">Сейчас: %1$s</string>
     <string name="settings_language_immediate">Выбор применяется сразу</string>
-    <string name="settings_project_thanks">Спасибо, что поддерживаете Ducker</string>
+    <string name="settings_project_thanks">Спасибо, что поддерживаете ducker</string>
     <string name="settings_project_community">Сообщество</string>
     <string name="settings_project_source">Исходный код</string>
     <string name="settings_project_crypto">Донат в криптовалюте</string>

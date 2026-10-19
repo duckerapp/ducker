@@ -499,7 +499,7 @@
     <string name="settings_language_system">Theo hệ thống</string>
     <string name="settings_system_language">Ngôn ngữ hiện tại: %1$s</string>
     <string name="settings_language_immediate">Lựa chọn được áp dụng ngay</string>
-    <string name="settings_project_thanks">Cảm ơn bạn đã ủng hộ Ducker</string>
+    <string name="settings_project_thanks">Cảm ơn bạn đã ủng hộ ducker</string>
     <string name="settings_project_community">Cộng đồng</string>
     <string name="settings_project_source">Mã nguồn</string>
     <string name="settings_project_crypto">Quyên góp tiền mã hóa</string>

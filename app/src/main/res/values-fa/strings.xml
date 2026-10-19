@@ -503,7 +503,7 @@
     <string name="settings_language_system">مطابق سیستم</string>
     <string name="settings_system_language">زبان فعلی: %1$s</string>
     <string name="settings_language_immediate">انتخاب فوراً اعمال می‌شود</string>
-    <string name="settings_project_thanks">از حمایت شما از Ducker سپاسگزاریم</string>
+    <string name="settings_project_thanks">از حمایت شما از ducker سپاسگزاریم</string>
     <string name="settings_project_community">جامعهٔ کاربران</string>
     <string name="settings_project_source">کد منبع</string>
     <string name="settings_project_crypto">کمک مالی با رمزارز</string>

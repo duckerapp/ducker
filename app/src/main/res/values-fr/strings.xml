@@ -507,7 +507,7 @@
     <string name="settings_language_system">Suivre le système</string>
     <string name="settings_system_language">Langue actuelle : %1$s</string>
     <string name="settings_language_immediate">Le choix est appliqué immédiatement</string>
-    <string name="settings_project_thanks">Merci de soutenir Ducker</string>
+    <string name="settings_project_thanks">Merci de soutenir ducker</string>
     <string name="settings_project_community">Communauté</string>
     <string name="settings_project_source">Code source</string>
     <string name="settings_project_crypto">Faire un don en cryptomonnaie</string>

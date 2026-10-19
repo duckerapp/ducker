@@ -538,7 +538,7 @@
     <string name="settings_language_system">Follow system</string>
     <string name="settings_system_language">Currently: %1$s</string>
     <string name="settings_language_immediate">Your choice applies immediately</string>
-    <string name="settings_project_thanks">Thank you for supporting Ducker</string>
+    <string name="settings_project_thanks">Thank you for supporting ducker</string>
     <string name="settings_project_community">Community</string>
     <string name="settings_project_source">Source code</string>
     <string name="settings_project_crypto">Donate with cryptocurrency</string>

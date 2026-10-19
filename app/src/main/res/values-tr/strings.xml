@@ -503,7 +503,7 @@
     <string name="settings_language_system">Sistem dilini kullan</string>
     <string name="settings_system_language">Geçerli dil: %1$s</string>
     <string name="settings_language_immediate">Seçiminiz hemen uygulanır</string>
-    <string name="settings_project_thanks">Ducker’ı desteklediğiniz için teşekkürler</string>
+    <string name="settings_project_thanks">ducker’ı desteklediğiniz için teşekkürler</string>
     <string name="settings_project_community">Topluluk</string>
     <string name="settings_project_source">Kaynak kodu</string>
     <string name="settings_project_crypto">Kripto para ile bağış</string>

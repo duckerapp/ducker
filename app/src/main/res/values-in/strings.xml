@@ -499,7 +499,7 @@
     <string name="settings_language_system">Ikuti sistem</string>
     <string name="settings_system_language">Bahasa saat ini: %1$s</string>
     <string name="settings_language_immediate">Pilihan langsung diterapkan</string>
-    <string name="settings_project_thanks">Terima kasih telah mendukung Ducker</string>
+    <string name="settings_project_thanks">Terima kasih telah mendukung ducker</string>
     <string name="settings_project_community">Komunitas</string>
     <string name="settings_project_source">Kode sumber</string>
     <string name="settings_project_crypto">Donasi mata uang kripto</string>
