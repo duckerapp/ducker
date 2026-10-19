@@ -331,6 +331,12 @@
     <string name="app_update_available">Versi %s tersedia</string>
     <string name="app_update_beta">Versi beta</string>
     <string name="app_update_beta_hint">Dapatkan versi baru beberapa hari lebih awal</string>
+    <string name="app_update_auto">Perbarui otomatis</string>
+    <string name="app_update_auto_hint">Melalui Wi-Fi saat layar mati</string>
+    <string name="app_update_auto_question">Perbarui ducker secara otomatis?</string>
+    <string name="app_update_auto_text">Versi baru akan diunduh melalui Wi-Fi dan terpasang sendiri saat layar mati — biasanya pada malam hari. Berubah pikiran? Ada sakelar di pengaturan</string>
+    <string name="app_update_auto_yes">Ya, perbarui</string>
+    <string name="app_update_auto_no">Saya akan memperbarui sendiri</string>
     <string name="app_update_card">Pembaruan tersedia: ducker %s</string>
     <string name="app_update_card_downloading">Mengunduh ducker %1$s — %2$d%%</string>
     <string name="app_update_card_installing">Menginstal ducker %s…</string>

@@ -341,6 +341,12 @@
     <string name="app_update_available">الإصدار %s متاح</string>
     <string name="app_update_beta">الإصدارات التجريبية</string>
     <string name="app_update_beta_hint">احصل على الإصدارات الجديدة قبل بضعة أيام</string>
+    <string name="app_update_auto">التحديث تلقائيًا</string>
+    <string name="app_update_auto_hint">عبر Wi-Fi أثناء إطفاء الشاشة</string>
+    <string name="app_update_auto_question">هل تريد تحديث ducker تلقائيًا؟</string>
+    <string name="app_update_auto_text">سيتم تنزيل الإصدارات الجديدة عبر Wi-Fi وتثبيتها تلقائيًا أثناء إطفاء الشاشة، عادةً في الليل. إذا غيّرت رأيك، يوجد مفتاح في الإعدادات</string>
+    <string name="app_update_auto_yes">نعم، حدّث</string>
+    <string name="app_update_auto_no">سأحدّث بنفسي</string>
     <string name="app_update_card">تحديث متاح: ducker %s</string>
     <string name="app_update_card_downloading">جارٍ تنزيل ducker %1$s — %2$d%%</string>
     <string name="app_update_card_installing">جارٍ تثبيت ducker %s…</string>

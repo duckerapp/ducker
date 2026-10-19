@@ -359,6 +359,12 @@
     <string name="app_update_available">Доступна версия %s</string>
     <string name="app_update_beta">Бета-версии</string>
     <string name="app_update_beta_hint">Новые версии на несколько дней раньше</string>
+    <string name="app_update_auto">Обновлять автоматически</string>
+    <string name="app_update_auto_hint">По Wi-Fi, пока экран погашен</string>
+    <string name="app_update_auto_question">Обновлять ducker автоматически?</string>
+    <string name="app_update_auto_text">Новые версии скачаются по Wi-Fi и встанут сами, пока экран погашен, — обычно ночью. Передумаете — переключатель в настройках</string>
+    <string name="app_update_auto_yes">Да, обновлять</string>
+    <string name="app_update_auto_no">Буду обновлять сам</string>
     <string name="app_update_card">Доступно обновление ducker %s</string>
     <string name="app_update_card_downloading">Скачиваю ducker %1$s — %2$d %%</string>
     <string name="app_update_card_installing">Устанавливаю ducker %s…</string>

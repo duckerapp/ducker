@@ -37,9 +37,14 @@ fun UpdateSheet(
     /** Android уже разрешил ducker ставить приложения; нет — «Обновить» сначала ведёт в настройки. */
     permitted: Boolean,
     onInstall: () -> Unit,
+    /** The answer to “update ducker automatically?”; “yes” installs this version as well. */
+    onAuto: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
 ) {
+    // Asked once, with the first update the person opens (D-287).
+    val ask = state.autoAvailable && state.auto == null
+
     DuckerSheet(
         open = open,
         title = stringResource(R.string.app_update_title, release.version),
@@ -100,20 +105,34 @@ fun UpdateSheet(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
+        if (ask) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = stringResource(R.string.app_update_auto_question),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = stringResource(R.string.app_update_auto_text),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
         SheetButton(
-            text = stringResource(R.string.update),
+            text = stringResource(if (ask) R.string.app_update_auto_yes else R.string.update),
             busyText = stringResource(
                 if (state.installing) R.string.app_update_installing else R.string.app_update_downloading,
             ),
             busy = state.busy,
             enabled = true,
-            onClick = onInstall,
+            onClick = if (ask) ({ onAuto(true) }) else onInstall,
             // Установка — кнопка залита целиком: скачивание позади.
             progress = if (state.installing) 1f else state.progress,
         )
 
-        TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.not_now))
+        TextButton(onClick = if (ask) ({ onAuto(false) }) else onDismiss, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(if (ask) R.string.app_update_auto_no else R.string.not_now))
         }
     }
 }

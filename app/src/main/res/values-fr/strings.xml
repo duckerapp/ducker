@@ -335,6 +335,12 @@
     <string name="app_update_available">La version %s est disponible</string>
     <string name="app_update_beta">Versions bêta</string>
     <string name="app_update_beta_hint">Recevez les nouvelles versions quelques jours avant leur sortie</string>
+    <string name="app_update_auto">Mettre à jour automatiquement</string>
+    <string name="app_update_auto_hint">Par Wi-Fi, écran éteint</string>
+    <string name="app_update_auto_question">Mettre à jour ducker automatiquement ?</string>
+    <string name="app_update_auto_text">Les nouvelles versions se téléchargeront par Wi-Fi et s’installeront d’elles-mêmes écran éteint, généralement la nuit. Vous changez d’avis ? Un interrupteur se trouve dans les paramètres</string>
+    <string name="app_update_auto_yes">Oui, mettre à jour</string>
+    <string name="app_update_auto_no">Je mettrai à jour moi-même</string>
     <string name="app_update_card">Mise à jour disponible : ducker %s</string>
     <string name="app_update_card_downloading">Téléchargement de ducker %1$s — %2$d %%</string>
     <string name="app_update_card_installing">Installation de ducker %s…</string>

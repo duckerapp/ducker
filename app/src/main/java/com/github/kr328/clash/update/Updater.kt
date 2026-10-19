@@ -6,7 +6,11 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
+import android.media.AudioManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.content.IntentCompat
 import com.github.kr328.clash.BuildConfig
 import com.github.kr328.clash.common.Global
@@ -60,6 +64,10 @@ data class UpdateState(
      * update closed the app, and the notification reaches only those who allowed notifications.
      */
     val updated: Updated? = null,
+    /** Android 12+: only there an update installs without a system dialog (F-248). */
+    val autoAvailable: Boolean = false,
+    /** The answer to “update ducker automatically?” (D-287); `null` — not asked yet. */
+    val auto: Boolean? = null,
 ) {
     val busy: Boolean
         get() = progress != null || installing
@@ -76,7 +84,7 @@ object Updater {
     /** Уведомление о новой версии открывает приложение с панелью обновления. */
     const val ACTION_SHOW = "${BuildConfig.APPLICATION_ID}.action.SHOW_UPDATE"
 
-    private val _state = MutableStateFlow(UpdateState())
+    private val _state = MutableStateFlow(UpdateState(autoAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S))
     val state: StateFlow<UpdateState> = _state.asStateFlow()
 
     private val context: Context
@@ -89,6 +97,10 @@ object Updater {
     private var checkJob: Job? = null
     private var installJob: Job? = null
 
+    /** The download in flight belongs to the automatic update: install it only while nobody uses the phone. */
+    @Volatile
+    private var quietOnly = false
+
     /**
      * Приложение на экране: показать то, что знали в прошлый раз, и проверить заново, если
      * давно не проверяли. Заодно — расписание фоновой проверки: оно переживает перезагрузку и
@@ -100,7 +112,7 @@ object Updater {
 
             val known = pick()
 
-            _state.update { it.copy(release = known, updated = updated()) }
+            _state.update { it.copy(release = known, updated = updated(), auto = store.auto) }
 
             if (System.currentTimeMillis() - store.checkedAt > OPEN_INTERVAL) check()
         }
@@ -113,6 +125,35 @@ object Updater {
      */
     suspend fun scheduled() {
         if (System.currentTimeMillis() - store.checkedAt > JUST_CHECKED) check().join()
+    }
+
+    /**
+     * The automatic update (D-287), from [UpdateJob] while the phone lies idle. `false` — not done
+     * yet: the system runs the job again in its next idle window, and the file downloaded so far
+     * stays.
+     */
+    suspend fun unattended(): Boolean {
+        if (!autoReady()) return true
+
+        val release = pick() ?: return true
+
+        _state.update { it.copy(release = release) }
+
+        if (!onWifi()) return false
+
+        install(unattended = true)?.join()
+
+        // The installer has the file — the app is about to be replaced.
+        return _state.value.installing
+    }
+
+    /** The answer to “update ducker automatically?”, from the sheet or the settings switch. */
+    fun setAuto(value: Boolean) {
+        store.auto = value
+
+        _state.update { it.copy(auto = value) }
+
+        if (!value) UpdateJob.cancelInstall(context) else if (_state.value.release != null) UpdateJob.scheduleInstall(context)
     }
 
     /**
@@ -166,23 +207,34 @@ object Updater {
         // Скачанное под прежние выпуски больше не нужно.
         dir.listFiles()?.filter { release == null || it != file(release) }?.forEach { it.delete() }
 
+        val auto = autoReady()
+
+        if (release != null && auto) UpdateJob.scheduleInstall(context)
+
         // Уведомление — один раз на версию и только когда приложения нет на экране: на экране
-        // о ней говорит карточка главной.
+        // о ней говорит карточка главной. The automatic update says so itself once installed.
         if (release != null && release.code != store.notified) {
             store.notified = release.code
 
-            if (!ApplicationObserver.visible) UpdateNotice.available(context, release.version)
+            if (!ApplicationObserver.visible && !auto) UpdateNotice.available(context, release.version)
         }
     }
 
-    /** Скачать, сверить и отдать установщику. Повторное нажатие, пока идёт, ничего не делает. */
+    /**
+     * Скачать, сверить и отдать установщику. Повторное нажатие, пока идёт, ничего не делает.
+     * A tap while the automatic update downloads turns that download into an ordinary one.
+     */
     @Synchronized
-    fun install() {
-        val release = _state.value.release ?: return
+    fun install(unattended: Boolean = false): Job? {
+        if (!unattended) quietOnly = false
 
-        if (installJob?.isActive == true) return
+        val release = _state.value.release ?: return null
 
-        installJob = Global.launch {
+        installJob?.takeIf { it.isActive }?.let { return it }
+
+        quietOnly = unattended
+
+        return Global.launch {
             _state.update { it.copy(progress = 0f, installing = false, error = null, errorDetail = "") }
 
             val file = file(release)
@@ -213,12 +265,20 @@ object Updater {
                 return@launch stale(UpdateError.Foreign)
             }
 
+            // Replacing the app drops the tunnel for a couple of seconds: the automatic update
+            // waits until nobody uses the phone, and the file stays for the next idle window.
+            if (quietOnly && !quiet()) {
+                _state.update { it.copy(installing = false) }
+
+                return@launch
+            }
+
             try {
                 commit(file, release.code)
             } catch (e: Exception) {
                 fail(UpdateError.Install, e.message.orEmpty())
             }
-        }
+        }.also { installJob = it }
     }
 
     /** Ответ установщика, из [UpdateReceiver]. */
@@ -244,6 +304,7 @@ object Updater {
     /** Приложение заменено новой версией — нашей установкой или руками. */
     fun replaced() {
         UpdateJob.schedule(context)
+        UpdateJob.cancelInstall(context)
 
         // Сказать «обновлён» стоит только про своё обновление: его человек не видел — приложение
         // просто исчезло с экрана. Поставил сам — прежнее «вышла версия» больше не правда.
@@ -303,6 +364,29 @@ object Updater {
     )
 
     private fun file(release: Release) = File(dir, "ducker-${release.code}.apk")
+
+    /** The person said yes, and Android lets ducker install without asking (D-287). */
+    private fun autoReady(): Boolean =
+        _state.value.autoAvailable && store.auto == true && context.packageManager.canRequestPackageInstalls()
+
+    /**
+     * Wi-Fi or a cable (D-287), not mobile data even where the carrier marks it unmetered: the file
+     * is about 70 MB, and with VPN on it goes through the node. The VPN network lists the transport
+     * beneath it: `WIFI|VPN` or `CELLULAR|VPN`.
+     */
+    private fun onWifi(): Boolean {
+        val manager = context.getSystemService(ConnectivityManager::class.java) ?: return false
+        val network = manager.getNetworkCapabilities(manager.activeNetwork) ?: return false
+
+        return (network.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+            network.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) &&
+            !network.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+    }
+
+    /** Nobody uses the phone: the screen is off, and no call goes on — cellular or in a messenger. */
+    private fun quiet(): Boolean =
+        context.getSystemService(PowerManager::class.java)?.isInteractive == false &&
+            context.getSystemService(AudioManager::class.java)?.mode == AudioManager.MODE_NORMAL
 
     private fun fetchText(url: String): String {
         val connection = URL(url).openConnection() as HttpURLConnection
@@ -423,6 +507,11 @@ private class UpdateStore(context: Context) {
     var notified: Long
         get() = prefs.getLong("notified", 0)
         set(value) = prefs.edit().putLong("notified", value).apply()
+
+    /** The answer to “update ducker automatically?”; `null` — not asked yet. */
+    var auto: Boolean?
+        get() = if (prefs.contains("auto")) prefs.getBoolean("auto", false) else null
+        set(value) = prefs.edit().putBoolean("auto", value == true).apply()
 
     /** Which version the app updated itself to and has not yet said so on screen. */
     var updated: Long

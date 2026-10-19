@@ -172,6 +172,8 @@ fun SettingsScreen(
     update: UpdateState,
     /** Есть что ставить — открыть панель обновления, иначе проверить. */
     onUpdate: () -> Unit,
+    /** Turning it on goes through Android's “install from this source” screen first. */
+    onAutoUpdate: (Boolean) -> Unit,
     onBetaUpdates: (Boolean) -> Unit,
     onAllowBackground: () -> Unit,
     /** Экран оболочки; `null` — страница приложения. */
@@ -271,6 +273,16 @@ fun SettingsScreen(
                                     icon = Symbols.Update,
                                     busy = update.checking, onClick = onUpdate, action = true,
                                 )
+                                if (update.autoAvailable) {
+                                    SettingsNavigationDivider()
+                                    SettingsSwitchRow(
+                                        title = stringResource(R.string.app_update_auto),
+                                        subtitle = stringResource(R.string.app_update_auto_hint),
+                                        icon = Symbols.SystemUpdate,
+                                        checked = update.auto == true,
+                                        onChange = onAutoUpdate,
+                                    )
+                                }
                                 SettingsNavigationDivider()
                                 SettingsSwitchRow(
                                     title = stringResource(R.string.app_update_beta),

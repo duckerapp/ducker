@@ -90,7 +90,8 @@ published by `.github/workflows/pages.yaml`.
 - **`update/`** — updating the app from inside the app: `Feed` (the `update.json` format and the
   choice of a release for this phone), `Download` (mirrors in order, resuming, SHA-256),
   `Updater` (the state the screens read; check, download, signature check, `PackageInstaller`
-  session), `UpdateJob` (the twice-a-day check), `UpdateReceiver`, `UpdateNotice`. The sheet is
+  session), `UpdateJob` (the twice-a-day check, and the automatic update while the phone is idle),
+  `UpdateReceiver`, `UpdateNotice`. The sheet is
   `ui/update/UpdateSheet`. Releases are published with `scripts/publish.sh`.
 
 ## `:service` — `S`

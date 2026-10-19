@@ -452,6 +452,28 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     updateShown = true
                 }
 
+                // «Установка из этого источника» ещё не разрешена — сначала экран Android с этим
+                // тумблером, и уже потом установщик. Иначе тот сам уводит в настройки, а после
+                // возврата считает, что человек отказался: «Обновить» пришлось бы жать дважды.
+                // Turning the automatic update on waits for it too: without it Android would ask.
+                var afterInstallPermission by remember { mutableStateOf<(() -> Unit)?>(null) }
+                val withInstallPermission: (() -> Unit) -> Unit = { action ->
+                    // Экрана с тумблером у системы нет — пусть спрашивает установщик.
+                    if (packageManager.canRequestPackageInstalls() || !askInstallPermission()) {
+                        action()
+                    } else {
+                        afterInstallPermission = action
+                    }
+                }
+
+                LaunchedEffect(resumes.intValue) {
+                    val action = afterInstallPermission ?: return@LaunchedEffect
+
+                    afterInstallPermission = null
+
+                    if (packageManager.canRequestPackageInstalls()) action()
+                }
+
                 // “What's new” in the version the app has just updated itself to.
                 var updatedOpen by remember { mutableStateOf(false) }
                 var updatedShown by remember { mutableStateOf(false) }
@@ -1090,6 +1112,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onUpdate = {
                                 if (updateState.release != null) openUpdate() else Updater.check(manual = true)
                             },
+                            onAutoUpdate = { on ->
+                                if (on) withInstallPermission { Updater.setAuto(true) } else Updater.setAuto(false)
+                            },
                             onBetaUpdates = { settingsViewModel.setBetaUpdates(this@HomeActivity, it) },
                             onAllowBackground = { requestBackgroundWork() },
                             onVendor = { openVendor(it) },
@@ -1405,19 +1430,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                 val updateRelease = updateState.release
 
-                // «Установка из этого источника» ещё не разрешена — сначала экран Android с этим
-                // тумблером, и уже потом установщик. Иначе тот сам уводит в настройки, а после
-                // возврата считает, что человек отказался: «Обновить» пришлось бы жать дважды.
-                var updateAwaitsPermission by remember { mutableStateOf(false) }
-
-                LaunchedEffect(resumes.intValue) {
-                    if (updateAwaitsPermission) {
-                        updateAwaitsPermission = false
-
-                        if (packageManager.canRequestPackageInstalls()) Updater.install()
-                    }
-                }
-
                 val updatedNow = updateState.updated
 
                 if (updatedShown && updatedNow != null) {
@@ -1440,12 +1452,15 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         state = updateState,
                         vpn = state.running,
                         permitted = remember(resumes.intValue) { packageManager.canRequestPackageInstalls() },
-                        onInstall = {
-                            // Экрана с тумблером у системы нет — пусть спрашивает установщик.
-                            if (packageManager.canRequestPackageInstalls() || !askInstallPermission()) {
-                                Updater.install()
+                        onInstall = { withInstallPermission { Updater.install() } },
+                        onAuto = { yes ->
+                            if (yes) {
+                                withInstallPermission {
+                                    Updater.setAuto(true)
+                                    Updater.install()
+                                }
                             } else {
-                                updateAwaitsPermission = true
+                                Updater.setAuto(false)
                             }
                         },
                         onDismiss = { updateOpen = false },

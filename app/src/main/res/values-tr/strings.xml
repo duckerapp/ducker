@@ -333,6 +333,12 @@
     <string name="app_update_available">%s sürümü mevcut</string>
     <string name="app_update_beta">Beta sürümler</string>
     <string name="app_update_beta_hint">Yeni sürümlere birkaç gün erken ulaşın</string>
+    <string name="app_update_auto">Otomatik güncelle</string>
+    <string name="app_update_auto_hint">Ekran kapalıyken, Wi-Fi üzerinden</string>
+    <string name="app_update_auto_question">ducker otomatik olarak güncellensin mi?</string>
+    <string name="app_update_auto_text">Yeni sürümler Wi-Fi üzerinden indirilecek ve ekran kapalıyken, genellikle gece, kendiliğinden yüklenecek. Fikrinizi değiştirirseniz ayarlarda bir anahtar var</string>
+    <string name="app_update_auto_yes">Evet, güncelle</string>
+    <string name="app_update_auto_no">Kendim güncelleyeceğim</string>
     <string name="app_update_card">Güncelleme mevcut: ducker %s</string>
     <string name="app_update_card_downloading">ducker %1$s indiriliyor — %%%2$d</string>
     <string name="app_update_card_installing">ducker %s yükleniyor…</string>
