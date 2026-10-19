@@ -19,12 +19,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.RowScope
@@ -88,18 +88,32 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.offset
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import coil.compose.AsyncImage
 import com.github.kr328.clash.R
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.foundation.shape.RoundedCornerShape
 
@@ -109,6 +123,14 @@ fun Modifier.screenInsets(): Modifier = windowInsetsPadding(
     WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
 ).focusGroup().semantics { isTraversalGroup = true }
 
+/** The custom subscription backing shares the cards' light direction and softness. */
+internal val DuckerCardShadow = Shadow(
+    radius = 8.dp,
+    color = Color.Black.copy(alpha = 0.10f),
+    offset = DpOffset(0.dp, 3.dp),
+)
+
+/** [surfaceModifier] keeps clipped press feedback inside the card's outer shadow. */
 @Composable
 fun DuckerCard(
     modifier: Modifier = Modifier,
@@ -116,11 +138,12 @@ fun DuckerCard(
         containerColor = MaterialTheme.colorScheme.surface,
     ),
     shape: Shape = MaterialTheme.shapes.large,
-    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    border: BorderStroke? = null,
+    surfaceModifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.dropShadow(shape, DuckerCardShadow).then(surfaceModifier),
         shape = shape,
         colors = colors,
         border = border,
@@ -211,82 +234,111 @@ fun EmptyState(
     }
 }
 
-/**
- * Строка поиска в стиле остального интерфейса: белая пилюля с волосяной рамкой,
- * без плавающей подписи и без подчёркивания — в чёрно-белой системе рамка и есть
- * единственное, чем поле отличается от фона.
- */
+/** A soft shadow separates the search surface; floating lift is read during shadow drawing. */
 @Composable
 fun SearchField(
     value: String,
     onValue: (String) -> Unit,
     hint: String,
     modifier: Modifier = Modifier,
+    shadowLift: () -> Float = { 0f },
+    compact: Boolean = false,
 ) {
-    val shape = CircleShape
+    val visualHeight = with(LocalDensity.current) {
+        MaterialTheme.typography.bodyMedium.lineHeight.toDp() + 8.dp
+    }.coerceAtLeast(44.dp)
+    val shape = remember(compact, visualHeight) { if (compact) CompactSearchShape(visualHeight) else CircleShape }
 
     // Пульт (этап 6): строка — одна кнопка, ввод открывается по ОК, см. [keyField].
     val (row, input) = keyField()
 
-    Row(
+    Box(
         modifier = modifier.fillMaxWidth()
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-            .then(row)
-            .padding(start = 14.dp, end = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .then(if (compact) Modifier.dropShadow(shape, DuckerCardShadow) else Modifier.dropShadow(shape) {
+                val lift = shadowLift().coerceIn(0f, 1f)
+                // Keep blur geometry fixed while scrolling so the cached mask stays reusable.
+                radius = DuckerCardShadow.radius.toPx()
+                color = DuckerCardShadow.color.copy(alpha = DuckerCardShadow.color.alpha * (1f + 0.4f * lift))
+                offset = Offset(
+                    DuckerCardShadow.offset.x.toPx(), DuckerCardShadow.offset.y.toPx(),
+                )
+            })
+            .then(
+                if (compact) Modifier.background(MaterialTheme.colorScheme.surface, shape)
+                else Modifier.clip(shape).background(MaterialTheme.colorScheme.surface),
+            )
+            .then(row),
     ) {
-        Icon(
-            imageVector = Icons.Default.Search,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        // Подсказка — внутри поля, а не рядом: так TalkBack читает её как название поля,
-        // а не отдельной строкой перед безымянным «полем ввода».
+        // Decoration belongs to the input so its icon, padding and empty clear slot also accept taps.
         BasicTextField(
             value = value,
             onValueChange = onValue,
-            modifier = Modifier.weight(1f).heightIn(min = 48.dp).then(input),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).then(input)
+                .semantics { contentDescription = hint },
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium
                 .copy(color = MaterialTheme.colorScheme.onSurface),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             decorationBox = { field ->
-                Box(contentAlignment = Alignment.CenterStart) {
-                    if (value.isEmpty()) {
-                        Text(
-                            text = hint,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                Row(
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 14.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        modifier = Modifier.size(if (compact) 21.dp else 18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    // Keep the hint inside the input's semantics, including when the query is empty.
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                        if (value.isEmpty()) {
+                            Text(
+                                text = hint,
+                                modifier = Modifier.clearAndSetSemantics {},
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+
+                        field()
                     }
 
-                    field()
+                    // Reserve the clear button's space so typing the first character does not shift text.
+                    Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                        if (value.isNotEmpty()) {
+                            IconButton(onClick = { onValue("") }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.search_clear),
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
                 }
             },
         )
+    }
+}
 
-        // Кнопка очистки появляется только когда есть что очищать, но место под неё
-        // зарезервировано всегда — иначе строка дёргается на первом же символе.
-        Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
-            if (value.isNotEmpty()) {
-                IconButton(onClick = { onValue("") }) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.search_clear),
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
+/** The small search surface stays centered inside its unchanged 48 dp input target. */
+private data class CompactSearchShape(val height: Dp) : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val visible = with(density) { height.toPx() }.coerceAtMost(size.height)
+        val top = (size.height - visible) / 2f
+        return Outline.Rounded(
+            RoundRect(
+                Rect(0f, top, size.width, top + visible),
+                CornerRadius(visible / 2f),
+            ),
+        )
     }
 }
 
@@ -364,7 +416,16 @@ fun ScreenHeader(
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().then(
+            if (onBack != null) Modifier.layout { measurable, constraints ->
+                // Let the 48dp touch target enter the gutter; the arrow aligns with section labels.
+                val gutter = 12.dp.roundToPx()
+                val placeable = measurable.measure(constraints.offset(horizontal = gutter))
+                layout(placeable.width - gutter, placeable.height) {
+                    placeable.placeRelative(-gutter, 0)
+                }
+            } else Modifier,
+        ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {

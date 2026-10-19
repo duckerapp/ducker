@@ -15,7 +15,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,10 +42,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.LayerOutsets
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -67,6 +67,7 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.SheetField
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
+import com.github.kr328.clash.ui.components.DuckerCardShadow
 import com.github.kr328.clash.ui.components.FitLabel
 import java.util.concurrent.TimeUnit
 import androidx.compose.runtime.mutableStateOf
@@ -190,6 +191,7 @@ fun EditSubscriptionDialog(
 private fun SheetLink(icon: ImageVector, text: String, enabled: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth()
+            .dropShadow(RoundedCornerShape(20.dp), DuckerCardShadow)
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surface)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
@@ -282,10 +284,10 @@ private fun IntervalPicker(
         Layout(
             modifier = Modifier.fillMaxWidth()
                 .height(52.dp)
+                .dropShadow(CircleShape, DuckerCardShadow)
                 .alpha(if (enabled) 1f else 0.5f)
                 .clip(CircleShape)
                 .background(scheme.surface)
-                .border(1.dp, scheme.outlineVariant, CircleShape)
                 .padding(4.dp)
                 // Пилюля рисуется, а не компонуется: едет каждый кадр, и перекладывать
                 // ради этого сегменты незачем.
@@ -434,6 +436,7 @@ private fun IntervalPicker(
 private fun Unfold(visible: Boolean, content: @Composable () -> Unit) {
     val progress = remember { Animatable(if (visible) 1f else 0f) }
     val open by remember { derivedStateOf { progress.value > 0f } }
+    val shadowOutsets = remember { LayerOutsets(left = 16.dp, top = 0.dp, right = 16.dp, bottom = 16.dp) }
 
     LaunchedEffect(visible) {
         progress.animateTo(
@@ -446,7 +449,13 @@ private fun Unfold(visible: Boolean, content: @Composable () -> Unit) {
 
     Box(
         modifier = Modifier.fillMaxWidth()
-            .clipToBounds()
+            // Keep the content reveal, but let the outer shadow overhang its bounds.
+            .drawWithContent {
+                val overhang = 16.dp.toPx()
+                clipRect(left = -overhang, top = 0f, right = size.width + overhang, bottom = size.height + overhang) {
+                    this@drawWithContent.drawContent()
+                }
+            }
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
                 val height = when {
@@ -455,7 +464,10 @@ private fun Unfold(visible: Boolean, content: @Composable () -> Unit) {
                 }
                 layout(placeable.width, height) { placeable.place(0, height - placeable.height) }
             }
-            .graphicsLayer { alpha = progress.value },
+            .graphicsLayer {
+                alpha = progress.value
+                outsets = shadowOutsets
+            },
     ) {
         content()
     }
@@ -474,6 +486,7 @@ private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Un
 
     Box(
         modifier = modifier.fillMaxWidth()
+            .dropShadow(RoundedCornerShape(20.dp), DuckerCardShadow)
             .clip(RoundedCornerShape(20.dp))
             .background(scheme.surface)
             .padding(horizontal = 16.dp, vertical = 4.dp),

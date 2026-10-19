@@ -241,7 +241,7 @@ fun DuckerTheme(
         }
     }
 
-    MaterialTheme(colorScheme = colors, shapes = DuckerShapes) {
+    MaterialTheme(colorScheme = colors, shapes = DuckerShapes, typography = DuckerTypography) {
         CompositionLocalProvider(LocalTv provides tv) {
             if (onToggleDark == null) content()
             else ThemeReveal(onToggle = onToggleDark, content = content)

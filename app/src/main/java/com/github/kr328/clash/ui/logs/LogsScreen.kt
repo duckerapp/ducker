@@ -119,7 +119,8 @@ fun LogsScreen(
         // Переключатель виден всегда, а не только когда выключено: иначе включить можно,
         // а выключить нечем — человек остаётся с подробным журналом навсегда.
         Card(
-            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
+            modifier = Modifier.fillMaxWidth(),
+            surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
                 .toggleable(value = verbose, role = Role.Switch, onValueChange = onVerbose),
         ) {
             Row(

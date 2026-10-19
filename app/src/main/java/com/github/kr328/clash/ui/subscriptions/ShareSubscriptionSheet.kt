@@ -5,21 +5,25 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.DuckerSheet
+import com.github.kr328.clash.ui.components.DuckerCardShadow
+import com.github.kr328.clash.ui.components.SheetButton
 import io.nayuki.qrcodegen.QrCode
 
 /**
@@ -44,7 +48,8 @@ fun ShareSubscriptionSheet(
                     .widthIn(max = 280.dp)
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .clip(MaterialTheme.shapes.medium)
+                    .dropShadow(MaterialTheme.shapes.large, DuckerCardShadow)
+                    .clip(MaterialTheme.shapes.large)
                     .qr(qr),
             )
         }
@@ -53,16 +58,25 @@ fun ShareSubscriptionSheet(
             text = stringResource(R.string.share_qr_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
         Text(
             text = stringResource(R.string.share_qr_warning),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
 
-        TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.done))
-        }
+        SheetButton(
+            text = stringResource(R.string.done),
+            busyText = stringResource(R.string.done),
+            busy = false,
+            enabled = true,
+            onClick = onDismiss,
+        )
     }
 }
 

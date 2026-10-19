@@ -237,7 +237,7 @@
     <string name="unfavorite">Remover dos favoritos</string>
     <string name="favorite_marked">Nos favoritos</string>
     <string name="other_subscriptions">Outras assinaturas</string>
-    <string name="hero_protected">Protegido</string>
+    <string name="hero_protected">Conectado</string>
     <string name="hero_protected_hint">A VPN está ativa</string>
     <string name="hero_off">Desconectado</string>
     <string name="hero_off_hint">Toque para ativar</string>
@@ -494,4 +494,27 @@
     <string name="external_control">Controle por outros aplicativos</string>
     <string name="external_control_hint">Permite que outros aplicativos, como o Tasker, ativem e desativem a VPN. Os widgets, o botão nas configurações rápidas e os atalhos do ducker funcionam sem essa permissão</string>
     <string name="external_control_denied">O controle por outros aplicativos está desativado. Ative nas configurações do ducker</string>
+
+    <!-- Settings sections and project support. -->
+    <string name="settings_appearance">Aparência</string>
+    <string name="settings_connection_summary">VPN e aplicativos</string>
+    <string name="settings_privacy_summary">Visibilidade e dispositivo</string>
+    <string name="settings_help">Ajuda e diagnóstico</string>
+    <string name="settings_help_summary">Registros, teste de nós e suporte</string>
+    <string name="settings_project">Apoiar o projeto</string>
+    <string name="settings_project_summary">Comunidade e apoio</string>
+    <string name="settings_about">Sobre o aplicativo</string>
+    <string name="settings_language_system">Usar o idioma do sistema</string>
+    <string name="settings_system_language">Idioma atual: %1$s</string>
+    <string name="settings_language_immediate">A seleção é aplicada imediatamente</string>
+    <string name="settings_project_thanks">Obrigado por apoiar o Ducker</string>
+    <string name="settings_project_community">Comunidade</string>
+    <string name="settings_project_source">Código-fonte</string>
+    <string name="settings_project_crypto">Doar criptomoedas</string>
+    <string name="settings_project_mail">Enviar e-mail</string>
+    <string name="settings_wallet_pending">O endereço da carteira ainda não foi adicionado</string>
+    <string name="settings_wallet_copy">Copiar endereço de %1$s (%2$s)</string>
+    <string name="settings_wallet_copied">Endereço da carteira copiado</string>
+    <string name="settings_category_interface">Interface</string>
+    <string name="settings_category_information">Informações</string>
 </resources>

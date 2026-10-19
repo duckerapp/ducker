@@ -13,6 +13,8 @@ import com.github.kr328.clash.ui.components.ringCorner
 import com.github.kr328.clash.ui.components.ringHold
 import com.github.kr328.clash.ui.components.tvKeys
 import com.github.kr328.clash.ui.components.LocalTv
+import com.github.kr328.clash.ui.proxy.ProxyState
+import com.github.kr328.clash.core.model.ProxySort
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusRequester
 import com.github.kr328.clash.ui.components.tabEntry
@@ -69,6 +71,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -105,6 +108,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -115,12 +119,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
@@ -132,6 +138,9 @@ import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
@@ -178,6 +187,9 @@ import com.github.kr328.clash.ui.components.Skeleton
 import com.github.kr328.clash.ui.components.formatBytes
 import com.github.kr328.clash.ui.components.formatDate
 import com.github.kr328.clash.ui.components.screenInsets
+import com.github.kr328.clash.ui.components.DuckerSheet
+import com.github.kr328.clash.ui.components.SheetButton
+import com.github.kr328.clash.ui.components.labelWeights
 import com.github.kr328.clash.ui.components.DuckerCard as Card
 
 /**
@@ -214,6 +226,10 @@ fun HomeScreen(
     backgroundNotice: BackgroundNotice? = null,
     /** Узлы для быстрой смены в карточке (D-116); `null` — ещё не загружены. */
     picker: NodePicker? = null,
+    /** The prepared proxy-tab order, including favorites and non-selectable groups. */
+    pickerState: ProxyState = ProxyState(),
+    onSortNodes: (ProxySort) -> Unit = {},
+    onCheckNodes: (String) -> Unit = {},
     /** Быстрая смена открылась — пора освежить задержки. */
     onOpenPicker: () -> Unit = {},
     onPickNode: (group: String, name: String) -> Unit = { _, _ -> },
@@ -267,6 +283,9 @@ fun HomeScreen(
                 onFastest = onFastest,
                 backgroundNotice = backgroundNotice,
                 picker = picker,
+                pickerState = pickerState,
+                onSortNodes = onSortNodes,
+                onCheckNodes = onCheckNodes,
                 onOpenPicker = onOpenPicker,
                 onPickNode = onPickNode,
                 onPreviewNode = onPreviewNode,
@@ -367,6 +386,9 @@ private fun HomeRegular(
     onFastest: (() -> Unit)?,
     backgroundNotice: BackgroundNotice?,
     picker: NodePicker?,
+    pickerState: ProxyState,
+    onSortNodes: (ProxySort) -> Unit,
+    onCheckNodes: (String) -> Unit,
     onOpenPicker: () -> Unit,
     onPickNode: (group: String, name: String) -> Unit,
     onPreviewNode: (name: String) -> Unit,
@@ -385,11 +407,26 @@ private fun HomeRegular(
     // Быстрая смена узла (D-116). Открыта ли она — здесь, а не в карточке: касание мимо
     // карточки видно только отсюда.
     var picking by remember { mutableStateOf(false) }
+    var pickerMounted by remember { mutableStateOf(false) }
+    val tv = LocalTv.current
+    // Display-size changes alter the logical window height; text keeps the system's own scale.
+    val compact = !tv && LocalConfiguration.current.screenHeightDp < 840
+    val requestNodes by rememberUpdatedState(onOpenPicker)
+    val nodesLoaded by rememberUpdatedState(pickerState.loaded)
     var viewport by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var heroCard by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
     LaunchedEffect(shown) {
         if (!shown) picking = false
+    }
+
+    LaunchedEffect(picking, tv) {
+        if (!tv && picking) {
+            pickerMounted = true
+            // Loaded content can open first; refreshing the sibling tab must not interrupt the sheet.
+            if (nodesLoaded) delay(280)
+            requestNodes()
+        }
     }
 
     Column(
@@ -402,7 +439,7 @@ private fun HomeRegular(
             // человек не гадает, а «Обновить» или шестерёнка под пальцем не срабатывают.
             .onGloballyPositioned { viewport = it }
             .pointerInput(picking) {
-                if (!picking) return@pointerInput
+                if (!picking || !tv) return@pointerInput
 
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -430,7 +467,7 @@ private fun HomeRegular(
         }
 
         if (profile != null && profile.announce.isNotEmpty() && !profile.hwidBlocked) {
-            InfoCard(profile.announce)
+            AnnouncementCard(profile.announce)
         }
 
         // Список ссылок — сообщение без текста ошибки ядра (D-81): ошибка там всегда одна и
@@ -491,7 +528,7 @@ private fun HomeRegular(
                 action = stringResource(R.string.home_choose_subscription) to onChooseSubscription,
             )
         } else if (!state.loaded) {
-            HomeSkeleton()
+            HomeSkeleton(compact)
         }
 
         // VPN остановился не по команде (D-227) — почему и что с этим делать. Без подписки
@@ -522,6 +559,7 @@ private fun HomeRegular(
                 onOpenPicker = onOpenPicker,
                 onPickNode = onPickNode,
                 onPreviewNode = onPreviewNode,
+                compact = compact,
                 modifier = Modifier.onGloballyPositioned { heroCard = it },
             )
         }
@@ -531,6 +569,23 @@ private fun HomeRegular(
             SubscriptionCard(profile, updating, updateFailed, onRefresh, onSupport)
         }
 
+    }
+
+    if (!tv && pickerMounted) {
+        NodePickerSheet(
+            open = picking,
+            state = pickerState,
+            onSort = onSortNodes,
+            onCheck = onCheckNodes,
+            initialGroup = picker?.group ?: state.groups.firstOrNull()?.name,
+            onPick = { group, name ->
+                // A service-specific group must not replace the main connection's node label.
+                if (group == state.groups.firstOrNull()?.name) onPreviewNode(name)
+                onPickNode(group, name)
+            },
+            onDismiss = { picking = false },
+            onClosed = { pickerMounted = false },
+        )
     }
 }
 
@@ -543,11 +598,11 @@ private fun HomeRegular(
  * и роняла весь экран вниз, когда исчезала.
  */
 @Composable
-private fun HomeSkeleton() {
+private fun HomeSkeleton(compact: Boolean) {
     Card(Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 22.dp),
-            verticalArrangement = Arrangement.spacedBy(26.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = if (compact) 16.dp else 22.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 22.dp else 26.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Skeleton(height = 26.dp, width = 190.dp)
@@ -555,7 +610,7 @@ private fun HomeSkeleton() {
             }
 
             Box(
-                modifier = Modifier.size(112.dp)
+                modifier = Modifier.size(if (compact) 96.dp else 112.dp)
                     .align(Alignment.CenterHorizontally)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
@@ -629,6 +684,7 @@ private fun Wordmark(modifier: Modifier = Modifier) {
         text = "DUCKER",
         modifier = modifier,
         style = MaterialTheme.typography.headlineSmall,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Black,
         letterSpacing = 0.14.em,
         maxLines = 1,
@@ -686,6 +742,7 @@ private fun HeroCard(
     onOpenPicker: () -> Unit,
     onPickNode: (group: String, name: String) -> Unit,
     onPreviewNode: (name: String) -> Unit,
+    compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val active = state.running
@@ -754,7 +811,8 @@ private fun HeroCard(
     // Свежие задержки просим после раскрытия, а выбранный узел применяем после
     // сворачивания: и то и другое перерисовывает соседнюю вкладку «Прокси» целиком
     // (12–16 мс, D-91) и рвало бы кадры анимации. Сразу — только если узлов ещё нет.
-    LaunchedEffect(picking) {
+    LaunchedEffect(picking, tv) {
+        if (!tv) return@LaunchedEffect
         if (picking) {
             val loaded = loadedPicker != null
 
@@ -772,7 +830,7 @@ private fun HeroCard(
         }
     }
 
-    BackHandler(enabled = picking) { close() }
+    BackHandler(enabled = picking && tv) { close() }
 
     // Узлы «Прокси» могли ещё не загружаться: панель раскрывается сразу и ждёт их сама.
     val onNode = if (state.groups.isNotEmpty()) ({ onPicking(true) }) else onOpenProxies
@@ -783,15 +841,13 @@ private fun HeroCard(
         if (row.isAttached) nodeRow = box.localBoundingBoxOf(row)
     }
 
-    // Обводка — кольцом, а не линией поверх заливки: линия на скруглении ложилась на край
-    // тёмной заливки, и по углам шла тёмная кайма (F-143). Карточка залита цветом обводки,
-    // оба состояния и волна — внутри, на ширину кольца меньше. Край один и тот же у
-    // включённой и выключенной, и волна кольцо не закрашивает.
+    // Keep the existing inset and inner outline: both wave layers retain their exact
+    // bounds. The outer surface is transparent so the old ring no longer draws a rim.
     Card(
         // Пока панель раскрывается или сворачивается, рамки пульта нет: фокус переходит сразу, а
         // узлы ещё не выехали — или плашка ещё под панелью (D-161).
         modifier = modifier.fillMaxWidth().then(if (tv) Modifier.ringHold(progress.isRunning) else Modifier),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = null,
     ) {
         Box(Modifier.fillMaxWidth().padding(HERO_RING).clip(HeroInner).onGloballyPositioned { card = it }) {
@@ -802,6 +858,7 @@ private fun HeroCard(
                 press = press,
                 onToggle = onToggle,
                 onNode = onNode,
+                compact = compact,
                 onButtonPlaced = ::locate,
                 onNodePlaced = ::placeNodeRow,
                 nodeFocus = Modifier.focusRequester(rowFocus),
@@ -819,6 +876,7 @@ private fun HeroCard(
                     press = press,
                     onToggle = onToggle,
                     onNode = onNode,
+                    compact = compact,
                     onButtonPlaced = {},
                     onNodePlaced = {},
                     textAlpha = { fade(wave.value, TEXT_IN, 1f) },
@@ -894,6 +952,7 @@ private class WaveShape(private val center: Offset, private val radius: Float) :
 }
 
 /** Одна копия карточки — целиком в одном состоянии. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun HeroFace(
     running: Boolean,
@@ -902,6 +961,7 @@ private fun HeroFace(
     press: MutableInteractionSource,
     onToggle: () -> Unit,
     onNode: () -> Unit,
+    compact: Boolean,
     onButtonPlaced: (LayoutCoordinates) -> Unit,
     /** Где стоит плашка узла: из неё раскрывается быстрая смена (D-116). */
     onNodePlaced: (LayoutCoordinates) -> Unit,
@@ -918,14 +978,16 @@ private fun HeroFace(
         Column(
             modifier = modifier.fillMaxWidth()
                 .background(fill)
-                .padding(horizontal = 20.dp, vertical = 22.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 20.dp, vertical = if (compact) 16.dp else 22.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 16.dp),
         ) {
-            Row(
+            FlowRow(
                 modifier = Modifier.graphicsLayer { alpha = textAlpha() },
-                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                maxItemsInEachRow = 2,
             ) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(Modifier.weight(1f).widthIn(min = 160.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     FitLabel(
                         text = stringResource(if (running) R.string.hero_protected else R.string.hero_off),
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
@@ -970,6 +1032,7 @@ private fun HeroFace(
                 busy = state.busy,
                 press = press,
                 onToggle = onToggle,
+                compact = compact,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
                     .onGloballyPositioned(onButtonPlaced),
             )
@@ -1039,6 +1102,7 @@ private fun PowerButton(
     busy: Boolean,
     press: MutableInteractionSource,
     onToggle: () -> Unit,
+    compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -1056,7 +1120,8 @@ private fun PowerButton(
     val face = LocalContentColor.current
     val fill = if (running) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
 
-    Box(modifier.size(RING_BOX), contentAlignment = Alignment.Center) {
+    val diameter = if (compact) 96.dp else 112.dp
+    Box(modifier.size(diameter + 20.dp), contentAlignment = Alignment.Center) {
         AnimatedVisibility(
             visible = busy,
             enter = fadeIn(tween(200, delayMillis = RING_DELAY_MS)),
@@ -1086,7 +1151,7 @@ private fun PowerButton(
         }
 
         Box(
-            modifier = Modifier.size(112.dp)
+            modifier = Modifier.size(diameter)
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
@@ -1120,7 +1185,7 @@ private fun PowerButton(
                 imageVector = Icons.Default.PowerSettingsNew,
                 // Без названия TalkBack читал кнопку питания просто «кнопкой».
                 contentDescription = stringResource(if (running) R.string.ducker_disconnect else R.string.ducker_connect),
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(if (compact) 44.dp else 48.dp),
                 // Значок — цвета карточки: кружок залит её содержимым наоборот.
                 tint = fill,
             )
@@ -1171,9 +1236,6 @@ private const val HINT_OUT_MS = 90
 private const val HINT_IN_MS = 150
 private const val RING_DELAY_MS = 150
 
-/** Кнопка 112 и кольцо ожидания в 10 от неё. */
-private val RING_BOX = 132.dp
-
 /** Строка с текущим узлом внутри главной карточки. */
 @Composable
 private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
@@ -1215,7 +1277,7 @@ private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
                     text = name.ifEmpty { stringResource(R.string.proxies_tab) },
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1303,16 +1365,77 @@ private fun AppUpdateCards(
 }
 
 @Composable
+private fun AnnouncementCard(text: String) {
+    var mounted by remember(text) { mutableStateOf(false) }
+    var open by remember(text) { mutableStateOf(false) }
+    val more = stringResource(R.string.announcement_read_more)
+    val style = MaterialTheme.typography.bodyMedium
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        // Measure before drawing so the disclosure never adds a late row and shifts the page.
+        val inset = 16.dp
+        val iconSize = 24.dp
+        val gap = 12.dp
+        val textWidth = with(density) { (maxWidth - inset * 2 - iconSize - gap).roundToPx().coerceAtLeast(1) }
+        val overflows = measurer.measure(
+            text = text, style = style, maxLines = 3, overflow = TextOverflow.Ellipsis,
+            constraints = Constraints(maxWidth = textWidth),
+        ).hasVisualOverflow
+
+        Card(Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .then(if (overflows) Modifier.clickable(role = Role.Button, onClickLabel = more) {
+                        mounted = true
+                        open = true
+                    } else Modifier)
+                    .padding(inset),
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Default.Campaign, contentDescription = null, modifier = Modifier.size(iconSize))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(text, style = style, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                    if (overflows) {
+                        Text(more, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+        }
+    }
+
+    if (mounted) {
+        DuckerSheet(
+            open = open, title = stringResource(R.string.provider_announcement), busy = false,
+            onDismiss = { open = false }, onClosed = { mounted = false },
+        ) {
+            Card(Modifier.fillMaxWidth()) {
+                SelectionContainer {
+                    Text(text, modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            SheetButton(
+                text = stringResource(R.string.done), busyText = stringResource(R.string.done),
+                busy = false, enabled = true, onClick = { open = false },
+            )
+        }
+    }
+}
+
+@Composable
 private fun InfoCard(
     text: String,
     icon: ImageVector = Icons.Default.Campaign,
     action: Pair<String, () -> Unit>? = null,
     secondary: Pair<String, () -> Unit>? = null,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = containerColor,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
     ) {
@@ -1562,6 +1685,7 @@ private fun LinkFailedCard(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SubscriptionCard(
     profile: Profile,
@@ -1573,6 +1697,7 @@ private fun SubscriptionCard(
     onOpen: (String) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val compact = !LocalTv.current
     // «Сейчас» — заново при каждом возврате на экран и раз в час: главная бывает открыта сутками,
     // и срок оставался вчерашним (аудит 9в.8).
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -1607,21 +1732,26 @@ private fun SubscriptionCard(
 
     Card(Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(if (compact) 14.dp else 16.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp),
         ) {
-            Row(verticalAlignment = Alignment.Bottom) {
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    if (!compact) {
+                        Text(
+                            text = stringResource(R.string.ducker_until_end),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = scheme.onSurfaceVariant,
+                        )
+                    }
                     Text(
-                        text = stringResource(R.string.ducker_until_end),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = scheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = if (profile.expire > 0) formatDate(profile.expire)
+                        text = if (profile.expire > 0) {
+                            if (compact) stringResource(R.string.valid_until, formatDate(profile.expire))
+                            else formatDate(profile.expire)
+                        }
                         else stringResource(R.string.traffic_unlimited),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Normal,
                     )
                 }
 
@@ -1651,20 +1781,36 @@ private fun SubscriptionCard(
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                UpdatePill(updating, updateFailed, onRefresh, Modifier.weight(1f))
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val updateLabels = listOf(
+                    stringResource(R.string.update), stringResource(R.string.updating),
+                    stringResource(R.string.updated), stringResource(R.string.update_failed_short),
+                )
+                val linkLabel = link?.let { stringResource(it.first) }
+                // Include every update outcome so clicking Update never rearranges the buttons.
+                val widths = labelWeights(updateLabels + listOfNotNull(linkLabel), MaterialTheme.typography.labelMedium, 23.dp)
+                val half = with(LocalDensity.current) { ((maxWidth - 8.dp) / 2).toPx() }
+                val stacked = link != null && widths.any { it > half }
 
-                if (link != null) {
-                    val (label, icon, url) = link
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    maxItemsInEachRow = if (stacked) 1 else 2,
+                ) {
+                    UpdatePill(updating, updateFailed, onRefresh, Modifier.weight(1f))
 
-                    CardPill(onClick = { onOpen(url) }, modifier = Modifier.weight(1f)) {
-                        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Text(
-                            text = stringResource(label),
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(start = 6.dp),
-                            maxLines = 1,
-                        )
+                    if (link != null) {
+                        val (_, icon, url) = link
+
+                        CardPill(onClick = { onOpen(url) }, modifier = Modifier.weight(1f)) {
+                            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Text(
+                                text = linkLabel.orEmpty(),
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.padding(start = 6.dp),
+                                maxLines = 1,
+                            )
+                        }
                     }
                 }
             }

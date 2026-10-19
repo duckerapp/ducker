@@ -236,7 +236,7 @@
     <string name="unfavorite">حذف از برگزیده‌ها</string>
     <string name="favorite_marked">برگزیده</string>
     <string name="other_subscriptions">سایر اشتراک‌ها</string>
-    <string name="hero_protected">محافظت‌شده</string>
+    <string name="hero_protected">متصل</string>
     <string name="hero_protected_hint">VPN فعال است</string>
     <string name="hero_off">متصل نیست</string>
     <string name="hero_off_hint">برای روشن کردن بزنید</string>
@@ -490,4 +490,27 @@
     <string name="external_control">کنترل از برنامه‌های دیگر</string>
     <string name="external_control_hint">به برنامه‌های دیگر مانند Tasker اجازه می‌دهد VPN را روشن و خاموش کنند. ویجت‌ها، کاشی و میان‌برهای ducker بدون این گزینه هم کار می‌کنند</string>
     <string name="external_control_denied">کنترل از برنامه‌های دیگر خاموش است — آن را در تنظیمات ducker روشن کنید</string>
+
+    <!-- Settings sections and project support. -->
+    <string name="settings_appearance">ظاهر</string>
+    <string name="settings_connection_summary">VPN و برنامه‌ها</string>
+    <string name="settings_privacy_summary">نمایش برنامه و دستگاه</string>
+    <string name="settings_help">راهنما و عیب‌یابی</string>
+    <string name="settings_help_summary">گزارش‌ها، بررسی گره و پشتیبانی</string>
+    <string name="settings_project">حمایت از پروژه</string>
+    <string name="settings_project_summary">جامعه و پشتیبانی</string>
+    <string name="settings_about">دربارهٔ برنامه</string>
+    <string name="settings_language_system">مطابق سیستم</string>
+    <string name="settings_system_language">زبان فعلی: %1$s</string>
+    <string name="settings_language_immediate">انتخاب فوراً اعمال می‌شود</string>
+    <string name="settings_project_thanks">از حمایت شما از Ducker سپاسگزاریم</string>
+    <string name="settings_project_community">جامعهٔ کاربران</string>
+    <string name="settings_project_source">کد منبع</string>
+    <string name="settings_project_crypto">کمک مالی با رمزارز</string>
+    <string name="settings_project_mail">ارسال ایمیل</string>
+    <string name="settings_wallet_pending">نشانی کیف پول هنوز اضافه نشده</string>
+    <string name="settings_wallet_copy">کپی نشانی %1$s (%2$s)</string>
+    <string name="settings_wallet_copied">نشانی کیف پول کپی شد</string>
+    <string name="settings_category_interface">رابط کاربری</string>
+    <string name="settings_category_information">اطلاعات</string>
 </resources>

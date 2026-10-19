@@ -987,6 +987,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onboarding = onboarding,
                                         backgroundNotice = backgroundNotice,
                                         picker = picker,
+                                        pickerState = proxyState,
+                                        onSortNodes = { proxyViewModel.setSort(this@HomeActivity, it) },
+                                        onCheckNodes = { proxyViewModel.healthCheck(this@HomeActivity, it) },
                                         shown = pagerState.settledPage == 0 && overlay == null,
                                         onOpenPicker = { proxyViewModel.refresh(this@HomeActivity) },
                                         onPickNode = { group, name ->
@@ -1039,6 +1042,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         visible = showSettings,
                         onBack = closeSettings,
                         enabled = !showApps && !showLogs && !showProbe,
+                        frameContent = false,
                     ) {
                         SettingsScreen(
                             state = settingsState,
@@ -1094,6 +1098,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             sendHwid = subscriptionsState.sendHwid,
                             onSendHwid = { subscriptionsViewModel.setSendHwid(this@HomeActivity, it) },
                             onLanguage = { settingsViewModel.setLanguage(it) },
+                            active = showSettings && !showApps && !showLogs && !showProbe,
                             onBack = closeSettings,
                             modifier = Modifier.padding(overlayInsets).consumeWindowInsets(overlayInsets),
                         )

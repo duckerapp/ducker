@@ -8,7 +8,7 @@
 <resources>
     <string name="home_tab">Home</string>
     <string name="proxies_tab">Proxies</string>
-    <string name="subscriptions_tab">Subscriptions</string>
+    <string name="subscriptions_tab">Profiles</string>
 
     <!-- Скорость: %1$s — отдача, %2$s — приём. Стрелки одинаковы во всех языках. -->
 
@@ -48,6 +48,7 @@
     <string name="welcome_text">To connect, add your provider\'s subscription by link or QR code.</string>
     <string name="updating">Updating…</string>
     <string name="delete">Delete</string>
+    <string name="delete_subscription_action">Delete subscription</string>
     <string name="hwid_title">Device ID</string>
     <string name="hwid_explained">Providers use it to count your devices, and support may ask for it.</string>
     <string name="hwid_disabled_warning">The ID isn\'t sent. If your provider counts devices, the subscription will stop updating.</string>
@@ -75,8 +76,8 @@
     <string name="scan_no_camera">No camera access. Allow it in app settings.</string>
     <!-- Поделиться подпиской QR-кодом (этап 10) -->
     <string name="share_qr">Share as QR code</string>
-    <string name="share_qr_hint">On the other phone: ducker → “+” → “Scan QR”. A screenshot of this screen works too — use “From gallery”.</string>
-    <string name="share_qr_warning">Anyone who scans this code can use your subscription. Show it only to your own devices.</string>
+    <string name="share_qr_hint">On the other device, open ducker:\n“+” → “Scan QR”</string>
+    <string name="share_qr_warning">This code gives access to your subscription.\nShow it only to your own devices.</string>
     <!-- Передача подписки с телефона на телевизор (D-162) -->
     <string name="receive_hint">Scan the code with your phone: ducker → Subscriptions → “+” → “Scan QR”. Or enter the link here.</string>
     <string name="receive_code">QR code for sending a subscription from your phone</string>
@@ -149,6 +150,8 @@
     <string name="ducker_active">Active</string>
     <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Valid until</string>
+    <string name="provider_announcement">Provider announcement</string>
+    <string name="announcement_read_more">Read more</string>
     <string name="sort_default">Default order</string>
     <string name="sort_delay">By delay</string>
     <string name="probe">Node test</string>
@@ -266,9 +269,9 @@
     <string name="favorite">Favorite</string>
     <string name="unfavorite">Remove from favorites</string>
     <string name="favorite_marked">Favorite</string>
-    <string name="other_subscriptions">Other subscriptions</string>
+    <string name="other_subscriptions">Other profiles</string>
     <!-- Monochrome home screen (D-65) -->
-    <string name="hero_protected">Protected</string>
+    <string name="hero_protected">Connected</string>
     <string name="hero_protected_hint">VPN is active</string>
     <string name="hero_off">Not connected</string>
     <string name="hero_off_hint">Tap to turn on</string>
@@ -525,4 +528,27 @@
     <string name="external_control">Control from other apps</string>
     <string name="external_control_hint">Lets other apps, such as Tasker, turn the VPN on and off. ducker’s widgets, tile and shortcuts work without it</string>
     <string name="external_control_denied">Control from other apps is off — turn it on in ducker settings</string>
+
+    <!-- Settings sections and project support. -->
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_connection_summary">VPN and apps</string>
+    <string name="settings_privacy_summary">Visibility and device</string>
+    <string name="settings_help">Help and diagnostics</string>
+    <string name="settings_help_summary">Logs, node checks, support</string>
+    <string name="settings_project">Support the project</string>
+    <string name="settings_project_summary">Community and support</string>
+    <string name="settings_about">About</string>
+    <string name="settings_language_system">Follow system</string>
+    <string name="settings_system_language">Currently: %1$s</string>
+    <string name="settings_language_immediate">Your choice applies immediately</string>
+    <string name="settings_project_thanks">Thank you for supporting Ducker</string>
+    <string name="settings_project_community">Community</string>
+    <string name="settings_project_source">Source code</string>
+    <string name="settings_project_crypto">Donate with cryptocurrency</string>
+    <string name="settings_project_mail">Write an email</string>
+    <string name="settings_wallet_pending">Wallet address not added yet</string>
+    <string name="settings_wallet_copy">Copy %1$s address (%2$s)</string>
+    <string name="settings_wallet_copied">Wallet address copied</string>
+    <string name="settings_category_interface">Interface</string>
+    <string name="settings_category_information">Information</string>
 </resources>

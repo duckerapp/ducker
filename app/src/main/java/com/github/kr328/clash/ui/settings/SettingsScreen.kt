@@ -1,9 +1,23 @@
 package com.github.kr328.clash.ui.settings
 
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import com.github.kr328.clash.ui.components.BackLayer
+import com.github.kr328.clash.ui.components.DuckerSheet
+import java.util.Locale
+
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
@@ -32,7 +46,6 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.VpnLock
 import androidx.compose.material.icons.filled.Palette
@@ -43,7 +56,6 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.SystemUpdate
 import com.github.kr328.clash.update.UpdateState
-import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.BatteryChargingFull
@@ -65,11 +77,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
@@ -91,9 +106,8 @@ import com.github.kr328.clash.util.Vendor
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import androidx.compose.material.icons.filled.CheckCircle
-import com.github.kr328.clash.ui.components.IconBadge
+import com.github.kr328.clash.ui.components.ScreenFrame
 import com.github.kr328.clash.ui.components.ScreenHeader
-import com.github.kr328.clash.ui.components.overscrollFor
 import com.github.kr328.clash.ui.components.screenInsets
 import com.github.kr328.clash.ui.components.DuckerCard as Card
 
@@ -138,8 +152,7 @@ data class SettingsState(
     val betaUpdates: Boolean = false,
 )
 
-/** Канал с выпусками и чат сообщества — строки в разделе «Помощь». */
-private const val CHANNEL = "https://t.me/ducker_mihomo"
+/** Community support remains reachable from diagnostics as well as project support. */
 private const val COMMUNITY = "https://t.me/ducker_community"
 
 /** Почта проекта — там же, для тех, кому Telegram не подходит. */
@@ -193,382 +206,451 @@ fun SettingsScreen(
     sendHwid: Boolean,
     onSendHwid: (Boolean) -> Unit,
     onBack: () -> Unit,
+    active: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
-    val list = rememberLazyListState()
+    var destination by rememberSaveable { mutableStateOf(SettingsPage.Appearance.name) }
+    var sectionOpen by rememberSaveable { mutableStateOf(false) }
+    val pages = rememberSaveableStateHolder()
+    var languageMounted by rememberSaveable { mutableStateOf(false) }
+    var languageOpen by rememberSaveable { mutableStateOf(false) }
+    var pendingLanguage by rememberSaveable { mutableStateOf<String?>(null) }
+    val languages = settingsLanguages()
+    val theme = when (state.theme) {
+        SettingsStore.THEME_LIGHT -> stringResource(R.string.theme_light)
+        SettingsStore.THEME_DARK -> stringResource(R.string.theme_dark)
+        else -> stringResource(R.string.theme_system)
+    }
+    val language = languages.firstOrNull { it.first == state.language }?.second
+        ?: stringResource(R.string.language_system)
+    val navigate: (SettingsPage) -> Unit = {
+        destination = it.name
+        sectionOpen = true
+    }
 
-    TvLazyColumn(
-        state = list,
-        overscrollEffect = overscrollFor(list),
-        // Пульт (этап 6): список помнит, где стоял фокус, — Compose помнит по уровню на список.
-        modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp)
-            .then(if (LocalTv.current) Modifier.focusRestorer() else Modifier),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp),
-    ) {
-        item {
-            ScreenHeader(stringResource(R.string.settings), onBack = onBack)
-        }
-
-        // Порядок — по тому, что человеку нужно чаще (D-122): сначала то, от чего каждый день
-        // зависит работа VPN, потом вид и приватность; сетевые тонкости свёрнуты «для
-        // знающих», журнал и диагностика — отдельным разделом в конце.
-        item { SectionTitle(stringResource(R.string.section_connection)) }
-
-        item {
-            BackgroundCard(state.backgroundAllowed, onAllowBackground, onVendor)
-        }
-
-        item {
-            LinkRow(
-                title = stringResource(R.string.access_control),
-                subtitle = stringResource(R.string.access_control_hint),
-                onClick = onAccessControl,
-                icon = Icons.Default.Apps,
-            )
-        }
-
-        // Плитка в быстрых настройках есть давно, но найти её в редакторе шторки умеют
-        // немногие. С Android 13 система может предложить добавить её сама (D-87).
-        if (onAddTile != null) {
-            item {
-                LinkRow(
-                    title = stringResource(R.string.add_tile),
-                    subtitle = stringResource(R.string.add_tile_hint),
-                    onClick = onAddTile,
-                    icon = Icons.Default.ToggleOn,
-                )
-            }
-        }
-
-        item {
-            SwitchRow(
-                title = stringResource(R.string.auto_restart),
-                subtitle = stringResource(R.string.auto_restart_hint),
-                checked = state.autoRestart,
-                onChange = onAutoRestart,
-                icon = Icons.Default.RestartAlt,
-            )
-        }
-
-        // Автозапуск ждёт своей очереди среди событий загрузки — на слабом телефоне полторы
-        // минуты (D-128). Сразу поднимает только «Постоянный VPN» Android (этап 10).
-        item {
-            LinkRow(
-                title = stringResource(R.string.always_on),
-                subtitle = stringResource(if (state.alwaysOn) R.string.always_on_enabled else R.string.always_on_hint),
-                onClick = onAlwaysOn,
-                icon = Icons.Default.VpnLock,
-            )
-        }
-
-        item {
-            SwitchRow(
-                title = stringResource(R.string.traffic_notification),
-                subtitle = stringResource(R.string.traffic_notification_hint),
-                checked = state.trafficNotification,
-                onChange = onTrafficNotification,
-                icon = Icons.Default.Notifications,
-            )
-        }
-
-        item { SectionTitle(stringResource(R.string.section_look)) }
-
-        item {
-            ChipsCard(
-                title = stringResource(R.string.theme),
-                icon = Icons.Default.DarkMode,
-                options = listOf(
-                    SettingsStore.THEME_SYSTEM to stringResource(R.string.theme_system),
-                    SettingsStore.THEME_LIGHT to stringResource(R.string.theme_light),
-                    SettingsStore.THEME_DARK to stringResource(R.string.theme_dark),
-                ),
-                selected = state.theme,
-                onSelect = onTheme,
-            )
-        }
-
-        item {
-            ChipsCard(
-                title = stringResource(R.string.language),
-                icon = Icons.Default.Translate,
-                // Только те языки, на которые переведены наши экраны (D-15).
-                options = listOf(
-                    "" to stringResource(R.string.language_system),
-                    "ru" to stringResource(R.string.language_ru),
-                    "en" to stringResource(R.string.language_en),
-                    // Each in its own language, as Android lists them: not translated (D-320).
-                    "zh-CN" to "简体中文",
-                    "fa" to "فارسی",
-                    "ar" to "العربية",
-                    "es" to "Español",
-                    "fr" to "Français",
-                    "id" to "Bahasa Indonesia",
-                    "pt-BR" to "Português (Brasil)",
-                    "tr" to "Türkçe",
-                    "vi" to "Tiếng Việt",
-                ),
-                selected = state.language,
-                onSelect = onLanguage,
-            )
-        }
-
-        item {
-            SwitchRow(
-                title = stringResource(R.string.oled),
-                subtitle = stringResource(R.string.oled_hint),
-                checked = state.oled,
-                onChange = onOled,
-                icon = Icons.Default.Contrast,
-            )
-        }
-
-        item {
-            SwitchRow(
-                title = stringResource(R.string.dynamic_color),
-                subtitle = stringResource(R.string.dynamic_color_hint),
-                checked = state.dynamicColor,
-                onChange = onDynamicColor,
-                icon = Icons.Default.Palette,
-            )
-        }
-
-        item { SectionTitle(stringResource(R.string.section_privacy)) }
-
-        item {
-            SwitchRow(
-                title = stringResource(R.string.external_control),
-                subtitle = stringResource(R.string.external_control_hint),
-                checked = state.allowExternalControl,
-                onChange = onExternalControl,
-                icon = Icons.Default.ToggleOn,
-            )
-        }
-
-        item {
-            SwitchRow(
-                title = stringResource(R.string.hide_recents),
-                subtitle = stringResource(R.string.hide_recents_hint),
-                checked = state.hideRecents,
-                onChange = onHideRecents,
-                icon = Icons.Default.VisibilityOff,
-            )
-        }
-
-        item {
-            SwitchRow(
-                title = stringResource(R.string.disguise),
-                subtitle = stringResource(R.string.disguise_hint),
-                checked = state.disguise,
-                onChange = onDisguise,
-                icon = Icons.Default.Calculate,
-            )
-        }
-
-        item {
-            HwidCard(hwid, sendHwid, onSendHwid)
-        }
-
-        item { SectionTitle(stringResource(R.string.section_advanced)) }
-
-        item {
-            ExpandableCard(
-                title = stringResource(R.string.advanced),
-                subtitle = stringResource(R.string.advanced_hint),
-                icon = Icons.Default.Tune,
+    val pageContent: @Composable (SettingsPage, () -> Unit) -> Unit = { page, back ->
+        pages.SaveableStateProvider(page.name) {
+            val list = rememberLazyListState()
+            TvLazyColumn(
+                state = list,
+                overscrollEffect = null,
+                modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp)
+                    .then(if (LocalTv.current) Modifier.focusRestorer() else Modifier),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(vertical = 16.dp),
             ) {
-                InnerSwitch(
-                    title = stringResource(R.string.ipv6),
-                    subtitle = stringResource(R.string.ipv6_hint),
-                    checked = state.ipv6,
-                    onChange = onIpv6,
-                )
+                item(key = "header") {
+                    ScreenHeader(stringResource(page.title), onBack = back)
+                }
+                when (page) {
+                    SettingsPage.Root -> {
+                        item(key = "interface") {
+                            SettingsNavigationGroup(stringResource(R.string.settings_category_interface)) {
+                                SettingsNavigationRow(
+                                    title = stringResource(R.string.language), value = language,
+                                    icon = SettingsIcons.Language,
+                                    onClick = { languageMounted = true; languageOpen = true },
+                                )
+                                SettingsNavigationDivider()
+                                SettingsNavigationRow(
+                                    title = stringResource(R.string.settings_appearance), value = theme,
+                                    icon = SettingsIcons.Appearance,
+                                    onClick = { navigate(SettingsPage.Appearance) },
+                                )
+                            }
+                        }
+                        item(key = "vpn") {
+                            SettingsNavigationGroup("VPN") {
+                                SettingsNavigationRow(
+                                    title = stringResource(R.string.section_connection),
+                                    subtitle = stringResource(R.string.settings_connection_summary),
+                                    icon = SettingsIcons.Connection,
+                                    onClick = { navigate(SettingsPage.Connection) },
+                                )
+                                SettingsNavigationDivider()
+                                SettingsNavigationRow(
+                                    title = stringResource(R.string.section_privacy),
+                                    subtitle = stringResource(R.string.settings_privacy_summary),
+                                    icon = SettingsIcons.Privacy,
+                                    onClick = { navigate(SettingsPage.Privacy) },
+                                )
+                            }
+                        }
+                        item(key = "information") {
+                            SettingsNavigationGroup(stringResource(R.string.settings_category_information)) {
+                                SettingsNavigationRow(
+                                    title = stringResource(R.string.settings_help),
+                                    subtitle = stringResource(R.string.settings_help_summary),
+                                    icon = SettingsIcons.Help,
+                                    onClick = { navigate(SettingsPage.Help) },
+                                )
+                                SettingsNavigationDivider()
+                                SettingsNavigationRow(
+                                    title = stringResource(R.string.app_update_check),
+                                    subtitle = when {
+                                        update.checking -> stringResource(R.string.app_update_checking)
+                                        update.release != null -> stringResource(R.string.app_update_available, update.release.version)
+                                        update.checked == false -> stringResource(R.string.app_update_check_failed)
+                                        update.checked == true -> stringResource(R.string.app_update_latest)
+                                        else -> stringResource(R.string.app_update_check_hint)
+                                    },
+                                    icon = SettingsIcons.Update,
+                                    busy = update.checking, onClick = onUpdate,
+                                )
+                                SettingsNavigationDivider()
+                                SettingsNavigationRow(
+                                    title = stringResource(R.string.settings_project),
+                                    subtitle = stringResource(R.string.settings_project_summary),
+                                    icon = SettingsIcons.Project,
+                                    onClick = { navigate(SettingsPage.Project) },
+                                )
+                                SettingsNavigationDivider()
+                                SettingsNavigationRow(
+                                    title = stringResource(R.string.settings_about),
+                                    subtitle = stringResource(R.string.version_app, state.appVersion),
+                                    icon = SettingsIcons.About,
+                                    onClick = { navigate(SettingsPage.About) },
+                                )
+                            }
+                        }
+                    }
+                    SettingsPage.Appearance -> {
+                        item {
+                            ChipsCard(
+                                title = stringResource(R.string.theme),
+                                icon = SettingsIcons.Appearance,
+                                options = listOf(
+                                    SettingsStore.THEME_SYSTEM to stringResource(R.string.theme_system),
+                                    SettingsStore.THEME_LIGHT to stringResource(R.string.theme_light),
+                                    SettingsStore.THEME_DARK to stringResource(R.string.theme_dark),
+                                ),
+                                selected = state.theme,
+                                onSelect = onTheme,
+                            )
+                        }
 
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = stringResource(R.string.stack_mode),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Text(
-                        text = stringResource(R.string.stack_mode_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    // Четыре чипа в одну строку на узком экране не влезают, поэтому
-                    // FlowRow: перенесётся, а не обрежется.
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        for (value in listOf("", "system", "gvisor", "mixed", "mips")) {
-                            FilterChip(
-                                selected = state.stack == value,
-                                onClick = { onStack(value) },
-                                label = {
+                        item {
+                            SwitchRow(
+                                title = stringResource(R.string.oled),
+                                subtitle = stringResource(R.string.oled_hint),
+                                checked = state.oled,
+                                onChange = onOled,
+                                icon = Icons.Default.Contrast,
+                            )
+                        }
+
+                        item {
+                            SwitchRow(
+                                title = stringResource(R.string.dynamic_color),
+                                subtitle = stringResource(R.string.dynamic_color_hint),
+                                checked = state.dynamicColor,
+                                onChange = onDynamicColor,
+                                icon = Icons.Default.Palette,
+                            )
+                        }
+                    }
+                    SettingsPage.Connection -> {
+                        item {
+                            BackgroundCard(state.backgroundAllowed, onAllowBackground, onVendor)
+                        }
+
+                        item {
+                            LinkRow(
+                                title = stringResource(R.string.access_control),
+                                subtitle = stringResource(R.string.access_control_hint),
+                                onClick = onAccessControl,
+                                icon = Icons.Default.Apps,
+                            )
+                        }
+
+                        // Плитка в быстрых настройках есть давно, но найти её в редакторе шторки умеют
+                        // немногие. С Android 13 система может предложить добавить её сама (D-87).
+                        if (onAddTile != null) {
+                            item {
+                                LinkRow(
+                                    title = stringResource(R.string.add_tile),
+                                    subtitle = stringResource(R.string.add_tile_hint),
+                                    onClick = onAddTile,
+                                    icon = Icons.Default.ToggleOn,
+                                )
+                            }
+                        }
+
+                        item {
+                            SwitchRow(
+                                title = stringResource(R.string.auto_restart),
+                                subtitle = stringResource(R.string.auto_restart_hint),
+                                checked = state.autoRestart,
+                                onChange = onAutoRestart,
+                                icon = Icons.Default.RestartAlt,
+                            )
+                        }
+
+                        // Автозапуск ждёт своей очереди среди событий загрузки — на слабом телефоне полторы
+                        // минуты (D-128). Сразу поднимает только «Постоянный VPN» Android (этап 10).
+                        item {
+                            LinkRow(
+                                title = stringResource(R.string.always_on),
+                                subtitle = stringResource(if (state.alwaysOn) R.string.always_on_enabled else R.string.always_on_hint),
+                                onClick = onAlwaysOn,
+                                icon = Icons.Default.VpnLock,
+                            )
+                        }
+
+                        item {
+                            SwitchRow(
+                                title = stringResource(R.string.traffic_notification),
+                                subtitle = stringResource(R.string.traffic_notification_hint),
+                                checked = state.trafficNotification,
+                                onChange = onTrafficNotification,
+                                icon = Icons.Default.Notifications,
+                            )
+                        }
+                        item { SectionTitle(stringResource(R.string.section_advanced)) }
+
+                        item {
+                            ExpandableCard(
+                                title = stringResource(R.string.advanced),
+                                subtitle = stringResource(R.string.advanced_hint),
+                                icon = Icons.Default.Tune,
+                            ) {
+                                InnerSwitch(
+                                    title = stringResource(R.string.ipv6),
+                                    subtitle = stringResource(R.string.ipv6_hint),
+                                    checked = state.ipv6,
+                                    onChange = onIpv6,
+                                )
+
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text(
-                                        // Что именно задал провайдер — видно прямо на чипе (D-122).
-                                        text = value.ifEmpty {
-                                            if (state.profileStack.isEmpty()) stringResource(R.string.stack_from_profile)
-                                            else stringResource(R.string.stack_from_profile_value, state.profileStack)
-                                        },
-                                        style = MaterialTheme.typography.labelMedium,
+                                        text = stringResource(R.string.stack_mode),
+                                        style = MaterialTheme.typography.bodyMedium,
                                     )
-                                },
-                                shape = MaterialTheme.shapes.extraLarge,
+                                    Text(
+                                        text = stringResource(R.string.stack_mode_hint),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    // Четыре чипа в одну строку на узком экране не влезают, поэтому
+                                    // FlowRow: перенесётся, а не обрежется.
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        for (value in listOf("", "system", "gvisor", "mixed", "mips")) {
+                                            FilterChip(
+                                                selected = state.stack == value,
+                                                onClick = { onStack(value) },
+                                                label = {
+                                                    Text(
+                                                        // Что именно задал провайдер — видно прямо на чипе (D-122).
+                                                        text = value.ifEmpty {
+                                                            if (state.profileStack.isEmpty()) stringResource(R.string.stack_from_profile)
+                                                            else stringResource(R.string.stack_from_profile_value, state.profileStack)
+                                                        },
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                    )
+                                                },
+                                                shape = MaterialTheme.shapes.extraLarge,
+                                            )
+                                        }
+                                    }
+                                }
+
+                                InnerSwitch(
+                                    title = stringResource(R.string.dns_hijack),
+                                    subtitle = stringResource(R.string.dns_hijack_hint),
+                                    checked = state.dnsHijacking,
+                                    onChange = onDnsHijacking,
+                                )
+                                InnerSwitch(
+                                    title = stringResource(R.string.bypass_private),
+                                    subtitle = stringResource(R.string.bypass_private_hint),
+                                    checked = state.bypassPrivate,
+                                    onChange = onBypassPrivate,
+                                )
+
+                                // Ниже — то, что меняет саму дорогу трафика. Отделено намеренно:
+                                // случайный клик здесь стоит дороже, чем на остальных переключателях.
+                                HorizontalDivider()
+
+                                Text(
+                                    text = stringResource(R.string.advanced_risky),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+
+                                InnerSwitch(
+                                    title = stringResource(R.string.system_proxy),
+                                    subtitle = stringResource(R.string.system_proxy_hint),
+                                    checked = state.systemProxy,
+                                    onChange = onSystemProxy,
+                                )
+                                InnerSwitch(
+                                    title = stringResource(R.string.allow_bypass),
+                                    subtitle = stringResource(R.string.allow_bypass_hint),
+                                    checked = state.allowBypass,
+                                    onChange = onAllowBypass,
+                                )
+                            }
+                        }
+                        item {
+                            SwitchRow(
+                                title = stringResource(R.string.external_control),
+                                subtitle = stringResource(R.string.external_control_hint),
+                                checked = state.allowExternalControl,
+                                onChange = onExternalControl,
+                                icon = Icons.Default.ToggleOn,
+                            )
+                        }
+                    }
+                    SettingsPage.Privacy -> {
+                        item {
+                            SwitchRow(
+                                title = stringResource(R.string.hide_recents),
+                                subtitle = stringResource(R.string.hide_recents_hint),
+                                checked = state.hideRecents,
+                                onChange = onHideRecents,
+                                icon = Icons.Default.VisibilityOff,
+                            )
+                        }
+
+                        item {
+                            SwitchRow(
+                                title = stringResource(R.string.disguise),
+                                subtitle = stringResource(R.string.disguise_hint),
+                                checked = state.disguise,
+                                onChange = onDisguise,
+                                icon = Icons.Default.Calculate,
+                            )
+                        }
+
+                        item {
+                            HwidCard(hwid, sendHwid, onSendHwid)
+                        }
+                    }
+                    SettingsPage.Help -> {
+                        // «Подробный журнал» — переключателем на самом экране журнала, второй здесь не нужен.
+                        item {
+                            LinkRow(
+                                title = stringResource(R.string.logs),
+                                subtitle = stringResource(R.string.logs_hint),
+                                onClick = onLogs,
+                                icon = Icons.Default.BugReport,
+                            )
+                        }
+
+                        item {
+                            LinkRow(
+                                title = stringResource(R.string.probe),
+                                subtitle = stringResource(R.string.probe_hint),
+                                onClick = onProbe,
+                                icon = Icons.Default.Speed,
+                            )
+                        }
+
+                        item {
+                            LinkRow(
+                                title = stringResource(R.string.dashboard),
+                                subtitle = stringResource(R.string.dashboard_hint),
+                                onClick = onDashboard,
+                                icon = Icons.Default.Insights,
+                            )
+                        }
+                        item {
+                            LinkRow(
+                                title = stringResource(R.string.community),
+                                subtitle = stringResource(R.string.community_hint),
+                                onClick = { onLink(COMMUNITY) },
+                                icon = Icons.Default.Forum,
+                            )
+                        }
+
+                        item {
+                            LinkRow(
+                                title = stringResource(R.string.mail),
+                                subtitle = MAIL,
+                                onClick = onMail,
+                                icon = Icons.Default.Email,
+                            )
+                        }
+                    }
+                    SettingsPage.Project -> {
+                        projectSupportItems(onLink = onLink, onMail = onMail)
+                    }
+                    SettingsPage.About -> {
+                        item {
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    // The tile as on the launcher (D-291): the mark of the other theme, so that it
+                                    // stands out from the card instead of blending into it.
+                                    Image(
+                                        painter = painterResource(
+                                            if (MaterialTheme.colorScheme.background.luminance() < 0.5f) R.drawable.ducker_mark_light
+                                            else R.drawable.ducker_mark_dark
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(percent = 22)),
+                                    )
+                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(
+                                            text = stringResource(R.string.version_app, state.appVersion),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.version_core, state.coreVersion),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        item {
+                            SwitchRow(
+                                title = stringResource(R.string.app_update_beta),
+                                subtitle = stringResource(R.string.app_update_beta_hint),
+                                checked = state.betaUpdates,
+                                onChange = onBetaUpdates,
+                                icon = Icons.Default.Science,
                             )
                         }
                     }
                 }
-
-                InnerSwitch(
-                    title = stringResource(R.string.dns_hijack),
-                    subtitle = stringResource(R.string.dns_hijack_hint),
-                    checked = state.dnsHijacking,
-                    onChange = onDnsHijacking,
-                )
-                InnerSwitch(
-                    title = stringResource(R.string.bypass_private),
-                    subtitle = stringResource(R.string.bypass_private_hint),
-                    checked = state.bypassPrivate,
-                    onChange = onBypassPrivate,
-                )
-
-                // Ниже — то, что меняет саму дорогу трафика. Отделено намеренно:
-                // случайный клик здесь стоит дороже, чем на остальных переключателях.
-                HorizontalDivider()
-
-                Text(
-                    text = stringResource(R.string.advanced_risky),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                InnerSwitch(
-                    title = stringResource(R.string.system_proxy),
-                    subtitle = stringResource(R.string.system_proxy_hint),
-                    checked = state.systemProxy,
-                    onChange = onSystemProxy,
-                )
-                InnerSwitch(
-                    title = stringResource(R.string.allow_bypass),
-                    subtitle = stringResource(R.string.allow_bypass_hint),
-                    checked = state.allowBypass,
-                    onChange = onAllowBypass,
-                )
             }
         }
+    }
 
-        item { SectionTitle(stringResource(R.string.section_help)) }
-
-        // «Подробный журнал» — переключателем на самом экране журнала, второй здесь не нужен.
-        item {
-            LinkRow(
-                title = stringResource(R.string.logs),
-                subtitle = stringResource(R.string.logs_hint),
-                onClick = onLogs,
-                icon = Icons.Default.BugReport,
-            )
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier.fillMaxSize().then(
+                if (sectionOpen) Modifier.clearAndSetSemantics {} else Modifier,
+            ),
+        ) {
+            ScreenFrame { pageContent(SettingsPage.Root, onBack) }
         }
-
-        item {
-            LinkRow(
-                title = stringResource(R.string.probe),
-                subtitle = stringResource(R.string.probe_hint),
-                onClick = onProbe,
-                icon = Icons.Default.Speed,
-            )
+        // Keep the root mounted beneath the section so predictive Back reveals
+        // its saved position, using the same motion as entry into Settings.
+        BackLayer(
+            visible = sectionOpen,
+            enabled = active && !languageMounted,
+            onBack = { sectionOpen = false },
+        ) {
+            pageContent(SettingsPage.valueOf(destination)) { sectionOpen = false }
         }
+    }
 
-        item {
-            LinkRow(
-                title = stringResource(R.string.dashboard),
-                subtitle = stringResource(R.string.dashboard_hint),
-                onClick = onDashboard,
-                icon = Icons.Default.Insights,
-            )
-        }
-
-        item {
-            LinkRow(
-                title = stringResource(R.string.channel),
-                subtitle = stringResource(R.string.channel_hint),
-                onClick = { onLink(CHANNEL) },
-                icon = Icons.AutoMirrored.Filled.Send,
-            )
-        }
-
-        item {
-            LinkRow(
-                title = stringResource(R.string.community),
-                subtitle = stringResource(R.string.community_hint),
-                onClick = { onLink(COMMUNITY) },
-                icon = Icons.Default.Forum,
-            )
-        }
-
-        item {
-            LinkRow(
-                title = stringResource(R.string.mail),
-                subtitle = MAIL,
-                onClick = onMail,
-                icon = Icons.Default.Email,
-            )
-        }
-
-        item { SectionTitle(stringResource(R.string.section_updates)) }
-
-        item {
-            LinkRow(
-                title = stringResource(R.string.app_update_check),
-                subtitle = when {
-                    update.checking -> stringResource(R.string.app_update_checking)
-                    update.release != null -> stringResource(R.string.app_update_available, update.release.version)
-                    update.checked == false -> stringResource(R.string.app_update_check_failed)
-                    update.checked == true -> stringResource(R.string.app_update_latest)
-                    else -> stringResource(R.string.app_update_check_hint)
-                },
-                onClick = onUpdate,
-                icon = Icons.Default.SystemUpdate,
-            )
-        }
-
-        item {
-            SwitchRow(
-                title = stringResource(R.string.app_update_beta),
-                subtitle = stringResource(R.string.app_update_beta_hint),
-                checked = state.betaUpdates,
-                onChange = onBetaUpdates,
-                icon = Icons.Default.Science,
-            )
-        }
-
-        item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // The tile as on the launcher (D-291): the mark of the other theme, so that it
-                    // stands out from the card instead of blending into it.
-                    Image(
-                        painter = painterResource(
-                            if (MaterialTheme.colorScheme.background.luminance() < 0.5f) R.drawable.ducker_mark_light
-                            else R.drawable.ducker_mark_dark
-                        ),
-                        contentDescription = null,
-                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(percent = 22)),
-                    )
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = stringResource(R.string.version_app, state.appVersion),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Text(
-                            text = stringResource(R.string.version_core, state.coreVersion),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                }
-            }
-        }
+    if (languageMounted) {
+        SettingsLanguageSheet(
+            open = languageOpen, selected = state.language, options = languages,
+            onSelect = { pendingLanguage = it; languageOpen = false },
+            onDismiss = { pendingLanguage = null; languageOpen = false },
+            onClosed = {
+                languageMounted = false
+                // Apply after dismissal: a locale change may recreate the Activity.
+                pendingLanguage?.let { value -> pendingLanguage = null; onLanguage(value) }
+            },
+        )
     }
 }
 
@@ -593,7 +675,7 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                IconBadge(Icons.Default.Fingerprint)
+                SettingsIcon(Icons.Default.Fingerprint)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.hwid_title),
@@ -685,7 +767,7 @@ private fun BackgroundCard(allowed: Boolean, onAllow: () -> Unit, onVendor: (Sho
         ) { stepsOpen = !stepsOpen }
     } else Modifier
 
-    Card(modifier = Modifier.fillMaxWidth().then(fold)) {
+    Card(modifier = Modifier.fillMaxWidth(), surfaceModifier = fold) {
         // Отступы — у самих строк, а не общим spacedBy: общий оставался бы, пока шаги
         // сворачиваются, и в последнем кадре карточка прыгала на 12 dp (D-140).
         Column(modifier = Modifier.padding(16.dp)) {
@@ -693,7 +775,7 @@ private fun BackgroundCard(allowed: Boolean, onAllow: () -> Unit, onVendor: (Sho
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                IconBadge(Icons.Default.BatteryChargingFull)
+                SettingsIcon(Icons.Default.BatteryChargingFull)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.background_title), style = MaterialTheme.typography.titleSmall)
                     Text(
@@ -757,7 +839,7 @@ private fun ExpandableCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                IconBadge(icon)
+                SettingsIcon(icon)
 
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(title, style = MaterialTheme.typography.titleSmall)
@@ -813,7 +895,7 @@ private fun InnerSwitch(
     }
 }
 
-/** Выбор из нескольких значений чипами — тема и язык. */
+/** Theme choices wrap vertically when large text needs more room. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ChipsCard(
@@ -823,25 +905,45 @@ private fun ChipsCard(
     selected: String,
     onSelect: (String) -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                IconBadge(icon)
+                SettingsIcon(icon)
                 Text(title, style = MaterialTheme.typography.titleSmall)
             }
-
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.focusGroup()) {
-                options.forEach { (value, label) ->
-                    FilterChip(
-                        selected = selected == value,
-                        onClick = { onSelect(value) },
-                        label = { Text(label) },
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        shape = MaterialTheme.shapes.extraLarge,
-                    )
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val density = LocalDensity.current
+                val labelStyle = MaterialTheme.typography.labelLarge
+                val measurer = rememberTextMeasurer()
+                val widest = options.maxOf { measurer.measure(it.second, labelStyle).size.width }
+                val columns = with(density) {
+                    if ((widest + 12.dp.roundToPx()) * options.size +
+                        8.dp.roundToPx() * (options.size - 1) <= maxWidth.roundToPx()) options.size else 1
+                }
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    maxItemsInEachRow = columns,
+                    modifier = Modifier.fillMaxWidth().selectableGroup(),
+                ) {
+                    options.forEach { (value, label) ->
+                        val chosen = selected == value
+                        val scheme = MaterialTheme.colorScheme
+                        Box(
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                                .clip(MaterialTheme.shapes.extraLarge)
+                                .background(if (chosen) scheme.primaryContainer else scheme.surfaceVariant)
+                                .selectable(selected = chosen, role = Role.RadioButton, onClick = { onSelect(value) })
+                                .padding(horizontal = 6.dp, vertical = 10.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                label, modifier = Modifier.fillMaxWidth(), style = labelStyle,
+                                textAlign = TextAlign.Center,
+                                color = if (chosen) scheme.onPrimaryContainer else scheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -867,14 +969,17 @@ private fun SwitchRow(
     onChange: (Boolean) -> Unit,
     icon: ImageVector,
 ) {
-    Card(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
-        .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            IconBadge(icon)
+            SettingsIcon(icon)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(title, style = MaterialTheme.typography.titleSmall)
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
@@ -888,11 +993,14 @@ private fun SwitchRow(
 
 @Composable
 private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit, icon: ImageVector) {
-    Card(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
-        .clickable(role = Role.Button, onClick = onClick)) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
+            .clickable(role = Role.Button, onClick = onClick),
+    ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            IconBadge(icon)
+            SettingsIcon(icon)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(title, style = MaterialTheme.typography.titleSmall)
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
@@ -934,5 +1042,165 @@ private fun Mosaic(modifier: Modifier) {
                 cornerRadius = corner,
             )
         }
+    }
+}
+
+private enum class SettingsPage(@StringRes val title: Int) {
+    Root(R.string.settings),
+    Appearance(R.string.settings_appearance),
+    Connection(R.string.section_connection),
+    Privacy(R.string.section_privacy),
+    Help(R.string.settings_help),
+    Project(R.string.settings_project),
+    About(R.string.settings_about),
+}
+
+@Composable
+private fun SettingsIcon(icon: ImageVector) {
+    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+}
+
+@Composable
+private fun SettingsNavigationGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            title, modifier = Modifier.padding(start = 4.dp, top = 4.dp).semantics { heading() },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceModifier = Modifier.clip(MaterialTheme.shapes.large),
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun SettingsNavigationDivider() {
+    HorizontalDivider(
+        Modifier.padding(horizontal = 16.dp),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+    )
+}
+
+@Composable
+private fun SettingsNavigationRow(
+    title: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    subtitle: String? = null,
+    value: String? = null,
+    busy: Boolean = false,
+) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 61.dp)
+            .clickable(enabled = !busy, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        SettingsIcon(icon)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            if (value == null) {
+                Text(title, style = MaterialTheme.typography.bodyLarge)
+            } else {
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val measurer = rememberTextMeasurer()
+                    val titleStyle = MaterialTheme.typography.bodyLarge
+                    val valueStyle = MaterialTheme.typography.bodyMedium
+                    val density = LocalDensity.current
+                    val fits = with(density) {
+                        measurer.measure(title, titleStyle).size.width +
+                            measurer.measure(value, valueStyle).size.width + 12.dp.roundToPx() <= maxWidth.roundToPx()
+                    }
+                    if (fits) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(title, Modifier.weight(1f), style = titleStyle)
+                            Text(value, style = valueStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text(title, style = titleStyle)
+                            Text(value, style = valueStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (busy) {
+            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+        } else {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun settingsLanguages(): List<Pair<String, String>> = listOf(
+    "" to stringResource(R.string.language_system),
+    "ru" to stringResource(R.string.language_ru),
+    "en" to stringResource(R.string.language_en),
+    "zh-CN" to "简体中文", "fa" to "فارسی", "ar" to "العربية", "es" to "Español",
+    "fr" to "Français", "id" to "Bahasa Indonesia", "pt-BR" to "Português (Brasil)",
+    "tr" to "Türkçe", "vi" to "Tiếng Việt",
+)
+
+@Composable
+private fun SettingsLanguageSheet(
+    open: Boolean,
+    selected: String,
+    options: List<Pair<String, String>>,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onClosed: () -> Unit,
+) {
+    val systemLocale = android.content.res.Resources.getSystem().configuration.locales[0] ?: Locale.getDefault()
+    val systemName = systemLocale.getDisplayLanguage(systemLocale)
+    DuckerSheet(
+        open = open, title = stringResource(R.string.language), busy = false,
+        heightFraction = 0.78f, onDismiss = onDismiss, onClosed = onClosed,
+    ) {
+        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Card(Modifier.fillMaxWidth()) {
+                LanguageChoice(
+                    label = stringResource(R.string.settings_language_system),
+                    hint = stringResource(R.string.settings_system_language, systemName),
+                    selected = selected.isEmpty(), onSelect = { onSelect("") },
+                )
+            }
+            Card(Modifier.fillMaxWidth()) {
+                options.filter { it.first.isNotEmpty() }.forEach { (value, label) ->
+                    LanguageChoice(label, selected = selected == value, onSelect = { onSelect(value) })
+                }
+            }
+            Text(
+                stringResource(R.string.settings_language_immediate),
+                modifier = Modifier.padding(horizontal = 4.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LanguageChoice(label: String, selected: Boolean, onSelect: () -> Unit, hint: String? = null) {
+    Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge)
+            if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (selected) Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(24.dp))
+        else Spacer(Modifier.size(24.dp))
     }
 }

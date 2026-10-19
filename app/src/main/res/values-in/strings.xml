@@ -235,7 +235,7 @@
     <string name="unfavorite">Hapus dari favorit</string>
     <string name="favorite_marked">Favorit</string>
     <string name="other_subscriptions">Langganan lain</string>
-    <string name="hero_protected">Terlindungi</string>
+    <string name="hero_protected">Terhubung</string>
     <string name="hero_protected_hint">VPN aktif</string>
     <string name="hero_off">Tidak terhubung</string>
     <string name="hero_off_hint">Ketuk untuk mengaktifkan</string>
@@ -486,4 +486,27 @@
     <string name="external_control">Kontrol dari aplikasi lain</string>
     <string name="external_control_hint">Mengizinkan aplikasi lain seperti Tasker mengaktifkan dan menonaktifkan VPN. Widget, tombol Setelan Cepat, dan pintasan ducker tetap berfungsi tanpa opsi ini</string>
     <string name="external_control_denied">Kontrol dari aplikasi lain nonaktif. Aktifkan di pengaturan ducker</string>
+
+    <!-- Settings sections and project support. -->
+    <string name="settings_appearance">Tampilan</string>
+    <string name="settings_connection_summary">VPN dan aplikasi</string>
+    <string name="settings_privacy_summary">Visibilitas dan perangkat</string>
+    <string name="settings_help">Bantuan dan diagnostik</string>
+    <string name="settings_help_summary">Log, uji node, dukungan</string>
+    <string name="settings_project">Dukung proyek</string>
+    <string name="settings_project_summary">Komunitas dan dukungan</string>
+    <string name="settings_about">Tentang aplikasi</string>
+    <string name="settings_language_system">Ikuti sistem</string>
+    <string name="settings_system_language">Bahasa saat ini: %1$s</string>
+    <string name="settings_language_immediate">Pilihan langsung diterapkan</string>
+    <string name="settings_project_thanks">Terima kasih telah mendukung Ducker</string>
+    <string name="settings_project_community">Komunitas</string>
+    <string name="settings_project_source">Kode sumber</string>
+    <string name="settings_project_crypto">Donasi mata uang kripto</string>
+    <string name="settings_project_mail">Kirim email</string>
+    <string name="settings_wallet_pending">Alamat dompet belum ditambahkan</string>
+    <string name="settings_wallet_copy">Salin alamat %1$s (%2$s)</string>
+    <string name="settings_wallet_copied">Alamat dompet disalin</string>
+    <string name="settings_category_interface">Antarmuka</string>
+    <string name="settings_category_information">Informasi</string>
 </resources>

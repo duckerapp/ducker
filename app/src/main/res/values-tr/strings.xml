@@ -236,7 +236,7 @@
     <string name="unfavorite">Favorilerden çıkar</string>
     <string name="favorite_marked">Favorilerde</string>
     <string name="other_subscriptions">Diğer abonelikler</string>
-    <string name="hero_protected">Korunuyor</string>
+    <string name="hero_protected">Bağlı</string>
     <string name="hero_protected_hint">VPN etkin</string>
     <string name="hero_off">Bağlı değil</string>
     <string name="hero_off_hint">Açmak için dokunun</string>
@@ -490,4 +490,27 @@
     <string name="external_control">Diğer uygulamalardan kontrol</string>
     <string name="external_control_hint">Tasker gibi diğer uygulamaların VPN bağlantısını açıp kapatmasına izin verir. ducker widget’ları, Hızlı Ayarlar düğmesi ve kısayolları bu seçenek kapalıyken de çalışır</string>
     <string name="external_control_denied">Diğer uygulamalardan kontrol kapalı; ducker ayarlarından açın</string>
+
+    <!-- Settings sections and project support. -->
+    <string name="settings_appearance">Görünüm</string>
+    <string name="settings_connection_summary">VPN ve uygulamalar</string>
+    <string name="settings_privacy_summary">Görünürlük ve cihaz</string>
+    <string name="settings_help">Yardım ve tanılama</string>
+    <string name="settings_help_summary">Günlükler, düğüm testi, destek</string>
+    <string name="settings_project">Projeyi destekle</string>
+    <string name="settings_project_summary">Topluluk ve destek</string>
+    <string name="settings_about">Hakkında</string>
+    <string name="settings_language_system">Sistem dilini kullan</string>
+    <string name="settings_system_language">Geçerli dil: %1$s</string>
+    <string name="settings_language_immediate">Seçiminiz hemen uygulanır</string>
+    <string name="settings_project_thanks">Ducker’ı desteklediğiniz için teşekkürler</string>
+    <string name="settings_project_community">Topluluk</string>
+    <string name="settings_project_source">Kaynak kodu</string>
+    <string name="settings_project_crypto">Kripto para ile bağış</string>
+    <string name="settings_project_mail">E-posta gönder</string>
+    <string name="settings_wallet_pending">Cüzdan adresi henüz eklenmedi</string>
+    <string name="settings_wallet_copy">%1$s adresini kopyala (%2$s)</string>
+    <string name="settings_wallet_copied">Cüzdan adresi kopyalandı</string>
+    <string name="settings_category_interface">Arayüz</string>
+    <string name="settings_category_information">Bilgi</string>
 </resources>

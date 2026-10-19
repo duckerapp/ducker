@@ -240,7 +240,7 @@
     <string name="unfavorite">إزالة من المفضلة</string>
     <string name="favorite_marked">في المفضلة</string>
     <string name="other_subscriptions">اشتراكات أخرى</string>
-    <string name="hero_protected">محمي</string>
+    <string name="hero_protected">متصل</string>
     <string name="hero_protected_hint">VPN نشط</string>
     <string name="hero_off">غير متصل</string>
     <string name="hero_off_hint">اضغط للتشغيل</string>
@@ -506,4 +506,27 @@
     <string name="external_control">التحكم من تطبيقات أخرى</string>
     <string name="external_control_hint">يسمح لتطبيقات أخرى، مثل Tasker، بتشغيل VPN وقطعه. تعمل تطبيقات ducker المصغّرة وزر الإعدادات السريعة والاختصارات دون هذا الإذن</string>
     <string name="external_control_denied">التحكم من تطبيقات أخرى معطّل؛ فعّله في إعدادات ducker</string>
+
+    <!-- Settings sections and project support. -->
+    <string name="settings_appearance">المظهر</string>
+    <string name="settings_connection_summary">VPN والتطبيقات</string>
+    <string name="settings_privacy_summary">إظهار التطبيق والجهاز</string>
+    <string name="settings_help">المساعدة والتشخيص</string>
+    <string name="settings_help_summary">السجلات وفحص العقد والدعم</string>
+    <string name="settings_project">دعم المشروع</string>
+    <string name="settings_project_summary">المجتمع والدعم</string>
+    <string name="settings_about">حول التطبيق</string>
+    <string name="settings_language_system">حسب النظام</string>
+    <string name="settings_system_language">اللغة الحالية: %1$s</string>
+    <string name="settings_language_immediate">يُطبَّق الاختيار فورًا</string>
+    <string name="settings_project_thanks">شكرًا لدعمك Ducker</string>
+    <string name="settings_project_community">المجتمع</string>
+    <string name="settings_project_source">الشيفرة المصدرية</string>
+    <string name="settings_project_crypto">التبرع بالعملات الرقمية</string>
+    <string name="settings_project_mail">مراسلتنا بالبريد الإلكتروني</string>
+    <string name="settings_wallet_pending">لم يُضف عنوان المحفظة بعد</string>
+    <string name="settings_wallet_copy">نسخ عنوان %1$s (%2$s)</string>
+    <string name="settings_wallet_copied">تم نسخ عنوان المحفظة</string>
+    <string name="settings_category_interface">الواجهة</string>
+    <string name="settings_category_information">المعلومات</string>
 </resources>

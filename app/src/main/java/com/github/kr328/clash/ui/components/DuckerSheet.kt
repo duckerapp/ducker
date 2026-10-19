@@ -87,6 +87,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -111,8 +112,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -149,6 +153,13 @@ internal fun DuckerSheet(
     start: FocusRequester? = null,
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
+    /** A lazy body manages its own scrolling while the sheet's footer stays visible. */
+    scrollable: Boolean = true,
+    /** Leave room for a lazy body and a fixed footer in a short window. */
+    compact: Boolean = false,
+    /** A fraction of the full window; keyboard insets expand it only as far as space allows. */
+    heightFraction: Float? = null,
+    titleAction: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     // Пока подписка загружается, панель не закрывается ни свайпом, ни «назад», ни касанием
@@ -157,6 +168,7 @@ internal fun DuckerSheet(
     val dismiss by rememberUpdatedState(onDismiss)
     val closed by rememberUpdatedState(onClosed)
     val ask by rememberUpdatedState(onAsk)
+    val sheetShape = remember { RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp) }
 
     /** Жест закрытия: занята — нельзя, есть что бросить — спросить, иначе закрыть. Закрылась ли. */
     fun close(): Boolean {
@@ -242,6 +254,7 @@ internal fun DuckerSheet(
         val imeFrom = WindowInsets.imeAnimationSource
         val imeTo = WindowInsets.imeAnimationTarget
         val bars = WindowInsets.navigationBars
+        val status = WindowInsets.statusBars
         // Место под панель и её высота без клавиатуры, пиксели.
         var room by remember { mutableFloatStateOf(0f) }
         var natural by remember { mutableFloatStateOf(0f) }
@@ -335,6 +348,15 @@ internal fun DuckerSheet(
         ) {
             Column(
                 modifier = Modifier.widthIn(max = ReadableWidth).fillMaxWidth()
+                    .then(
+                        if (heightFraction != null) Modifier.layout { measurable, constraints ->
+                            val fullWindow = constraints.maxHeight + status.getTop(this)
+                            val target = (fullWindow * heightFraction + keyboard(ime)).roundToInt()
+                                .coerceIn(0, constraints.maxHeight)
+                            val placeable = measurable.measure(constraints.copy(minHeight = target, maxHeight = target))
+                            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                        } else Modifier,
+                    )
                     .onSizeChanged {
                         height = it.height.toFloat()
 
@@ -357,7 +379,10 @@ internal fun DuckerSheet(
                         orientation = Orientation.Vertical,
                         onDragStopped = { settle(it) },
                     )
-                    .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    // Its height animates: a platform outline shadow avoids rebuilding
+                    // a full-sheet blur mask for each new height.
+                    .shadow(8.dp, sheetShape, clip = false)
+                    .clip(sheetShape)
                     .background(MaterialTheme.colorScheme.background),
             ) {
                 // Ручка — знак, что панель тянется.
@@ -380,7 +405,7 @@ internal fun DuckerSheet(
                                 if (tv) Modifier.focusProperties { if (start != null) onEnter = { start.requestFocus() } }.focusGroup()
                                 else Modifier,
                             )
-                            .verticalScroll(rememberScrollState())
+                            .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                             .navigationBarsPadding()
                             .imePadding()
                             // Высота меняется плавно: подсказка при загрузке, строка ошибки, лишняя
@@ -390,19 +415,40 @@ internal fun DuckerSheet(
                             // Held at the bottom while the height rides, like the sheet itself: the rows below
                             // a change stay still, and only the sheet's top moves. Held at the top, the save
                             // button hopped whenever the spring and a block's own animation drifted apart (D-314).
-                            .animateContentSize(spring(stiffness = Spring.StiffnessMediumLow), alignment = Alignment.BottomStart)
-                            .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                            .then(
+                                // A fixed-height body already follows the IME insets. A second size
+                                // spring makes its rows chase the sheet when the keyboard closes.
+                                if (heightFraction == null) Modifier.animateContentSize(
+                                    spring(stiffness = Spring.StiffnessMediumLow), alignment = Alignment.BottomStart,
+                                ) else Modifier,
+                            )
+                            .padding(start = 20.dp, end = 20.dp, bottom = if (compact) 12.dp else 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 16.dp),
                     ) {
                         // Цвет текста — под фон панели: окно диалога берёт чёрный по умолчанию, и в
                         // тёмной теме заголовок и строки-переходы пропадали на фоне.
                         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    text = title,
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                )
+                                if (titleAction == null) {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                } else {
+                                    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(
+                                            text = title,
+                                            modifier = Modifier.weight(1f),
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        Box(
+                                            Modifier.height(with(density) { MaterialTheme.typography.headlineSmall.lineHeight.toDp() }),
+                                            contentAlignment = Alignment.Center,
+                                        ) { titleAction() }
+                                    }
+                                }
 
                                 if (hint != null) {
                                     Text(
@@ -502,9 +548,10 @@ internal fun SheetField(
 
     Row(
         modifier = Modifier.fillMaxWidth()
+            .dropShadow(shape, DuckerCardShadow)
             .clip(shape)
             .background(scheme.surface)
-            .border(1.dp, if (error) scheme.error else scheme.outlineVariant, shape)
+            .then(if (error) Modifier.border(1.dp, scheme.error, shape) else Modifier)
             .then(row)
             .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -581,15 +628,15 @@ internal fun SheetButton(
 
     Box(
         modifier = Modifier.fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .dropShadow(CircleShape, DuckerCardShadow)
             // Нечего отправлять — кнопка приглушена целиком, вместе с фоном.
             .alpha(if (enabled || busy) 1f else 0.4f)
-            .heightIn(min = 56.dp)
             .clip(CircleShape)
             .background(back)
             .then(
                 if (filling) {
-                    Modifier.border(1.dp, scheme.outlineVariant, CircleShape)
-                        .semantics { progressBarRangeInfo = ProgressBarRangeInfo(filled, 0f..1f) }
+                    Modifier.semantics { progressBarRangeInfo = ProgressBarRangeInfo(filled, 0f..1f) }
                 } else Modifier
             )
             .clickable(enabled = enabled && !busy, role = Role.Button, onClick = onClick),
@@ -649,7 +696,7 @@ private fun SheetButtonLabel(text: String, busyText: String, busy: Boolean, ring
                 text = if (working) busyText else text,
                 color = color,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Medium,
             )
         }
     }

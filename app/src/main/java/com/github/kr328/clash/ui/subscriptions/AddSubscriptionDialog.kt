@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -43,6 +43,7 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.SheetField
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
+import com.github.kr328.clash.ui.components.DuckerCardShadow
 import com.github.kr328.clash.ui.components.FitLabel
 import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.labelWeights
@@ -238,13 +239,13 @@ internal fun SourceTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val shape = RoundedCornerShape(20.dp)
     Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.dropShadow(shape, DuckerCardShadow),
+        shape = shape,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(
             modifier = Modifier.padding(vertical = 16.dp, horizontal = TILE_PADDING).alpha(if (enabled) 1f else 0.5f),

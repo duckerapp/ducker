@@ -40,6 +40,7 @@
     <string name="welcome_text">Чтобы подключиться, добавьте подписку провайдера — ссылкой или QR-кодом.</string>
     <string name="updating">Обновляю…</string>
     <string name="delete">Удалить</string>
+    <string name="delete_subscription_action">Удалить подписку</string>
     <string name="hwid_title">Идентификатор устройства</string>
     <string name="hwid_explained">По нему провайдер считает устройства; его же спрашивает поддержка.</string>
     <string name="hwid_disabled_warning">Идентификатор не отправляется. Если провайдер считает устройства, подписка перестанет обновляться.</string>
@@ -67,8 +68,8 @@
     <string name="scan_no_camera">Нет доступа к камере. Разрешите его в настройках приложения.</string>
     <!-- Поделиться подпиской QR-кодом (этап 10) -->
     <string name="share_qr">Поделиться QR-кодом</string>
-    <string name="share_qr_hint">На другом устройстве: ducker → «+» → «Сканировать QR». Подойдёт и скриншот этого экрана — через «Из галереи».</string>
-    <string name="share_qr_warning">Кто отсканирует этот код, сможет пользоваться подпиской. Показывайте его только своим устройствам.</string>
+    <string name="share_qr_hint">На другом устройстве откройте ducker:\n«+» → «Сканировать QR»</string>
+    <string name="share_qr_warning">Этот код даёт доступ к подписке.\nПоказывайте его только своим устройствам.</string>
     <!-- Передача подписки с телефона на телевизор (D-162) -->
     <string name="receive_hint">Отсканируйте код телефоном: ducker → «Подписки» → «+» → «Сканировать QR». Или введите ссылку здесь.</string>
     <string name="receive_code">QR-код для передачи подписки с телефона</string>
@@ -139,6 +140,8 @@
     <string name="ducker_active">Активна</string>
     <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Подписка до</string>
+    <string name="provider_announcement">Анонс провайдера</string>
+    <string name="announcement_read_more">Подробнее</string>
     <string name="sort_default">По порядку</string>
     <string name="sort_delay">По задержке</string>
     <string name="probe">Замер узла</string>
@@ -258,7 +261,7 @@
     <string name="favorite_marked">В избранном</string>
     <string name="other_subscriptions">Другие подписки</string>
     <!-- Главная в чёрно-белом стиле (D-65) -->
-    <string name="hero_protected">Защищено</string>
+    <string name="hero_protected">Подключено</string>
     <string name="hero_protected_hint">VPN работает</string>
     <string name="hero_off">Не подключено</string>
     <string name="hero_off_hint">Нажмите, чтобы включить</string>
@@ -520,4 +523,27 @@
     <string name="external_control">Управление из других приложений</string>
     <string name="external_control_hint">Другие приложения, например Tasker, смогут включать и выключать VPN. Виджеты, плитка и ярлыки ducker работают и без этого</string>
     <string name="external_control_denied">Управление из других приложений выключено — включите его в настройках ducker</string>
+
+    <!-- Settings sections and project support. -->
+    <string name="settings_appearance">Оформление</string>
+    <string name="settings_connection_summary">VPN и приложения</string>
+    <string name="settings_privacy_summary">Видимость и устройство</string>
+    <string name="settings_help">Помощь и диагностика</string>
+    <string name="settings_help_summary">Журнал, проверка узла, поддержка</string>
+    <string name="settings_project">Помощь проекту</string>
+    <string name="settings_project_summary">Сообщество и поддержка</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_language_system">Как в системе</string>
+    <string name="settings_system_language">Сейчас: %1$s</string>
+    <string name="settings_language_immediate">Выбор применяется сразу</string>
+    <string name="settings_project_thanks">Спасибо, что поддерживаете Ducker</string>
+    <string name="settings_project_community">Сообщество</string>
+    <string name="settings_project_source">Исходный код</string>
+    <string name="settings_project_crypto">Донат в криптовалюте</string>
+    <string name="settings_project_mail">Написать на почту</string>
+    <string name="settings_wallet_pending">Кошелёк пока не указан</string>
+    <string name="settings_wallet_copy">Скопировать адрес %1$s (%2$s)</string>
+    <string name="settings_wallet_copied">Адрес кошелька скопирован</string>
+    <string name="settings_category_interface">Интерфейс</string>
+    <string name="settings_category_information">Информация</string>
 </resources>

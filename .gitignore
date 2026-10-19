@@ -31,6 +31,7 @@ gradle-app.setting
 # ducker: исключается содержимое, а не сам каталог — иначе git не заглядывает
 # внутрь и не видит исключение-наоборот для нашего подкаталога ниже.
 app/src/main/assets/*
+!app/src/main/assets/licenses/
 
 # KeyStore
 signing.properties

@@ -235,7 +235,7 @@
     <string name="unfavorite">Bỏ yêu thích</string>
     <string name="favorite_marked">Đã yêu thích</string>
     <string name="other_subscriptions">Gói đăng ký khác</string>
-    <string name="hero_protected">Được bảo vệ</string>
+    <string name="hero_protected">Đã kết nối</string>
     <string name="hero_protected_hint">VPN đang hoạt động</string>
     <string name="hero_off">Chưa kết nối</string>
     <string name="hero_off_hint">Nhấn để bật</string>
@@ -486,4 +486,27 @@
     <string name="external_control">Điều khiển từ ứng dụng khác</string>
     <string name="external_control_hint">Cho phép ứng dụng khác như Tasker bật và tắt VPN. Tiện ích, nút Cài đặt nhanh và lối tắt của ducker vẫn hoạt động khi tắt tùy chọn này</string>
     <string name="external_control_denied">Điều khiển từ ứng dụng khác đang tắt; hãy bật trong cài đặt ducker</string>
+
+    <!-- Settings sections and project support. -->
+    <string name="settings_appearance">Giao diện</string>
+    <string name="settings_connection_summary">VPN và ứng dụng</string>
+    <string name="settings_privacy_summary">Hiển thị và thiết bị</string>
+    <string name="settings_help">Trợ giúp và chẩn đoán</string>
+    <string name="settings_help_summary">Nhật ký, kiểm tra nút, hỗ trợ</string>
+    <string name="settings_project">Ủng hộ dự án</string>
+    <string name="settings_project_summary">Cộng đồng và hỗ trợ</string>
+    <string name="settings_about">Giới thiệu</string>
+    <string name="settings_language_system">Theo hệ thống</string>
+    <string name="settings_system_language">Ngôn ngữ hiện tại: %1$s</string>
+    <string name="settings_language_immediate">Lựa chọn được áp dụng ngay</string>
+    <string name="settings_project_thanks">Cảm ơn bạn đã ủng hộ Ducker</string>
+    <string name="settings_project_community">Cộng đồng</string>
+    <string name="settings_project_source">Mã nguồn</string>
+    <string name="settings_project_crypto">Quyên góp tiền mã hóa</string>
+    <string name="settings_project_mail">Gửi email</string>
+    <string name="settings_wallet_pending">Chưa thêm địa chỉ ví</string>
+    <string name="settings_wallet_copy">Sao chép địa chỉ %1$s (%2$s)</string>
+    <string name="settings_wallet_copied">Đã sao chép địa chỉ ví</string>
+    <string name="settings_category_interface">Giao diện</string>
+    <string name="settings_category_information">Thông tin</string>
 </resources>

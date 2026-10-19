@@ -51,6 +51,10 @@ import kotlinx.coroutines.launch
  * [enabled] — ловить ли «назад»: у настроек его забирает открытый поверх экран. Заодно
  * закрытый экран прячется от TalkBack, как вкладки под настройками: человек его не видит.
  * [wide] — без предела ширины, см. [ScreenFrame].
+ *
+ * [frameContent] is false when content owns a separate [ScreenFrame] for each page.
+ * A shared frame above nested layers would paint a stationary status-bar gradient
+ * over the moving page during predictive Back.
  */
 @Composable
 fun BackLayer(
@@ -58,6 +62,7 @@ fun BackLayer(
     onBack: () -> Unit,
     enabled: Boolean = true,
     wide: Boolean = false,
+    frameContent: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -171,7 +176,7 @@ fun BackLayer(
                 .then(if (enabled) Modifier else Modifier.clearAndSetSemantics {})
                 .then(if (tv) Modifier.focusRoom(focus) else Modifier),
         ) {
-            ScreenFrame(wide, content = content)
+            if (frameContent) ScreenFrame(wide, content = content) else content()
         }
     }
 }

@@ -10,7 +10,6 @@ import com.github.kr328.clash.ui.components.keepFocus
 import com.github.kr328.clash.ui.components.ringCorner
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.ui.semantics.semantics
@@ -41,7 +40,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -68,25 +66,17 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.zIndex
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.filled.Add
@@ -137,12 +127,13 @@ import com.github.kr328.clash.ui.components.overscrollFor
 import com.github.kr328.clash.ui.components.screenInsets
 import java.util.UUID
 import com.github.kr328.clash.ui.components.DuckerCard as Card
+import com.github.kr328.clash.ui.components.DuckerCardShadow
 
 /**
  * Третья вкладка: подписки (этап 5).
  *
- * The active subscription is a card on top; the others are rows on one shared white backing under
- * the caption «Другие подписки» (stage 19, package 4). The model hands them over in order: the
+ * The active subscription is a card on top; the others are compact Air cards under
+ * the caption «Другие подписки». The model hands them over in order: the
  * active one, favourites, the rest.
  */
 @Composable
@@ -229,19 +220,16 @@ fun SubscriptionsScreen(
         // (D-317).
         val renew = firstProviderLink(profile.buyUrl, profile.supportUrl, profile.profileWebPageUrl)
         val support = providerLink(profile.supportUrl)
-        // The active card has «Обновить», «Изменить» and the QR button of its own.
-        val main = profile.active
-
         ProfileMenu(
             open = menuOpen,
             name = profile.shownName,
             actions = listOfNotNull(
-                MenuAction.Update.takeIf { !main && !profile.local },
-                MenuAction.Edit.takeIf { !main },
-                MenuAction.Renew.takeIf { renew != null },
-                MenuAction.Support.takeIf { support != null },
-                MenuAction.Share.takeIf { !main && !profile.local },
+                MenuAction.Update.takeIf { !profile.local },
+                MenuAction.Edit,
                 MenuAction.Favorite,
+                MenuAction.Support.takeIf { support != null },
+                MenuAction.Renew.takeIf { renew != null },
+                MenuAction.Share.takeIf { !profile.local },
                 MenuAction.Delete,
             ),
             favorite = profile.uuid in state.favorites,
@@ -287,9 +275,6 @@ fun SubscriptionsScreen(
     val direction = LocalLayoutDirection.current
     val start = 16.dp + contentPadding.calculateStartPadding(direction)
     val end = 16.dp + contentPadding.calculateEndPadding(direction)
-    val rows by rememberUpdatedState(others.mapTo(HashSet<Any>()) { it.uuid.toString() })
-    val backing = MaterialTheme.colorScheme.surface
-    val edge = MaterialTheme.colorScheme.outlineVariant
 
     PullToRefresh(
         refreshing = refreshing,
@@ -300,47 +285,10 @@ fun SubscriptionsScreen(
         TvLazyColumn(
             state = list,
             overscrollEffect = bounce,
-            modifier = Modifier.fillMaxSize().screenInsets().drawBehind {
-                // The rows' white backing: one shape from the first row to the last, drawn by the
-                // list rather than by each row — a neighbour sliding to its new place during a drag
-                // would open a gap in pieces. Taken from the layout's places, which a drag never
-                // changes, and moved with the bounce at the list's edge, which shifts the content
-                // as a layer.
-                val layout = list.layoutInfo
-                var top = Float.POSITIVE_INFINITY
-                var bottom = Float.NEGATIVE_INFINITY
-
-                for (item in layout.visibleItemsInfo) {
-                    if (item.key !in rows) continue
-
-                    val y = (item.offset - layout.viewportStartOffset).toFloat()
-
-                    top = minOf(top, y)
-                    bottom = maxOf(bottom, y + item.size)
-                }
-                if (top >= bottom) return@drawBehind
-
-                val stroke = 1.dp.toPx()
-                val radius = BACKING_CORNER.toPx()
-                val left = (if (layoutDirection == LayoutDirection.Ltr) start else end).toPx()
-                val width = size.width - start.toPx() - end.toPx()
-
-                clipRect {
-                    translate(top = top + (bounce?.offset ?: 0f)) {
-                        drawRoundRect(backing, Offset(left, 0f), Size(width, bottom - top), CornerRadius(radius))
-                        drawRoundRect(
-                            color = edge,
-                            topLeft = Offset(left + stroke / 2, stroke / 2),
-                            size = Size(width - stroke, bottom - top - stroke),
-                            cornerRadius = CornerRadius(radius - stroke / 2),
-                            style = Stroke(stroke),
-                        )
-                    }
-                }
-            },
+            modifier = Modifier.fillMaxSize().screenInsets(),
             // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
-            // панель вкладок и видны в просветах по её бокам (D-74). Between items there are none:
-            // the rows stand edge to edge, every other item brings its own gap below.
+            // панель вкладок и видны в просветах по её бокам (D-74). Each card owns its trailing
+            // gap so the lazy item's bounds remain stable while it is dragged.
             contentPadding = PaddingValues(
                 start = start,
                 end = end,
@@ -417,7 +365,6 @@ fun SubscriptionsScreen(
                 val below = others.getOrNull(index + 1)
                 val up = stringResource(R.string.move_up)
                 val down = stringResource(R.string.move_down)
-                val lifted = { p: Profile -> p.uuid.toString().let { k -> reorder.dragged == k || reorder.settling == k } }
 
                 ProfileRow(
                     // Соседи расступаются плавно только при перестановке: в остальное время сдвиг
@@ -432,8 +379,6 @@ fun SubscriptionsScreen(
                         } else null,
                     ),
                     reorder = reorder,
-                    // The line above a row; none beside a lifted one — its place stays blank under it.
-                    line = above != null && !lifted(profile) && !lifted(above),
                     onLift = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                     onStep = { haptic.performHapticFeedback(HapticFeedbackType.SegmentTick) },
                     // TalkBack перетаскивать не умеет — те же перестановки действиями, в своей группе.
@@ -492,7 +437,6 @@ private fun ActiveCard(
 
     val container = if (profile.hwidBlocked) scheme.errorContainer else scheme.primaryContainer
     val content = if (profile.hwidBlocked) scheme.onErrorContainer else scheme.onPrimaryContainer
-    val border = if (profile.hwidBlocked) scheme.outlineVariant else scheme.primary
 
     Card(
         // Повторное касание по выбранной ничего не делает: смена профиля перезагружает конфиг
@@ -504,7 +448,6 @@ private fun ActiveCard(
             .focusProperties { if (tv) canFocus = false }
             .selectable(selected = true, role = Role.RadioButton, onClick = {}),
         colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
-        border = BorderStroke(1.dp, border),
     ) {
         // Another subscription chosen: the card stays in place, its content fades through to the
         // new one (Material's timings) and the height flows to it.
@@ -581,8 +524,6 @@ private fun ActiveCard(
 private fun ProfileRow(
     modifier: Modifier,
     reorder: ProfileReorder,
-    /** A line above the row, inset under the text at both ends. */
-    line: Boolean,
     onLift: () -> Unit,
     onStep: () -> Unit,
     moves: List<CustomAccessibilityAction>,
@@ -598,9 +539,7 @@ private fun ProfileRow(
     val key = profile.uuid.toString()
     val lifted = reorder.dragged == key
 
-    // Released, the card rides to its place still lifted and only there is put down. Until it is
-    // flat it stays opaque and above its neighbours: a shadow under a see-through card showed as a
-    // grey plate, and the lines beside its place came back over its edges.
+    // Keep the released card above its neighbours until it reaches its place and is put down.
     val up = lifted || (reorder.settling == key && reorder.arrived != key)
     val lift by animateFloatAsState(if (up) 1f else 0f, tween(LIFT_MS), label = "lift")
     val raised = lifted || reorder.settling == key || lift > 0f
@@ -629,12 +568,8 @@ private fun ProfileRow(
     val menu = remember { FocusRequester() }
     val tv = LocalTv.current
 
-    Box(modifier.fillMaxWidth().zIndex(if (raised) 1f else 0f)) {
-        if (line) HorizontalDivider(Modifier.padding(horizontal = ROW_INSET), color = scheme.outlineVariant)
-
-        // Долгое нажатие поднимает строку (этап 13, пакет 5): она становится карточкой — своя
-        // подложка, рамка, тень, чуть крупнее — и едет над соседями; под ней остаётся пустое
-        // место на общей подложке.
+    Box(modifier.fillMaxWidth().padding(bottom = ROW_GAP).zIndex(if (raised) 1f else 0f)) {
+        // The opaque surface and its cached Air shadow travel together in the existing drag layer.
         Row(
             modifier = Modifier.fillMaxWidth()
                 .graphicsLayer {
@@ -644,12 +579,10 @@ private fun ProfileRow(
                     shadowElevation = LIFT_SHADOW.toPx() * lift
                     this.shape = shape
                 }
-                // Opaque at once, not faded in: a row dragged off at once would show its neighbour
-                // through itself. At the lift and when flat again it is over its own white place.
-                .then(if (raised) Modifier.background(scheme.surface, shape) else Modifier)
-                .border(1.dp, scheme.outlineVariant.copy(alpha = lift), shape)
+                .dropShadow(shape, DuckerCardShadow)
                 .clip(shape)
-                .then(if (tv) Modifier.ringCorner(BACKING_CORNER) else Modifier)
+                .background(scheme.surface)
+                .then(if (tv) Modifier.ringCorner(ROW_CORNER) else Modifier)
                 .focusRequester(self)
                 .focusProperties { if (tv) right = menu }
                 .selectable(
@@ -662,7 +595,7 @@ private fun ProfileRow(
                 .semantics { customActions = moves }
                 .reorderable(reorder, key, scale = { 1f + LIFT_SCALE * lift }, onLift = onLift, onStep = onStep)
                 .heightIn(min = ROW_HEIGHT)
-                .padding(start = ROW_INSET),
+                .padding(start = ROW_INSET, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -671,14 +604,15 @@ private fun ProfileRow(
                     modifier = Modifier.weight(1f).padding(vertical = 15.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    ProfileName(profile, favorite, rules)
+                    ProfileName(profile, favorite, rules, style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight(450))
 
                     Text(
                         text = profileSummary(profile, updating),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (!profile.imported) scheme.error
-                        else LocalContentColor.current.copy(alpha = 0.7f),
-                        maxLines = 1,
+                        else scheme.onSurfaceVariant,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
 
@@ -702,12 +636,18 @@ private fun ProfileRow(
 
 /** The name with a star when it is a favourite and the rules badge (D-123). */
 @Composable
-private fun ProfileName(profile: Profile, favorite: Boolean, rules: Int, style: TextStyle = LocalTextStyle.current) {
+private fun ProfileName(
+    profile: Profile,
+    favorite: Boolean,
+    rules: Int,
+    style: TextStyle = LocalTextStyle.current,
+    fontWeight: FontWeight = FontWeight.Medium,
+) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             text = profile.shownName,
             style = style,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = fontWeight,
             modifier = Modifier.weight(1f, fill = false),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -790,10 +730,11 @@ private fun ActiveDetails(
                     if (loaded) R.string.ducker_active else R.string.profile_not_loaded
                 ),
                 style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Normal,
             )
             if (loaded && profile.expire > 0 && !profile.local) {
                 Text(stringResource(R.string.valid_until, formatDate(profile.expire)),
-                    style = MaterialTheme.typography.labelMedium)
+                    style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Normal)
             }
         }
         if (loaded && profile.local) {
@@ -871,7 +812,7 @@ private fun ActiveDetails(
 
 private enum class MenuAction { Update, Edit, Renew, Support, Share, Favorite, Delete }
 
-/** Действия подписки — панелью снизу (D-121); у активной — те, которых нет на карточке. */
+/** The same actions apply to active and inactive subscriptions. */
 @Composable
 private fun ProfileMenu(
     open: Boolean,
@@ -883,27 +824,33 @@ private fun ProfileMenu(
     onClosed: () -> Unit,
 ) {
     DuckerSheet(open = open, title = name, busy = false, onDismiss = onDismiss, onClosed = onClosed) {
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             for (action in actions) {
-                val click = { onAction(action) }
+                val icon = when (action) {
+                    MenuAction.Update -> Icons.Default.Refresh
+                    MenuAction.Edit -> Icons.Outlined.Edit
+                    MenuAction.Share -> Icons.Default.QrCode2
+                    MenuAction.Favorite -> if (favorite) Icons.Filled.Star else Icons.Outlined.StarOutline
+                    MenuAction.Renew -> Icons.Default.CreditCard
+                    MenuAction.Support -> Icons.Default.SupportAgent
+                    MenuAction.Delete -> Icons.Default.DeleteOutline
+                }
+                val label = when (action) {
+                    MenuAction.Update -> R.string.update
+                    MenuAction.Edit -> R.string.edit
+                    MenuAction.Share -> R.string.share_qr
+                    MenuAction.Favorite -> if (favorite) R.string.unfavorite else R.string.favorite
+                    MenuAction.Renew -> R.string.renew
+                    MenuAction.Support -> R.string.support
+                    MenuAction.Delete -> R.string.delete_subscription_action
+                }
 
-                when (action) {
-                    MenuAction.Update -> MenuLine(Icons.Default.Refresh, stringResource(R.string.update), onClick = click)
-                    MenuAction.Edit -> MenuLine(Icons.Outlined.Edit, stringResource(R.string.edit), onClick = click)
-                    MenuAction.Renew -> MenuLine(Icons.Default.CreditCard, stringResource(R.string.renew), onClick = click)
-                    MenuAction.Support -> MenuLine(Icons.Default.SupportAgent, stringResource(R.string.support), onClick = click)
-                    MenuAction.Share -> MenuLine(Icons.Default.QrCode2, stringResource(R.string.share_qr), onClick = click)
-                    MenuAction.Favorite -> MenuLine(
-                        if (favorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                        stringResource(if (favorite) R.string.unfavorite else R.string.favorite),
-                        onClick = click,
-                    )
-                    MenuAction.Delete -> MenuLine(
-                        Icons.Default.DeleteOutline,
-                        stringResource(R.string.delete),
-                        MaterialTheme.colorScheme.error,
-                        onClick = click,
-                    )
+                if (action == MenuAction.Delete) {
+                    MenuLine(icon, stringResource(label), MaterialTheme.colorScheme.error) { onAction(action) }
+                } else {
+                    Card(Modifier.fillMaxWidth()) {
+                        MenuLine(icon, stringResource(label)) { onAction(action) }
+                    }
                 }
             }
         }
@@ -922,12 +869,13 @@ private fun MenuLine(
             .heightIn(min = 56.dp)
             .clip(MaterialTheme.shapes.medium)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = color)
-        Text(text, style = MaterialTheme.typography.bodyLarge, color = color)
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
+        Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+            color = color, modifier = Modifier.weight(1f))
     }
 }
 
@@ -1076,12 +1024,13 @@ private const val OTHERS_KEY = "others"
 /** The list's step: below the header (twice), the skeletons and the error card. */
 private val GAP = 12.dp
 
-/** The rows' text and lines start this far inside the backing, the line ends as far from its edge. */
-private val ROW_INSET = 14.dp
+/** Text inset and spacing for the compact subscription cards. */
+private val ROW_INSET = 16.dp
 private val ROW_HEIGHT = 74.dp
+private val ROW_GAP = 10.dp
 
-/** The backing's corners — those of the cards, `shapes.large`. */
-private val BACKING_CORNER = 24.dp
+/** The cards' corners, shared with `shapes.large` for the TV focus ring. */
+private val ROW_CORNER = 24.dp
 
 private const val ROW_FADE_MS = 220
 private const val CARD_FADE_OUT_MS = 90

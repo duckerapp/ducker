@@ -21,7 +21,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -60,12 +59,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -73,18 +68,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animate
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.withFrameNanos
+import kotlinx.coroutines.Job
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.traversalIndex
@@ -114,6 +109,9 @@ import com.github.kr328.clash.store.DelayStore
 import com.github.kr328.clash.ui.components.EmptyState
 import com.github.kr328.clash.ui.components.PullToRefresh
 import com.github.kr328.clash.ui.components.ScreenHeader
+import com.github.kr328.clash.ui.components.FloatingSearch
+import com.github.kr328.clash.ui.components.ProxySortToggle
+import com.github.kr328.clash.ui.components.ProxyCheckButton
 import com.github.kr328.clash.ui.components.SearchField
 import com.github.kr328.clash.ui.components.Skeleton
 import com.github.kr328.clash.ui.components.screenInsets
@@ -154,6 +152,8 @@ fun ProxyScreen(
 ) {
     val columns = if (LocalDensity.current.fontScale > 1.15f) 1 else 2
     val scope = rememberCoroutineScope()
+    var returnToken by remember { mutableStateOf<Any?>(null) }
+    var groupScroll by remember { mutableStateOf<Job?>(null) }
     // Пульт (этап 6): строка поиска висит над списком, и список целиком охватывает её — стрелка
     // вниз его не находила. Вниз из поиска — на первую группу, а если она уехала — в список.
     val listFocus = remember { FocusRequester() }
@@ -184,6 +184,8 @@ fun ProxyScreen(
     // две копии, которые делили бы фокус и клавиатуру. Пока её место в списке видно, строка
     // стоит на нём; ушло за край — выезжает при прокрутке вверх и уезжает при прокрутке вниз.
     val density = LocalDensity.current
+    var viewportHeight by remember { mutableIntStateOf(0) }
+    val bottomPaddingPx = with(density) { (16.dp + contentPadding.calculateBottomPadding()).roundToPx() }
     val search = remember(density) { FloatingSearch(with(density) { 8.dp.toPx() }) }
     var searchHeight by remember { mutableFloatStateOf(with(density) { 48.dp.toPx() }) }
     // Анимация читается только при раскладке и отрисовке строки: смена «показать/спрятать»
@@ -229,7 +231,8 @@ fun ProxyScreen(
             TvLazyColumn(
                 state = listState,
                 overscrollEffect = overscroll,
-                modifier = Modifier.fillMaxSize().screenInsets().focusRequester(listFocus),
+                modifier = Modifier.fillMaxSize().screenInsets().focusRequester(listFocus)
+                    .onSizeChanged { viewportHeight = it.height },
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
                 // панель вкладок и видны в просветах по её бокам (D-74).
@@ -247,21 +250,7 @@ fun ProxyScreen(
 
                         // With the VPN off too: the tab loads the profile into the core without the
                         // tunnel, and the core sorts that list by delay as well (D-319).
-                        val byDelay = state.sort == ProxySort.Delay
-
-                        // Просто текст, без подложки: это переключатель вида, а не действие.
-                        TextButton(
-                            onClick = { onSort(if (byDelay) ProxySort.Default else ProxySort.Delay) },
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                        ) {
-                            Text(
-                                stringResource(if (byDelay) R.string.sort_delay else R.string.sort_default),
-                                style = MaterialTheme.typography.labelLarge,
-                            )
-                        }
+                        ProxySortToggle(state.sort, onSort)
                     }
                 }
 
@@ -313,14 +302,33 @@ fun ProxyScreen(
                             checkEnabled = state.checking == null,
                             canCheck = state.canCheck,
                             onExpand = {
+                                val beforeLayout = listState.layoutInfo
+                                groupScroll?.cancel()
                                 if (group.name in flipped) flipped -= group.name else flipped += group.name
 
-                                if (!open && group.proxies.isNotEmpty()) scope.launch {
-                                    listState.reveal(
-                                        header = "header-${group.name}",
-                                        firstRow = "${group.name}-${group.proxies.first().name}",
-                                        rows = (group.proxies.size + columns - 1) / columns,
-                                    )
+                                if (query.isBlank() && (open || returnToken != null)) {
+                                    // Keep scroll space while native item fades remove the rows.
+                                    val token = Any()
+                                    returnToken = token
+                                    groupScroll = scope.launch {
+                                        try {
+                                            withTimeoutOrNull(REVEAL_WAIT_MS) {
+                                                snapshotFlow { listState.layoutInfo }.first { it !== beforeLayout }
+                                            }
+                                            listState.returnAfterCollapse(bottomPaddingPx)
+                                            withFrameNanos {}
+                                        } finally {
+                                            if (returnToken === token) returnToken = null
+                                        }
+                                    }
+                                } else if (!open && group.proxies.isNotEmpty()) {
+                                    groupScroll = scope.launch {
+                                        listState.reveal(
+                                            header = "header-${group.name}",
+                                            firstRow = "${group.name}-${group.proxies.first().name}",
+                                            rows = (group.proxies.size + columns - 1) / columns,
+                                        )
+                                    }
                                 }
                             },
                             onHealthCheck = { onHealthCheck(group.name) },
@@ -336,55 +344,18 @@ fun ProxyScreen(
                         if (open) group.proxies.chunked(columns) else emptyList(),
                         key = { "${group.name}-${it.first().name}" },
                     ) { proxies ->
-                        // Пульт (D-158) идёт по группе строго: карточка, её звёздочка, следующая
-                        // карточка — и так до конца группы, с ряда на ряд. Вниз и вверх — на карточку
-                        // того же столбца в соседнем ряду, а нет такой — на последнюю (D-161).
-                        // Звёздочку стрелки сами не находят: она внутри карточки, а внутрь
-                        // нажимаемого Compose не водит (F-187).
-                        val cards = remember(proxies.size) { List(proxies.size) { FocusRequester() } }
-                        val stars = remember(proxies.size) { List(proxies.size) { FocusRequester() } }
-                        val more = proxies.last() !== group.proxies.last()
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth()
-                                // Группа раскрывается мягко (D-120): узлы проявляются, а группы
-                                // ниже съезжают, а не прыгают. Высоту не анимируем — только
-                                // прозрачность и сдвиг слоя, это дёшево и на слабых телефонах.
-                                .animateItem(fadeInSpec = ItemFadeIn, fadeOutSpec = ItemFadeOut, placementSpec = ItemMove)
-                                // Высоту больше не подгоняем: имя занимает ровно две строки,
-                                // а тип и задержка рисуются всегда, поэтому карточки и так
-                                // одинаковые. С IntrinsicSize.Min при minLines нижняя строка
-                                // обрезалась — задержка просто пропадала.
-                                .selectableGroup()
-                                .then(
-                                    if (tv) {
-                                        Modifier.focusProperties {
-                                            onEnter = { cards[column[0].coerceAtMost(cards.lastIndex)].requestFocus() }
-                                        }.focusGroup()
-                                    } else Modifier.focusGroup(),
-                                ),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            proxies.forEachIndexed { i, proxy ->
-                                ProxyOption(
-                                    proxy = proxy,
-                                    selected = proxy.name == group.now,
-                                    enabled = group.selectable,
-                                    onSelect = { onSelect(group.name, proxy.name) },
-                                    onFavorite = { onFavorite(proxy.name) },
-                                    card = cards[i],
-                                    star = stars[i],
-                                    previous = stars.getOrNull(i - 1),
-                                    next = cards.getOrNull(i + 1),
-                                    // Вправо с последней звёздочки ряда — на следующий ряд группы.
-                                    wrap = more && i == proxies.lastIndex,
-                                    onFocused = { column[0] = i },
-                                    onWrap = { column[0] = 0 },
-                                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                                )
-                            }
-                            if (proxies.size < columns) Spacer(Modifier.weight(1f))
-                        }
+                        ProxyRow(
+                            group = group, proxies = proxies, columns = columns, column = column,
+                            onSelect = onSelect, onFavorite = onFavorite,
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = ItemFadeIn, fadeOutSpec = ItemFadeOut, placementSpec = ItemMove,
+                            ),
+                        )
+                    }
+                }
+                if (returnToken != null) {
+                    item(key = RETURN_RESERVE_KEY) {
+                        Spacer(Modifier.height(with(density) { viewportHeight.toDp() }))
                     }
                 }
             }
@@ -394,6 +365,12 @@ fun ProxyScreen(
                     value = query,
                     onValue = onQuery,
                     hint = stringResource(R.string.proxy_search),
+                    shadowLift = {
+                        with(density) {
+                            val (slot, floating) = searchPlace()
+                            ((floating - slot.toFloat()) / 12.dp.toPx()).coerceIn(0f, 1f)
+                        }
+                    },
                     modifier = Modifier.screenInsets()
                         .padding(start = start, end = end)
                         .focusProperties {
@@ -409,15 +386,6 @@ fun ProxyScreen(
 
                             IntOffset(0, maxOf(slot, floating))
                         }
-                        // Выехавшая строка висит над карточками, как панель вкладок, — с той же
-                        // тенью; садясь на своё место в списке, тень плавно теряет.
-                        .graphicsLayer {
-                            val (slot, floating) = searchPlace()
-                            val lift = ((floating - slot.toFloat()) / 12.dp.toPx()).coerceIn(0f, 1f)
-
-                            shadowElevation = lift * 10.dp.toPx()
-                            shape = CircleShape
-                        }
                         // Поверх списка, но озвучивается раньше него, а не после всех узлов.
                         .semantics { traversalIndex = -1f },
                 )
@@ -426,25 +394,85 @@ fun ProxyScreen(
     }
 }
 
-/**
- * Следит за прокруткой и решает, показывать ли плавающую строку поиска. Порог — чтобы
- * случайное дрожание пальца не дёргало строку туда-сюда.
- */
-private class FloatingSearch(private val slop: Float) : NestedScrollConnection {
-    var shown by mutableStateOf(false)
-        private set
+private const val RETURN_RESERVE_KEY = "proxy-scroll-return-reserve"
 
-    /** Прокрутка в одну сторону подряд; смена направления начинает счёт заново. */
-    private var run = 0f
+private suspend fun LazyListState.returnAfterCollapse(bottom: Int) {
+    val info = layoutInfo
+    // The last item is only a reserve. Use the real content end to find the legal offset.
+    val tail = info.visibleItemsInfo.firstOrNull { it.index == info.totalItemsCount - 2 } ?: return
+    val gap = (info.viewportEndOffset - bottom - tail.offset - tail.size).coerceAtLeast(0).toFloat()
+    if (gap <= 0f || (firstVisibleItemIndex == 0 && firstVisibleItemScrollOffset == 0)) return
 
-    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-        val dy = consumed.y
+    scroll {
+        var remaining = gap
+        var previous = 0f
+        animate(0f, 1f, animationSpec = tween(REVEAL_MS)) { fraction, _ ->
+            // Only consume real travel when a compact page reaches its first item.
+            val toStart = if (firstVisibleItemIndex == 0) firstVisibleItemScrollOffset
+                else layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }?.offset?.let { -it }
+            if (toStart != null) remaining = minOf(remaining, toStart.coerceAtLeast(0).toFloat())
+            val portion = if (previous < 1f) ((fraction - previous) / (1f - previous)).coerceIn(0f, 1f) else 0f
+            remaining = (remaining + scrollBy(-remaining * portion)).coerceAtLeast(0f)
+            previous = fraction
+        }
+    }
+}
 
-        run = if (dy * run > 0) run + dy else dy
+@Composable
+private fun ProxyRow(
+    group: ProxyGroupState,
+    proxies: List<NodeState>,
+    columns: Int,
+    column: IntArray,
+    onSelect: (String, String) -> Unit,
+    onFavorite: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tv = LocalTv.current
+    // Пульт (D-158) идёт по группе строго: карточка, её звёздочка, следующая
+    // карточка — и так до конца группы, с ряда на ряд. Вниз и вверх — на карточку
+    // того же столбца в соседнем ряду, а нет такой — на последнюю (D-161).
+    // Звёздочку стрелки сами не находят: она внутри карточки, а внутрь
+    // нажимаемого Compose не водит (F-187).
+    val cards = remember(proxies.size) { List(proxies.size) { FocusRequester() } }
+    val stars = remember(proxies.size) { List(proxies.size) { FocusRequester() } }
+    val more = proxies.last() !== group.proxies.last()
 
-        if (run > slop) shown = true else if (run < -slop) shown = false
-
-        return Offset.Zero
+    Row(
+        modifier = modifier.fillMaxWidth()
+            // Высоту больше не подгоняем: имя занимает ровно две строки,
+            // а тип и задержка рисуются всегда, поэтому карточки и так
+            // одинаковые. С IntrinsicSize.Min при minLines нижняя строка
+            // обрезалась — задержка просто пропадала.
+            .selectableGroup()
+            .then(
+                if (tv) {
+                    Modifier.focusProperties {
+                        onEnter = { cards[column[0].coerceAtMost(cards.lastIndex)].requestFocus() }
+                    }.focusGroup()
+                } else Modifier.focusGroup(),
+            ),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        proxies.forEachIndexed { i, proxy ->
+            ProxyOption(
+                proxy = proxy,
+                selected = proxy.name == group.now,
+                enabled = group.selectable,
+                onSelect = { onSelect(group.name, proxy.name) },
+                onFavorite = { onFavorite(proxy.name) },
+                card = cards[i],
+                star = stars[i],
+                previous = stars.getOrNull(i - 1),
+                next = cards.getOrNull(i + 1),
+                // Вправо с последней звёздочки ряда — на следующий ряд группы.
+                wrap = more && i == proxies.lastIndex,
+                onFocused = { column[0] = i },
+                onWrap = { column[0] = 0 },
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+        }
+        if (proxies.size < columns) Spacer(Modifier.weight(1f))
     }
 }
 
@@ -530,7 +558,7 @@ private fun GroupHeader(
                     modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(group.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(group.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                 Text(group.now, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
@@ -548,7 +576,7 @@ private fun GroupHeader(
             // Замер — кружком рядом со стрелкой, а не кнопкой во всю ширину (D-120): та
             // занимала строку в каждой раскрытой группе. Замерять нечем, пока ядро не работает.
             if (canCheck) {
-                CheckBubble(
+                ProxyCheckButton(
                     checking = checking,
                     enabled = checkEnabled,
                     onClick = onHealthCheck,
@@ -557,44 +585,6 @@ private fun GroupHeader(
             }
             Icon(if (open) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface)
-        }
-    }
-}
-
-/**
- * Замер задержки группы: пульс в кружке, во время замера — кольцо. Кружок бледнее
- * `surfaceVariant`: тем он спорил со стрелкой раскрытия и картинкой группы.
- */
-@Composable
-private fun CheckBubble(checking: Boolean, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val label = stringResource(if (checking) R.string.checking else R.string.check_delay)
-    val active = enabled && !checking
-
-    Box(
-        modifier = modifier.size(40.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            // С пульта на время замера кружок держит фокус (D-158).
-            .clickable(enabled = keepFocus(active), role = Role.Button, onClickLabel = label) { if (active) onClick() }
-            .semantics {
-                contentDescription = label
-                if (!active) disabled()
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        if (checking) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
-                strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            Icon(
-                imageVector = DuckerIcons.Ping,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.4f),
-            )
         }
     }
 }
@@ -653,7 +643,8 @@ private fun ProxyOption(
     val tv = LocalTv.current
 
     Card(
-        modifier = modifier.clip(MaterialTheme.shapes.medium)
+        modifier = modifier,
+        surfaceModifier = Modifier.clip(MaterialTheme.shapes.medium)
             .then(if (tv) Modifier.onFocusChanged { if (it.hasFocus) onFocused() } else Modifier)
             .focusRequester(card)
             .focusProperties {
@@ -674,8 +665,6 @@ private fun ProxyOption(
         colors = CardDefaults.cardColors(
             containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         ),
-        border = BorderStroke(1.dp,
-            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -683,10 +672,8 @@ private fun ProxyOption(
                     text = proxy.name,
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium,
-                    // Выбранный узел — жирным, остальные обычным. Разница между
-                    // SemiBold и Medium на глаз почти не читалась, и выбранный выглядел
-                    // даже легче соседей.
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                    // The filled surface carries selection; keep the name lighter than screen headings.
+                    fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                     // Ровно две строки всегда: у провайдеров имена разной длины, и без
                     // этого соседние карточки выходят разной высоты. Длинное имя
                     // помещается целиком, короткое оставляет пустую строку.

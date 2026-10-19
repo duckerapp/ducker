@@ -9,7 +9,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -61,6 +60,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.material3.ripple
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
@@ -188,7 +188,7 @@ fun DuckerScaffold(
                     .windowInsetsPadding(
                         bars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
                     )
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 30.dp, vertical = 12.dp)
                     .graphicsLayer {
                         // Ниже края целиком, вместе с отступом и тенью.
                         translationY = hidden * (size.height + below + 40.dp.toPx())
@@ -337,13 +337,11 @@ private fun FloatingDock(
     fun DrawScope.pillWidth() = lerp(dockSlotWidth(size.width), size.width, merge)
 
     Surface(
-        modifier = modifier.widthIn(max = 420.dp),
+        modifier = modifier.widthIn(max = 420.dp).dropShadow(shape, DuckerCardShadow),
         shape = shape,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shadowElevation = 10.dp,
     ) {
-        Box(Modifier.fillMaxWidth().padding(5.dp)) {
+        Box(Modifier.fillMaxWidth().padding(4.dp)) {
             // Подсветка — своим слоем под обеими копиями вкладок: при слиянии она растёт,
             // а вкладки гаснут, и гасить её вместе с ними нельзя.
             Box(
@@ -478,8 +476,8 @@ private fun DockTabs(
                             Modifier
                         },
                     )
-                    .heightIn(min = 52.dp)
-                    .padding(horizontal = 6.dp, vertical = 9.dp),
+                    .heightIn(min = 48.dp)
+                    .padding(horizontal = 6.dp, vertical = 7.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
             ) {

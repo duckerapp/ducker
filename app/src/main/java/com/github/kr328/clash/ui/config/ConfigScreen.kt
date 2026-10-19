@@ -44,6 +44,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.alpha
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.CompositionLocalProvider
@@ -57,7 +59,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.activity.compose.BackHandler
@@ -105,6 +106,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.DuckerSheet
+import com.github.kr328.clash.ui.components.DuckerCardShadow
 import com.github.kr328.clash.ui.components.LeaveSheet
 import com.github.kr328.clash.ui.components.FitLabel
 import com.github.kr328.clash.ui.components.SheetButton
@@ -441,13 +443,18 @@ fun ConfigScreen(
                 }
             }
 
-            // Код — в карточке, как всё в приложении: белая плашка с рамкой и скруглением.
+            // Keep the code surface's bounds; the editor clips inside its outer shadow.
             Box(
                 modifier = Modifier.weight(1f).fillMaxWidth()
                     .padding(start = 16.dp, end = 16.dp, top = if (compact) 8.dp else 12.dp, bottom = if (compact) 8.dp else if (bare) 16.dp else 0.dp)
+                    // The editor resizes with the IME; keep its shadow on the platform outline.
+                    .shadow(
+                        3.dp, MaterialTheme.shapes.large, clip = false,
+                        ambientColor = Color.Black.copy(alpha = 0.5f),
+                        spotColor = Color.Black.copy(alpha = 0.5f),
+                    )
                     .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surface)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large)
                     .then(
                         if (keys) {
                             Modifier.focusRequester(code).clickable(interactionSource = null, indication = null) {
@@ -685,8 +692,8 @@ private fun Header(kind: String, name: String, onBack: () -> Unit, onFull: () ->
 }
 
 /**
- * Кнопки — плавающей панелью, как панель вкладок: белая, с рамкой и тенью. Второстепенные
- * на ней серые, главная — чёрная; на белом фоне экрана серые пилюли сливались.
+ * The floating save bar has one soft shadow. Secondary actions stay gray and the main one
+ * black: on the old white screen background the gray pills blended into the page.
  */
 @Composable
 private fun ActionBar(
@@ -704,11 +711,9 @@ private fun ActionBar(
     val actions = listOf({ _: String -> onSaveAs() }, onSave)
 
     Surface(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(16.dp).dropShadow(CircleShape, DuckerCardShadow),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shadowElevation = 8.dp,
     ) {
         BoxWithConstraints(Modifier.padding(6.dp)) {
             // Свободное место — кнопкам поровну, а не по длине подписи: иначе у «Сохранить как»
@@ -782,14 +787,14 @@ private fun SearchLines(side: Boolean, content: @Composable (Modifier) -> Unit) 
     }
 }
 
-/** Подсказка в фирменном овале: значок и текст на белой плашке с рамкой. */
+/** Hint text and icon on a softly raised surface. */
 @Composable
 private fun Hint(text: String) {
     Row(
         modifier = Modifier.fillMaxWidth()
+            .dropShadow(MaterialTheme.shapes.large, DuckerCardShadow)
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -803,9 +808,8 @@ private fun Hint(text: String) {
 @Composable
 private fun ToolGroup(content: @Composable RowScope.() -> Unit) {
     Row(
-        modifier = Modifier.clip(CircleShape)
+        modifier = Modifier.dropShadow(CircleShape, DuckerCardShadow).clip(CircleShape)
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
             .padding(2.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content,
@@ -835,8 +839,8 @@ private fun ToolButton(icon: ImageVector, description: String, enabled: Boolean,
 private fun TextPill(text: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier.heightIn(min = 44.dp)
+            .dropShadow(CircleShape, DuckerCardShadow)
             .background(MaterialTheme.colorScheme.surface, CircleShape)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
             .clip(CircleShape)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .alpha(if (enabled) 1f else 0.4f)
@@ -901,10 +905,10 @@ private fun ResultContent(result: ConfigResult, onLine: (Int) -> Unit, onDismiss
     val color = if (ok) scheme.onSurface else scheme.error
 
     Surface(
+        modifier = Modifier.dropShadow(MaterialTheme.shapes.large, DuckerCardShadow),
         shape = MaterialTheme.shapes.large,
         color = if (ok) scheme.surface else scheme.errorContainer,
-        border = BorderStroke(1.dp, if (ok) scheme.outlineVariant else scheme.error.copy(alpha = 0.4f)),
-        shadowElevation = 6.dp,
+        border = if (ok) null else BorderStroke(1.dp, scheme.error.copy(alpha = 0.4f)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth()
@@ -974,6 +978,7 @@ private fun SectionsSheet(text: String, onPick: (Int) -> Unit, onClosed: () -> U
 
                 Row(
                     modifier = Modifier.fillMaxWidth()
+                        .dropShadow(RoundedCornerShape(20.dp), DuckerCardShadow)
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.surface)
                         .clickable(role = Role.Button) {
@@ -1070,6 +1075,7 @@ private fun SaveAsSheet(file: Boolean, onPick: (SaveAs) -> Unit, onClosed: () ->
 private fun SaveOption(icon: ImageVector, title: String, hint: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth()
+            .dropShadow(RoundedCornerShape(20.dp), DuckerCardShadow)
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surface)
             .clickable(role = Role.Button, onClick = onClick)
