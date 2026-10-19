@@ -125,6 +125,9 @@ class BounceOverscroll(private val scope: CoroutineScope) : OverscrollEffect {
         // the content further out before the return, a jerk after a hard pull (D-315).
         if (offset != 0f && (v == 0f || v.sign == offset.sign)) {
             settle(0f)
+            // Still a release for the nested-scroll parents (the pull of PullToRefresh, a sheet's
+            // drag): skipped, they never heard the finger go up.
+            performFling(Velocity.Zero)
 
             return
         }
