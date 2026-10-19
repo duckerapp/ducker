@@ -494,11 +494,11 @@
     <!-- Settings sections and project support. -->
     <string name="settings_appearance">ظاهر</string>
     <string name="settings_connection_summary">VPN و برنامه‌ها</string>
-    <string name="settings_privacy_summary">نمایش برنامه و دستگاه</string>
+    <string name="settings_privacy_summary">نمایش برنامه، دستگاه، برنامه‌های دیگر</string>
     <string name="settings_help">راهنما و عیب‌یابی</string>
     <string name="settings_help_summary">گزارش‌ها، بررسی گره و پشتیبانی</string>
     <string name="settings_project">حمایت از پروژه</string>
-    <string name="settings_project_summary">جامعه و پشتیبانی</string>
+    <string name="settings_project_summary">جامعه، کد منبع، کمک مالی</string>
     <string name="settings_about">دربارهٔ برنامه</string>
     <string name="settings_language_system">مطابق سیستم</string>
     <string name="settings_system_language">زبان فعلی: %1$s</string>

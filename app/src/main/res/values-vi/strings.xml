@@ -490,11 +490,11 @@
     <!-- Settings sections and project support. -->
     <string name="settings_appearance">Giao diện</string>
     <string name="settings_connection_summary">VPN và ứng dụng</string>
-    <string name="settings_privacy_summary">Hiển thị và thiết bị</string>
+    <string name="settings_privacy_summary">Hiển thị, thiết bị, ứng dụng khác</string>
     <string name="settings_help">Trợ giúp và chẩn đoán</string>
     <string name="settings_help_summary">Nhật ký, kiểm tra nút, hỗ trợ</string>
     <string name="settings_project">Ủng hộ dự án</string>
-    <string name="settings_project_summary">Cộng đồng và hỗ trợ</string>
+    <string name="settings_project_summary">Cộng đồng, mã nguồn, quyên góp</string>
     <string name="settings_about">Giới thiệu</string>
     <string name="settings_language_system">Theo hệ thống</string>
     <string name="settings_system_language">Ngôn ngữ hiện tại: %1$s</string>

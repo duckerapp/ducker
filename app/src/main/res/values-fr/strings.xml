@@ -498,11 +498,11 @@
     <!-- Settings sections and project support. -->
     <string name="settings_appearance">Apparence</string>
     <string name="settings_connection_summary">VPN et applications</string>
-    <string name="settings_privacy_summary">Visibilité et appareil</string>
+    <string name="settings_privacy_summary">Visibilité, appareil, autres applications</string>
     <string name="settings_help">Aide et diagnostic</string>
     <string name="settings_help_summary">Journaux, test de nœud, assistance</string>
     <string name="settings_project">Soutenir le projet</string>
-    <string name="settings_project_summary">Communauté et soutien</string>
+    <string name="settings_project_summary">Communauté, code source, dons</string>
     <string name="settings_about">À propos</string>
     <string name="settings_language_system">Suivre le système</string>
     <string name="settings_system_language">Langue actuelle : %1$s</string>

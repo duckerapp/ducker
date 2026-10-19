@@ -51,7 +51,6 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Science
 import com.github.kr328.clash.update.UpdateState
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.BugReport
@@ -292,7 +291,13 @@ fun SettingsScreen(
                                         else -> stringResource(R.string.app_update_check_hint)
                                     },
                                     icon = SettingsIcons.Update,
-                                    busy = update.checking, onClick = onUpdate,
+                                    busy = update.checking, onClick = onUpdate, action = true,
+                                )
+                                SettingsSubSwitch(
+                                    title = stringResource(R.string.app_update_beta),
+                                    subtitle = stringResource(R.string.app_update_beta_hint),
+                                    checked = state.betaUpdates,
+                                    onChange = onBetaUpdates,
                                 )
                                 SettingsNavigationDivider()
                                 SettingsNavigationRow(
@@ -491,15 +496,6 @@ fun SettingsScreen(
                                 )
                             }
                         }
-                        item {
-                            SwitchRow(
-                                title = stringResource(R.string.external_control),
-                                subtitle = stringResource(R.string.external_control_hint),
-                                checked = state.allowExternalControl,
-                                onChange = onExternalControl,
-                                icon = Icons.Default.ToggleOn,
-                            )
-                        }
                     }
                     SettingsPage.Privacy -> {
                         item {
@@ -519,6 +515,16 @@ fun SettingsScreen(
                                 checked = state.disguise,
                                 onChange = onDisguise,
                                 icon = Icons.Default.Calculate,
+                            )
+                        }
+
+                        item {
+                            SwitchRow(
+                                title = stringResource(R.string.external_control),
+                                subtitle = stringResource(R.string.external_control_hint),
+                                checked = state.allowExternalControl,
+                                onChange = onExternalControl,
+                                icon = Icons.Default.ToggleOn,
                             )
                         }
 
@@ -602,15 +608,6 @@ fun SettingsScreen(
                                     }
                                 }
                             }
-                        }
-                        item {
-                            SwitchRow(
-                                title = stringResource(R.string.app_update_beta),
-                                subtitle = stringResource(R.string.app_update_beta_hint),
-                                checked = state.betaUpdates,
-                                onChange = onBetaUpdates,
-                                icon = Icons.Default.Science,
-                            )
                         }
                     }
                 }
@@ -1089,6 +1086,8 @@ private fun SettingsNavigationRow(
     subtitle: String? = null,
     value: String? = null,
     busy: Boolean = false,
+    /** The row does something rather than open a page: no arrow, only the progress while it runs. */
+    action: Boolean = false,
 ) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 61.dp)
@@ -1128,11 +1127,30 @@ private fun SettingsNavigationRow(
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        if (busy) {
-            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-        } else {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp))
+        when {
+            busy -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+            // The progress takes this place, so the text does not move when it appears.
+            action -> Spacer(Modifier.size(20.dp))
+            else -> Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp))
         }
+    }
+}
+
+/** A switch that belongs to the row above: no icon of its own, its text under that row's title. */
+@Composable
+private fun SettingsSubSwitch(title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+            .padding(start = 16.dp + 24.dp + 12.dp, end = 16.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 

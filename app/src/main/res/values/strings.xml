@@ -529,11 +529,11 @@
     <!-- Settings sections and project support. -->
     <string name="settings_appearance">Appearance</string>
     <string name="settings_connection_summary">VPN and apps</string>
-    <string name="settings_privacy_summary">Visibility and device</string>
+    <string name="settings_privacy_summary">Visibility, device, other apps</string>
     <string name="settings_help">Help and diagnostics</string>
     <string name="settings_help_summary">Logs, node checks, support</string>
     <string name="settings_project">Support the project</string>
-    <string name="settings_project_summary">Community and support</string>
+    <string name="settings_project_summary">Community, source code, donations</string>
     <string name="settings_about">About</string>
     <string name="settings_language_system">Follow system</string>
     <string name="settings_system_language">Currently: %1$s</string>

@@ -494,11 +494,11 @@
     <!-- Settings sections and project support. -->
     <string name="settings_appearance">Görünüm</string>
     <string name="settings_connection_summary">VPN ve uygulamalar</string>
-    <string name="settings_privacy_summary">Görünürlük ve cihaz</string>
+    <string name="settings_privacy_summary">Görünürlük, cihaz, diğer uygulamalar</string>
     <string name="settings_help">Yardım ve tanılama</string>
     <string name="settings_help_summary">Günlükler, düğüm testi, destek</string>
     <string name="settings_project">Projeyi destekle</string>
-    <string name="settings_project_summary">Topluluk ve destek</string>
+    <string name="settings_project_summary">Topluluk, kaynak kodu, bağışlar</string>
     <string name="settings_about">Hakkında</string>
     <string name="settings_language_system">Sistem dilini kullan</string>
     <string name="settings_system_language">Geçerli dil: %1$s</string>

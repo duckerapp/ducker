@@ -524,11 +524,11 @@
     <!-- Settings sections and project support. -->
     <string name="settings_appearance">Оформление</string>
     <string name="settings_connection_summary">VPN и приложения</string>
-    <string name="settings_privacy_summary">Видимость и устройство</string>
+    <string name="settings_privacy_summary">Видимость, устройство, другие приложения</string>
     <string name="settings_help">Помощь и диагностика</string>
     <string name="settings_help_summary">Журнал, проверка узла, поддержка</string>
     <string name="settings_project">Помощь проекту</string>
-    <string name="settings_project_summary">Сообщество и поддержка</string>
+    <string name="settings_project_summary">Сообщество, исходный код, пожертвования</string>
     <string name="settings_about">О приложении</string>
     <string name="settings_language_system">Как в системе</string>
     <string name="settings_system_language">Сейчас: %1$s</string>
