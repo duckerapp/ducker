@@ -68,6 +68,7 @@ import com.github.kr328.clash.ui.components.SheetField
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.DuckerCardShadow
+import com.github.kr328.clash.ui.components.DuckerShadowOutsets
 import com.github.kr328.clash.ui.components.FitLabel
 import java.util.concurrent.TimeUnit
 import androidx.compose.runtime.mutableStateOf
@@ -284,8 +285,12 @@ private fun IntervalPicker(
         Layout(
             modifier = Modifier.fillMaxWidth()
                 .height(52.dp)
+                // Dimmed together with its shadow, which would show through the faded surface.
+                .graphicsLayer {
+                    alpha = if (enabled) 1f else 0.5f
+                    outsets = DuckerShadowOutsets
+                }
                 .dropShadow(CircleShape, DuckerCardShadow)
-                .alpha(if (enabled) 1f else 0.5f)
                 .clip(CircleShape)
                 .background(scheme.surface)
                 .padding(4.dp)

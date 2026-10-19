@@ -113,7 +113,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.shadow
@@ -629,9 +629,13 @@ internal fun SheetButton(
     Box(
         modifier = Modifier.fillMaxWidth()
             .heightIn(min = 56.dp)
-            .dropShadow(CircleShape, DuckerCardShadow)
             // Нечего отправлять — кнопка приглушена целиком, вместе с фоном.
-            .alpha(if (enabled || busy) 1f else 0.4f)
+            // Before the shadow, which would otherwise show through the faded button.
+            .graphicsLayer {
+                alpha = if (enabled || busy) 1f else 0.4f
+                outsets = DuckerShadowOutsets
+            }
+            .dropShadow(CircleShape, DuckerCardShadow)
             .clip(CircleShape)
             .background(back)
             .then(

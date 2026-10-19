@@ -97,6 +97,7 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.LayerOutsets
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
@@ -130,6 +131,9 @@ internal val DuckerCardShadow = Shadow(
     color = Color.Black.copy(alpha = 0.10f),
     offset = DpOffset(0.dp, 3.dp),
 )
+
+/** Room for [DuckerCardShadow] around a faded layer: below full alpha it draws offscreen, cut to its bounds. */
+internal val DuckerShadowOutsets = LayerOutsets(left = 12.dp, top = 12.dp, right = 12.dp, bottom = 12.dp)
 
 /**
  * The shadow of a surface whose size animates. [dropShadow] keeps one blurred mask per size in a
