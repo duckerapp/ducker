@@ -30,6 +30,7 @@
     <string name="welcome_text">Bağlanmak için sağlayıcınızın aboneliğini bağlantı veya QR koduyla ekleyin.</string>
     <string name="updating">Güncelleniyor…</string>
     <string name="delete">Sil</string>
+    <string name="delete_subscription_action">Aboneliği sil</string>
     <string name="hwid_title">Cihaz kimliği</string>
     <string name="hwid_explained">Sağlayıcılar cihaz sayınızı belirlemek için bu kimliği kullanır. Destek ekibi de bu kimliği isteyebilir.</string>
     <string name="hwid_disabled_warning">Cihaz kimliği gönderilmiyor. Sağlayıcınız cihaz sayısını takip ediyorsa abonelik artık güncellenmez.</string>
@@ -125,6 +126,8 @@
     <string name="ducker_active">Etkin</string>
     <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Son geçerlilik</string>
+    <string name="provider_announcement">Sağlayıcı duyurusu</string>
+    <string name="announcement_read_more">Devamını oku</string>
     <string name="sort_default">Varsayılan sıra</string>
     <string name="sort_delay">Gecikmeye göre</string>
     <string name="probe">Gecikme testi</string>

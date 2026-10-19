@@ -30,6 +30,7 @@
     <string name="welcome_text">请通过链接或二维码添加服务商的订阅以进行连接。</string>
     <string name="updating">正在更新…</string>
     <string name="delete">删除</string>
+    <string name="delete_subscription_action">删除订阅</string>
     <string name="hwid_title">设备 ID</string>
     <string name="hwid_explained">服务商用它统计你的设备数量，客服也可能会向你索要。</string>
     <string name="hwid_disabled_warning">不发送设备 ID。如果服务商限制设备数量，订阅将无法更新。</string>
@@ -125,6 +126,8 @@
     <string name="ducker_active">当前使用</string>
     <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">有效期至</string>
+    <string name="provider_announcement">服务商公告</string>
+    <string name="announcement_read_more">查看全文</string>
     <string name="sort_default">默认排序</string>
     <string name="sort_delay">按延迟排序</string>
     <string name="probe">节点延迟测试</string>

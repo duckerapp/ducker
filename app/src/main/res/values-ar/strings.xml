@@ -30,6 +30,7 @@
     <string name="welcome_text">للاتصال، أضف اشتراك مزوّد الخدمة عبر رابط أو رمز QR.</string>
     <string name="updating">جارٍ التحديث…</string>
     <string name="delete">حذف</string>
+    <string name="delete_subscription_action">حذف الاشتراك</string>
     <string name="hwid_title">معرّف الجهاز</string>
     <string name="hwid_explained">يستخدمه مزوّد الخدمة لحساب عدد أجهزتك، وقد يطلبه فريق الدعم.</string>
     <string name="hwid_disabled_warning">لا يتم إرسال المعرّف. إذا كان مزوّد الخدمة يحسب عدد الأجهزة، فلن يعود الاشتراك قابلًا للتحديث.</string>
@@ -125,6 +126,8 @@
     <string name="ducker_active">نشط</string>
     <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">صالح حتى</string>
+    <string name="provider_announcement">إعلان مزوّد الخدمة</string>
+    <string name="announcement_read_more">اقرأ المزيد</string>
     <string name="sort_default">الترتيب الافتراضي</string>
     <string name="sort_delay">حسب زمن الاستجابة</string>
     <string name="probe">فحص زمن الاستجابة</string>

@@ -30,6 +30,7 @@
     <string name="welcome_text">Untuk terhubung, tambahkan langganan dari penyedia melalui tautan atau kode QR.</string>
     <string name="updating">Memperbarui…</string>
     <string name="delete">Hapus</string>
+    <string name="delete_subscription_action">Hapus langganan</string>
     <string name="hwid_title">ID perangkat</string>
     <string name="hwid_explained">Penyedia menggunakannya untuk menghitung perangkat Anda. Tim bantuan juga mungkin memintanya.</string>
     <string name="hwid_disabled_warning">ID perangkat tidak dikirim. Jika penyedia menghitung jumlah perangkat, langganan tidak akan bisa diperbarui lagi.</string>
@@ -125,6 +126,8 @@
     <string name="ducker_active">Aktif</string>
     <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Berlaku hingga</string>
+    <string name="provider_announcement">Pengumuman penyedia</string>
+    <string name="announcement_read_more">Baca selengkapnya</string>
     <string name="sort_default">Urutan bawaan</string>
     <string name="sort_delay">Menurut latensi</string>
     <string name="probe">Uji latensi</string>

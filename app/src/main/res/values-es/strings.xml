@@ -30,6 +30,7 @@
     <string name="welcome_text">Para conectarte, añade la suscripción de tu proveedor mediante un enlace o código QR.</string>
     <string name="updating">Actualizando…</string>
     <string name="delete">Eliminar</string>
+    <string name="delete_subscription_action">Eliminar suscripción</string>
     <string name="hwid_title">ID del dispositivo</string>
     <string name="hwid_explained">El proveedor lo usa para contar tus dispositivos y el equipo de soporte puede pedírtelo.</string>
     <string name="hwid_disabled_warning">No se envía el ID. Si tu proveedor cuenta los dispositivos, la suscripción dejará de actualizarse.</string>
@@ -125,6 +126,8 @@
     <string name="ducker_active">En uso</string>
     <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Válida hasta</string>
+    <string name="provider_announcement">Anuncio del proveedor</string>
+    <string name="announcement_read_more">Leer más</string>
     <string name="sort_default">Orden predeterminado</string>
     <string name="sort_delay">Por latencia</string>
     <string name="probe">Prueba de latencia</string>

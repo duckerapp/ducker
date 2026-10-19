@@ -30,6 +30,7 @@
     <string name="welcome_text">Để kết nối, hãy thêm gói đăng ký của nhà cung cấp bằng liên kết hoặc mã QR.</string>
     <string name="updating">Đang cập nhật…</string>
     <string name="delete">Xóa</string>
+    <string name="delete_subscription_action">Xóa gói đăng ký</string>
     <string name="hwid_title">ID thiết bị</string>
     <string name="hwid_explained">Nhà cung cấp dùng ID này để đếm số thiết bị của bạn. Bộ phận hỗ trợ cũng có thể cần ID này.</string>
     <string name="hwid_disabled_warning">ID thiết bị không được gửi. Nếu nhà cung cấp đếm số thiết bị, gói đăng ký sẽ không cập nhật được nữa.</string>
@@ -125,6 +126,8 @@
     <string name="ducker_active">Đang dùng</string>
     <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Có hiệu lực đến</string>
+    <string name="provider_announcement">Thông báo của nhà cung cấp</string>
+    <string name="announcement_read_more">Xem thêm</string>
     <string name="sort_default">Thứ tự mặc định</string>
     <string name="sort_delay">Theo độ trễ</string>
     <string name="probe">Kiểm tra độ trễ</string>

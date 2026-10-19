@@ -30,6 +30,7 @@
     <string name="welcome_text">برای اتصال، اشتراک ارائه‌دهنده خود را با لینک یا کد QR اضافه کنید.</string>
     <string name="updating">در حال به‌روزرسانی…</string>
     <string name="delete">حذف</string>
+    <string name="delete_subscription_action">حذف اشتراک</string>
     <string name="hwid_title">شناسه دستگاه</string>
     <string name="hwid_explained">ارائه‌دهندگان از آن برای شمارش دستگاه‌های شما استفاده می‌کنند و ممکن است پشتیبانی آن را بخواهد.</string>
     <string name="hwid_disabled_warning">شناسه دستگاه فرستاده نمی‌شود. اگر ارائه‌دهنده تعداد دستگاه‌ها را بشمارد، اشتراک دیگر به‌روزرسانی نخواهد شد.</string>
@@ -125,6 +126,8 @@
     <string name="ducker_active">فعال</string>
     <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">اعتبار تا</string>
+    <string name="provider_announcement">اطلاعیهٔ ارائه‌دهنده</string>
+    <string name="announcement_read_more">بیشتر بخوانید</string>
     <string name="sort_default">ترتیب پیش‌فرض</string>
     <string name="sort_delay">بر اساس تأخیر</string>
     <string name="probe">آزمایش سرور</string>

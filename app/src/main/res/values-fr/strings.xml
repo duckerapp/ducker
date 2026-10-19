@@ -30,6 +30,7 @@
     <string name="welcome_text">Pour vous connecter, ajoutez l’abonnement de votre fournisseur avec un lien ou un code QR.</string>
     <string name="updating">Mise à jour…</string>
     <string name="delete">Supprimer</string>
+    <string name="delete_subscription_action">Supprimer l’abonnement</string>
     <string name="hwid_title">Identifiant de l’appareil</string>
     <string name="hwid_explained">Le fournisseur l’utilise pour compter vos appareils. L’assistance peut aussi vous le demander.</string>
     <string name="hwid_disabled_warning">L’identifiant n’est pas envoyé. Si votre fournisseur compte les appareils, l’abonnement ne pourra plus être mis à jour.</string>
@@ -125,6 +126,8 @@
     <string name="ducker_active">Actif</string>
     <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Valable jusqu’au</string>
+    <string name="provider_announcement">Annonce du fournisseur</string>
+    <string name="announcement_read_more">Lire la suite</string>
     <string name="sort_default">Ordre par défaut</string>
     <string name="sort_delay">Par latence</string>
     <string name="probe">Test de latence</string>
