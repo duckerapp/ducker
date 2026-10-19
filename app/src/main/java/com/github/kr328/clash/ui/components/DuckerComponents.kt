@@ -39,7 +39,21 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.unit.Velocity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.flow.first
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.derivedStateOf
@@ -556,8 +570,36 @@ fun PullToRefresh(
     // жест (F-190), — у верхнего края список «тянулся» сам и запускал обновление. С клавишами
     // жеста нет, и кружка тоже: замер и так виден на своей группе.
     val keys = tvKeys()
+    val scope = rememberCoroutineScope()
+    val threshold = with(LocalDensity.current) { PullToRefreshDefaults.PositionalThreshold.toPx() }
+    val pull = remember(state, scope) { PullGesture(state, scope) }
 
-    Box(modifier.pullToRefresh(isRefreshing = refreshing, state = state, enabled = !keys, onRefresh = onRefresh)) {
+    SideEffect {
+        pull.enabled = !keys
+        pull.refreshing = refreshing
+        pull.onRefresh = onRefresh
+        pull.threshold = threshold
+    }
+    LaunchedEffect(refreshing) {
+        if (refreshing) state.animateToThreshold() else if (!pull.pulling) state.animateToHidden()
+    }
+
+    Box(
+        modifier
+            // The finger's own up, not the list's fling: a drag can end without one (the content
+            // past its edge, the pager taking the gesture), and the circle stayed where it was let go.
+            .pointerInput(pull) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    pull.start()
+                    do {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                    } while (event.changes.any { it.pressed })
+                    pull.release()
+                }
+            }
+            .nestedScroll(pull),
+    ) {
         content()
 
         if (!keys) {
@@ -567,6 +609,97 @@ fun PullToRefresh(
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = top),
             )
         }
+    }
+}
+
+/**
+ * The pull of [PullToRefresh], in place of Material's `pullToRefresh`: only a drag that began with
+ * the list at its top pulls the circle — a drag that scrolls up to the top leaves the rest to the
+ * list's edge spring; a release is taken from the finger ([release]); and a refresh that does not
+ * start (nothing to update) does not leave the circle at its threshold. Distances as in Material:
+ * the circle follows half the finger, [threshold] is a full pull.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+internal class PullGesture(
+    private val state: PullToRefreshState,
+    private val scope: CoroutineScope,
+) : NestedScrollConnection {
+    var enabled = true
+    var refreshing by mutableStateOf(false)
+    var onRefresh: () -> Unit = {}
+    var threshold = 1f
+
+    /** Finger travel the circle has taken in this drag, px. */
+    private var pulled = 0f
+
+    /** Whether this drag pulls: decided by its first move — the list could not scroll up, the finger went down. */
+    private var armed: Boolean? = null
+
+    /** The drag pulled: a fling downward after it belongs to the pull, not to the list's edge. */
+    private var ateFling = false
+
+    val pulling get() = pulled > 0f
+
+    fun start() {
+        armed = null
+        ateFling = false
+    }
+
+    fun release() {
+        armed = null
+        if (pulled <= 0f) return
+
+        val full = pulled * DRAG >= threshold
+        pulled = 0f
+        ateFling = true
+
+        scope.launch {
+            if (!full) return@launch state.animateToHidden()
+
+            onRefresh()
+            state.animateToThreshold()
+            val started = withTimeoutOrNull(REFRESH_START_MS) { snapshotFlow { refreshing }.first { it } }
+            if (started == null) state.animateToHidden()
+        }
+    }
+
+    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+        // The finger goes back up: the circle returns before the list scrolls.
+        if (source != NestedScrollSource.UserInput || pulled <= 0f || available.y >= 0f) return Offset.Zero
+
+        val used = maxOf(available.y, -pulled)
+        pulled += used
+        follow()
+
+        return Offset(0f, used)
+    }
+
+    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+        if (source != NestedScrollSource.UserInput || !enabled || refreshing) return Offset.Zero
+        if (armed == null && (consumed.y != 0f || available.y != 0f)) armed = consumed.y == 0f && available.y > 0f
+        if (armed != true || available.y <= 0f) return Offset.Zero
+
+        pulled += available.y
+        follow()
+
+        return Offset(0f, available.y)
+    }
+
+    override suspend fun onPreFling(available: Velocity): Velocity {
+        val eaten = ateFling && available.y > 0f
+        ateFling = false
+
+        return if (eaten) Velocity(0f, available.y) else Velocity.Zero
+    }
+
+    private fun follow() {
+        val fraction = pulled * DRAG / threshold
+        scope.launch { state.snapTo(fraction) }
+    }
+
+    private companion object {
+        const val DRAG = 0.5f
+        const val REFRESH_START_MS = 500L
     }
 }
 
