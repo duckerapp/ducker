@@ -207,7 +207,7 @@ ducker 由一个人和 AI 助手共同开发。代码由 Anthropic 的 AI 模型
 
 ## 由其他应用控制
 
-适用于 Tasker、快捷方式等工具。请先打开 **Settings → Connection → Control from other apps**：它默认关闭，
+适用于 Tasker、快捷方式等工具。请先打开 **Settings → Privacy → Control from other apps**：它默认关闭，
 已安装的应用更新后也是如此。该权限对所有能够发送这些命令的应用生效。ducker 自己的小组件、磁贴
 和快捷方式不需要它。
 

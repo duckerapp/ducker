@@ -227,7 +227,7 @@ two smaller forks, [duckerapp/utls](https://github.com/duckerapp/utls) and
 
 ## Control from other apps
 
-For Tasker, shortcuts and similar tools. Turn on **Settings → Connection → Control from other apps** first: it
+For Tasker, shortcuts and similar tools. Turn on **Settings → Privacy → Control from other apps** first: it
 is off by default, also after updating an existing installation. The permission applies to every
 app that is able to send these commands. ducker's own widgets, tile and shortcuts work without it.
 
