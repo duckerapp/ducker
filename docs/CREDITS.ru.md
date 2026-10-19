@@ -9,11 +9,15 @@
 - **mihomo** — MetaCubeX, GPL-3.0. Ядро.
 - **zashboard** — Zephyruso, MIT. Панель диагностики в разделе «Помощь и диагностика».
 
-## Шрифт
+## Шрифт и значки
 
 - **Onest** — The Onest Project Authors (Дмитрий Волошин, Андрей Кудрявцев), SIL Open Font
   License 1.1. Шрифт интерфейса, без изменений: версия 2.001 из Google Fonts. Лицензия и
   уведомление лежат в самом приложении, в `app/src/main/assets/licenses/`.
+- **Material Symbols** — Google, Apache License 2.0. Все значки приложения: стиль Rounded, вес
+  400, контуры без изменений из npm-пакета `@material-symbols/svg-400` 0.47.6, хранятся векторами
+  в `ui/components/Symbols.kt`, их пишет `scripts/material-symbols.py`. Лицензия и уведомление —
+  в `app/src/main/assets/licenses/`.
 
 ## Заимствованные идеи и код
 Формат записи: что взято, откуда (репозиторий, ветка, коммит), идея или код.

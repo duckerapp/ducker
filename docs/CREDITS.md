@@ -13,11 +13,15 @@ repository README.
 - **mihomo** — MetaCubeX, GPL-3.0. The core.
 - **zashboard** — Zephyruso, MIT. The diagnostics dashboard under **Help and diagnostics**.
 
-## Font
+## Font and icons
 
 - **Onest** — The Onest Project Authors (Dmitri Voloshin, Andrey Kudryavtsev), SIL Open Font
   License 1.1. The interface font, unmodified: version 2.001 from Google Fonts. Its license and
   notice ship inside the app, in `app/src/main/assets/licenses/`.
+- **Material Symbols** — Google, Apache License 2.0. Every icon in the app: style Rounded, weight
+  400, unmodified outlines from the npm package `@material-symbols/svg-400` 0.47.6, stored as
+  vectors in `ui/components/Symbols.kt` by `scripts/material-symbols.py`. License and notice in
+  `app/src/main/assets/licenses/`.
 
 ## Borrowed ideas and code
 
