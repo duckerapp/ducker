@@ -330,7 +330,7 @@
     <string name="app_update_check_failed">Không thể kiểm tra. Hãy thử lại sau</string>
     <string name="app_update_available">Đã có phiên bản %s</string>
     <string name="app_update_beta">Phiên bản thử nghiệm</string>
-    <string name="app_update_beta_hint">Nhận phiên bản mới sớm hơn vài ngày. Các phiên bản này có thể có lỗi</string>
+    <string name="app_update_beta_hint">Nhận phiên bản mới sớm hơn vài ngày</string>
     <string name="app_update_card">Có bản cập nhật: ducker %s</string>
     <string name="app_update_card_downloading">Đang tải ducker %1$s — %2$d%%</string>
     <string name="app_update_card_installing">Đang cài đặt ducker %s…</string>

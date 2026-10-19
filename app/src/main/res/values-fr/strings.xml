@@ -334,7 +334,7 @@
     <string name="app_update_check_failed">Impossible de vérifier. Réessayez plus tard</string>
     <string name="app_update_available">La version %s est disponible</string>
     <string name="app_update_beta">Versions bêta</string>
-    <string name="app_update_beta_hint">Recevez les nouvelles versions quelques jours avant leur sortie. Elles peuvent contenir des bugs</string>
+    <string name="app_update_beta_hint">Recevez les nouvelles versions quelques jours avant leur sortie</string>
     <string name="app_update_card">Mise à jour disponible : ducker %s</string>
     <string name="app_update_card_downloading">Téléchargement de ducker %1$s — %2$d %%</string>
     <string name="app_update_card_installing">Installation de ducker %s…</string>

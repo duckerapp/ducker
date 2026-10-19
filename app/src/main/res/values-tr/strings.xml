@@ -332,7 +332,7 @@
     <string name="app_update_check_failed">Kontrol edilemedi. Daha sonra tekrar deneyin</string>
     <string name="app_update_available">%s sürümü mevcut</string>
     <string name="app_update_beta">Beta sürümler</string>
-    <string name="app_update_beta_hint">Yeni sürümlere birkaç gün erken ulaşın. Hatalar içerebilirler</string>
+    <string name="app_update_beta_hint">Yeni sürümlere birkaç gün erken ulaşın</string>
     <string name="app_update_card">Güncelleme mevcut: ducker %s</string>
     <string name="app_update_card_downloading">ducker %1$s indiriliyor — %%%2$d</string>
     <string name="app_update_card_installing">ducker %s yükleniyor…</string>

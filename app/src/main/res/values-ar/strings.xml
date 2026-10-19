@@ -340,7 +340,7 @@
     <string name="app_update_check_failed">تعذّر التحقق. حاول مجددًا لاحقًا</string>
     <string name="app_update_available">الإصدار %s متاح</string>
     <string name="app_update_beta">الإصدارات التجريبية</string>
-    <string name="app_update_beta_hint">احصل على الإصدارات الجديدة قبل بضعة أيام. قد تحتوي على أخطاء</string>
+    <string name="app_update_beta_hint">احصل على الإصدارات الجديدة قبل بضعة أيام</string>
     <string name="app_update_card">تحديث متاح: ducker %s</string>
     <string name="app_update_card_downloading">جارٍ تنزيل ducker %1$s — %2$d%%</string>
     <string name="app_update_card_installing">جارٍ تثبيت ducker %s…</string>

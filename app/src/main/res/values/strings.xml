@@ -366,7 +366,7 @@
     <string name="app_update_check_failed">Couldn\'t check. Try again later</string>
     <string name="app_update_available">Version %s is available</string>
     <string name="app_update_beta">Beta versions</string>
-    <string name="app_update_beta_hint">Get new versions a few days early. They may have bugs</string>
+    <string name="app_update_beta_hint">Get new versions a few days early</string>
     <string name="app_update_card">Update available: ducker %s</string>
     <string name="app_update_card_downloading">Downloading ducker %1$s — %2$d%%</string>
     <string name="app_update_card_installing">Installing ducker %s…</string>
