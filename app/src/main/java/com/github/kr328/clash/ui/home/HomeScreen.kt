@@ -1436,12 +1436,11 @@ private fun InfoCard(
     icon: ImageVector = Icons.Default.Campaign,
     action: Pair<String, () -> Unit>? = null,
     secondary: Pair<String, () -> Unit>? = null,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = containerColor,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
     ) {

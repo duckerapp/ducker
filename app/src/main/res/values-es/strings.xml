@@ -78,7 +78,6 @@
     <string name="back">Volver</string>
     <string name="add_failed">No se pudo añadir la suscripción</string>
     <string name="clipboard_empty">El portapapeles está vacío</string>
-    <string name="section_look">Apariencia</string>
     <string name="section_connection">Conexión</string>
     <string name="section_advanced">Avanzado</string>
     <string name="theme">Tema</string>
@@ -322,14 +321,12 @@
     <string name="move_up">Subir</string>
     <string name="move_down">Bajar</string>
     <string name="section_privacy">Privacidad</string>
-    <string name="section_help">Ayuda</string>
     <string name="channel">Canal de Telegram</string>
     <string name="channel_hint">Nuevas versiones y noticias del proyecto</string>
     <string name="community">Chat de la comunidad</string>
     <string name="community_hint">Preguntas y debates con otros usuarios</string>
     <string name="mail">Correo electrónico</string>
     <string name="mail_copied">Dirección copiada</string>
-    <string name="section_updates">Actualizaciones</string>
     <string name="app_update_check">Buscar actualizaciones</string>
     <string name="app_update_check_hint">ducker también las busca automáticamente dos veces al día</string>
     <string name="app_update_checking">Buscando…</string>

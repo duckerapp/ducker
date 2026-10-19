@@ -78,7 +78,6 @@
     <string name="back">رجوع</string>
     <string name="add_failed">تعذّرت إضافة الاشتراك</string>
     <string name="clipboard_empty">الحافظة فارغة</string>
-    <string name="section_look">المظهر</string>
     <string name="section_connection">الاتصال</string>
     <string name="section_advanced">خيارات متقدمة</string>
     <string name="theme">المظهر</string>
@@ -328,14 +327,12 @@
     <string name="move_up">نقل لأعلى</string>
     <string name="move_down">نقل لأسفل</string>
     <string name="section_privacy">الخصوصية</string>
-    <string name="section_help">المساعدة</string>
     <string name="channel">قناة Telegram</string>
     <string name="channel_hint">الإصدارات الجديدة وأخبار المشروع</string>
     <string name="community">دردشة المجتمع</string>
     <string name="community_hint">أسئلة ونقاشات مع مستخدمين آخرين</string>
     <string name="mail">البريد الإلكتروني</string>
     <string name="mail_copied">تم نسخ العنوان</string>
-    <string name="section_updates">التحديثات</string>
     <string name="app_update_check">البحث عن تحديثات</string>
     <string name="app_update_check_hint">يتحقق ducker تلقائيًا أيضًا مرتين في اليوم</string>
     <string name="app_update_checking">جارٍ البحث…</string>

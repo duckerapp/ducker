@@ -20,7 +20,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +36,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Insights
@@ -54,7 +52,6 @@ import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Science
-import androidx.compose.material.icons.filled.SystemUpdate
 import com.github.kr328.clash.update.UpdateState
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.BugReport
@@ -153,7 +150,7 @@ data class SettingsState(
 )
 
 /** Community support remains reachable from diagnostics as well as project support. */
-private const val COMMUNITY = "https://t.me/ducker_community"
+internal const val COMMUNITY = "https://t.me/ducker_community"
 
 /** Почта проекта — там же, для тех, кому Telegram не подходит. */
 const val MAIL = "duckermihomo@proton.me"

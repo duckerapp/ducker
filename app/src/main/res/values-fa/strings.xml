@@ -78,7 +78,6 @@
     <string name="back">بازگشت</string>
     <string name="add_failed">افزودن اشتراک ممکن نشد</string>
     <string name="clipboard_empty">کلیپ‌بورد خالی است</string>
-    <string name="section_look">ظاهر</string>
     <string name="section_connection">اتصال</string>
     <string name="section_advanced">پیشرفته</string>
     <string name="theme">پوسته</string>
@@ -320,14 +319,12 @@
     <string name="move_up">انتقال به بالا</string>
     <string name="move_down">انتقال به پایین</string>
     <string name="section_privacy">حریم خصوصی</string>
-    <string name="section_help">راهنما</string>
     <string name="channel">کانال Telegram</string>
     <string name="channel_hint">نسخه‌های جدید و اخبار پروژه</string>
     <string name="community">گروه گفتگو</string>
     <string name="community_hint">پرسش و گفتگو با سایر کاربران</string>
     <string name="mail">ایمیل</string>
     <string name="mail_copied">آدرس کپی شد</string>
-    <string name="section_updates">به‌روزرسانی‌ها</string>
     <string name="app_update_check">بررسی به‌روزرسانی</string>
     <string name="app_update_check_hint">خود ducker هم روزی دو بار بررسی می‌کند</string>
     <string name="app_update_checking">در حال بررسی…</string>

@@ -78,7 +78,6 @@
     <string name="back">Geri</string>
     <string name="add_failed">Abonelik eklenemedi</string>
     <string name="clipboard_empty">Pano boş</string>
-    <string name="section_look">Görünüm</string>
     <string name="section_connection">Bağlantı</string>
     <string name="section_advanced">Gelişmiş</string>
     <string name="theme">Tema</string>
@@ -320,14 +319,12 @@
     <string name="move_up">Yukarı taşı</string>
     <string name="move_down">Aşağı taşı</string>
     <string name="section_privacy">Gizlilik</string>
-    <string name="section_help">Yardım</string>
     <string name="channel">Telegram kanalı</string>
     <string name="channel_hint">Yeni sürümler ve proje haberleri</string>
     <string name="community">Topluluk sohbeti</string>
     <string name="community_hint">Diğer kullanıcılarla sorular ve tartışmalar</string>
     <string name="mail">E-posta</string>
     <string name="mail_copied">Adres kopyalandı</string>
-    <string name="section_updates">Güncellemeler</string>
     <string name="app_update_check">Güncellemeleri kontrol et</string>
     <string name="app_update_check_hint">ducker ayrıca günde iki kez kendiliğinden kontrol eder</string>
     <string name="app_update_checking">Kontrol ediliyor…</string>

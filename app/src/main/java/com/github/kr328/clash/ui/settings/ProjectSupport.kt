@@ -15,12 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Forum
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,7 +41,6 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.DuckerCard as Card
 
 private const val PROJECT_CHANNEL = "https://t.me/ducker_mihomo"
-private const val PROJECT_COMMUNITY = "https://t.me/ducker_community"
 private const val PROJECT_GITHUB = "https://github.com/duckerapp/ducker"
 private const val PROJECT_GITLAB = "https://gitlab.com/duckerx/ducker"
 
@@ -74,7 +73,7 @@ internal fun LazyListScope.projectSupportItems(onLink: (String) -> Unit, onMail:
     }
     item(key = "telegram-community") {
         ProjectLinkRow(stringResource(R.string.community), Icons.Default.Forum, stringResource(R.string.community_hint)) {
-            onLink(PROJECT_COMMUNITY)
+            onLink(COMMUNITY)
         }
     }
     item(key = "source-heading") { ProjectSection(stringResource(R.string.settings_project_source)) }
@@ -119,7 +118,7 @@ private fun ProjectLinkRow(title: String, icon: ImageVector, subtitle: String? =
                 Text(title, style = MaterialTheme.typography.bodyLarge)
                 if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(20.dp))
+            Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(20.dp))
         }
     }
 }

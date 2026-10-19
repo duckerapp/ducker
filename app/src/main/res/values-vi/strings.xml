@@ -78,7 +78,6 @@
     <string name="back">Quay lại</string>
     <string name="add_failed">Không thể thêm gói đăng ký</string>
     <string name="clipboard_empty">Bảng nhớ tạm trống</string>
-    <string name="section_look">Giao diện</string>
     <string name="section_connection">Kết nối</string>
     <string name="section_advanced">Nâng cao</string>
     <string name="theme">Giao diện</string>
@@ -318,14 +317,12 @@
     <string name="move_up">Chuyển lên</string>
     <string name="move_down">Chuyển xuống</string>
     <string name="section_privacy">Quyền riêng tư</string>
-    <string name="section_help">Trợ giúp</string>
     <string name="channel">Kênh Telegram</string>
     <string name="channel_hint">Phiên bản mới và tin tức dự án</string>
     <string name="community">Nhóm trò chuyện</string>
     <string name="community_hint">Hỏi đáp và thảo luận với người dùng khác</string>
     <string name="mail">Email</string>
     <string name="mail_copied">Đã sao chép địa chỉ</string>
-    <string name="section_updates">Bản cập nhật</string>
     <string name="app_update_check">Kiểm tra cập nhật</string>
     <string name="app_update_check_hint">ducker cũng tự kiểm tra hai lần mỗi ngày</string>
     <string name="app_update_checking">Đang kiểm tra…</string>

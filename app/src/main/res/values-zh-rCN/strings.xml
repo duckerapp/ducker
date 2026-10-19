@@ -78,7 +78,6 @@
     <string name="back">返回</string>
     <string name="add_failed">无法添加订阅</string>
     <string name="clipboard_empty">剪贴板为空</string>
-    <string name="section_look">外观</string>
     <string name="section_connection">连接</string>
     <string name="section_advanced">高级</string>
     <string name="theme">主题</string>
@@ -318,14 +317,12 @@
     <string name="move_up">上移</string>
     <string name="move_down">下移</string>
     <string name="section_privacy">隐私</string>
-    <string name="section_help">帮助</string>
     <string name="channel">Telegram 频道</string>
     <string name="channel_hint">新版本发布与项目动态</string>
     <string name="community">社区群组</string>
     <string name="community_hint">与其他用户交流和提问</string>
     <string name="mail">邮箱</string>
     <string name="mail_copied">邮箱地址已复制</string>
-    <string name="section_updates">更新</string>
     <string name="app_update_check">检查更新</string>
     <string name="app_update_check_hint">ducker 每天也会自动检查两次</string>
     <string name="app_update_checking">正在检查…</string>

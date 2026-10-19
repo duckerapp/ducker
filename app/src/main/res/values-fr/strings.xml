@@ -78,7 +78,6 @@
     <string name="back">Retour</string>
     <string name="add_failed">Impossible d’ajouter l’abonnement</string>
     <string name="clipboard_empty">Le presse-papiers est vide</string>
-    <string name="section_look">Apparence</string>
     <string name="section_connection">Connexion</string>
     <string name="section_advanced">Avancé</string>
     <string name="theme">Thème</string>
@@ -322,14 +321,12 @@
     <string name="move_up">Monter</string>
     <string name="move_down">Descendre</string>
     <string name="section_privacy">Confidentialité</string>
-    <string name="section_help">Aide</string>
     <string name="channel">Canal Telegram</string>
     <string name="channel_hint">Nouvelles versions et actualités du projet</string>
     <string name="community">Discussion communautaire</string>
     <string name="community_hint">Questions et échanges avec d’autres utilisateurs</string>
     <string name="mail">E-mail</string>
     <string name="mail_copied">Adresse copiée</string>
-    <string name="section_updates">Mises à jour</string>
     <string name="app_update_check">Rechercher des mises à jour</string>
     <string name="app_update_check_hint">ducker vérifie aussi automatiquement deux fois par jour</string>
     <string name="app_update_checking">Recherche…</string>

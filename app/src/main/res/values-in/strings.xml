@@ -78,7 +78,6 @@
     <string name="back">Kembali</string>
     <string name="add_failed">Tidak dapat menambahkan langganan</string>
     <string name="clipboard_empty">Papan klip kosong</string>
-    <string name="section_look">Tampilan</string>
     <string name="section_connection">Koneksi</string>
     <string name="section_advanced">Lanjutan</string>
     <string name="theme">Tema</string>
@@ -318,14 +317,12 @@
     <string name="move_up">Pindah ke atas</string>
     <string name="move_down">Pindah ke bawah</string>
     <string name="section_privacy">Privasi</string>
-    <string name="section_help">Panduan</string>
     <string name="channel">Kanal Telegram</string>
     <string name="channel_hint">Versi baru dan kabar proyek</string>
     <string name="community">Obrolan komunitas</string>
     <string name="community_hint">Tanya jawab dan diskusi dengan pengguna lain</string>
     <string name="mail">Email</string>
     <string name="mail_copied">Alamat disalin</string>
-    <string name="section_updates">Pembaruan</string>
     <string name="app_update_check">Periksa pembaruan</string>
     <string name="app_update_check_hint">ducker juga memeriksa secara otomatis dua kali sehari</string>
     <string name="app_update_checking">Memeriksa…</string>

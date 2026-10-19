@@ -100,7 +100,6 @@
     <string name="add_failed">Could not add the subscription</string>
     <string name="clipboard_empty">The clipboard is empty</string>
 
-    <string name="section_look">Look</string>
     <string name="section_connection">Connection</string>
     <string name="section_advanced">Advanced</string>
     <string name="theme">Theme</string>
@@ -353,7 +352,6 @@
     <string name="move_up">Move up</string>
     <string name="move_down">Move down</string>
     <string name="section_privacy">Privacy</string>
-    <string name="section_help">Help</string>
     <string name="channel">Telegram channel</string>
     <string name="channel_hint">New versions and project news</string>
     <string name="community">Community chat</string>
@@ -361,7 +359,6 @@
     <string name="mail">Email</string>
     <string name="mail_copied">Address copied</string>
     <!-- Обновление приложения (этап 7). -->
-    <string name="section_updates">Updates</string>
     <string name="app_update_check">Check for updates</string>
     <string name="app_update_check_hint">ducker also checks by itself twice a day</string>
     <string name="app_update_checking">Checking…</string>

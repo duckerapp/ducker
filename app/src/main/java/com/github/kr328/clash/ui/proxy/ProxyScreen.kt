@@ -57,8 +57,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.material3.CardDefaults
@@ -73,7 +71,6 @@ import androidx.compose.animation.core.animate
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.Job
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import kotlinx.coroutines.flow.collectLatest
@@ -83,7 +80,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.traversalIndex
-import com.github.kr328.clash.ui.components.DuckerIcons
 import com.github.kr328.clash.ui.components.overscrollFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

@@ -92,7 +92,6 @@
     <string name="add_failed">Не удалось добавить подписку</string>
     <string name="clipboard_empty">В буфере обмена пусто</string>
 
-    <string name="section_look">Вид</string>
     <string name="section_connection">Подключение</string>
     <string name="section_advanced">Для опытных</string>
     <string name="theme">Тема</string>
@@ -345,7 +344,6 @@
     <string name="move_up">Переместить выше</string>
     <string name="move_down">Переместить ниже</string>
     <string name="section_privacy">Приватность</string>
-    <string name="section_help">Помощь</string>
     <string name="channel">Канал в Telegram</string>
     <string name="channel_hint">Новые версии и новости проекта</string>
     <string name="community">Чат сообщества</string>
@@ -353,7 +351,6 @@
     <string name="mail">Почта</string>
     <string name="mail_copied">Адрес скопирован</string>
     <!-- Обновление приложения (этап 7). -->
-    <string name="section_updates">Обновления</string>
     <string name="app_update_check">Проверить обновления</string>
     <string name="app_update_check_hint">ducker и сам проверяет дважды в день</string>
     <string name="app_update_checking">Проверяю…</string>

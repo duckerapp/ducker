@@ -78,7 +78,6 @@
     <string name="back">Voltar</string>
     <string name="add_failed">Não foi possível adicionar a assinatura</string>
     <string name="clipboard_empty">A área de transferência está vazia</string>
-    <string name="section_look">Aparência</string>
     <string name="section_connection">Conexão</string>
     <string name="section_advanced">Avançado</string>
     <string name="theme">Tema</string>
@@ -322,14 +321,12 @@
     <string name="move_up">Mover para cima</string>
     <string name="move_down">Mover para baixo</string>
     <string name="section_privacy">Privacidade</string>
-    <string name="section_help">Ajuda</string>
     <string name="channel">Canal do Telegram</string>
     <string name="channel_hint">Novas versões e notícias do projeto</string>
     <string name="community">Chat da comunidade</string>
     <string name="community_hint">Perguntas e conversas com outros usuários</string>
     <string name="mail">E-mail</string>
     <string name="mail_copied">Endereço copiado</string>
-    <string name="section_updates">Atualizações</string>
     <string name="app_update_check">Buscar atualizações</string>
     <string name="app_update_check_hint">O ducker também verifica automaticamente duas vezes por dia</string>
     <string name="app_update_checking">Buscando…</string>
