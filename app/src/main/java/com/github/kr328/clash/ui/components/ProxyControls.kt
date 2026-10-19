@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -92,7 +91,7 @@ internal fun ProxyCheckButton(
     ) {
         if (compact) {
             Box(
-                Modifier.size(44.dp).dropShadow(CircleShape, DuckerCardShadow)
+                Modifier.size(44.dp).airShadow(CircleShape)
                     .clip(CircleShape).background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center,
             ) { indicator() }

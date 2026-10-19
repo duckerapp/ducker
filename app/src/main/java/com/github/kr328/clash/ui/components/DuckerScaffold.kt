@@ -60,7 +60,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.material3.ripple
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
@@ -337,7 +336,7 @@ private fun FloatingDock(
     fun DrawScope.pillWidth() = lerp(dockSlotWidth(size.width), size.width, merge)
 
     Surface(
-        modifier = modifier.widthIn(max = 420.dp).dropShadow(shape, DuckerCardShadow),
+        modifier = modifier.widthIn(max = 420.dp).airShadow(shape),
         shape = shape,
         color = MaterialTheme.colorScheme.surface,
     ) {

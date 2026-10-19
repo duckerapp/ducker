@@ -190,6 +190,7 @@ import com.github.kr328.clash.ui.components.screenInsets
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.labelWeights
+import com.github.kr328.clash.ui.components.airEdge
 import com.github.kr328.clash.ui.components.DuckerCard as Card
 
 /**
@@ -842,12 +843,15 @@ private fun HeroCard(
     }
 
     // Keep the existing inset and inner outline: both wave layers retain their exact
-    // bounds. The outer surface is transparent so the old ring no longer draws a rim.
+    // bounds. The outer surface is transparent and the card's shadow is its edge; in OLED,
+    // where no shadow shows, the surface is the old ring again ([airEdge]).
     Card(
         // Пока панель раскрывается или сворачивается, рамки пульта нет: фокус переходит сразу, а
         // узлы ещё не выехали — или плашка ещё под панелью (D-161).
         modifier = modifier.fillMaxWidth().then(if (tv) Modifier.ringHold(progress.isRunning) else Modifier),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        colors = CardDefaults.cardColors(
+            containerColor = if (airEdge() != null) MaterialTheme.colorScheme.outlineVariant else Color.Transparent,
+        ),
         border = null,
         // The remote's node panel unfolds inside this card.
         resizing = tv,

@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.RowScope
@@ -136,6 +137,22 @@ internal val DuckerCardShadow = Shadow(
 internal val DuckerShadowOutsets = LayerOutsets(left = 12.dp, top = 12.dp, right = 12.dp, bottom = 12.dp)
 
 /**
+ * The OLED theme makes a surface as black as the screen behind it, and no shadow shows on black:
+ * there the surface keeps the hairline it had before the soft shadows. [fill] — the surface's color.
+ */
+@Composable
+internal fun airEdge(fill: Color = MaterialTheme.colorScheme.surface): BorderStroke? {
+    val scheme = MaterialTheme.colorScheme
+
+    return if (fill == scheme.background) BorderStroke(1.dp, scheme.outlineVariant) else null
+}
+
+/** [DuckerCardShadow], or the hairline of [airEdge] where a shadow cannot show. */
+@Composable
+internal fun Modifier.airShadow(shape: Shape, fill: Color = MaterialTheme.colorScheme.surface): Modifier =
+    airEdge(fill)?.let { border(it, shape) } ?: dropShadow(shape, DuckerCardShadow)
+
+/**
  * The shadow of a surface whose size animates. [dropShadow] keeps one blurred mask per size in a
  * window-wide cache that is emptied only when the app goes to the background, so each frame of a
  * height animation would blur a new mask and keep it. The platform outline shadow has no mask; its
@@ -163,13 +180,21 @@ fun DuckerCard(
     resizing: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val edge = airEdge(colors.containerColor)
+
     Card(
         modifier = modifier
-            .then(if (resizing) Modifier.resizingShadow(shape) else Modifier.dropShadow(shape, DuckerCardShadow))
+            .then(
+                when {
+                    edge != null -> Modifier
+                    resizing -> Modifier.resizingShadow(shape)
+                    else -> Modifier.dropShadow(shape, DuckerCardShadow)
+                },
+            )
             .then(surfaceModifier),
         shape = shape,
         colors = colors,
-        border = border,
+        border = border ?: edge,
         content = content,
     )
 }
@@ -274,17 +299,22 @@ fun SearchField(
 
     // Пульт (этап 6): строка — одна кнопка, ввод открывается по ОК, см. [keyField].
     val (row, input) = keyField()
+    val edge = airEdge()
 
     Box(
         modifier = modifier.fillMaxWidth()
-            .then(if (compact) Modifier.dropShadow(shape, DuckerCardShadow) else Modifier.dropShadow(shape) {
-                val lift = shadowLift().coerceIn(0f, 1f)
-                // Keep blur geometry fixed while scrolling so the cached mask stays reusable.
-                radius = DuckerCardShadow.radius.toPx()
-                color = DuckerCardShadow.color.copy(alpha = DuckerCardShadow.color.alpha * (1f + 0.4f * lift))
-                offset = Offset(
-                    DuckerCardShadow.offset.x.toPx(), DuckerCardShadow.offset.y.toPx(),
-                )
+            .then(when {
+                edge != null -> Modifier.border(edge, shape)
+                compact -> Modifier.dropShadow(shape, DuckerCardShadow)
+                else -> Modifier.dropShadow(shape) {
+                    val lift = shadowLift().coerceIn(0f, 1f)
+                    // Keep blur geometry fixed while scrolling so the cached mask stays reusable.
+                    radius = DuckerCardShadow.radius.toPx()
+                    color = DuckerCardShadow.color.copy(alpha = DuckerCardShadow.color.alpha * (1f + 0.4f * lift))
+                    offset = Offset(
+                        DuckerCardShadow.offset.x.toPx(), DuckerCardShadow.offset.y.toPx(),
+                    )
+                }
             })
             .then(
                 if (compact) Modifier.background(MaterialTheme.colorScheme.surface, shape)

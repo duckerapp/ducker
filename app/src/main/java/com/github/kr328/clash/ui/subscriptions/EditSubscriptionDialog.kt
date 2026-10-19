@@ -42,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -67,9 +66,9 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.SheetField
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
-import com.github.kr328.clash.ui.components.DuckerCardShadow
 import com.github.kr328.clash.ui.components.DuckerShadowOutsets
 import com.github.kr328.clash.ui.components.FitLabel
+import com.github.kr328.clash.ui.components.airShadow
 import java.util.concurrent.TimeUnit
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -192,7 +191,7 @@ fun EditSubscriptionDialog(
 private fun SheetLink(icon: ImageVector, text: String, enabled: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth()
-            .dropShadow(RoundedCornerShape(20.dp), DuckerCardShadow)
+            .airShadow(RoundedCornerShape(20.dp))
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surface)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
@@ -290,7 +289,7 @@ private fun IntervalPicker(
                     alpha = if (enabled) 1f else 0.5f
                     outsets = DuckerShadowOutsets
                 }
-                .dropShadow(CircleShape, DuckerCardShadow)
+                .airShadow(CircleShape)
                 .clip(CircleShape)
                 .background(scheme.surface)
                 .padding(4.dp)
@@ -491,7 +490,7 @@ private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Un
 
     Box(
         modifier = modifier.fillMaxWidth()
-            .dropShadow(RoundedCornerShape(20.dp), DuckerCardShadow)
+            .airShadow(RoundedCornerShape(20.dp))
             .clip(RoundedCornerShape(20.dp))
             .background(scheme.surface)
             .padding(horizontal = 16.dp, vertical = 4.dp),

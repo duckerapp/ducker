@@ -77,6 +77,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -545,13 +546,15 @@ internal fun SheetField(
     // Пульт (этап 6): ввод по ОК, как у поиска, — иначе панель открывалась сразу с клавиатурой.
     // Скругление — рамке: по высоте поле сошло бы за кнопку-пилюлю.
     val (row, input) = keyField(corner = 20.dp)
+    val flat = airEdge()
+    val edge = if (error) BorderStroke(1.dp, scheme.error) else flat
 
     Row(
         modifier = Modifier.fillMaxWidth()
-            .dropShadow(shape, DuckerCardShadow)
+            .then(if (flat == null) Modifier.dropShadow(shape, DuckerCardShadow) else Modifier)
             .clip(shape)
             .background(scheme.surface)
-            .then(if (error) Modifier.border(1.dp, scheme.error, shape) else Modifier)
+            .then(edge?.let { Modifier.border(it, shape) } ?: Modifier)
             .then(row)
             .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -625,6 +628,7 @@ internal fun SheetButton(
     )
     val back by animateColorAsState(if (filling) scheme.surface else container, tween(FILL_FADE_MS), label = "sheetButtonBack")
     val front by animateColorAsState(if (filling) container else content, tween(FILL_FADE_MS), label = "sheetButtonFront")
+    val edge = airEdge(if (filling) scheme.surface else container)
 
     Box(
         modifier = Modifier.fillMaxWidth()
@@ -635,12 +639,13 @@ internal fun SheetButton(
                 alpha = if (enabled || busy) 1f else 0.4f
                 outsets = DuckerShadowOutsets
             }
-            .dropShadow(CircleShape, DuckerCardShadow)
+            .then(if (edge == null) Modifier.dropShadow(CircleShape, DuckerCardShadow) else Modifier)
             .clip(CircleShape)
             .background(back)
             .then(
                 if (filling) {
-                    Modifier.semantics { progressBarRangeInfo = ProgressBarRangeInfo(filled, 0f..1f) }
+                    (edge?.let { Modifier.border(it, CircleShape) } ?: Modifier)
+                        .semantics { progressBarRangeInfo = ProgressBarRangeInfo(filled, 0f..1f) }
                 } else Modifier
             )
             .clickable(enabled = enabled && !busy, role = Role.Button, onClick = onClick),

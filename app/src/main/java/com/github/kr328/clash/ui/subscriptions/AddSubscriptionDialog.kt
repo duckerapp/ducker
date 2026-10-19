@@ -31,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -43,10 +42,10 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.SheetField
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
-import com.github.kr328.clash.ui.components.DuckerCardShadow
 import com.github.kr328.clash.ui.components.FitLabel
 import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.labelWeights
+import com.github.kr328.clash.ui.components.airShadow
 import io.nayuki.qrcodegen.QrCode
 
 /**
@@ -243,7 +242,7 @@ internal fun SourceTile(
     Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.dropShadow(shape, DuckerCardShadow),
+        modifier = modifier.airShadow(shape),
         shape = shape,
         color = MaterialTheme.colorScheme.surface,
     ) {

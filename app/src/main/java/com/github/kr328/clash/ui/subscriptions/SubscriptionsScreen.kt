@@ -70,7 +70,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -125,9 +124,9 @@ import com.github.kr328.clash.ui.components.formatBytes
 import com.github.kr328.clash.ui.components.formatDate
 import com.github.kr328.clash.ui.components.overscrollFor
 import com.github.kr328.clash.ui.components.screenInsets
+import com.github.kr328.clash.ui.components.airShadow
 import java.util.UUID
 import com.github.kr328.clash.ui.components.DuckerCard as Card
-import com.github.kr328.clash.ui.components.DuckerCardShadow
 
 /**
  * Третья вкладка: подписки (этап 5).
@@ -580,7 +579,7 @@ private fun ProfileRow(
                     shadowElevation = LIFT_SHADOW.toPx() * lift
                     this.shape = shape
                 }
-                .dropShadow(shape, DuckerCardShadow)
+                .airShadow(shape)
                 .clip(shape)
                 .background(scheme.surface)
                 .then(if (tv) Modifier.ringCorner(ROW_CORNER) else Modifier)

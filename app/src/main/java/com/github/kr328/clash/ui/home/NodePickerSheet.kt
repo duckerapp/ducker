@@ -40,7 +40,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
@@ -67,13 +66,13 @@ import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.core.model.ProxySort
 import com.github.kr328.clash.store.DelayStore
-import com.github.kr328.clash.ui.components.DuckerCardShadow
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.FloatingSearch
 import com.github.kr328.clash.ui.components.ProxyCheckButton
 import com.github.kr328.clash.ui.components.ProxySortToggle
 import com.github.kr328.clash.ui.components.SearchField
 import com.github.kr328.clash.ui.components.SheetButton
+import com.github.kr328.clash.ui.components.airShadow
 import com.github.kr328.clash.ui.proxy.NodeState
 import com.github.kr328.clash.ui.proxy.ProxyGroupState
 import com.github.kr328.clash.ui.proxy.ProxyState
@@ -253,10 +252,11 @@ private fun PickerNode(node: NodeState, selected: Boolean, enabled: Boolean, onC
     val scheme = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(20.dp)
     val content = if (selected) scheme.onPrimary else scheme.onSurface
+    val fill = if (selected) scheme.primary else scheme.surface
     Row(
         modifier = modifier.fillMaxWidth().heightIn(min = 56.dp)
-            .dropShadow(shape, DuckerCardShadow).clip(shape)
-            .background(if (selected) scheme.primary else scheme.surface)
+            .airShadow(shape, fill).clip(shape)
+            .background(fill)
             .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
