@@ -3,9 +3,9 @@
 
     python3 scripts/material-symbols.py
 
-Style Rounded, weight 400, grade 0, optical size 24; outlined unless a row asks for the filled
+Style Rounded, weight WEIGHT, grade 0, optical size 24; outlined unless a row asks for the filled
 form. To add an icon, add a row to ICONS and run the script again; the SVGs come from the npm
-package @material-symbols/svg-400 at the pinned version, through jsDelivr. Licence: Apache 2.0,
+package @material-symbols/svg-<WEIGHT> at the pinned version, through jsDelivr. Licence: Apache 2.0,
 app/src/main/assets/licenses/Material-Symbols-LICENSE.txt.
 """
 import re
@@ -14,7 +14,9 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 VERSION = "0.47.6"
-URL = "https://cdn.jsdelivr.net/npm/@material-symbols/svg-400@{}/rounded/{}.svg"
+# The owner chose 500 on 19.10.2026 after trying 400 on the phone (D-323).
+WEIGHT = 500
+URL = "https://cdn.jsdelivr.net/npm/@material-symbols/svg-{}@{}/rounded/{}.svg"
 OUT = Path(__file__).resolve().parent.parent / "app/src/main/java/com/github/kr328/clash/ui/components/Symbols.kt"
 
 # Name in the code, symbol, filled, mirrored in right-to-left layouts.
@@ -76,6 +78,7 @@ ICONS = [
     ("Redo", "redo", False, True),
     ("Refresh", "refresh", False, False),
     ("RestartAlt", "restart_alt", False, False),
+    ("Science", "science", False, False),
     ("Search", "search", False, False),
     ("Send", "send", False, True),
     ("Settings", "settings", False, False),
@@ -106,7 +109,7 @@ PATH_DATA = re.compile(r"[MmLlHhVvCcSsQqTtAaZz0-9.,\- ]+")
 
 
 def path_of(symbol: str, filled: bool) -> str:
-    url = URL.format(VERSION, symbol + ("-fill" if filled else ""))
+    url = URL.format(WEIGHT, VERSION, symbol + ("-fill" if filled else ""))
     root = ET.fromstring(urllib.request.urlopen(url, timeout=30).read())
     assert root.get("viewBox") == "0 -960 960 960", (symbol, root.get("viewBox"))
     parts = [e.get("d") for e in root.iter() if e.tag.endswith("path")]
@@ -124,7 +127,7 @@ def main():
         print(name)
 
     OUT.write_text(
-        "// Written by scripts/material-symbols.py from Material Symbols %s; edit the script, not this file.\n" % VERSION
+        "// Written by scripts/material-symbols.py from Material Symbols %s, weight %d; edit the script, not this file.\n" % (VERSION, WEIGHT)
         + """package com.github.kr328.clash.ui.components
 
 import androidx.compose.ui.graphics.Color
@@ -134,12 +137,12 @@ import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
 
 /**
- * The app's icons: Google's Material Symbols, Rounded, weight 400, as vectors (D-323). Apache License 2.0,
+ * The app's icons: Google's Material Symbols, Rounded, weight %d, as vectors (D-323). Apache License 2.0,
  * see `assets/licenses/Material-Symbols-LICENSE.txt`. [androidx.compose.material3.Icon] tints them, so the
  * color here does not matter.
  */
 object Symbols {
-""" + "".join(rows) + """
+""" % WEIGHT + "".join(rows) + """
     /** The symbols are drawn on a 960 grid whose top is at -960, as in their SVG `viewBox`. */
     private fun symbol(name: String, path: String, mirrored: Boolean = false): ImageVector = ImageVector.Builder(
         name = name,

@@ -15,7 +15,7 @@
   License 1.1. Шрифт интерфейса, без изменений: версия 2.001 из Google Fonts. Лицензия и
   уведомление лежат в самом приложении, в `app/src/main/assets/licenses/`.
 - **Material Symbols** — Google, Apache License 2.0. Все значки приложения: стиль Rounded, вес
-  400, контуры без изменений из npm-пакета `@material-symbols/svg-400` 0.47.6, хранятся векторами
+  500, контуры без изменений из npm-пакета `@material-symbols/svg-500` 0.47.6, хранятся векторами
   в `ui/components/Symbols.kt`, их пишет `scripts/material-symbols.py`. Лицензия и уведомление —
   в `app/src/main/assets/licenses/`.
 
