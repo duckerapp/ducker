@@ -36,7 +36,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import com.github.kr328.clash.update.UpdateState
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -78,8 +77,7 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.util.Shortcut
 import com.github.kr328.clash.util.shortcuts
 import com.github.kr328.clash.util.Vendor
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Button
+import com.github.kr328.clash.ui.components.Pill
 import com.github.kr328.clash.ui.components.ScreenFrame
 import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.screenInsets
@@ -428,24 +426,20 @@ fun SettingsScreen(
                                     // Четыре чипа в одну строку на узком экране не влезают, поэтому
                                     // FlowRow: перенесётся, а не обрежется.
                                     FlowRow(
+                                        modifier = Modifier.selectableGroup(),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp),
                                     ) {
                                         for (value in listOf("", "system", "gvisor", "mixed", "mips")) {
-                                            FilterChip(
-                                                selected = state.stack == value,
-                                                onClick = { onStack(value) },
-                                                label = {
-                                                    Text(
-                                                        // Что именно задал провайдер — видно прямо на чипе (D-122).
-                                                        text = value.ifEmpty {
-                                                            if (state.profileStack.isEmpty()) stringResource(R.string.stack_from_profile)
-                                                            else stringResource(R.string.stack_from_profile_value, state.profileStack)
-                                                        },
-                                                        style = MaterialTheme.typography.labelMedium,
-                                                    )
+                                            Pill(
+                                                // Что именно задал провайдер — видно прямо на чипе (D-122).
+                                                text = value.ifEmpty {
+                                                    if (state.profileStack.isEmpty()) stringResource(R.string.stack_from_profile)
+                                                    else stringResource(R.string.stack_from_profile_value, state.profileStack)
                                                 },
-                                                shape = MaterialTheme.shapes.extraLarge,
+                                                onClick = { onStack(value) },
+                                                selected = state.stack == value,
+                                                onCard = true,
+                                                role = Role.RadioButton,
                                             )
                                         }
                                     }
@@ -777,9 +771,12 @@ private fun BackgroundCard(allowed: Boolean, onAllow: () -> Unit, onVendor: (Sho
             }
 
             if (!allowed) {
-                Button(onClick = onAllow, modifier = Modifier.padding(top = 12.dp).fillMaxWidth().heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.background_allow))
-                }
+                Pill(
+                    text = stringResource(R.string.background_allow),
+                    onClick = onAllow,
+                    modifier = Modifier.padding(top = 12.dp).fillMaxWidth().heightIn(min = 48.dp),
+                    selected = true,
+                )
             }
 
             if (vendor != null) {
@@ -792,9 +789,12 @@ private fun BackgroundCard(allowed: Boolean, onAllow: () -> Unit, onVendor: (Sho
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         vendor.shortcuts.ifEmpty { listOf(null) }.forEach { shortcut ->
-                            OutlinedButton(onClick = { onVendor(shortcut) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                                Text(stringResource(shortcut?.label ?: R.string.background_app_settings))
-                            }
+                            Pill(
+                                text = stringResource(shortcut?.label ?: R.string.background_app_settings),
+                                onClick = { onVendor(shortcut) },
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                                onCard = true,
+                            )
                         }
                     }
                 }

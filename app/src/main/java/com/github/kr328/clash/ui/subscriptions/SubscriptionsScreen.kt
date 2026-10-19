@@ -24,7 +24,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.TextButton
+import com.github.kr328.clash.ui.components.Pill
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -947,7 +947,7 @@ private fun UpdateErrorCard(
                 }
 
                 action?.let { (label, onClick) ->
-                    TextButton(onClick = onClick, contentPadding = PaddingValues(0.dp)) { Text(label) }
+                    Pill(text = label, onClick = onClick, modifier = Modifier.padding(top = 4.dp), selected = true)
                 }
             }
 

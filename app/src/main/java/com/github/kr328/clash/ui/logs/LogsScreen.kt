@@ -17,8 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.core.model.LogMessage
 import com.github.kr328.clash.ui.components.DuckerCard as Card
-import com.github.kr328.clash.ui.components.FitLabel
+import com.github.kr328.clash.ui.components.Pill
 import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.labelWeights
 import com.github.kr328.clash.ui.components.overscrollFor
@@ -155,11 +153,11 @@ fun LogsScreen(
             Triple(stringResource(R.string.logs_save), onSave, true),
             Triple(stringResource(R.string.logs_clear), onClear, state.lines.isNotEmpty()),
         )
-        val weights = labelWeights(actions.map { it.first }, MaterialTheme.typography.labelMedium, ACTION_PADDING)
+        val weights = labelWeights(actions.map { it.first }, MaterialTheme.typography.labelLarge, ACTION_PADDING)
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             actions.forEachIndexed { i, (label, onClick, enabled) ->
-                Action(label, onClick, enabled, Modifier.weight(weights[i]))
+                Pill(text = label, onClick = onClick, modifier = Modifier.weight(weights[i]), enabled = enabled, fit = true)
             }
         }
 
@@ -205,27 +203,8 @@ fun LogsScreen(
     }
 }
 
-@Composable
-private fun Action(label: String, onClick: () -> Unit, enabled: Boolean, modifier: Modifier) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier,
-        contentPadding = PaddingValues(horizontal = ACTION_PADDING),
-        // Выключенная — тем же фоном, только подпись бледнее. По умолчанию Material рисует её
-        // тёмной плашкой, и «Очистить» при пустом журнале выглядела нажатой (D-140).
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
-        ),
-    ) {
-        FitLabel(label, MaterialTheme.typography.labelMedium)
-    }
-}
-
-private val ACTION_PADDING = 8.dp
+/** [Pill]'s room on each side of its label. */
+private val ACTION_PADDING = 14.dp
 
 @Composable
 private fun colorOf(level: LogMessage.Level): Color = when (level) {

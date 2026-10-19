@@ -10,10 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.util.nodeFailure
 import com.github.kr328.clash.ui.components.DuckerCard as Card
+import com.github.kr328.clash.ui.components.Pill
 import com.github.kr328.clash.ui.components.ScreenHeader
+import com.github.kr328.clash.ui.components.ThinBar
 import com.github.kr328.clash.ui.components.overscrollFor
 import com.github.kr328.clash.ui.components.screenInsets
 
@@ -72,15 +72,16 @@ fun ProbeScreen(
             item {
                 Card(Modifier.fillMaxWidth()) {
                     FlowRow(
-                        modifier = Modifier.padding(12.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp).selectableGroup(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         state.nodes.forEach { node ->
-                            FilterChip(
-                                selected = state.selected == node,
+                            Pill(
+                                text = node,
                                 onClick = { onSelect(node) },
-                                label = { Text(node, style = MaterialTheme.typography.labelMedium) },
+                                selected = state.selected == node,
+                                onCard = true,
+                                role = Role.RadioButton,
                             )
                         }
                     }
@@ -91,30 +92,15 @@ fun ProbeScreen(
         if (state.selected.isNotEmpty()) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
+                    // The run is the screen's one action — black; the copy of its report white beside it.
+                    Pill(
+                        text = stringResource(if (state.probing) R.string.probe_stop else R.string.probe_start),
                         onClick = if (state.probing) onStop else onStart,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
-                    ) {
-                        Text(
-                            stringResource(if (state.probing) R.string.probe_stop else R.string.probe_start),
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    }
+                        selected = true,
+                    )
 
                     if (state.stats.total > 0 && !state.probing) {
-                        Button(
-                            onClick = onCopy,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
-                        ) {
-                            Text(stringResource(R.string.probe_copy),
-                                style = MaterialTheme.typography.labelMedium)
-                        }
+                        Pill(text = stringResource(R.string.probe_copy), onClick = onCopy)
                     }
                 }
             }
@@ -127,10 +113,7 @@ fun ProbeScreen(
                         text = stringResource(R.string.probe_progress, state.done, state.planned),
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    LinearProgressIndicator(
-                        progress = { state.done.toFloat() / state.planned },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    ThinBar(state.done.toFloat() / state.planned)
                 }
             }
         }

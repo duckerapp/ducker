@@ -81,9 +81,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -133,6 +131,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.geometry.isSpecified
 import com.github.kr328.clash.ui.components.ThinBar
+import com.github.kr328.clash.ui.components.Pill
 import com.github.kr328.clash.ui.components.FitLabel
 import com.github.kr328.clash.ui.components.UpdateLabel
 import com.github.kr328.clash.ui.components.UpdateShown
@@ -1450,18 +1449,10 @@ private fun InfoCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = text, style = MaterialTheme.typography.bodyMedium)
 
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    action?.let { (label, onClick) ->
-                        TextButton(onClick = onClick, contentPadding = PaddingValues(0.dp)) {
-                            Text(label)
-                        }
-                    }
-
-                    secondary?.let { (label, onClick) ->
-                        TextButton(onClick = onClick, contentPadding = PaddingValues(0.dp)) {
-                            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
+                // The action black, «Не сейчас» and the like white beside it (D-326).
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    action?.let { (label, onClick) -> Pill(text = label, onClick = onClick, selected = true) }
+                    secondary?.let { (label, onClick) -> Pill(text = label, onClick = onClick) }
                 }
             }
         }
@@ -1503,14 +1494,10 @@ private fun LimitCard(profile: Profile, onSupport: (String) -> Unit, onRefresh: 
 
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 providerLink(profile.supportUrl)?.let { support ->
-                    Button(onClick = { onSupport(support) }) {
-                        Text(stringResource(R.string.support))
-                    }
+                    Pill(text = stringResource(R.string.support), onClick = { onSupport(support) }, selected = true)
                 }
 
-                OutlinedButton(onClick = onRefresh) {
-                    Text(stringResource(R.string.update))
-                }
+                Pill(text = stringResource(R.string.update), onClick = onRefresh)
             }
         }
     }
@@ -1582,8 +1569,7 @@ private fun StopCard(
             if (actions.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     actions.forEachIndexed { index, (label, onClick) ->
-                        if (index == 0) Button(onClick = onClick) { Text(label) }
-                        else OutlinedButton(onClick = onClick) { Text(label) }
+                        Pill(text = label, onClick = onClick, selected = index == 0)
                     }
                 }
             }
@@ -1639,49 +1625,32 @@ private fun LinkFailedCard(
             // Главное действие — во всю ширину: рядом с двумя другими кнопками длинная
             // подпись не влезает, а искать узел руками человеку в этот момент некогда.
             if (onFastest != null) {
-                Button(
+                Pill(
+                    text = stringResource(if (state.switching) R.string.link_fastest_busy else R.string.link_fastest),
                     onClick = { if (!state.switching) onFastest() },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+                    selected = true,
                     enabled = keepFocus(!state.switching),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp),
-                ) {
-                    Text(
-                        stringResource(if (state.switching) R.string.link_fastest_busy else R.string.link_fastest),
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }
+                    fit = true,
+                )
             }
 
             // Обе кнопки делят строку поровну — во всю ширину, как кнопка над ними.
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
+                Pill(
+                    text = stringResource(if (state.checking) R.string.checking else R.string.link_check),
                     onClick = { if (!state.checking) onCheckLink() },
+                    modifier = Modifier.weight(1f),
                     enabled = keepFocus(!state.checking),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
-                    modifier = Modifier.weight(1f).heightIn(min = 34.dp),
-                ) {
-                    Text(
-                        stringResource(if (state.checking) R.string.checking else R.string.link_check),
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                }
+                    fit = true,
+                )
 
-                Button(
+                Pill(
+                    text = stringResource(R.string.link_other_node),
                     onClick = onOpenProxies,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
-                    modifier = Modifier.weight(1f).heightIn(min = 34.dp),
-                ) {
-                    Text(stringResource(R.string.link_other_node),
-                        style = MaterialTheme.typography.labelMedium)
-                }
+                    modifier = Modifier.weight(1f),
+                    fit = true,
+                )
             }
         }
     }
