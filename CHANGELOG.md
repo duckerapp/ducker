@@ -5,6 +5,14 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.35 — 2026-10-20
+
+- Automatic updates: with the first new version, the update sheet asks once whether ducker should
+  update itself. If yes, new versions download over Wi-Fi and install while the screen is off,
+  usually at night, and the VPN comes back by itself. The switch is in Settings → Information.
+  Android 12 and newer; it starts working once releases are published.
+- "What's new" in the update sheet sits on a card, like the rest of the new look.
+
 ## 0.4.34 — 2026-10-19
 
 - A new look: soft shadows instead of outlines, the Onest font and Material Symbols icons throughout.
