@@ -55,6 +55,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -634,14 +635,18 @@ private fun BrandHeader(profile: Profile?, onSettings: () -> Unit) {
     ) {
         BrandTitle(profile)
 
-        ThemeButton()
+        // The icons half as far apart as two 48 dp targets with a gap would put them: side by side,
+        // the theme button 6 dp over the settings one, so neither target shrinks.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.offset(x = 6.dp)) { ThemeButton() }
 
-        // Настройки с главной: раньше до них надо было идти через вкладку подписок.
-        HeaderButton(
-            icon = Symbols.Settings,
-            description = stringResource(R.string.settings),
-            onClick = onSettings,
-        )
+            // Настройки с главной: раньше до них надо было идти через вкладку подписок.
+            HeaderButton(
+                icon = Symbols.Settings,
+                description = stringResource(R.string.settings),
+                onClick = onSettings,
+            )
+        }
     }
 }
 
