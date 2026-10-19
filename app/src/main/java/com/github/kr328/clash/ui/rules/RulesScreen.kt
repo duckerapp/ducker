@@ -23,9 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +59,17 @@ import com.github.kr328.clash.ui.components.SheetField
 import com.github.kr328.clash.ui.components.overscrollFor
 import com.github.kr328.clash.ui.components.screenInsets
 import com.github.kr328.clash.ui.components.DuckerCard as Card
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.key
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import com.github.kr328.clash.ui.components.Pill
+import com.github.kr328.clash.ui.components.PillSegments
+import com.github.kr328.clash.ui.components.airShadow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -124,21 +133,40 @@ fun RulesScreen(
                     message = stringResource(R.string.rules_empty),
                 )
             }
+        } else {
+            // The rows on one backing with inset lines, as «Подписки» and the settings index (D-326).
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(vertical = 4.dp)) {
+                        rules.forEachIndexed { index, rule ->
+                            key(rule) {
+                                if (index > 0) {
+                                    HorizontalDivider(
+                                        Modifier.padding(start = 72.dp, end = 16.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                                    )
+                                }
+
+                                RuleRow(rule, bypass, onRemove = { onRemove(rule) })
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        items(rules) { rule -> RuleRow(rule, bypass, onRemove = { onRemove(rule) }) }
-
         item {
-            Button(
+            SheetButton(
+                text = stringResource(R.string.rules_add),
+                busyText = "",
+                busy = false,
+                enabled = true,
+                icon = Symbols.Add,
                 onClick = {
                     adding = true
                     addShown = true
                 },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-            ) {
-                Icon(Symbols.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text(stringResource(R.string.rules_add), modifier = Modifier.padding(start = 8.dp))
-            }
+            )
         }
     }
 }
@@ -184,60 +212,65 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
         }
     }
 
-    Card(Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (rule.type == UserRule.Type.App) {
-                AppIcon(rule.value, Modifier.size(44.dp).clip(MaterialTheme.shapes.medium))
-            } else {
-                IconBadge(
-                    when (rule.type) {
-                        UserRule.Type.Site -> Symbols.Language
-                        UserRule.Type.Keyword -> Symbols.TextFields
-                        UserRule.Type.Geosite -> Symbols.Category
-                        UserRule.Type.Geoip -> Symbols.Flag
-                        else -> Symbols.Lan
-                    },
-                )
-            }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (rule.type == UserRule.Type.App) {
+            AppIcon(rule.value, Modifier.size(44.dp).clip(MaterialTheme.shapes.medium))
+        } else {
+            IconBadge(typeIcon(rule.type))
+        }
 
-            Column(Modifier.weight(1f)) {
-                Text(label, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    text = stringResource(typeLabel(rule.type)) + " · " + stringResource(targetLabel(rule.target)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (rule.target == UserRule.Target.Block) MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                text = stringResource(typeLabel(rule.type)) + " · " + stringResource(targetLabel(rule.target)),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (rule.target == UserRule.Target.Block) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
-                if (outside != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Icon(
-                            Symbols.Lock,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            stringResource(
-                                if (outside == Bypass.Reason.Provider) R.string.rule_app_provider
-                                else R.string.rule_app_access
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+            if (outside != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(
+                        Symbols.Lock,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        stringResource(
+                            if (outside == Bypass.Reason.Provider) R.string.rule_app_provider
+                            else R.string.rule_app_access
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
+        }
 
-            IconButton(onClick = onRemove) {
-                Icon(Symbols.Close, contentDescription = stringResource(R.string.rule_remove))
-            }
+        IconButton(onClick = onRemove) {
+            Icon(
+                Symbols.Close,
+                contentDescription = stringResource(R.string.rule_remove),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
+}
+
+/** The kind's icon: in the list's rows and on the new rule's tiles alike. */
+private fun typeIcon(type: UserRule.Type) = when (type) {
+    UserRule.Type.Site -> Symbols.Language
+    UserRule.Type.App -> Symbols.Apps
+    UserRule.Type.Ip -> Symbols.Lan
+    UserRule.Type.Keyword -> Symbols.TextFields
+    UserRule.Type.Geosite -> Symbols.Category
+    UserRule.Type.Geoip -> Symbols.Flag
 }
 
 /**
@@ -368,27 +401,7 @@ private fun AddRuleSheet(
         onClosed = onClosed,
     ) {
         Labeled(stringResource(R.string.rule_what)) {
-            // Шесть видов — двумя рядами: частые сверху, новые (D-126) под ними.
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Choice(
-                    options = listOf(
-                        UserRule.Type.Site to stringResource(R.string.rule_site),
-                        UserRule.Type.App to stringResource(R.string.rule_app),
-                        UserRule.Type.Ip to stringResource(R.string.rule_ip),
-                    ),
-                    selected = type,
-                    onSelect = ::choose,
-                )
-                Choice(
-                    options = listOf(
-                        UserRule.Type.Keyword to stringResource(R.string.rule_keyword),
-                        UserRule.Type.Geosite to stringResource(R.string.rule_geosite),
-                        UserRule.Type.Geoip to stringResource(R.string.rule_geoip),
-                    ),
-                    selected = type,
-                    onSelect = ::choose,
-                )
-            }
+            KindTiles(selected = type, onSelect = ::choose)
         }
 
         if (type == UserRule.Type.App) {
@@ -453,14 +466,12 @@ private fun AddRuleSheet(
         }
 
         Labeled(stringResource(R.string.rule_where)) {
-            Choice(
-                options = listOf(
-                    UserRule.Target.Direct to stringResource(R.string.rule_direct),
-                    UserRule.Target.Proxy to stringResource(R.string.rule_proxy),
-                    UserRule.Target.Block to stringResource(R.string.rule_block),
-                ),
-                selected = target,
-                onSelect = { target = it },
+            val targets = listOf(UserRule.Target.Direct, UserRule.Target.Proxy, UserRule.Target.Block)
+
+            PillSegments(
+                labels = targets.map { stringResource(targetLabel(it)) },
+                selected = targets.indexOf(target),
+                onSelect = { target = targets[it] },
             )
         }
 
@@ -474,19 +485,66 @@ private fun AddRuleSheet(
     }
 }
 
-/** Готовые значения чипами: нажал — оно в поле. */
+/** Готовые значения пилюлями: нажал — оно в поле. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Suggestions(options: List<Pair<String, String>>, selected: String?, onPick: (String) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEach { (code, label) ->
-            FilterChip(
-                selected = code == selected,
-                onClick = { onPick(code) },
-                label = { Text(label, maxLines = 1) },
-                shape = MaterialTheme.shapes.extraLarge,
-            )
+            Pill(text = label, onClick = { onPick(code) }, selected = code == selected, role = Role.RadioButton)
         }
+    }
+}
+
+/** Шесть видов правила плитками со значками, по три в ряд (D-326): значки те же, что у строк списка. */
+@Composable
+private fun KindTiles(selected: UserRule.Type, onSelect: (UserRule.Type) -> Unit) {
+    val kinds = listOf(
+        UserRule.Type.Site to R.string.rule_site,
+        UserRule.Type.App to R.string.rule_app,
+        UserRule.Type.Ip to R.string.rule_ip,
+        UserRule.Type.Keyword to R.string.rule_keyword,
+        UserRule.Type.Geosite to R.string.rule_geosite,
+        UserRule.Type.Geoip to R.string.rule_geoip,
+    )
+
+    Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        kinds.chunked(3).forEach { row ->
+            // A label on two lines makes its tile taller, and the row's other tiles follow it.
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { (kind, label) ->
+                    KindTile(
+                        icon = typeIcon(kind),
+                        label = stringResource(label),
+                        selected = kind == selected,
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        onClick = { onSelect(kind) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun KindTile(icon: ImageVector, label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val shape = MaterialTheme.shapes.medium
+    val fill by animateColorAsState(if (selected) scheme.primaryContainer else scheme.surface, tween(TILE_FADE_MS), label = "kindFill")
+    val ink by animateColorAsState(if (selected) scheme.onPrimaryContainer else scheme.onSurface, tween(TILE_FADE_MS), label = "kindInk")
+
+    Column(
+        modifier = modifier.heightIn(min = 76.dp)
+            .airShadow(shape)
+            .clip(shape)
+            .background(fill)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(24.dp))
+        Text(label, color = ink, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, maxLines = 2)
     }
 }
 
@@ -610,28 +668,9 @@ private fun AppPicker(
     }
 }
 
-/**
- * Варианты чипами по ширине подписи, как подсказки категорий (D-135): растянутые на всю строку,
- * они держали подпись у левого края. Не влезли в строку — переносятся целиком.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun <T> Choice(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        options.forEach { (value, label) ->
-            FilterChip(
-                selected = selected == value,
-                onClick = { onSelect(value) },
-                label = { Text(label, maxLines = 1) },
-                shape = MaterialTheme.shapes.extraLarge,
-            )
-        }
-    }
-}
-
 @Composable
 private fun Labeled(label: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
@@ -645,3 +684,4 @@ private fun Labeled(label: String, content: @Composable () -> Unit) {
 private val PICKER_HEIGHT = 260.dp
 private const val DIMMED = 0.5f
 private const val SUGGESTIONS = 8
+private const val TILE_FADE_MS = 150
