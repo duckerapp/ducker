@@ -1,7 +1,6 @@
 package com.github.kr328.clash.ui.theme
 
 import androidx.compose.material3.Typography
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -24,29 +23,22 @@ private val Onest = FontFamily(
 /** Preserve the type scale; small labels carry quiet metadata rather than button emphasis. */
 private val Defaults = Typography()
 
-/**
- * Onest's own figures are proportional — «1» is half as wide as «0» — so speed, delays and counters
- * that change on screen would shift sideways; tabular figures keep them in place.
- */
-private fun TextStyle.onest(weight: FontWeight? = fontWeight) =
-    copy(fontFamily = Onest, fontWeight = weight, fontFeatureSettings = "tnum")
-
 internal val DuckerTypography = with(Defaults) {
     Typography(
-        displayLarge = displayLarge.onest(),
-        displayMedium = displayMedium.onest(),
-        displaySmall = displaySmall.onest(),
-        headlineLarge = headlineLarge.onest(),
-        headlineMedium = headlineMedium.onest(),
-        headlineSmall = headlineSmall.onest(),
-        titleLarge = titleLarge.onest(),
-        titleMedium = titleMedium.onest(),
-        titleSmall = titleSmall.onest(),
-        bodyLarge = bodyLarge.onest(),
-        bodyMedium = bodyMedium.onest(),
-        bodySmall = bodySmall.onest(),
-        labelLarge = labelLarge.onest(),
-        labelMedium = labelMedium.onest(),
-        labelSmall = labelSmall.onest(FontWeight.Normal),
+        displayLarge = displayLarge.copy(fontFamily = Onest),
+        displayMedium = displayMedium.copy(fontFamily = Onest),
+        displaySmall = displaySmall.copy(fontFamily = Onest),
+        headlineLarge = headlineLarge.copy(fontFamily = Onest),
+        headlineMedium = headlineMedium.copy(fontFamily = Onest),
+        headlineSmall = headlineSmall.copy(fontFamily = Onest),
+        titleLarge = titleLarge.copy(fontFamily = Onest),
+        titleMedium = titleMedium.copy(fontFamily = Onest),
+        titleSmall = titleSmall.copy(fontFamily = Onest),
+        bodyLarge = bodyLarge.copy(fontFamily = Onest),
+        bodyMedium = bodyMedium.copy(fontFamily = Onest),
+        bodySmall = bodySmall.copy(fontFamily = Onest),
+        labelLarge = labelLarge.copy(fontFamily = Onest),
+        labelMedium = labelMedium.copy(fontFamily = Onest),
+        labelSmall = labelSmall.copy(fontFamily = Onest, fontWeight = FontWeight.Normal),
     )
 }
