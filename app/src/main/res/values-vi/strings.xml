@@ -155,7 +155,7 @@
     <string name="apps_mode_only_hint">Chỉ ứng dụng được chọn mới dùng VPN. Nếu không chọn ứng dụng nào, mọi ứng dụng đều qua VPN</string>
     <string name="apps_mode_except_hint">Ứng dụng được chọn sẽ không qua VPN. Nếu không chọn ứng dụng nào, mọi ứng dụng đều dùng VPN</string>
     <string name="apps_search">Tìm theo tên ứng dụng hoặc tên gói</string>
-    <string name="apps_system">Hiện ứng dụng hệ thống</string>
+    <string name="apps_system_short">Hệ thống</string>
     <string name="apps_selected">Đã chọn %1$d, đang hiển thị %2$d</string>
     <string name="apps_select_all">Chọn tất cả</string>
     <string name="apps_select_none">Bỏ chọn tất cả</string>

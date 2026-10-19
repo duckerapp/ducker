@@ -155,7 +155,7 @@
     <string name="apps_mode_only_hint">Yalnızca seçili uygulamalar VPN kullanır. Hiçbiri seçili değilse tüm uygulamalar VPN üzerinden bağlanır</string>
     <string name="apps_mode_except_hint">Seçili uygulamalar VPN dışında bağlanır. Hiçbiri seçili değilse tüm uygulamalar VPN kullanır</string>
     <string name="apps_search">Uygulama veya paket adıyla ara</string>
-    <string name="apps_system">Sistem uygulamalarını göster</string>
+    <string name="apps_system_short">Sistem</string>
     <string name="apps_selected">%1$d seçili, %2$d gösteriliyor</string>
     <string name="apps_select_all">Tümünü seç</string>
     <string name="apps_select_none">Seçimleri kaldır</string>

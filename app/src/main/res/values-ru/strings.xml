@@ -170,7 +170,7 @@
     <string name="apps_mode_only_hint">Через VPN идут только отмеченные приложения. Если ничего не отмечено, через VPN идут все</string>
     <string name="apps_mode_except_hint">Отмеченные приложения идут мимо VPN. Если ничего не отмечено, через VPN идут все</string>
     <string name="apps_search">Поиск по названию или пакету</string>
-    <string name="apps_system">Показывать системные</string>
+    <string name="apps_system_short">Системные</string>
     <string name="apps_selected">Отмечено %1$d, показано %2$d</string>
     <string name="apps_select_all">Отметить все</string>
     <string name="apps_select_none">Снять все</string>

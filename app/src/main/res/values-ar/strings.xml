@@ -155,7 +155,7 @@
     <string name="apps_mode_only_hint">التطبيقات المحددة فقط تستخدم VPN. إذا لم تحدد أي تطبيق، فستتصل جميع التطبيقات عبر VPN</string>
     <string name="apps_mode_except_hint">التطبيقات المحددة تتصل دون VPN. إذا لم تحدد أي تطبيق، فستستخدم جميع التطبيقات VPN</string>
     <string name="apps_search">البحث باسم التطبيق أو الحزمة</string>
-    <string name="apps_system">إظهار تطبيقات النظام</string>
+    <string name="apps_system_short">النظام</string>
     <string name="apps_selected">المحدد: %1$d، المعروض: %2$d</string>
     <string name="apps_select_all">تحديد الكل</string>
     <string name="apps_select_none">إلغاء تحديد الكل</string>

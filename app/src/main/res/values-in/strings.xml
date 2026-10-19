@@ -155,7 +155,7 @@
     <string name="apps_mode_only_hint">Hanya aplikasi yang dipilih yang menggunakan VPN. Jika tidak ada yang dipilih, semua aplikasi melalui VPN</string>
     <string name="apps_mode_except_hint">Aplikasi yang dipilih tidak melalui VPN. Jika tidak ada yang dipilih, semua aplikasi menggunakan VPN</string>
     <string name="apps_search">Cari nama aplikasi atau paket</string>
-    <string name="apps_system">Tampilkan aplikasi sistem</string>
+    <string name="apps_system_short">Sistem</string>
     <string name="apps_selected">%1$d dipilih, %2$d ditampilkan</string>
     <string name="apps_select_all">Pilih semua</string>
     <string name="apps_select_none">Batalkan semua pilihan</string>

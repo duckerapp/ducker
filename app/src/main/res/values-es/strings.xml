@@ -155,7 +155,7 @@
     <string name="apps_mode_only_hint">Solo las aplicaciones seleccionadas usan la VPN. Si no seleccionas ninguna, todas pasan por la VPN</string>
     <string name="apps_mode_except_hint">Las aplicaciones seleccionadas no pasan por la VPN. Si no seleccionas ninguna, todas la usan</string>
     <string name="apps_search">Buscar por nombre o paquete</string>
-    <string name="apps_system">Mostrar aplicaciones del sistema</string>
+    <string name="apps_system_short">Sistema</string>
     <string name="apps_selected">Seleccionadas: %1$d, visibles: %2$d</string>
     <string name="apps_select_all">Seleccionar todo</string>
     <string name="apps_select_none">Desmarcar todo</string>

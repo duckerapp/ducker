@@ -16,13 +16,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -40,8 +36,10 @@ import androidx.core.graphics.drawable.toBitmap
 import com.github.kr328.clash.R
 import com.github.kr328.clash.service.model.AccessControlMode
 import com.github.kr328.clash.ui.components.DuckerCard as Card
-import com.github.kr328.clash.ui.components.FitLabel
 import com.github.kr328.clash.ui.components.ScreenHeader
+import com.github.kr328.clash.ui.components.Pill
+import com.github.kr328.clash.ui.components.PillSegments
+import com.github.kr328.clash.ui.components.SearchField
 import com.github.kr328.clash.ui.components.overscrollFor
 import com.github.kr328.clash.ui.components.screenInsets
 import kotlinx.coroutines.Dispatchers
@@ -80,17 +78,16 @@ fun AppsScreen(
             ScreenHeader(stringResource(R.string.access_control), onBack = onBack)
         }
 
-        item {
-            // Два режима: «Все» — это «Без VPN» без отметок (D-139). Подписи короткие — чипы
-            // по их ширине, как у темы и языка; делить строку, как в D-114, больше незачем.
-            val modes = listOf(
-                AccessControlMode.DenySelected to stringResource(R.string.apps_mode_except),
-                AccessControlMode.AcceptSelected to stringResource(R.string.apps_mode_only),
-            )
+        // Два режима: «Все» — это «Без VPN» без отметок (D-139). The switch waits for the stored mode, or its
+        // pill would ride from the first segment as the screen opens (D-326).
+        if (state.mode != null) item {
+            val modes = listOf(AccessControlMode.DenySelected, AccessControlMode.AcceptSelected)
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                modes.forEach { (value, label) -> Mode(state.mode, value, label, onMode) }
-            }
+            PillSegments(
+                labels = listOf(stringResource(R.string.apps_mode_except), stringResource(R.string.apps_mode_only)),
+                selected = modes.indexOf(state.mode),
+                onSelect = { onMode(modes[it]) },
+            )
         }
 
         if (state.mode != null) item {
@@ -138,54 +135,36 @@ fun AppsScreen(
 
         if (choosing) {
             item {
-                OutlinedTextField(
-                    value = state.query,
-                    onValueChange = onQuery,
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.apps_search)) },
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                SearchField(value = state.query, onValue = onQuery, hint = stringResource(R.string.apps_search))
             }
 
+            // The count and two pills on one line instead of a card with a switch and two text buttons
+            // (D-326). One pill for both bulk actions: it clears while anything shown is marked.
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
-                        Row(
-                            modifier = Modifier.toggleable(
-                                value = state.showSystem, role = Role.Switch, onValueChange = onShowSystem,
-                            ),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = stringResource(R.string.apps_system),
-                                modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            Switch(checked = state.showSystem, onCheckedChange = null)
-                        }
+                val marked = state.apps.any { !it.locked && it.packageName in state.selected }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(
-                                    R.string.apps_selected,
-                                    state.selected.size,
-                                    state.apps.size,
-                                ),
-                                modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            TextButton(onClick = onSelectAll) {
-                                Text(stringResource(R.string.apps_select_all),
-                                    style = MaterialTheme.typography.labelMedium)
-                            }
-                            TextButton(onClick = onSelectNone) {
-                                Text(stringResource(R.string.apps_select_none),
-                                    style = MaterialTheme.typography.labelMedium)
-                            }
-                        }
-                    }
+                Row(
+                    modifier = Modifier.padding(start = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.apps_selected, state.selected.size, state.apps.size),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Pill(
+                        text = stringResource(R.string.apps_system_short),
+                        onClick = { onShowSystem(!state.showSystem) },
+                        selected = state.showSystem,
+                        role = Role.Switch,
+                    )
+                    Pill(
+                        text = stringResource(if (marked) R.string.apps_select_none else R.string.apps_select_all),
+                        onClick = if (marked) onSelectNone else onSelectAll,
+                        enabled = state.apps.isNotEmpty(),
+                    )
                 }
             }
 
@@ -206,21 +185,6 @@ fun AppsScreen(
             }
         }
     }
-}
-
-@Composable
-private fun Mode(
-    current: AccessControlMode?,
-    value: AccessControlMode,
-    label: String,
-    onMode: (AccessControlMode) -> Unit,
-) {
-    FilterChip(
-        selected = current == value,
-        onClick = { onMode(value) },
-        label = { FitLabel(label, MaterialTheme.typography.labelMedium) },
-        shape = MaterialTheme.shapes.extraLarge,
-    )
 }
 
 @Composable

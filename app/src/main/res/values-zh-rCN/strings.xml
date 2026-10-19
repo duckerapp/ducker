@@ -155,7 +155,7 @@
     <string name="apps_mode_only_hint">仅勾选的应用走 VPN。若未勾选任何应用，则所有应用都走 VPN</string>
     <string name="apps_mode_except_hint">勾选的应用不走 VPN。若未勾选任何应用，则所有应用都走 VPN</string>
     <string name="apps_search">按名称或包名搜索</string>
-    <string name="apps_system">显示系统应用</string>
+    <string name="apps_system_short">系统</string>
     <string name="apps_selected">已选 %1$d 个，显示 %2$d 个</string>
     <string name="apps_select_all">全选</string>
     <string name="apps_select_none">取消全选</string>

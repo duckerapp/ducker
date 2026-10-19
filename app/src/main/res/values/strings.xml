@@ -180,7 +180,7 @@
     <string name="apps_mode_only_hint">Only checked apps use the VPN. If none are checked, everything goes through the VPN</string>
     <string name="apps_mode_except_hint">Checked apps bypass the VPN. If none are checked, all apps use it</string>
     <string name="apps_search">Search by name or package</string>
-    <string name="apps_system">Show system apps</string>
+    <string name="apps_system_short">System</string>
     <string name="apps_selected">%1$d selected, %2$d shown</string>
     <string name="apps_select_all">Select all</string>
     <string name="apps_select_none">Clear</string>

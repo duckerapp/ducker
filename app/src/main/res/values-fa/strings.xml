@@ -155,7 +155,7 @@
     <string name="apps_mode_only_hint">فقط برنامه‌های انتخاب‌شده از طریق VPN وصل می‌شوند. اگر هیچ‌کدام انتخاب نشود، همه‌چیز از طریق VPN می‌رود</string>
     <string name="apps_mode_except_hint">برنامه‌های انتخاب‌شده بدون VPN وصل می‌شوند. اگر هیچ‌کدام انتخاب نشود، همه برنامه‌ها از طریق VPN می‌روند</string>
     <string name="apps_search">جستجو با نام برنامه یا نام بسته</string>
-    <string name="apps_system">نمایش برنامه‌های سیستمی</string>
+    <string name="apps_system_short">سیستمی</string>
     <string name="apps_selected">%1$d انتخاب‌شده، %2$d نمایش داده‌شده</string>
     <string name="apps_select_all">انتخاب همه</string>
     <string name="apps_select_none">لغو انتخاب همه</string>
