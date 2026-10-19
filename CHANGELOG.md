@@ -5,6 +5,24 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.34 — 2026-10-19
+
+- A new look: soft shadows instead of outlines, the Onest font and Material Symbols icons throughout.
+  The dark theme is a step lighter; with the black background, cards keep thin edges.
+- Nine new languages: Chinese (Simplified), Farsi, Arabic, Spanish, French, Indonesian, Portuguese
+  (Brazil), Turkish and Vietnamese. Traditional Chinese, Japanese and Korean now show English.
+- Home: a quick node choice in a sheet with search, sort and the delay check; the provider's
+  announcement as a short preview with the full text a tap away; "Connected" as the status; a more
+  compact layout on shorter screens.
+- Settings are grouped into Interface, VPN and Information, each section on its own page; the
+  language is picked from a list; a new "Support the project" page; beta versions sit next to the
+  update check, and "Control from other apps" is under Privacy.
+- The English tab is now called Profiles. Every subscription is its own card, with one action menu
+  for all of them.
+- Pull to refresh on Proxies and Profiles works only from the very top, and the circle no longer
+  hangs.
+- Less memory used while cards in Settings and on Profiles expand.
+
 ## 0.4.33 — 2026-10-14
 
 - Updates from inside the app: ducker checks for a new version, shows it on Home with what's new,
