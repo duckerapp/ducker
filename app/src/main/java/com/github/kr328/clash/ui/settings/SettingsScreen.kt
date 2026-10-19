@@ -271,9 +271,11 @@ fun SettingsScreen(
                                     icon = Symbols.Update,
                                     busy = update.checking, onClick = onUpdate, action = true,
                                 )
-                                SettingsSubSwitch(
+                                SettingsNavigationDivider()
+                                SettingsSwitchRow(
                                     title = stringResource(R.string.app_update_beta),
                                     subtitle = stringResource(R.string.app_update_beta_hint),
+                                    icon = Symbols.Science,
                                     checked = state.betaUpdates,
                                     onChange = onBetaUpdates,
                                 )
@@ -1114,16 +1116,17 @@ private fun SettingsNavigationRow(
     }
 }
 
-/** A switch that belongs to the row above: no icon of its own, its text under that row's title. */
+/** A row of a settings group, like [SettingsNavigationRow], that holds a switch. */
 @Composable
-private fun SettingsSubSwitch(title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun SettingsSwitchRow(title: String, subtitle: String, icon: ImageVector, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
-        Modifier.fillMaxWidth()
+        Modifier.fillMaxWidth().heightIn(min = 61.dp)
             .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
-            .padding(start = 16.dp + 24.dp + 12.dp, end = 16.dp, bottom = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        SettingsIcon(icon)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
