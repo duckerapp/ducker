@@ -52,7 +52,7 @@ means everything through the server. If unsure, leave Rules.
 First get a subscription link (it starts with `https://`), a QR code or a file from your provider.
 
 1. Open ducker. While there are no subscriptions, there is one button at the bottom — "Add
-   subscription". If you already have subscriptions — the Subscriptions tab, the "+" button at
+   subscription". If you already have subscriptions — the Profiles tab, the "+" button at
    the bottom centre, above the tabs.
 2. The "Add subscription" sheet opens. Choose how:
    - **A link.** Copy the link from the email or chat, press "Paste" in the sheet, then "Add".
@@ -65,7 +65,7 @@ First get a subscription link (it starts with `https://`), a QR code or a file f
 3. Wait: the provider is sending the settings, this may take up to a minute.
 4. On Home press the big round button with the power sign. The first time ducker warns that
    Android will now ask about VPN: press "Continue" and allow the connection in the Android
-   dialog. Android shows this dialog for any VPN. When everything is ready, Home says "Protected".
+   dialog. Android shows this dialog for any VPN. When everything is ready, Home says "Connected".
 
 If a card "The provider’s config has an error…" appears on Home after adding, there is nothing
 you need to do: the VPN works. The provider made a mistake in the subscription settings, so ducker
@@ -78,7 +78,7 @@ config does not update itself: its card says "Own config · no updates". If your
 `https://…` subscription link, it is better to add that.
 
 **Move a subscription to another phone** or set it up for a relative. On the phone that already
-has the subscription: the Subscriptions tab → the QR icon on the subscription card (for an
+has the subscription: the Profiles tab → the QR icon on the subscription card (for an
 inactive subscription — "⋯" → "Share as QR code"). On the other phone: "+" → "Scan QR". A
 screenshot of the code works too — through "From gallery". Show the code only to your own
 devices: anyone who has it can use your subscription.
@@ -89,7 +89,7 @@ To save battery, Android and phone makers' software put background apps to sleep
 them — and the VPN goes off together with ducker. This is set up once and takes a couple of
 minutes.
 
-1. **Allow background work.** On Home press ⚙ Settings (top right) → the "Connection" section →
+1. **Allow background work.** On Home press ⚙ Settings (top right) → "Connection" →
    the "Background work" card → "Allow", and confirm in the Android dialog. When everything is
    fine, the card says: "Android won't put ducker to sleep, so the VPN keeps working with the
    screen off." The card on Home with the "Allow" button offers the same.
@@ -101,7 +101,7 @@ minutes.
 3. **Do not swipe ducker away from recent apps.** Better lock it there — how exactly is written
    in the steps for your phone.
 4. **Turn on "Always-on VPN"** so that the VPN comes up as soon as the phone boots: Settings →
-   "Always-on VPN" → in the VPN settings that open, press ⚙ next to ducker and turn on always-on
+   "Connection" → "Always-on VPN" → in the VPN settings that open, press ⚙ next to ducker and turn on always-on
    VPN. The "Autostart" switch in ducker's settings also brings the VPN up after a restart, but
    later — on slow phones in a minute or two.
 
@@ -208,9 +208,9 @@ arrives as a notification; tap it. The card disappears by itself when the VPN co
 ## The subscription does not update
 
 A subscription added by a link updates itself — usually every 8 hours. How often is shown and
-changed here: Subscriptions → "Edit" → "Auto-update".
+changed here: Profiles → "Edit" → "Auto-update".
 
-1. **Update by hand:** Subscriptions → "Update" on the subscription card. The result appears
+1. **Update by hand:** Profiles → "Update" on the subscription card. The result appears
    right on the button: "Updated" or "Failed". After a successful update the subscription goes
    back to updating itself on schedule.
 2. **Read the reason.** On an error you see "Could not update “…”", and below it — why, and a
@@ -220,7 +220,7 @@ changed here: Subscriptions → "Edit" → "Auto-update".
    the request goes directly.
 4. **"Device limit reached"** — the provider counts devices and the limit is used up. Remove an
    old device at the provider (in your account or bot) or write to them with the "Support"
-   button, then press "Update". Also check Settings → "Device ID": it must be on. Without it a
+   button, then press "Update". Also check Settings → "Privacy" → "Device ID": it must be on. Without it a
    provider that counts devices will not hand out the subscription.
 5. **"Not loaded"** — the provider did not answer or the link is wrong. If the provider sent a
    new link: "Edit" → paste it into the "Link" field → "Save".
@@ -248,14 +248,14 @@ First look at Home: ducker reports the most common causes there itself.
 If there are no such cards:
 
 1. Turn the VPN off and on again with the big button on Home.
-2. Update the subscription: Subscriptions → "Update". The provider may have changed the servers.
+2. Update the subscription: Profiles → "Update". The provider may have changed the servers.
 3. On the Proxies tab press "Check" and tap a server that shows a number rather than "no answer".
 4. Try another network: Wi-Fi instead of mobile data, or the other way round.
 5. Make sure the date and time on the phone are set automatically: with a wrong time a protected
    connection to the server may fail to establish.
-6. If you turned on "IPv6" (Settings → "Network and tunnel"), turn it off: it is needed only if
+6. If you turned on "IPv6" (Settings → "Connection" → "Network and tunnel"), turn it off: it is needed only if
    the provider supports it.
-7. One app does not work while the others do — open Settings → "Apps" and check whether it goes
+7. One app does not work while the others do — open Settings → "Connection" → "Apps" and check whether it goes
    through the VPN. A provider may deliberately send some apps, banks for example, past the VPN.
 8. Did not help — [send a log](#how-to-send-a-log) to your provider's support.
 
@@ -297,7 +297,7 @@ from Google Play, and every new version is a new file to Google.
 
 "Don't install app" cancels the installation and breaks nothing: when updating, ducker shows the
 "Update" button again. If Google answers differently, do not install; write to us through
-⚙ Settings → the "Help" section.
+⚙ Settings → "Help and diagnostics".
 
 <!-- The window's labels come from the Google Play Store, not from the app: recorded on a phone on
      12.10.2026. In ducker the button is the string update. -->
@@ -306,7 +306,7 @@ from Google Play, and every new version is a new file to Google.
 
 The log is a record of what happened to ducker and the VPN. Support uses it to find the cause.
 
-1. Right after the failure open ⚙ Settings → the "Help" section → "Log".
+1. Right after the failure open ⚙ Settings → "Help and diagnostics" → "Log".
 2. If the failure can be repeated, turn on "Detailed log", repeat it, and then turn the detailed
    log off: it uses battery. If you forget, it turns itself off in a day.
 3. Press "Send" and choose a messenger or email. You can also "Copy" it and paste it into a
@@ -339,7 +339,7 @@ To no one — not to support, not to chats, not to GitHub:
 - **Server links** like `vless://`, `trojan://`, `ss://` — they contain passwords.
 - **The config** — the subscription's settings file or a screenshot of the "Config" screen: it
   holds server addresses and passwords. If support asks for the config, send a copy without
-  them: Subscriptions → "Edit" → "Config" → "Save as" → "As a file without servers". The copy has
+  them: Profiles → "Edit" → "Config" → "Save as" → "As a file without servers". The copy has
   no servers, passwords or subscription links; groups, rules and DNS are in place. Look through
   the file before sending.
 - **A screenshot of the log.** On the screen the log is shown in full: ducker cleans it only on

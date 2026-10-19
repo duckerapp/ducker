@@ -32,7 +32,7 @@ device limit are explained under [Devices and limits](devices.md).
 and validated by the core before replacing the working config. If validation fails —
 because of a config error, a server page instead of a subscription, an empty response,
 or a config without any nodes — the old config remains and the VPN continues working.
-The Subscriptions tab shows a “Could not update” card with the reason and core error text
+The Profiles tab shows a “Could not update” card with the reason and core error text
 that the user can forward to you.
 
 **A config error in a new subscription.** The user has no working config yet, so the app

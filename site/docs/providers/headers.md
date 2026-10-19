@@ -8,7 +8,7 @@ no panel code changes are needed. To return them only to ducker, see
 | Header | Value | Effect |
 |---|---|---|
 | `ducker-brand-name` | text | Provider name instead of DUCKER in the Home header, notification shade, and Quick Settings tile. |
-| `ducker-brand-logo` | an `https://…` image URL or inline `data:…;base64,…` image: PNG, JPEG, WebP, or SVG | Logo to the left of the name on Home and beside the subscription on the Subscriptions tab. If it fails to load, the ducker icon is used. |
+| `ducker-brand-logo` | an `https://…` image URL or inline `data:…;base64,…` image: PNG, JPEG, WebP, or SVG | Logo to the left of the name on Home and beside the subscription on the Profiles tab. If it fails to load, the ducker icon is used. |
 | `ducker-buy-url` | URL | **Renew** button on the subscription card when fewer than three days remain, it has expired, or less than 10% of traffic remains; also used in the upcoming-expiry notification. Without this header, `profile-web-page-url` is used. |
 | `ducker-global` | `off` | Hides the Global/Rules switch on the Proxy tab; the mode remains as specified in the config. Without this header or with another value, the switch is shown. |
 | `ducker-local-proxy` | `off` | Starts the tunnel with the config's local ports closed (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`) and without `listeners`: other apps cannot find a proxy at `127.0.0.1`. The config file itself is not rewritten. A header cannot open a port; without this header or with another value, the config is applied as supplied. |

@@ -8,7 +8,8 @@
 If Telegram or GitHub is unsuitable, email
 [duckermihomo@proton.me](mailto:duckermihomo@proton.me).
 
-The channel, chat, and email are also in the app under **Settings → Help**.
+The channel, chat, and email are also in the app under **Settings → Support the project**;
+the chat and email also under **Settings → Help and diagnostics**.
 
 ## Questions for someone other than the developer
 

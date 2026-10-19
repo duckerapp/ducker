@@ -11,7 +11,13 @@ repository README.
 - **Clash Meta for Android (CMFA)** — MetaCubeX, GPL-3.0.
   Ducker is a CMFA fork. The network layer, VPN service, core wrapper, and core build are their work.
 - **mihomo** — MetaCubeX, GPL-3.0. The core.
-- **zashboard** — Zephyruso, MIT. The diagnostics dashboard under **Advanced**.
+- **zashboard** — Zephyruso, MIT. The diagnostics dashboard under **Help and diagnostics**.
+
+## Font
+
+- **Onest** — The Onest Project Authors (Dmitri Voloshin, Andrey Kudryavtsev), SIL Open Font
+  License 1.1. The interface font, unmodified: version 2.001 from Google Fonts. Its license and
+  notice ship inside the app, in `app/src/main/assets/licenses/`.
 
 ## Borrowed ideas and code
 

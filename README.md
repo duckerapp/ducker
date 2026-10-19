@@ -111,9 +111,9 @@ Compose. Free, no ads, no analytics, GPL-3.0.
 The same APK runs on Android TV and Google TV.
 
 - **Made for the remote.** A dock on the left, a glowing frame around the focused element, the
-  main screens — Home, Proxies, Subscriptions — work with the D-pad.
+  main screens — Home, Proxies, Profiles — work with the D-pad.
 - **No typing a link with the remote.** The TV shows a QR code; scan it in ducker on your phone
-  (Subscriptions → **+** → Scan QR) and the subscription is sent to the TV over your home network.
+  (Profiles → **+** → Scan QR) and the subscription is sent to the TV over your home network.
   The link travels encrypted (AES-256-GCM) with a one-time key that exists only inside that QR
   code, and the TV listens only while the code is on the screen.
 - **Still in progress.** TV support is new. Some screens opened from Settings are not yet
@@ -132,7 +132,7 @@ The same APK runs on Android TV and Google TV.
    - `armeabi-v7a` — older phones and many TVs; take it if the first one does not install.
 2. Open the file. Android will ask to allow installation from this source — that is normal for
    apps from outside Google Play.
-3. Add a subscription: **Subscriptions → + →** paste the link from your provider, scan its QR code
+3. Add a subscription: **Profiles → + →** paste the link from your provider, scan its QR code
    or pick a file. A link like `ducker://install-config?url=…` opens the same dialog straight from
    a chat or an email.
 4. Press the power button on **Home** and allow Android's VPN request.
@@ -189,7 +189,7 @@ ducker also understands the common subscription headers: `profile-title`,
 
 **Device limit.** With each subscription request ducker sends a stable device ID in `x-hwid`
 together with `x-device-os`, `x-ver-os` and `x-device-model`, so a panel can count devices. The
-user sees this ID in **Settings → Device ID** and can turn it off. The ID is sent over HTTPS
+user sees this ID in **Settings → Privacy → Device ID** and can turn it off. The ID is sent over HTTPS
 only.
 
 **One-tap install.** `ducker://install-config?url=<subscription link>` opens the Add subscription
@@ -227,7 +227,7 @@ two smaller forks, [duckerapp/utls](https://github.com/duckerapp/utls) and
 
 ## Control from other apps
 
-For Tasker, shortcuts and similar tools. Turn on **Settings → Control from other apps** first: it
+For Tasker, shortcuts and similar tools. Turn on **Settings → Connection → Control from other apps** first: it
 is off by default, also after updating an existing installation. The permission applies to every
 app that is able to send these commands. ducker's own widgets, tile and shortcuts work without it.
 

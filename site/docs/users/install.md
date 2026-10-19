@@ -14,7 +14,7 @@ Android 10 or later is required. Every release includes `SHA256SUMS` with the AP
 
 ## Your first subscription
 
-Open **Subscriptions → +** and paste the provider's URL, or open a
+Open **Profiles → +** and paste the provider's URL, or open a
 `ducker://install-config?url=…` link directly from an email or chat.
 
 All methods — URL, QR code, and file — are described under
@@ -24,14 +24,14 @@ All methods — URL, QR code, and file — are described under
 
 The same APK works on Android TV and Google TV. You do not need to type the URL with a remote:
 press **+** on the TV to show a QR code. Scan it in ducker on your phone
-(**Subscriptions → + → Scan QR**) and confirm sending. The subscription is sent to the TV
+(**Profiles → + → Scan QR**) and confirm sending. The subscription is sent to the TV
 encrypted over the home network. The phone and TV must be on the same home network.
 
 ## External control
 
 The app accepts intents, which are useful for Tasker and shortcuts.
 
-For external START/STOP/TOGGLE, enable **Settings → Control from other apps**.
+For external START/STOP/TOGGLE, enable **Settings → Connection → Control from other apps**.
 Access is disabled by default, including on existing installations. Permission applies to
 all apps able to send these commands. Built-in widgets, the tile, and shortcuts work
 independently of this permission; importing through a URL requires confirmation.

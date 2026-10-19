@@ -110,8 +110,8 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
 同一个 APK 可在 Android TV 和 Google TV 上运行。
 
 - **为遥控器设计。** 左侧是导航栏，当前焦点周围有发光边框；主要页面——Home、Proxies、
-  Subscriptions——可用方向键操作。
-- **不用遥控器输入链接。** 电视显示二维码；在手机上的 ducker 中扫描它（Subscriptions → **+** →
+  Profiles——可用方向键操作。
+- **不用遥控器输入链接。** 电视显示二维码；在手机上的 ducker 中扫描它（Profiles → **+** →
   Scan QR），订阅就会通过家庭网络发送到电视。链接经过加密（AES-256-GCM），一次性密钥只存在于
   这个二维码中，而且电视只在二维码显示期间监听网络。
 - **仍在完善。** 电视支持是新功能。从设置打开的部分页面用遥控器操作还不够方便，目前主要在
@@ -128,7 +128,7 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
    - `arm64-v8a` —— 2017 年以后的几乎所有手机；
    - `armeabi-v7a` —— 较旧的手机和许多电视；第一个装不上时选它。
 2. 打开文件。Android 会要求允许从此来源安装——对 Google Play 之外的应用来说这是正常的。
-3. 添加订阅：**Subscriptions → + →** 粘贴服务商给的链接、扫描二维码或选择文件。形如
+3. 添加订阅：**Profiles → + →** 粘贴服务商给的链接、扫描二维码或选择文件。形如
    `ducker://install-config?url=…` 的链接可以直接从聊天或邮件中打开同一个窗口。
 4. 在 **Home** 上按下电源按钮，并允许 Android 的 VPN 请求。
 
@@ -177,7 +177,7 @@ ducker 还支持常见的订阅响应头：`profile-title`、`profile-update-int
 
 **设备数量限制。** 每次请求订阅时，ducker 会在 `x-hwid` 中发送稳定的设备 ID，同时发送
 `x-device-os`、`x-ver-os` 和 `x-device-model`，面板可以据此统计设备。用户可以在
-**Settings → Device ID** 中看到这个 ID 并将其关闭。设备 ID 只通过 HTTPS 发送。
+**Settings → Privacy → Device ID** 中看到这个 ID 并将其关闭。设备 ID 只通过 HTTPS 发送。
 
 **一键导入。** `ducker://install-config?url=<订阅链接>` 会打开已填好链接的添加订阅窗口；用户确认
 之前不会下载任何内容。
@@ -207,7 +207,7 @@ ducker 由一个人和 AI 助手共同开发。代码由 Anthropic 的 AI 模型
 
 ## 由其他应用控制
 
-适用于 Tasker、快捷方式等工具。请先打开 **Settings → Control from other apps**：它默认关闭，
+适用于 Tasker、快捷方式等工具。请先打开 **Settings → Connection → Control from other apps**：它默认关闭，
 已安装的应用更新后也是如此。该权限对所有能够发送这些命令的应用生效。ducker 自己的小组件、磁贴
 和快捷方式不需要它。
 
