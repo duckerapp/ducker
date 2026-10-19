@@ -101,6 +101,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -611,6 +612,8 @@ internal fun SheetButton(
      * поле, и заливается своим цветом от начала к концу — вместо кольца. `null` — кольцо.
      */
     progress: Float? = null,
+    /** Before the label, while not busy: «＋» of «Добавить правило». */
+    icon: ImageVector? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
     val container = if (danger) scheme.error else scheme.primaryContainer
@@ -649,7 +652,7 @@ internal fun SheetButton(
             .clickable(enabled = enabled && !busy, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        SheetButtonLabel(text, busyText, busy, ring = !filling, color = front)
+        SheetButtonLabel(text, busyText, busy, ring = !filling, color = front, icon = icon)
 
         // Залитая часть — та же надпись другим цветом, обрезанная по доле: буквы на границе
         // заливки двухцветные и читаются по обе её стороны.
@@ -675,7 +678,7 @@ internal fun SheetButton(
 }
 
 @Composable
-private fun SheetButtonLabel(text: String, busyText: String, busy: Boolean, ring: Boolean, color: Color) {
+private fun SheetButtonLabel(text: String, busyText: String, busy: Boolean, ring: Boolean, color: Color, icon: ImageVector? = null) {
     // Надпись сменяется растворением, а не подменой: кнопка — то, куда человек
     // смотрит в момент нажатия.
     AnimatedContent(
@@ -697,6 +700,11 @@ private fun SheetButtonLabel(text: String, busyText: String, busy: Boolean, ring
                 )
 
                 Spacer(Modifier.width(12.dp))
+            }
+
+            if (!working && icon != null) {
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(10.dp))
             }
 
             Text(
