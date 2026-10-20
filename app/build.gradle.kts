@@ -82,11 +82,13 @@ val zashboardVersion = "v3.29.1"
 // SHA-256 of the release's `dist-no-fonts.zip`; GitHub lists it as the asset's digest.
 val zashboardSha256 = "21371cd111b6b3d87774f3ea3ddeacdcb0f6aff8690a16d652daa3ea6e3b0145"
 val zashboardDir = file("src/main/assets/zashboard")
+// The marker names the cuts as well: a tree unpacked before a cut changed is unpacked again.
+val zashboardBuild = "$zashboardVersion, no globe, no service worker"
 
 task("downloadZashboard") {
     val marker = File(zashboardDir, ".version")
 
-    outputs.upToDateWhen { marker.isFile && marker.readText() == zashboardVersion }
+    outputs.upToDateWhen { marker.isFile && marker.readText() == zashboardBuild }
 
     doLast {
         val archive = File(temporaryDir, "zashboard.zip")
@@ -115,8 +117,8 @@ task("downloadZashboard") {
 
         // The connection globe is cut out (D-334). Shown by default, it loads a WebGL renderer with
         // its textures, asks an outside service for the device's address and offers a 60 MB
-        // download. Its files leave the APK, its card the overview's list and its entries the
-        // service worker's list; a zashboard built differently stops the build here.
+        // download. Its files leave the APK and its card the overview's list; a zashboard built
+        // differently stops the build here.
         val globe = zashboardDir.resolve("assets")
             .listFiles { f -> Regex("""(EarthGlobeCard|earth-[a-z]+|geoip\.worker)-.*""").matches(f.name) }!!
         check(globe.size == 7) { "zashboard $zashboardVersion: ${globe.size} globe files, not 7 (D-334)" }
@@ -131,9 +133,16 @@ task("downloadZashboard") {
         val main = zashboardDir.resolve("assets").listFiles { f -> Regex("""index-.*\.js""").matches(f.name) }!!.single()
         cut(main, Regex("""\w+\.EarthGlobeCard=`EarthGlobeCard`,"""), 1)
         cut(main, Regex("""\{card:\w+\.EarthGlobeCard,visible:!0},"""), 1)
-        cut(zashboardDir.resolve("sw.js"), Regex("""\{url:"assets/(EarthGlobeCard|earth-[a-z]+|geoip\.worker)-[^"]*",revision:[^}]*},?"""), 7)
 
-        marker.writeText(zashboardVersion)
+        // No service worker (D-335). The panel is served from the phone itself, so its cache buys
+        // nothing; with the port kept (F-317) it would show the previous panel after an app update,
+        // and WebView has no call that clears it.
+        val worker = zashboardDir.listFiles { f -> Regex("""registerSW\.js|sw\.js|workbox-.*\.js""").matches(f.name) }!!
+        check(worker.size == 3) { "zashboard $zashboardVersion: ${worker.size} service worker files, not 3 (D-335)" }
+        worker.forEach { it.delete() }
+        cut(zashboardDir.resolve("index.html"), Regex("""<script id="vite-plugin-pwa:register-sw" src="\./registerSW\.js"></script>"""), 1)
+
+        marker.writeText(zashboardBuild)
 
         println("zashboard $zashboardVersion unpacked to $zashboardDir")
     }
