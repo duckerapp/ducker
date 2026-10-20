@@ -5,6 +5,18 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.37 — 2026-10-20
+
+- On Android 10–12 the chosen language no longer falls back to the system one after the app is closed.
+- The core is built with Go 1.27.3, which brings security fixes for certificate checks, and with newer
+  network and cryptography libraries: ten known vulnerabilities are gone from its code. Multiplexing
+  (h2mux) now runs on Go's own HTTP/2. Go's two Android fixes, which the core needs on some older and
+  32-bit phones, are now in the release build too.
+- Fresh GeoIP and GeoSite databases.
+- The zashboard web panel is updated to v3.29.1.
+- Error messages in the log no longer quote the text that failed to parse: it could hold node
+  addresses or keys.
+
 ## 0.4.36 — 2026-10-20
 
 - My rules in the new look: the kinds of a rule as pills with icons, "Where" as a switch, the rules as rows
