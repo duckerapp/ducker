@@ -575,7 +575,8 @@ private fun AppPicker(
                 else shown.filter { it.label.contains(needle, true) || it.packageName.contains(needle, true) }
             }
 
-            LazyColumn(Modifier.fillMaxSize()) {
+            // A gap between the rows, or several marked one after another merge into one black block (D-326).
+            LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 items(filtered, key = { it.packageName }) { app ->
                     val chosen = app.packageName in selected
                     val outside = bypass?.reason(app.packageName)
