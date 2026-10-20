@@ -5,6 +5,7 @@ import com.github.kr328.clash.core.model.*
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
@@ -14,12 +15,19 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.net.InetSocketAddress
 
+/**
+ * A parse error leaves the input out of its message: the core's answers carry node names and,
+ * in [AgeKeyPair], a private key, and exception texts reach the log and crash reports (invariant 4).
+ */
+@OptIn(ExperimentalSerializationApi::class)
+internal val CoreJson = Json { exceptionsWithDebugInfo = false }
+
 object Clash {
     enum class OverrideSlot {
         Persist, Session
     }
 
-    private val ConfigurationOverrideJson = Json {
+    private val ConfigurationOverrideJson = Json(CoreJson) {
         ignoreUnknownKeys = true
         encodeDefaults = false
     }
@@ -39,7 +47,7 @@ object Clash {
     fun queryTunnelState(): TunnelState {
         val json = Bridge.nativeQueryTunnelState()
 
-        return Json.decodeFromString(TunnelState.serializer(), json)
+        return CoreJson.decodeFromString(TunnelState.serializer(), json)
     }
 
     /** Сменить режим на лету, без перезагрузки конфига. `false` — ядро такого режима не знает. */
@@ -99,7 +107,7 @@ object Clash {
      */
     fun queryProfileNetwork(path: String): ProfileNetwork {
         return try {
-            Json.Default.decodeFromString(
+            CoreJson.decodeFromString(
                 ProfileNetwork.serializer(),
                 Bridge.nativeQueryProfileNetwork(path)
             )
@@ -114,7 +122,7 @@ object Clash {
      */
     fun queryProfileGroups(path: String): List<ProfileGroup> {
         return try {
-            Json.Default.decodeFromString(
+            CoreJson.decodeFromString(
                 ListSerializer(ProfileGroup.serializer()),
                 Bridge.nativeQueryProfileGroups(path)
             )
@@ -124,7 +132,7 @@ object Clash {
     }
 
     fun queryGroupNames(excludeNotSelectable: Boolean): List<String> {
-        val names = Json.Default.decodeFromString(
+        val names = CoreJson.decodeFromString(
             JsonArray.serializer(),
             Bridge.nativeQueryGroupNames(excludeNotSelectable)
         )
@@ -138,7 +146,7 @@ object Clash {
 
     fun queryGroup(name: String, sort: ProxySort): ProxyGroup {
         return Bridge.nativeQueryGroup(name, sort.name)
-            ?.let { Json.Default.decodeFromString(ProxyGroup.serializer(), it) }
+            ?.let { CoreJson.decodeFromString(ProxyGroup.serializer(), it) }
             ?: ProxyGroup("Unknown", emptyList(), "", "")
     }
 
@@ -161,7 +169,7 @@ object Clash {
 
     fun probeProxy(name: String, url: String = "", timeout: Int = 0): ProbeResult {
         return try {
-            Json.Default.decodeFromString(
+            CoreJson.decodeFromString(
                 ProbeResult.serializer(),
                 Bridge.nativeProbeProxy(name, url, timeout)
             )
@@ -239,10 +247,10 @@ object Clash {
 
     fun queryProviders(): List<Provider> {
         val providers =
-            Json.Default.decodeFromString(JsonArray.serializer(), Bridge.nativeQueryProviders())
+            CoreJson.decodeFromString(JsonArray.serializer(), Bridge.nativeQueryProviders())
 
         return List(providers.size) {
-            Json.Default.decodeFromJsonElement(Provider.serializer(), providers[it])
+            CoreJson.decodeFromJsonElement(Provider.serializer(), providers[it])
         }
     }
 
@@ -328,7 +336,7 @@ object Clash {
         template: String,
         directHost: String = "",
     ): ConvertResult {
-        val result = Json.Default.decodeFromString(
+        val result = CoreJson.decodeFromString(
             ConvertResult.serializer(),
             Bridge.nativeConvertAndApplyTemplate(content, template, directHost),
         )
@@ -343,7 +351,7 @@ object Clash {
     fun setSubscriptionHeaders(headers: Map<String, String>) {
         Bridge.nativeSetSubscriptionHeaders(
             if (headers.isEmpty()) null
-            else Json.Default.encodeToString(
+            else CoreJson.encodeToString(
                 MapSerializer(String.serializer(), String.serializer()),
                 headers,
             )
@@ -364,7 +372,7 @@ object Clash {
 
     fun toPublicKeys(vararg secretKeys: String): List<String> {
         return Bridge.nativeToPublicKeys(secretKeys.firstOrNull() ?: "")
-            ?.let { Json.Default.decodeFromString(ListSerializer(String.serializer()), it) }
+            ?.let { CoreJson.decodeFromString(ListSerializer(String.serializer()), it) }
             ?: emptyList()
     }
 
@@ -373,6 +381,6 @@ object Clash {
     }
 
     private fun parseAgeKeyPair(value: String): AgeKeyPair {
-        return Json.Default.decodeFromString(AgeKeyPair.serializer(), value)
+        return CoreJson.decodeFromString(AgeKeyPair.serializer(), value)
     }
 }

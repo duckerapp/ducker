@@ -1,6 +1,7 @@
 package com.github.kr328.clash.core.bridge
 
 import com.github.kr328.clash.common.log.Log
+import com.github.kr328.clash.core.CoreJson
 import com.github.kr328.clash.core.model.FetchStatus
 import com.github.kr328.clash.core.util.parseInetSocketAddress
 import kotlinx.coroutines.CompletableDeferred
@@ -61,6 +62,6 @@ internal class SafeFetchCallback(
     }
 
     private companion object {
-        val statusJsonFormat = Json { ignoreUnknownKeys = true }
+        val statusJsonFormat = Json(CoreJson) { ignoreUnknownKeys = true }
     }
 }
