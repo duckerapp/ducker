@@ -55,6 +55,10 @@ echo
 sed -i "s/versionName = \"$OLD_VERSION\"/versionName = \"$VERSION\"/" build.gradle.kts
 sed -i "s/versionCode = $OLD_CODE/versionCode = $NEW_CODE/" build.gradle.kts
 
+# The build downloads the geo databases only when they are missing, so without this every release
+# shipped them as old as the last `clean` on this computer.
+rm -f app/src/main/assets/geoip.metadb app/src/main/assets/geosite.dat
+
 echo "Собираю (это надолго)…"
 if ! ./gradlew :app:assembleMetaRelease -q >/tmp/ducker-release-build.log 2>&1; then
   echo "Сборка упала, смотри /tmp/ducker-release-build.log. Версию возвращаю обратно."
