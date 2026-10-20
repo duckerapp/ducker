@@ -90,6 +90,8 @@ ok "подмодуль: ${SUBMODULE:-неизвестно}"
 if [ -f "$SO" ] && command -v go >/dev/null; then
   GOVER=$(go version -m "$SO" 2>/dev/null | grep -m1 'github.com/metacubex/mihomo' | awk '{print $3}')
   ok "mihomo ${GOVER:-версия не прочиталась}"
+  # The Go it was built with — the pinned one of core/toolchain/go.sh (D-330).
+  ok "собрано на $(go version "$SO" 2>/dev/null | awk '{print $2}')"
 fi
 
 # Версию, которую приложение показывает в «О приложении», считает CMake — один раз
