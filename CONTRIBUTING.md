@@ -51,6 +51,24 @@ The checks that CI runs:
 ./gradlew :core:externalNativeBuildMetaRelease
 ```
 
+## Dependencies
+
+Gradle checks every file it downloads against its SHA-256 in `gradle/verification-metadata.xml`
+and stops the build on a mismatch or a missing sum. After adding or updating a dependency, a plugin
+or AGP, record the new sums and read the diff: the new entries should be what you changed and
+nothing else.
+
+```
+GRADLE_USER_HOME=$(mktemp -d) ./gradlew --write-verification-metadata sha256 help \
+    :app:assembleMetaRelease :app:testMetaDebugUnitTest
+```
+
+`help` resolves every configuration; the two tasks add what is downloaded only while a task runs,
+such as aapt2 and lint. The empty Gradle home makes it download everything again (about 600 MB):
+a cache filled earlier skips some metadata files that a fresh checkout needs. Gradle on Linux
+records only the Linux aapt2, so after an AGP update add the macOS one by hand, next to the Linux
+entry: its SHA-256 is that of `aapt2-<version>-osx.jar` from `dl.google.com/dl/android/maven2`.
+
 ## How the project is organised
 
 Where things live is described in the [code map](docs/ARCHITECTURE.md): processes, modules, the
