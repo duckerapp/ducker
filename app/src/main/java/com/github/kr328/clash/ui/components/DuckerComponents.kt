@@ -120,7 +120,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.github.kr328.clash.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpOffset
@@ -208,9 +208,10 @@ fun DuckerCard(
 
 /**
  * Что отдать Coil вместо строки картинки провайдера — логотипа или значка группы: ссылку — как
- * есть, а `data:` — байтами. Строку `data:` Coil 2.7 не понимает (F-184), хотя заголовок
- * `ducker-brand-logo` её обещает (D-35). Ссылка — только в сеть: Coil открыл бы и `file://`, и
- * `content://`, а адрес задаёт провайдер (аудит 9в.7).
+ * есть, а `data:` — байтами. Coil 3 сам читает `data:` только в строгом base64: ни текстом, ни
+ * base64 с переносами строк (F-184, D-332), а заголовок `ducker-brand-logo` обещает любой (D-35).
+ * Ссылка — только в сеть: Coil открыл бы и `file://`, и `content://`, а адрес задаёт провайдер
+ * (аудит 9в.7).
  */
 internal fun logoModel(logo: String?): Any? {
     val value = logo?.trim().orEmpty()

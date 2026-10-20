@@ -56,6 +56,10 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
+    // Coil 3 loads nothing by URL without a network artifact; the cache one keeps honouring the server's
+    // Cache-Control, as Coil 2 did.
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.network.cache.control)
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
