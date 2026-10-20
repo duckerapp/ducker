@@ -113,6 +113,26 @@ task("downloadZashboard") {
             includeEmptyDirs = false
         }
 
+        // The connection globe is cut out (D-334). Shown by default, it loads a WebGL renderer with
+        // its textures, asks an outside service for the device's address and offers a 60 MB
+        // download. Its files leave the APK, its card the overview's list and its entries the
+        // service worker's list; a zashboard built differently stops the build here.
+        val globe = zashboardDir.resolve("assets")
+            .listFiles { f -> Regex("""(EarthGlobeCard|earth-[a-z]+|geoip\.worker)-.*""").matches(f.name) }!!
+        check(globe.size == 7) { "zashboard $zashboardVersion: ${globe.size} globe files, not 7 (D-334)" }
+        globe.forEach { it.delete() }
+
+        fun cut(file: File, part: Regex, times: Int) {
+            val text = file.readText()
+            val found = part.findAll(text).count()
+            check(found == times) { "zashboard $zashboardVersion: ${file.name} has $part $found times, not $times (D-334)" }
+            file.writeText(part.replace(text, ""))
+        }
+        val main = zashboardDir.resolve("assets").listFiles { f -> Regex("""index-.*\.js""").matches(f.name) }!!.single()
+        cut(main, Regex("""\w+\.EarthGlobeCard=`EarthGlobeCard`,"""), 1)
+        cut(main, Regex("""\{card:\w+\.EarthGlobeCard,visible:!0},"""), 1)
+        cut(zashboardDir.resolve("sw.js"), Regex("""\{url:"assets/(EarthGlobeCard|earth-[a-z]+|geoip\.worker)-[^"]*",revision:[^}]*},?"""), 7)
+
         marker.writeText(zashboardVersion)
 
         println("zashboard $zashboardVersion unpacked to $zashboardDir")
