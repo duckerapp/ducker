@@ -25,7 +25,8 @@
 Нужны:
 - JDK 21;
 - Android SDK: platform 37, NDK **29.0.14206865** (версия зафиксирована), CMake из SDK;
-- Go 1.26 или новее (CI собирает на Go 1.26 от MetaCubeX с патчами из `.github/patch`);
+- curl и patch: Go сборка скачивает сама в `~/.cache/ducker` — версию из `core/toolchain/go.sh`,
+  со сверкой SHA-256 и патчами для Android, ту же, что в CI и в релизах (Linux x86-64 или macOS);
 - git.
 
 ```

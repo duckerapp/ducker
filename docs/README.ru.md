@@ -253,7 +253,7 @@ REALITY. Они открыты в форке [duckerapp/mihomo](https://github.c
 
 ## Сборка
 
-Нужны JDK 21, Android SDK (platform 37, NDK 29.0.14206865), Go 1.26 или новее и git.
+Нужны JDK 21, Android SDK (platform 37, NDK 29.0.14206865), git, curl и patch; Go сборка скачивает сама.
 
 ```
 git clone --recurse-submodules https://github.com/duckerapp/ducker.git

@@ -229,7 +229,7 @@ ducker 由一个人和 AI 助手共同开发。代码由 Anthropic 的 AI 模型
 
 ## 构建
 
-需要 JDK 21、Android SDK（platform 37、NDK 29.0.14206865）、Go 1.26 或更高版本，以及 git。
+需要 JDK 21、Android SDK（platform 37、NDK 29.0.14206865）、git、curl 和 patch；Go 由构建过程自行下载。
 
 ```
 git clone --recurse-submodules https://github.com/duckerapp/ducker.git

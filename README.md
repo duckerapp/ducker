@@ -249,7 +249,8 @@ What has already been done, version by version, is in the [changelog](CHANGELOG.
 
 ## Build
 
-You need JDK 21, the Android SDK (platform 37, NDK 29.0.14206865), Go 1.26 or newer, and git.
+You need JDK 21, the Android SDK (platform 37, NDK 29.0.14206865), git, curl and patch; the build
+downloads its own Go.
 
 ```
 git clone --recurse-submodules https://github.com/duckerapp/ducker.git

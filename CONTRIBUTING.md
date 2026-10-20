@@ -28,7 +28,9 @@ You need:
 
 - JDK 21;
 - the Android SDK: platform 37, NDK **29.0.14206865** (the version is pinned), CMake from the SDK;
-- Go 1.26 or newer (CI builds with Go 1.26 from MetaCubeX with the patches from `.github/patch`);
+- curl and patch: the build downloads its own Go into `~/.cache/ducker` — the version pinned in
+  `core/toolchain/go.sh`, checked against its SHA-256 and patched for Android, the same as in CI and
+  in releases (Linux x86-64 or macOS);
 - git.
 
 ```
