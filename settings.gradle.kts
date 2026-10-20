@@ -9,7 +9,6 @@ include(":baselineprofile")
 
 pluginManagement {
     repositories {
-        mavenLocal()
         mavenCentral()
         gradlePluginPortal()
     }
