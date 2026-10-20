@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -59,17 +58,12 @@ import com.github.kr328.clash.ui.components.SheetField
 import com.github.kr328.clash.ui.components.overscrollFor
 import com.github.kr328.clash.ui.components.screenInsets
 import com.github.kr328.clash.ui.components.DuckerCard as Card
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.key
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextAlign
 import com.github.kr328.clash.ui.components.Pill
 import com.github.kr328.clash.ui.components.PillSegments
-import com.github.kr328.clash.ui.components.airShadow
+import com.github.kr328.clash.ui.components.labelWeights
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -401,7 +395,7 @@ private fun AddRuleSheet(
         onClosed = onClosed,
     ) {
         Labeled(stringResource(R.string.rule_what)) {
-            KindTiles(selected = type, onSelect = ::choose)
+            KindPills(selected = type, onSelect = ::choose)
         }
 
         if (type == UserRule.Type.App) {
@@ -496,55 +490,41 @@ private fun Suggestions(options: List<Pair<String, String>>, selected: String?, 
     }
 }
 
-/** Шесть видов правила плитками со значками, по три в ряд (D-326): значки те же, что у строк списка. */
+/**
+ * Шесть видов правила пилюлями со значками (D-326), двумя рядами: частые сверху, новые (D-126) под ними. Ряд
+ * делится по длине подписей, как кнопки журнала (D-114): по ширине подписи пилюли ложились в три ряда, а
+ * плитки были ещё выше — с «Приложением» кнопка «Добавить» уезжала под край панели.
+ */
 @Composable
-private fun KindTiles(selected: UserRule.Type, onSelect: (UserRule.Type) -> Unit) {
-    val kinds = listOf(
-        UserRule.Type.Site to R.string.rule_site,
-        UserRule.Type.App to R.string.rule_app,
-        UserRule.Type.Ip to R.string.rule_ip,
-        UserRule.Type.Keyword to R.string.rule_keyword,
-        UserRule.Type.Geosite to R.string.rule_geosite,
-        UserRule.Type.Geoip to R.string.rule_geoip,
+private fun KindPills(selected: UserRule.Type, onSelect: (UserRule.Type) -> Unit) {
+    val rows = listOf(
+        listOf(UserRule.Type.Site to R.string.rule_site, UserRule.Type.App to R.string.rule_app, UserRule.Type.Ip to R.string.rule_ip),
+        listOf(
+            UserRule.Type.Keyword to R.string.rule_keyword,
+            UserRule.Type.Geosite to R.string.rule_geosite,
+            UserRule.Type.Geoip to R.string.rule_geoip,
+        ),
     )
 
-    Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        kinds.chunked(3).forEach { row ->
-            // A label on two lines makes its tile taller, and the row's other tiles follow it.
-            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { (kind, label) ->
-                    KindTile(
-                        icon = typeIcon(kind),
-                        label = stringResource(label),
-                        selected = kind == selected,
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
+    Column(Modifier.selectableGroup()) {
+        rows.forEach { row ->
+            val labels = row.map { stringResource(it.second) }
+            val weights = labelWeights(labels, MaterialTheme.typography.labelLarge, KIND_PILL_ROOM)
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                row.forEachIndexed { i, (kind, _) ->
+                    Pill(
+                        text = labels[i],
                         onClick = { onSelect(kind) },
+                        modifier = Modifier.weight(weights[i]),
+                        selected = kind == selected,
+                        icon = typeIcon(kind),
+                        role = Role.RadioButton,
+                        fit = true,
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun KindTile(icon: ImageVector, label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    val shape = MaterialTheme.shapes.medium
-    val fill by animateColorAsState(if (selected) scheme.primaryContainer else scheme.surface, tween(TILE_FADE_MS), label = "kindFill")
-    val ink by animateColorAsState(if (selected) scheme.onPrimaryContainer else scheme.onSurface, tween(TILE_FADE_MS), label = "kindInk")
-
-    Column(
-        modifier = modifier.heightIn(min = 76.dp)
-            .airShadow(shape)
-            .clip(shape)
-            .background(fill)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(24.dp))
-        Text(label, color = ink, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, maxLines = 2)
     }
 }
 
@@ -684,4 +664,6 @@ private fun Labeled(label: String, content: @Composable () -> Unit) {
 private val PICKER_HEIGHT = 260.dp
 private const val DIMMED = 0.5f
 private const val SUGGESTIONS = 8
-private const val TILE_FADE_MS = 150
+
+/** Half of [Pill]'s room around a label with an icon: 10 + 18 + 6 + 14 = 48 in all. */
+private val KIND_PILL_ROOM = 24.dp
