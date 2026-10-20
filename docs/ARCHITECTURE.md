@@ -56,7 +56,7 @@ receive ready-made state from view models and never call the service from layout
 
 | Module | What is inside |
 |---|---|
-| `:app` | The interface, activities, receivers, assets (`assets/ducker/template.yaml`; `assets/zashboard` is downloaded by `app/build.gradle.kts` at build time, checked against its SHA-256, the connection globe cut out). |
+| `:app` | The interface, activities, receivers, assets (`assets/ducker/template.yaml`; `assets/zashboard` is downloaded by `app/build.gradle.kts` at build time, checked against its SHA-256, the connection globe and the service worker cut out). |
 | `:service` | `VpnService`, the core runtime, Room, profiles, Binder implementations. |
 | `:core` | JNI (`core/src/main/cpp`), the Go adapter `cfa` (`G`), the Kotlin facade (`K`), the core build (`core/src/foss/golang`). |
 | `:common` | Global context, intent constants, `Store`, utilities, `compat/`. |
