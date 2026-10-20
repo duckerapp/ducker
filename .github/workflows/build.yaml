@@ -69,12 +69,14 @@ jobs:
       # Проверка сессий мультиплекса (D-105) — на настоящем HTTP/2 и настоящем сервере
       # sing-mux, с детектором гонок: она живёт в фоновых горутинах.
       - name: Test mux health checks
-        working-directory: core/src/foss/golang/sing-mux
+        # From the core's module, not the fork's own: there the tests get the dependency versions the
+        # core ships with — the HTTP/2 of h2mux among them (D-331) — not the fork's older pins.
+        working-directory: core/src/foss/golang
         # -race работает только с cgo, а в окружении раннера CGO_ENABLED=0 (видно в
         # `go env` шага Setup Go). Шаг добавлен 23.09 и до 27.09 ни разу не запускался (F-139).
         env:
           CGO_ENABLED: "1"
-        run: go test -race -count=3 ./...
+        run: go test -race -count=3 github.com/metacubex/sing-mux/...
 
       # Только ядро, без APK: APK собираются на компьютере разработчика, а их выгрузка
       # упиралась в квоту хранилища артефактов. Задача настраивает CMake (версия ядра), собирает
