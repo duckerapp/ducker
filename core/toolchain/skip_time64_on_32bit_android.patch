@@ -1,0 +1,25 @@
+Skip futex_time64 and timer_settime64 on 32-bit Android, for Go 1.27.
+
+Go 1.27 picks the 64-bit time calls by the kernel release (5.1 or newer, CL 758902).
+Android 8.0-10 kills the process on them whatever the kernel, so a 32-bit Android 10
+on a 5.1+ kernel is still hit. This restores Go's own skip on Android (CL 750040,
+golang/go#77621); the earlier patch of MetaCubeX for Go 1.26 removed the calls the
+same way ("Disable futex_time64 again", wwqgtxx, 09.05.2026).
+
+--- a/src/runtime/os_linux32.go
++++ b/src/runtime/os_linux32.go
+@@ -26,6 +26,14 @@
+ // reaching the probing fallback generally means we are on neither,
+ // and probing is the safest available signal.
+ func configure64bitsTimeOn32BitsArchitectures() {
++	// In Android 8.0-10 (API levels 26-29) the seccomp filter kills the process
++	// on futex_time64 and timer_settime64 whatever the kernel release, which the
++	// release check below does not cover. Go skipped these calls on Android in
++	// CL 750040 until CL 758902; this restores the skip and leaves out the probe
++	// too. The 32-bit calls carry only durations here (CL 751342).
++	if GOOS == "android" {
++		return
++	}
+ 	if kv, ok := getKernelVersion(); ok {
+ 		use64bitsTimeOn32bits = kv.GE(5, 1)
+ 		return

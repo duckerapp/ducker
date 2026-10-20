@@ -31,6 +31,9 @@ val golangSource = file("src/main/golang/native")
 val goPackage = "cfa/native"
 val goTags = listOf("foss", "with_gvisor", "cmfa")
 
+/** The pinned, patched Go (D-330): its version and patches are files of this directory. */
+val goToolchain = file("toolchain")
+
 // Тег `debug` ядру не ставим никогда. Для него это не «побольше логов», а другое
 // поведение: в библиотеке sing он включает проверку утечек, и Buffer.Leak() вместо
 // возврата буфера в пул вызывает panic("leaking buffer") — ядро падало через несколько
@@ -121,7 +124,7 @@ androidComponents.onVariants { variant ->
 
             commandLine(
                 buildList {
-                    add("go")
+                    add(File(goToolchain, "go.sh").absolutePath)
                     add("build")
                     add("-buildmode"); add("c-shared")
                     add("-trimpath")
@@ -168,6 +171,8 @@ androidComponents.onVariants { variant ->
             inputs.file(file("src/foss/golang/go.sum"))
             inputs.file(file("src/main/golang/go.mod"))
             inputs.file(file("src/main/golang/go.sum"))
+            // A new Go version or patch must rebuild the core as well.
+            inputs.dir(goToolchain)
             if (pgoProfile.isFile) inputs.file(pgoProfile)
 
             outputs.dir(outputDir)

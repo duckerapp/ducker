@@ -35,18 +35,15 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      # Патченный Go от MetaCubeX: в нём отключён pidfd на Android и futex_time64
-      # на 32-битном Linux. Патчи лежат в .github/patch и накладываются ниже.
+      # The Go of the release builds (D-330): core/toolchain/go.sh downloads the pinned version,
+      # checks its SHA-256 and applies the Android patches next to it. The Gradle build calls the
+      # script itself; the steps that call `go` find the same Go first on PATH. The assignment stops
+      # the step if the script fails; inside `echo` the runner's own Go would go on silently.
       - name: Setup Go
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
-        with:
-          go-download-base-url: 'https://github.com/MetaCubeX/go/releases/download/build'
-          go-version: '1.26'
-
-      - name: Apply Go patches
         run: |
-          cd $(go env GOROOT)
-          for p in $GITHUB_WORKSPACE/.github/patch/*.patch; do patch --verbose -p 1 < "$p"; done
+          GOROOT=$(core/toolchain/go.sh env GOROOT)
+          echo "$GOROOT/bin" >> "$GITHUB_PATH"
+          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
 
       - uses: actions/cache@v5
         with:
