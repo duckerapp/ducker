@@ -201,12 +201,12 @@ class DashboardActivity : ComponentActivity() {
 
     /**
      * Файлы панели лежат в ресурсах приложения (инвариант 3), а ядро раздаёт их из своего
-     * дома. Копируем один раз на версию приложения: ресурсы меняются только вместе с ней.
+     * дома. Копируем один раз на установку: сборки с одним номером версии несут разные файлы панели.
      */
     private fun unpackDashboard() {
         val target = filesDir.resolve("clash/dashboard")
         val marker = File(target, ".version")
-        val version = packageManager.getPackageInfo(packageName, 0).versionName ?: ""
+        val version = packageManager.getPackageInfo(packageName, 0).lastUpdateTime.toString()
 
         if (marker.isFile && marker.readText() == version) return
 
