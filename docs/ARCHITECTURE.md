@@ -123,6 +123,8 @@ published by `.github/workflows/pages.yaml`.
   a config through the built-in template), `tunnel/`, `tun/`, `app/`.
 - **`core/src/foss/golang/`** — the main `go.mod` with `replace` directives and three git
   submodules.
+- **`core/toolchain/`** — `go.sh`, the pinned Go the core is built with in CI and in releases, and
+  its two Android patches.
 
 ### The core and its forks
 
