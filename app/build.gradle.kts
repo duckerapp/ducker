@@ -72,7 +72,7 @@ val geoFilesDownloadDir = "src/main/assets"
 
 // ducker: панель zashboard лежит в ресурсах приложения, а не качается с сети во время
 // работы (инвариант 3, D-33). Версия закреплена, чтобы сборка была воспроизводимой.
-val zashboardVersion = "v3.28.0"
+val zashboardVersion = "v3.29.1"
 val zashboardDir = file("src/main/assets/zashboard")
 
 task("downloadZashboard") {
