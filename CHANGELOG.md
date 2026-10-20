@@ -5,6 +5,16 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.36 — 2026-10-20
+
+- My rules in the new look: the kinds of a rule as pills with icons, "Where" as a switch, the rules as rows
+  on one card. Several apps can be picked at once — each gets its own rule — and a second tap unpicks one.
+- Apps in the new look: the mode as a switch, the new search field, and "System" with "Select all" or
+  "Clear all" on one line above the list. On a TV the search no longer opens the keyboard as soon as it
+  gets the focus.
+- The last old-style buttons and chips — node check, network stack, background work, logs and the cards
+  on Home — now match the rest.
+
 ## 0.4.35 — 2026-10-20
 
 - Automatic updates: with the first new version, the update sheet asks once whether ducker should
