@@ -1218,7 +1218,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             name = subscriptionsState.rulesName,
                             rules = subscriptionsState.rules,
                             bypass = subscriptionsState.rulesBypass,
-                            onAdd = { subscriptionsViewModel.addRule(this@HomeActivity, it) },
+                            onAdd = { subscriptionsViewModel.addRules(this@HomeActivity, it) },
                             onRemove = { subscriptionsViewModel.removeRule(this@HomeActivity, it) },
                             onBack = { subscriptionsViewModel.closeRules() },
                             modifier = Modifier.padding(overlayInsets).consumeWindowInsets(overlayInsets),

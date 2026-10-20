@@ -8,7 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import java.util.Locale
-import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -77,7 +77,7 @@ fun RulesScreen(
     name: String,
     rules: List<UserRule>,
     bypass: Bypass?,
-    onAdd: (UserRule) -> Unit,
+    onAdd: (List<UserRule>) -> Unit,
     onRemove: (UserRule) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -324,18 +324,19 @@ private fun AddRuleSheet(
     open: Boolean,
     rules: List<UserRule>,
     bypass: Bypass?,
-    onAdd: (UserRule) -> Unit,
+    onAdd: (List<UserRule>) -> Unit,
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
 ) {
     val context = LocalContext.current
     var type by remember { mutableStateOf(UserRule.Type.Site) }
     var input by remember { mutableStateOf("") }
-    var app by remember { mutableStateOf<String?>(null) }
+    // Several apps at once, in the order they were picked; each gets a rule of its own (D-326).
+    var apps by remember { mutableStateOf(listOf<String>()) }
     var target by remember { mutableStateOf(UserRule.Target.Direct) }
     // Введённое правило молча не бросаем: закрыть — значит сначала спросить (D-135).
     var asking by remember { mutableStateOf(false) }
-    val entered = if (type == UserRule.Type.App) app != null else input.isNotBlank()
+    val entered = if (type == UserRule.Type.App) apps.isNotEmpty() else input.isNotBlank()
 
     if (asking) {
         LeaveSheet(
@@ -363,7 +364,8 @@ private fun AddRuleSheet(
 
     // Приложение, выбранное до ответа службы, могло оказаться под замком. Категория без списка не
     // проходит: неизвестную ядро молча пропустит (D-126), и правило с опечаткой просто не сработает.
-    val value = if (type == UserRule.Type.App) app?.takeIf { bypass?.reason(it) == null }
+    val picked = apps.filter { bypass?.reason(it) == null }
+    val value = if (type == UserRule.Type.App) picked.firstOrNull()
     else ruleValue(type, input)?.takeIf { type != UserRule.Type.Geosite || categories?.contains(it) == true }
 
     // Подсказки категорий: пока пусто — частые, по мере ввода — подходящие из базы.
@@ -399,11 +401,11 @@ private fun AddRuleSheet(
 
         if (type == UserRule.Type.App) {
             AppPicker(
-                selected = app,
+                selected = apps,
                 existing = remember(rules) { rules.filter { it.type == UserRule.Type.App }.associate { it.value to it.target } },
                 bypass = bypass,
-                // A second tap on the chosen app lets it go (D-326): there was no other way back.
-                onSelect = { app = it.takeIf { picked -> picked != app } },
+                // A tap marks an app, a second one lets it go (D-326).
+                onSelect = { apps = if (it in apps) apps - it else apps + it },
             )
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -469,12 +471,18 @@ private fun AddRuleSheet(
             )
         }
 
+        // Several apps: the count on the button, as the picked rows may be scrolled away.
+        val count = if (type == UserRule.Type.App) picked.size else 0
+
         SheetButton(
-            text = stringResource(R.string.add),
+            text = stringResource(R.string.add) + if (count > 1) " · $count" else "",
             busyText = "",
             busy = false,
             enabled = value != null,
-            onClick = { value?.let { onAdd(UserRule(type, it, target)) } },
+            onClick = {
+                if (type == UserRule.Type.App) onAdd(picked.map { UserRule(type, it, target) })
+                else value?.let { onAdd(listOf(UserRule(type, it, target))) }
+            },
         )
     }
 }
@@ -535,7 +543,7 @@ private fun KindPills(selected: UserRule.Type, onSelect: (UserRule.Type) -> Unit
  */
 @Composable
 private fun AppPicker(
-    selected: String?,
+    selected: List<String>,
     existing: Map<String, UserRule.Target>,
     bypass: Bypass?,
     onSelect: (String) -> Unit,
@@ -569,7 +577,7 @@ private fun AppPicker(
 
             LazyColumn(Modifier.fillMaxSize()) {
                 items(filtered, key = { it.packageName }) { app ->
-                    val chosen = app.packageName == selected
+                    val chosen = app.packageName in selected
                     val outside = bypass?.reason(app.packageName)
                     val rule = existing[app.packageName]
                     val note = when {
@@ -597,12 +605,12 @@ private fun AppPicker(
                             .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = fill))
                             // No press wave: it is tinted for the unfilled row, played over the fresh fill
                             // and dimmed the text for a third of a second (D-292). The fill is the answer.
-                            .selectable(
-                                selected = chosen,
+                            .toggleable(
+                                value = chosen,
                                 interactionSource = null,
                                 indication = null,
                                 enabled = outside == null,
-                                role = Role.RadioButton,
+                                role = Role.Checkbox,
                             ) { onSelect(app.packageName) }
                             .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,

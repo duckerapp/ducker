@@ -801,12 +801,15 @@ class SubscriptionsViewModel : ViewModel() {
 
     /**
      * Правило на тот же сайт или приложение заменяет прежнее на его месте, а не встаёт вторым:
-     * второе ядро всё равно не увидело бы — решает первое совпадение (D-135).
+     * второе ядро всё равно не увидело бы — решает первое совпадение (D-135). Several at once (apps picked
+     * together, D-326) are saved once, so the core reloads once.
      */
-    fun addRule(context: Context, rule: UserRule) = saveRules(context) { rules ->
-        val same = rules.indexOfFirst { it.type == rule.type && it.value == rule.value }
+    fun addRules(context: Context, added: List<UserRule>) = saveRules(context) { rules ->
+        added.fold(rules) { all, rule ->
+            val same = all.indexOfFirst { it.type == rule.type && it.value == rule.value }
 
-        if (same < 0) rules + rule else rules.toMutableList().apply { set(same, rule) }
+            if (same < 0) all + rule else all.toMutableList().apply { set(same, rule) }
+        }
     }
 
     fun removeRule(context: Context, rule: UserRule) = saveRules(context) { it - rule }
