@@ -34,7 +34,7 @@ import java.security.SecureRandom
  * Раздел «Расширенно»: панель zashboard (D-4, D-33).
  *
  * Панель отдаёт само ядро: при открытии экрана мы пишем в **сессионный** оверрайд адрес
- * `127.0.0.1:<свободный порт>` и случайный секрет, ядро поднимает свой REST API и раздаёт
+ * `127.0.0.1:<порт>` и случайный секрет (оба выбираются один раз, см. `endpoint`), ядро поднимает свой REST API и раздаёт
  * статические файлы по `/ui/`. При выходе оверрайд очищается, и API закрывается.
  *
  * Почему именно так, а не WebView поверх файлов приложения: страница, отданная ядром,
@@ -44,36 +44,13 @@ import java.security.SecureRandom
 class DashboardActivity : ComponentActivity() {
     private var port = 0
 
-    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val web = WebView(this).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-
-            // Панель — локальная страница, и уходить с неё внутри нашего окна незачем.
-            // Любую внешнюю ссылку отдаём браузеру: в адресе страницы лежит секрет
-            // доступа к API ядра, и уносить его на чужой сайт заголовком Referer
-            // не нужно.
-            webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(
-                    view: WebView,
-                    request: WebResourceRequest,
-                ): Boolean {
-                    if (request.url.host == "127.0.0.1") return false
-
-                    runCatching { startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
-
-                    return true
-                }
-            }
-        }
 
         // Приложение рисуется во весь экран, а панель об этом не знает: без отступов её
         // шапка уезжает под строку состояния. Отступ вешаем на контейнер, а не на сам
         // WebView: страницу внутри него собственный padding не сдвигает.
-        val frame = FrameLayout(this).apply { addView(web) }
+        val frame = FrameLayout(this)
 
         ViewCompat.setOnApplyWindowInsetsListener(frame) { view, insets ->
             val bars = insets.getInsets(
@@ -87,12 +64,6 @@ class DashboardActivity : ComponentActivity() {
 
         setContentView(frame)
 
-        // Внутри панели много переходов; системная «назад» должна ходить по ним,
-        // а не закрывать экран с первого нажатия.
-        onBackPressedDispatcher.addCallback(this) {
-            if (web.canGoBack()) web.goBack() else finish()
-        }
-
         lifecycleScope.launch {
             // Панель живёт внутри ядра, поэтому без поднятого туннеля открывать нечего. Спрашиваем
             // службу прямо: в свежем процессе `:dashboard` флаг Remote.broadcasts ещё не заполнен.
@@ -102,9 +73,20 @@ class DashboardActivity : ComponentActivity() {
                 return@launch finish()
             }
 
-            val secret = randomSecret()
+            val (savedPort, secret) = withContext(Dispatchers.IO) { endpoint() }
 
-            port = withContext(Dispatchers.IO) { freePort() }
+            port = savedPort
+
+            // Only now: endpoint() may wipe WebView's data, and that must come before WebView starts.
+            val web = webView()
+
+            frame.addView(web)
+
+            // Внутри панели много переходов; системная «назад» должна ходить по ним,
+            // а не закрывать экран с первого нажатия.
+            onBackPressedDispatcher.addCallback(this@DashboardActivity) {
+                if (web.canGoBack()) web.goBack() else finish()
+            }
 
             withContext(Dispatchers.IO) { unpackDashboard() }
 
@@ -117,6 +99,29 @@ class DashboardActivity : ComponentActivity() {
             }
 
             web.loadUrl("http://127.0.0.1:$port/ui/?hostname=127.0.0.1&port=$port&secret=$secret")
+        }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun webView(): WebView = WebView(this).apply {
+        settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
+
+        // Панель — локальная страница, и уходить с неё внутри нашего окна незачем.
+        // Любую внешнюю ссылку отдаём браузеру: в адресе страницы лежит секрет
+        // доступа к API ядра, и уносить его на чужой сайт заголовком Referer
+        // не нужно.
+        webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(
+                view: WebView,
+                request: WebResourceRequest,
+            ): Boolean {
+                if (request.url.host == "127.0.0.1") return false
+
+                runCatching { startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
+
+                return true
+            }
         }
     }
 
@@ -235,6 +240,37 @@ class DashboardActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * WebView keeps a page's storage by origin, and the port is part of it: a new port at every visit left a whole
+     * copy of the panel behind each time (F-317). So the port is chosen once and kept, and the secret with it —
+     * zashboard remembers the address together with the secret and would pick the stale pair. A port somebody else
+     * holds is replaced. The file is outside Android's backup: the secret has no place in a cloud copy.
+     *
+     * A new port makes whatever WebView kept under the old origins dead, so it is all wiped — the first visit
+     * after this change included. `WebStorage.deleteOrigin` leaves service worker caches behind (F-317), so the
+     * directories go, which is safe only while WebView has not started in this process.
+     */
+    private fun endpoint(): Pair<Int, String> {
+        current?.let { return it }
+
+        val file = File(noBackupFilesDir, "dashboard")
+        val saved = runCatching { file.readText().split(' ') }.getOrNull()
+        val savedPort = saved?.getOrNull(0)?.toIntOrNull()
+        val secret = saved?.getOrNull(1)?.takeIf { it.isNotEmpty() } ?: randomSecret()
+        val port = savedPort?.takeIf(::isFree) ?: freePort()
+
+        if (port != savedPort) {
+            getDir("webview", MODE_PRIVATE).deleteRecursively()
+            cacheDir.resolve("WebView").deleteRecursively()
+        }
+
+        file.writeText("$port $secret")
+
+        return (port to secret).also { current = it }
+    }
+
+    private fun isFree(port: Int): Boolean = runCatching { ServerSocket(port).close() }.isSuccess
+
     private fun freePort(): Int = ServerSocket(0).use { it.localPort }
 
     private fun randomSecret(): String {
@@ -254,5 +290,9 @@ class DashboardActivity : ComponentActivity() {
         private const val STEP = 150L
         private const val TIMEOUT = 1000
         private const val CLEANUP_MS = 3000L
+
+        // Kept for the process: a screen recreated while the old one's API is still up would find
+        // the port taken. The process ends with the panel (D-141).
+        private var current: Pair<Int, String>? = null
     }
 }
