@@ -1,6 +1,8 @@
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
+import java.util.HexFormat
 
 plugins {
     // Плагин Kotlin не нужен: с AGP 9 поддержка Kotlin встроена в сам Android-плагин (D-84).
@@ -77,6 +79,8 @@ val geoFilesDownloadDir = "src/main/assets"
 // ducker: панель zashboard лежит в ресурсах приложения, а не качается с сети во время
 // работы (инвариант 3, D-33). Версия закреплена, чтобы сборка была воспроизводимой.
 val zashboardVersion = "v3.29.1"
+// SHA-256 of the release's `dist-no-fonts.zip`; GitHub lists it as the asset's digest.
+val zashboardSha256 = "21371cd111b6b3d87774f3ea3ddeacdcb0f6aff8690a16d652daa3ea6e3b0145"
 val zashboardDir = file("src/main/assets/zashboard")
 
 task("downloadZashboard") {
@@ -92,6 +96,12 @@ task("downloadZashboard") {
                 "$zashboardVersion/dist-no-fonts.zip"
         ).openStream().use { input ->
             Files.copy(input, archive.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
+
+        // Checked before the old panel is deleted: a wrong archive stops the build and keeps it.
+        val sha256 = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(archive.readBytes()))
+        check(sha256 == zashboardSha256) {
+            "zashboard $zashboardVersion: SHA-256 $sha256, expected $zashboardSha256"
         }
 
         delete(zashboardDir)
