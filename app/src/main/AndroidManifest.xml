@@ -200,9 +200,11 @@
             android:exported="false"
             android:label="@string/application_crashed"
             android:launchMode="singleTask" />
+        <!-- The WebView lays itself out again on rotation. A recreated screen reloaded the profile
+             twice to reopen the core's API and showed a white page meanwhile (F-317). -->
         <activity
             android:name=".DashboardActivity"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize"
             android:process=":dashboard"
             android:exported="false"
             android:label="@string/dashboard" />
