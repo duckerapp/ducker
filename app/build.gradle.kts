@@ -46,7 +46,6 @@ dependencies {
     implementation(libs.androidx.camera.view)
     // QR подписки для «Поделиться»: один класс на Java, MIT, без зависимостей.
     implementation(libs.qrcodegen)
-    implementation(libs.androidx.activity.ktx)
 
     // ducker: свой интерфейс. Версии держит BOM.
     val composeBom = platform(libs.androidx.compose.bom)
