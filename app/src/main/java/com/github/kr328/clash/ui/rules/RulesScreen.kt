@@ -402,7 +402,8 @@ private fun AddRuleSheet(
                 selected = app,
                 existing = remember(rules) { rules.filter { it.type == UserRule.Type.App }.associate { it.value to it.target } },
                 bypass = bypass,
-                onSelect = { app = it },
+                // A second tap on the chosen app lets it go (D-326): there was no other way back.
+                onSelect = { app = it.takeIf { picked -> picked != app } },
             )
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
