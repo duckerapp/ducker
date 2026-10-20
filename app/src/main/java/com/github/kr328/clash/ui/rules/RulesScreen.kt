@@ -394,9 +394,8 @@ private fun AddRuleSheet(
         onDismiss = onDismiss,
         onClosed = onClosed,
     ) {
-        Labeled(stringResource(R.string.rule_what)) {
-            KindPills(selected = type, onSelect = ::choose)
-        }
+        // No «Что» above the kinds: the pills say themselves what is chosen (D-326).
+        KindPills(selected = type, onSelect = ::choose)
 
         if (type == UserRule.Type.App) {
             AppPicker(

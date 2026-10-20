@@ -363,7 +363,6 @@
     <string name="rules_empty">Thêm trang web, ứng dụng hoặc địa chỉ rồi chọn: không qua VPN, qua VPN hoặc chặn</string>
     <string name="rules_add">Thêm quy tắc</string>
     <string name="rule_new">Quy tắc mới</string>
-    <string name="rule_what">Đối tượng</string>
     <string name="rule_where">Cách xử lý</string>
     <string name="rule_site">Trang web</string>
     <string name="rule_app">Ứng dụng</string>

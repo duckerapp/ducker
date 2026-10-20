@@ -399,7 +399,6 @@
     <string name="rules_empty">Add a site, app or address and choose: bypass the VPN, go through it, or block</string>
     <string name="rules_add">Add rule</string>
     <string name="rule_new">New rule</string>
-    <string name="rule_what">What</string>
     <string name="rule_where">Where</string>
     <string name="rule_site">Website</string>
     <string name="rule_app">App</string>

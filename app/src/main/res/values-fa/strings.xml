@@ -365,7 +365,6 @@
     <string name="rules_empty">یک سایت، برنامه یا آدرس اضافه کنید و انتخاب کنید: بدون VPN، از طریق VPN یا مسدود کردن</string>
     <string name="rules_add">افزودن قانون</string>
     <string name="rule_new">قانون جدید</string>
-    <string name="rule_what">چه چیزی</string>
     <string name="rule_where">به کجا</string>
     <string name="rule_site">وب‌سایت</string>
     <string name="rule_app">برنامه</string>

@@ -373,7 +373,6 @@
     <string name="rules_empty">أضف موقعًا أو تطبيقًا أو عنوانًا، واختر الاتصال دون VPN أو عبره أو الحظر</string>
     <string name="rules_add">إضافة قاعدة</string>
     <string name="rule_new">قاعدة جديدة</string>
-    <string name="rule_what">الهدف</string>
     <string name="rule_where">الإجراء</string>
     <string name="rule_site">موقع إلكتروني</string>
     <string name="rule_app">تطبيق</string>

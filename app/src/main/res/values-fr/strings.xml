@@ -367,7 +367,6 @@
     <string name="rules_empty">Ajoutez un site, une application ou une adresse, puis choisissez : contourner le VPN, passer par lui ou bloquer</string>
     <string name="rules_add">Ajouter une règle</string>
     <string name="rule_new">Nouvelle règle</string>
-    <string name="rule_what">Cible</string>
     <string name="rule_where">Action</string>
     <string name="rule_site">Site web</string>
     <string name="rule_app">Application</string>

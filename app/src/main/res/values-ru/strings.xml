@@ -391,7 +391,6 @@
     <string name="rules_empty">Добавьте сайт, приложение или адрес и выберите: мимо VPN, через VPN или блокировать</string>
     <string name="rules_add">Добавить правило</string>
     <string name="rule_new">Новое правило</string>
-    <string name="rule_what">Что</string>
     <string name="rule_where">Куда</string>
     <string name="rule_site">Сайт</string>
     <string name="rule_app">Приложение</string>

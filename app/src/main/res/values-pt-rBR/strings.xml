@@ -367,7 +367,6 @@
     <string name="rules_empty">Adicione um site, aplicativo ou endereço e escolha: passar fora da VPN, usar a VPN ou bloquear</string>
     <string name="rules_add">Adicionar regra</string>
     <string name="rule_new">Nova regra</string>
-    <string name="rule_what">O quê</string>
     <string name="rule_where">Ação</string>
     <string name="rule_site">Site</string>
     <string name="rule_app">Aplicativo</string>

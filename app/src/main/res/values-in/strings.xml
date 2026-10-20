@@ -363,7 +363,6 @@
     <string name="rules_empty">Tambahkan situs, aplikasi, atau alamat, lalu pilih: tanpa VPN, melalui VPN, atau blokir</string>
     <string name="rules_add">Tambah aturan</string>
     <string name="rule_new">Aturan baru</string>
-    <string name="rule_what">Untuk apa</string>
     <string name="rule_where">Tindakan</string>
     <string name="rule_site">Situs web</string>
     <string name="rule_app">Aplikasi</string>

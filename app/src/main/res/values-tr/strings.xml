@@ -365,7 +365,6 @@
     <string name="rules_empty">Bir site, uygulama veya adres ekleyip VPN dışında bağlanmasını, VPN üzerinden bağlanmasını ya da engellenmesini seçin</string>
     <string name="rules_add">Kural ekle</string>
     <string name="rule_new">Yeni kural</string>
-    <string name="rule_what">Ne için</string>
     <string name="rule_where">İşlem</string>
     <string name="rule_site">Web sitesi</string>
     <string name="rule_app">Uygulama</string>

@@ -363,7 +363,6 @@
     <string name="rules_empty">添加网站、应用或地址，并选择：不走 VPN、走 VPN 或拦截</string>
     <string name="rules_add">添加规则</string>
     <string name="rule_new">新建规则</string>
-    <string name="rule_what">匹配项</string>
     <string name="rule_where">走向</string>
     <string name="rule_site">网站</string>
     <string name="rule_app">应用</string>
