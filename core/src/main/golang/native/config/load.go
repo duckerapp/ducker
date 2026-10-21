@@ -113,11 +113,8 @@ const (
 //
 // A reload: the place of the running pool is written, the new pool goes on from it, and the
 // addresses apps hold keep their names. A start with no core running: the table of the previous
-// run is kept where that is sound — resumeFakeIP.
-//
-// ponytail: a name asked between this call and the moment the new pool takes over, tens of
-// milliseconds, may lose its address to the next new name. mihomo#3283 copies the place at
-// the takeover itself; it comes with the next core update.
+// run is kept where that is sound — resumeFakeIP. A name asked between this call and the takeover
+// keeps its place too: the takeover copies it from the old pool (mihomo#3283).
 func keepFakeIP(rawCfg *config.RawConfig) {
 	if resolver.DefaultHostMapper != nil {
 		resolver.StoreFakePoolState()
