@@ -5,6 +5,19 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.38 — 2026-10-21
+
+- The core is updated to mihomo v1.19.33: connecting to a DNS-over-HTTPS server no longer waits without
+  limit, and a node that answers a delay check in under a millisecond is no longer shown as failed.
+- The log now shows a node that stops working: once a minute per node, how many of its connections got
+  no answer and the last site among them; a node that refuses a multiplexed connection is logged with
+  the server's reason. These lines are kept even with the detailed log off.
+- The detailed log costs the phone about two and a half times less work per line.
+- The zashboard web panel keeps its settings between visits, no longer grows by a few megabytes with
+  each one, and no longer turns into a white page when the phone is rotated. The connection globe is gone
+  from it.
+- The splash screen shows the new duck.
+
 ## 0.4.37 — 2026-10-20
 
 - On Android 10–12 the chosen language no longer falls back to the system one after the app is closed.
