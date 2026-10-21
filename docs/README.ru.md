@@ -222,10 +222,10 @@ Anthropic; что делать, решает владелец проекта. К
 проверяется на настоящих устройствах, прежде чем попасть в выпуск, а сборку можно повторить
 самому из этого репозитория.
 
-Шифрование и протоколы — не наши: они приходят из ядра mihomo. Наши правки к нему — 21 коммит
+Шифрование и протоколы — не наши: они приходят из ядра mihomo. Наши правки к нему — 23 коммита
 поверх v1.19.33, из них 13 — правки сообщества для мультиплексора, совместимого с Xray, и
-REALITY. Они открыты в форке [duckerapp/mihomo](https://github.com/duckerapp/mihomo), ветка `ducker`; ещё четыре
-коммита — в двух малых форках, [duckerapp/utls](https://github.com/duckerapp/utls) и
+REALITY. Они открыты в форке [duckerapp/mihomo](https://github.com/duckerapp/mihomo), ветка `ducker`; ещё пять
+коммитов — в двух малых форках, [duckerapp/utls](https://github.com/duckerapp/utls) и
 [duckerapp/sing-mux](https://github.com/duckerapp/sing-mux).
 
 ## Управление из других приложений

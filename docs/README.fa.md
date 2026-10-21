@@ -238,9 +238,9 @@ Anthropic، می‌نویسد و اینکه چه چیزی ساخته شود را
 ساخته و آزمایش می‌شود و روی دستگاه‌های واقعی بررسی می‌شود، و هر کسی می‌تواند ساخت را از همین مخزن
 تکرار کند.
 
-رمزنگاری و پروتکل‌ها کار ما نیست: از هستهٔ mihomo می‌آیند. تغییرات ما در هسته ۲۱ کامیت روی
+رمزنگاری و پروتکل‌ها کار ما نیست: از هستهٔ mihomo می‌آیند. تغییرات ما در هسته ۲۳ کامیت روی
 v1.19.33 است که ۱۳ تای آن وصله‌های جامعهٔ کاربری برای مالتی‌پلکس سازگار با Xray و REALITY است.
-این تغییرات در فورک [duckerapp/mihomo](https://github.com/duckerapp/mihomo)، شاخهٔ `ducker`، عمومی است؛ چهار کامیت دیگر در دو فورک کوچک‌تر،
+این تغییرات در فورک [duckerapp/mihomo](https://github.com/duckerapp/mihomo)، شاخهٔ `ducker`، عمومی است؛ پنج کامیت دیگر در دو فورک کوچک‌تر،
 [duckerapp/utls](https://github.com/duckerapp/utls) و [duckerapp/sing-mux](https://github.com/duckerapp/sing-mux)، قرار دارد.
 
 <a id="control"></a>

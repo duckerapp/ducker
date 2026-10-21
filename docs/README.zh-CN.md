@@ -199,9 +199,9 @@ ducker 还支持常见的订阅响应头：`profile-title`、`profile-update-int
 ducker 由一个人和 AI 助手共同开发。代码由 Anthropic 的 AI 模型 Claude 编写；做什么由项目所有者
 决定。每项改动在发布前都会经过构建、测试，并在真实设备上检查；任何人都可以用本仓库重复构建。
 
-加密和协议不是我们写的：它们来自 mihomo 内核。我们对内核的改动是在 v1.19.33 之上的 21 个提交，
+加密和协议不是我们写的：它们来自 mihomo 内核。我们对内核的改动是在 v1.19.33 之上的 23 个提交，
 其中 13 个是社区为 Xray 兼容的多路复用和 REALITY 编写的补丁。它们公开在
-[duckerapp/mihomo](https://github.com/duckerapp/mihomo) 分支仓库的 `ducker` 分支中；另有四个提交位于两个较小的
+[duckerapp/mihomo](https://github.com/duckerapp/mihomo) 分支仓库的 `ducker` 分支中；另有五个提交位于两个较小的
 分支仓库 [duckerapp/utls](https://github.com/duckerapp/utls) 和
 [duckerapp/sing-mux](https://github.com/duckerapp/sing-mux)。
 

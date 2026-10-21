@@ -219,11 +219,11 @@ Claude, an AI model made by Anthropic; the owner decides what to build. Every ch
 tested and checked on real devices before it is released, and anyone can repeat the build from
 this repository.
 
-Encryption and protocols are not ours: they come from the mihomo core. Our changes to it are 21
+Encryption and protocols are not ours: they come from the mihomo core. Our changes to it are 23
 commits on top of v1.19.33, 13 of them community patches for the Xray-compatible mux and REALITY.
 They are public in the [duckerapp/mihomo](https://github.com/duckerapp/mihomo) fork, branch `ducker`;
 two smaller forks, [duckerapp/utls](https://github.com/duckerapp/utls) and
-[duckerapp/sing-mux](https://github.com/duckerapp/sing-mux), carry four more commits.
+[duckerapp/sing-mux](https://github.com/duckerapp/sing-mux), carry five more commits.
 
 ## Control from other apps
 
