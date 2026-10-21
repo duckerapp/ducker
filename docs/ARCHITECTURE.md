@@ -134,7 +134,7 @@ a `ducker` branch, which is the clean branch plus our commits on top.
 
 | Submodule | Fork | Clean branch | Why |
 |---|---|---|---|
-| `clash/` | [duckerapp/mihomo](https://github.com/duckerapp/mihomo) | `Alpha` | Xray-compatible mux (mux.cool), REALITY in step with Xray, skipping a broken node, naming the DNS server that failed, logging a mux node's refusals. |
+| `clash/` | [duckerapp/mihomo](https://github.com/duckerapp/mihomo) | `Alpha` | Xray-compatible mux (mux.cool), REALITY in step with Xray, skipping a broken node, naming the DNS server that failed, logging a mux node's refusals and a node's connections that got no answer. |
 | `utls/` | [duckerapp/utls](https://github.com/duckerapp/utls) | `v1.9.0-mod-meta` | Current TLS fingerprints and ML-DSA-65 for REALITY. |
 | `sing-mux/` | [duckerapp/sing-mux](https://github.com/duckerapp/sing-mux) | `main` | Checking that a multiplexed session is alive before reusing it; handing a stream the server refuses to the core. |
 
