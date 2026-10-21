@@ -101,7 +101,8 @@ published by `.github/workflows/pages.yaml`.
   `ProfileWorker` (scheduled updates), `TunGuard`, `FlightRecorder` (the always-on log),
   `ExpiryNotice` (subscription expiry notifications), `VerboseLog` (the one-day limit of the
   detailed log), `LogTail` (the last lines of the core log, held in memory for the log screen),
-  `StopNotice` (why the VPN stopped when nobody asked it to).
+  `StopNotice` (why the VPN stopped when nobody asked it to; `CrashRecorder` posts it when the
+  tunnel's process crashes, with a Connect button).
 - **Binder implementations:** `ClashManager` (the core) and `ProfileManager` (profiles).
   `ProfileProcessor` downloads, validates and commits a profile.
 - **`clash/ClashRuntime.kt`** with `clash/module/*Module.kt`: `Tun`, `Configuration`,
