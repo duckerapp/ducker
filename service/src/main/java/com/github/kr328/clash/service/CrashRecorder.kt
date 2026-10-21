@@ -28,9 +28,10 @@ object CrashRecorder {
                     writer.append("${Date()} FATAL $process thread ${thread.name}\n${failure.stackTraceToString()}\n")
                 }
             }
-            // Only this process can tell the person: after a repeated crash Android restarts none of
-            // its services, TunGuard included, and nothing else of ours runs (F-327). A guard that
-            // does bring the tunnel back clears the notice in TunService.onCreate.
+            // Only this process can tell the person: after a repeated crash Android brings TunGuard
+            // back half an hour later, or never once its crash dialog is closed, and nothing else of
+            // ours runs meanwhile (F-327, F-328). A guard that does bring the tunnel back clears the
+            // notice in TunService.onCreate.
             if (process == "background" && StatusProvider.serviceRunning) StopNotice.show(context, Failure.CRASHED)
         })
     }
