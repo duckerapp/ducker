@@ -43,4 +43,7 @@
     <string name="failure_try_again">Réessayer</string>
     <string name="vpn_failure_channel">Échecs du VPN</string>
     <string name="vpn_failure_title">Le VPN n’a pas démarré</string>
+    <string name="vpn_crashed_title">Le VPN s’est arrêté</string>
+    <string name="vpn_crashed">Une erreur de ducker a arrêté le VPN. Reconnectez-vous</string>
+    <string name="vpn_crashed_connect">Connecter</string>
 </resources>

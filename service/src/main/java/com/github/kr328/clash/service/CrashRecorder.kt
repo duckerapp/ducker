@@ -2,6 +2,7 @@ package com.github.kr328.clash.service
 
 import android.content.Context
 import android.os.Process
+import com.github.kr328.clash.service.util.Failure
 import java.util.Date
 import kotlin.system.exitProcess
 
@@ -21,10 +22,16 @@ object CrashRecorder {
         val dir = context.filesDir.resolve(DIR).resolve(process)
         Thread.setDefaultUncaughtExceptionHandler(CrashHandler(previous) { thread, failure ->
             // Each process owns its pair of files. No competing flight-log writers.
-            dir.mkdirs()
-            FlightLogWriter(dir, LIMIT).use { writer ->
-                writer.append("${Date()} FATAL $process thread ${thread.name}\n${failure.stackTraceToString()}\n")
+            runCatching {
+                dir.mkdirs()
+                FlightLogWriter(dir, LIMIT).use { writer ->
+                    writer.append("${Date()} FATAL $process thread ${thread.name}\n${failure.stackTraceToString()}\n")
+                }
             }
+            // Only this process can tell the person: after a repeated crash Android restarts none of
+            // its services, TunGuard included, and nothing else of ours runs (F-327). A guard that
+            // does bring the tunnel back clears the notice in TunService.onCreate.
+            if (process == "background" && StatusProvider.serviceRunning) StopNotice.show(context, Failure.CRASHED)
         })
     }
 }

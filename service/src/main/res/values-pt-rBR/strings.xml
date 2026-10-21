@@ -43,4 +43,7 @@
     <string name="failure_try_again">Tentar novamente</string>
     <string name="vpn_failure_channel">Falhas da VPN</string>
     <string name="vpn_failure_title">A VPN não foi iniciada</string>
+    <string name="vpn_crashed_title">A VPN foi desligada</string>
+    <string name="vpn_crashed">Um erro no ducker desligou a VPN. Conecte de novo</string>
+    <string name="vpn_crashed_connect">Conectar</string>
 </resources>

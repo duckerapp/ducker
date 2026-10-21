@@ -46,4 +46,7 @@
     <string name="failure_try_again">حاول مجددًا</string>
     <string name="vpn_failure_channel">أخطاء VPN</string>
     <string name="vpn_failure_title">لم يبدأ VPN</string>
+    <string name="vpn_crashed_title">توقف VPN</string>
+    <string name="vpn_crashed">أدى خطأ في ducker إلى إيقاف VPN. اتصل مجددًا</string>
+    <string name="vpn_crashed_connect">اتصال</string>
 </resources>

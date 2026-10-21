@@ -49,4 +49,7 @@
     <string name="failure_try_again">Try again</string>
     <string name="vpn_failure_channel">VPN failures</string>
     <string name="vpn_failure_title">VPN didn’t start</string>
+    <string name="vpn_crashed_title">VPN turned off</string>
+    <string name="vpn_crashed">An error in ducker turned the VPN off. Connect again</string>
+    <string name="vpn_crashed_connect">Connect</string>
 </resources>

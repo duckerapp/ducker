@@ -48,4 +48,7 @@
     <string name="failure_try_again">Попробуйте ещё раз</string>
     <string name="vpn_failure_channel">Сбои VPN</string>
     <string name="vpn_failure_title">VPN не включился</string>
+    <string name="vpn_crashed_title">VPN выключился</string>
+    <string name="vpn_crashed">Сбой в ducker выключил VPN. Подключитесь снова</string>
+    <string name="vpn_crashed_connect">Подключить</string>
 </resources>

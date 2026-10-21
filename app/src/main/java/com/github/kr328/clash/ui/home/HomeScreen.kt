@@ -1544,7 +1544,7 @@ private fun StopCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     // Тот же заголовок, что у уведомления в шторке.
-                    text = stringResource(com.github.kr328.clash.service.R.string.vpn_failure_title),
+                    text = stringResource(failure.stopTitle),
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
                 )

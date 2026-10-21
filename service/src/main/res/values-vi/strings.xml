@@ -41,4 +41,7 @@
     <string name="failure_try_again">Thử lại</string>
     <string name="vpn_failure_channel">Lỗi VPN</string>
     <string name="vpn_failure_title">Không khởi động được VPN</string>
+    <string name="vpn_crashed_title">VPN đã tắt</string>
+    <string name="vpn_crashed">Lỗi trong ducker đã tắt VPN. Hãy kết nối lại</string>
+    <string name="vpn_crashed_connect">Kết nối</string>
 </resources>

@@ -12,6 +12,7 @@ import androidx.core.content.getSystemService
 import com.github.kr328.clash.common.compat.getColorCompat
 import com.github.kr328.clash.common.compat.pendingIntentFlags
 import com.github.kr328.clash.common.constants.Components
+import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.Failure
 
@@ -47,19 +48,34 @@ object StopNotice {
             pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT),
         )
 
+        val crashed = failure.kind == Failure.Kind.Crashed
+
         val notification = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_logo_service)
             .setColor(context.getColorCompat(R.color.color_clash))
-            .setContentTitle(context.getString(R.string.vpn_failure_title))
+            .setContentTitle(context.getString(failure.stopTitle))
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setContentIntent(open)
             .setAutoCancel(true)
+            .apply {
+                // Started from the app's own process: after a repeated crash Android restarts nothing
+                // in the tunnel's process until the person starts it, and this tap is that start (F-327).
+                if (crashed) addAction(0, context.getString(R.string.vpn_crashed_connect), connect(context))
+            }
             .build()
 
         // Без разрешения на уведомления (Android 13+) система молча не покажет — не наша беда.
         runCatching { manager.notify(R.id.nf_vpn_failure, notification) }
     }
+
+    private fun connect(context: Context): PendingIntent = PendingIntent.getActivity(
+        context, R.id.nf_vpn_failure,
+        Intent(Intents.ACTION_START_CLASH)
+            .setComponent(Components.INTERNAL_CONTROL_ACTIVITY)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION),
+        pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT),
+    )
 
     /** Причина больше не правда: туннель поднимают заново или карточку закрыли. */
     fun clear(context: Context) {

@@ -42,4 +42,7 @@
     <string name="failure_try_again">تلاش مجدد</string>
     <string name="vpn_failure_channel">خطاهای VPN</string>
     <string name="vpn_failure_title">VPN راه‌اندازی نشد</string>
+    <string name="vpn_crashed_title">VPN خاموش شد</string>
+    <string name="vpn_crashed">خطایی در ducker باعث خاموش شدن VPN شد. دوباره وصل شوید</string>
+    <string name="vpn_crashed_connect">اتصال</string>
 </resources>

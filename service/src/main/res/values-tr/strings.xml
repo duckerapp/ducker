@@ -42,4 +42,7 @@
     <string name="failure_try_again">Tekrar dene</string>
     <string name="vpn_failure_channel">VPN hataları</string>
     <string name="vpn_failure_title">VPN başlatılamadı</string>
+    <string name="vpn_crashed_title">VPN kapandı</string>
+    <string name="vpn_crashed">ducker’daki bir hata VPN’i kapattı. Yeniden bağlanın</string>
+    <string name="vpn_crashed_connect">Bağlan</string>
 </resources>

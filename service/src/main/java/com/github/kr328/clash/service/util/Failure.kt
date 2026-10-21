@@ -53,14 +53,23 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "") {
         NoProfile(R.string.vpn_no_profile),
         VpnRejected(R.string.vpn_rejected, Fix.VpnSettings),
         TunnelFailed(R.string.failure_try_again),
+        Crashed(R.string.vpn_crashed),
         Unknown(R.string.failure_try_again),
     }
 
     fun text(context: Context): String = context.getString(kind.text, code)
 
+    /** The heading of a stop, shared by the notification and the home card. */
+    @get:StringRes
+    val stopTitle: Int
+        get() = if (kind == Kind.Crashed) R.string.vpn_crashed_title else R.string.vpn_failure_title
+
     companion object {
         const val NO_PROFILE = "No profile selected"
         const val VPN_REJECTED = "Establish VPN rejected by system"
+
+        /** The tunnel's process crashed while running; its own crash handler reports it (D-343). */
+        const val CRASHED = "Tunnel process crashed"
 
         /** Метки службы перед текстом ядра — по образцу `DOWNLOAD_FAILED:` из `config/download.go`. */
         const val LOAD = "LOAD_FAILED: "
@@ -117,6 +126,7 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "") {
                 text.startsWith(RELOAD) -> Failure(Kind.Reload, detail = text.removePrefix(RELOAD))
                 text == NO_PROFILE -> Failure(Kind.NoProfile)
                 text == VPN_REJECTED -> Failure(Kind.VpnRejected)
+                text == CRASHED -> Failure(Kind.Crashed)
                 text == TunModule.START_FAILED -> Failure(Kind.TunnelFailed)
                 text == "Invalid url" || text.startsWith("Unsupported url") -> Failure(Kind.BadLink)
                 // Вставили текст, а не адрес: ядро не разобрало его как ссылки протоколов или не

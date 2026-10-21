@@ -41,4 +41,7 @@
     <string name="failure_try_again">Coba lagi</string>
     <string name="vpn_failure_channel">Kesalahan VPN</string>
     <string name="vpn_failure_title">VPN tidak dapat dimulai</string>
+    <string name="vpn_crashed_title">VPN mati</string>
+    <string name="vpn_crashed">Kesalahan di ducker mematikan VPN. Hubungkan lagi</string>
+    <string name="vpn_crashed_connect">Hubungkan</string>
 </resources>

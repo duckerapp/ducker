@@ -19,4 +19,7 @@ object Components {
      * ошибку обновления показывает карточка подписки, отдельного экрана свойств у нас нет.
      */
     val PROPERTIES_ACTIVITY = MAIN_ACTIVITY
+
+    /** The closed command target of widgets and shortcuts; the service's notices use it too. */
+    val INTERNAL_CONTROL_ACTIVITY = ComponentName(packageName, "$componentsPackageName.InternalControlActivity")
 }
