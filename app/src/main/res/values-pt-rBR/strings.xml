@@ -123,7 +123,6 @@
     <string name="ducker_expand_group">Expandir grupo</string>
     <string name="ducker_collapse_group">Recolher grupo</string>
     <string name="ducker_active">Em uso</string>
-    <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Válida até</string>
     <string name="provider_announcement">Aviso do provedor</string>
     <string name="announcement_read_more">Ler mais</string>
@@ -547,5 +546,10 @@
         <item quantity="one">sem resposta em %d segundo</item>
         <item quantity="many">sem resposta em %d segundos</item>
         <item quantity="other">sem resposta em %d segundos</item>
+    </plurals>
+    <plurals name="subscription_rules_count">
+        <item quantity="one">%d regra</item>
+        <item quantity="many">%d regras</item>
+        <item quantity="other">%d regras</item>
     </plurals>
 </resources>

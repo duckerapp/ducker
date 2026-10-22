@@ -147,7 +147,6 @@
     <string name="ducker_expand_group">Expand group</string>
     <string name="ducker_collapse_group">Collapse group</string>
     <string name="ducker_active">Active</string>
-    <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Valid until</string>
     <string name="provider_announcement">Provider announcement</string>
     <string name="announcement_read_more">Read more</string>
@@ -576,5 +575,9 @@
     <plurals name="address_timeout">
         <item quantity="one">no answer in %d second</item>
         <item quantity="other">no answer in %d seconds</item>
+    </plurals>
+    <plurals name="subscription_rules_count">
+        <item quantity="one">%d rule</item>
+        <item quantity="other">%d rules</item>
     </plurals>
 </resources>

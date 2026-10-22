@@ -123,7 +123,6 @@
     <string name="ducker_expand_group">Buka grup</string>
     <string name="ducker_collapse_group">Tutup grup</string>
     <string name="ducker_active">Aktif</string>
-    <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Berlaku hingga</string>
     <string name="provider_announcement">Pengumuman penyedia</string>
     <string name="announcement_read_more">Baca selengkapnya</string>
@@ -535,5 +534,8 @@
     </plurals>
     <plurals name="address_timeout">
         <item quantity="other">tidak ada jawaban dalam %d detik</item>
+    </plurals>
+    <plurals name="subscription_rules_count">
+        <item quantity="other">%d aturan</item>
     </plurals>
 </resources>

@@ -14,6 +14,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
@@ -146,6 +148,8 @@ fun SubscriptionsScreen(
     onMoved: () -> Unit = {},
     /** «N запасных адреса» on the active card: its addresses (Q-82). */
     onAddresses: (Profile) -> Unit = {},
+    /** «N правил» on the active card: its own rules (Q-83). */
+    onRules: (Profile) -> Unit = {},
 ) {
     val list = rememberLazyListState()
     val bounce = overscrollFor(list)
@@ -332,6 +336,7 @@ fun SubscriptionsScreen(
                         onShare = share,
                         onMenu = openMenu,
                         onAddresses = onAddresses,
+                        onRules = onRules,
                     )
                 }
 
@@ -421,9 +426,12 @@ private fun ActiveCard(
     onShare: (Profile) -> Unit,
     onMenu: (Profile) -> Unit,
     onAddresses: (Profile) -> Unit,
+    onRules: (Profile) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val tv = LocalTv.current
+    // «Активна» is no longer written on the card (Q-83): its place and fill say it; TalkBack still hears it.
+    val activeText = stringResource(R.string.ducker_active)
 
     val container = if (profile.hwidBlocked) scheme.errorContainer else scheme.primaryContainer
     val content = if (profile.hwidBlocked) scheme.onErrorContainer else scheme.onPrimaryContainer
@@ -436,7 +444,8 @@ private fun ActiveCard(
         modifier = Modifier.fillMaxWidth()
             .tabEntry()
             .focusProperties { if (tv) canFocus = false }
-            .selectable(selected = true, role = Role.RadioButton, onClick = {}),
+            .selectable(selected = true, role = Role.RadioButton, onClick = {})
+            .semantics { stateDescription = activeText },
         colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
         resizing = true,
     ) {
@@ -456,18 +465,20 @@ private fun ActiveCard(
                 modifier = Modifier.animateContentSize(spring(stiffness = Spring.StiffnessMediumLow)).padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                // No gap before the QR button: its icon keeps 12 dp of its touch area on each side, which
+                // is gap enough, and the line under the name needs the room (Q-83).
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     // The logo is on the active card only: the provider's, else ours (D-45).
                     BrandAvatar(shown.brandLogo, Modifier.size(44.dp))
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(modifier = Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        // The rules go to the line below (Q-83): beside the name they took its room.
                         ProfileName(
                             shown,
                             favorite = shown.uuid in state.favorites,
-                            rules = state.ruleCounts[shown.uuid] ?: 0,
+                            rules = 0,
                             // A step larger than in the rows.
                             style = LocalTextStyle.current.let { it.copy(fontSize = (it.fontSize.value + 1).sp) },
                         )
@@ -482,11 +493,20 @@ private fun ActiveCard(
                                 color = LocalContentColor.current.copy(alpha = 0.7f),
                             )
                         }
+
+                        CardFacts(
+                            rules = state.ruleCounts[shown.uuid] ?: 0,
+                            backups = if (shown.imported) shown.backups else 0,
+                            onRules = { onRules(shown) },
+                            onAddresses = { onAddresses(shown) },
+                        )
                     }
 
-                    // «Поделиться» — в свободном углу; своему конфигу делиться нечем.
+                    // «Поделиться» — в свободном углу; своему конфигу делиться нечем. The button's
+                    // icon sits 12 dp inside its touch area: moved by that, the icon's edge is on the
+                    // card's content edge, as the logo's and the «⋯» button's are (Q-83).
                     if (!shown.local) {
-                        IconButton(onClick = { onShare(shown) }) {
+                        IconButton(onClick = { onShare(shown) }, modifier = Modifier.offset(x = 12.dp)) {
                             Icon(Symbols.QrCode2, contentDescription = stringResource(R.string.share_qr))
                         }
                     }
@@ -501,7 +521,6 @@ private fun ActiveCard(
                     onUpdate = { onUpdate(shown.uuid) },
                     onEdit = { onEdit(shown) },
                     onMenu = { onMenu(shown) },
-                    onAddresses = { onAddresses(shown) },
                 )
             }
         }
@@ -655,6 +674,37 @@ private fun ProfileName(
 private fun hwidLimit(profile: Profile): Int =
     if (profile.hwidReason == "not_supported") R.string.limit_hwid_required else R.string.limit_max_devices
 
+/**
+ * Under the active card's name (Q-83): the subscription's own rules and the provider's backup addresses,
+ * only what there is — most subscriptions have neither, and the line is not there. A touch opens them.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CardFacts(rules: Int, backups: Int, onRules: () -> Unit, onAddresses: () -> Unit) {
+    if (rules == 0 && backups == 0) return
+
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (rules > 0) Fact(Symbols.Tune, pluralStringResource(R.plurals.subscription_rules_count, rules, rules), onRules)
+        if (backups > 0) {
+            Fact(Symbols.AltRoute, pluralStringResource(R.plurals.subscription_backup_addresses, backups, backups), onAddresses)
+        }
+    }
+}
+
+@Composable
+private fun Fact(icon: ImageVector, text: String, onClick: () -> Unit) {
+    val color = LocalContentColor.current.copy(alpha = 0.7f)
+
+    Row(
+        modifier = Modifier.clip(MaterialTheme.shapes.small).clickable(role = Role.Button, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+        Text(text, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Normal, color = color, maxLines = 1)
+    }
+}
+
 /** У подписки есть свои правила: значок и число, в цвет текста карточки (D-123). */
 @Composable
 private fun RulesBadge(count: Int) {
@@ -706,7 +756,6 @@ private fun ActiveDetails(
     onUpdate: () -> Unit,
     onEdit: () -> Unit,
     onMenu: () -> Unit,
-    onAddresses: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
 
@@ -716,64 +765,55 @@ private fun ActiveDetails(
         // цифр у неё нет и не будет, пока не починят ссылку.
         val loaded = profile.imported
 
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (!loaded) {
             // На залитой карточке красный теряется, там хватает самих слов.
             Text(
-                stringResource(
-                    if (loaded) R.string.ducker_active else R.string.profile_not_loaded
-                ),
+                stringResource(R.string.profile_not_loaded),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Normal,
             )
-            if (loaded && profile.expire > 0 && !profile.local) {
-                Text(stringResource(R.string.valid_until, formatDate(profile.expire)),
-                    style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Normal)
-            }
-            // Only where the provider gave mirrors (Q-82); a touch opens them.
-            if (loaded && profile.backups > 0) {
-                Row(
-                    modifier = Modifier.clip(MaterialTheme.shapes.small).clickable(role = Role.Button, onClick = onAddresses),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(Symbols.AltRoute, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text(
-                        pluralStringResource(R.plurals.subscription_backup_addresses, profile.backups, profile.backups),
-                        style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Normal,
-                    )
-                }
-            }
-        }
-        if (loaded && profile.local) {
-            // Свой конфиг: трафика и срока у него нет, счётчик «0 Б» только путал (D-125).
-            Text(
-                stringResource(R.string.profile_local),
-                style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
-            )
-        } else if (loaded) {
-            val used = profile.upload + profile.download
-
-            Text(
-                stringResource(R.string.ducker_traffic_usage, formatBytes(used),
-                    if (profile.total > 0) formatBytes(profile.total) else UNLIMITED),
-                style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
-            )
-
-            // Шкала вместо разделительной линии (D-102): та же, что на главной, только
-            // в цвет текста карточки — белая на залитой, чёрная на обычной.
-            if (profile.total > 0) {
-                ThinBar(
-                    fraction = (used.toFloat() / profile.total).coerceIn(0f, 1f),
-                    color = LocalContentColor.current,
-                    trackColor = LocalContentColor.current.copy(alpha = 0.15f),
-                )
-            }
-        } else {
             Text(
                 stringResource(R.string.profile_not_loaded_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = LocalContentColor.current.copy(alpha = 0.7f),
             )
+        } else if (profile.local) {
+            // Свой конфиг: трафика и срока у него нет, счётчик «0 Б» только путал (D-125).
+            Text(
+                stringResource(R.string.profile_local),
+                style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+            )
+        } else {
+            val used = profile.upload + profile.download
+
+            // The plan as one block (Q-83): how much on the left, until when on the right, the bar under them.
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "${formatBytes(used)} ${stringResource(R.string.ducker_traffic_of,
+                            if (profile.total > 0) formatBytes(profile.total) else UNLIMITED)}",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+                    )
+                    if (profile.expire > 0) {
+                        Text(
+                            stringResource(R.string.valid_until, formatDate(profile.expire)),
+                            style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Normal,
+                            color = LocalContentColor.current.copy(alpha = 0.7f),
+                        )
+                    }
+                }
+
+                // Шкала вместо разделительной линии (D-102): та же, что на главной, только
+                // в цвет текста карточки — белая на залитой, чёрная на обычной.
+                if (profile.total > 0) {
+                    ThinBar(
+                        fraction = (used.toFloat() / profile.total).coerceIn(0f, 1f),
+                        color = LocalContentColor.current,
+                        trackColor = LocalContentColor.current.copy(alpha = 0.15f),
+                    )
+                }
+            }
         }
         // Действия одной строкой вместо карандаша в углу (D-101). Последнее — «⋯» на месте
         // корзины (stage 19, package 4): удаление, избранное, «Продлить» и остальное — в меню.

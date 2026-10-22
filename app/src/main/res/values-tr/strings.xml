@@ -123,7 +123,6 @@
     <string name="ducker_expand_group">Grubu genişlet</string>
     <string name="ducker_collapse_group">Grubu daralt</string>
     <string name="ducker_active">Etkin</string>
-    <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">Son geçerlilik</string>
     <string name="provider_announcement">Sağlayıcı duyurusu</string>
     <string name="announcement_read_more">Devamını oku</string>
@@ -541,5 +540,9 @@
     <plurals name="address_timeout">
         <item quantity="one">%d saniyede yanıt yok</item>
         <item quantity="other">%d saniyede yanıt yok</item>
+    </plurals>
+    <plurals name="subscription_rules_count">
+        <item quantity="one">%d kural</item>
+        <item quantity="other">%d kural</item>
     </plurals>
 </resources>

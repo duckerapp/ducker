@@ -933,6 +933,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onMove = { from, to -> subscriptionsViewModel.move(from, to) },
                                         onMoved = { subscriptionsViewModel.saveOrder(this@HomeActivity) },
                                         onAddresses = { subscriptionsViewModel.showAddresses(it.uuid) },
+                                        onRules = { subscriptionsViewModel.openRules(this@HomeActivity, it.uuid) },
                                         modifier = Modifier.consumeWindowInsets(insets),
                                         contentPadding = insets,
                                         // Потянуть вниз — обновить подписку, которая сейчас в работе.

@@ -123,7 +123,6 @@
     <string name="ducker_expand_group">باز کردن گروه</string>
     <string name="ducker_collapse_group">بستن گروه</string>
     <string name="ducker_active">فعال</string>
-    <string name="ducker_traffic_usage">%1$s / %2$s</string>
     <string name="ducker_until_end">اعتبار تا</string>
     <string name="provider_announcement">اطلاعیهٔ ارائه‌دهنده</string>
     <string name="announcement_read_more">بیشتر بخوانید</string>
@@ -541,5 +540,9 @@
     <plurals name="address_timeout">
         <item quantity="one">بدون پاسخ در %d ثانیه</item>
         <item quantity="other">بدون پاسخ در %d ثانیه</item>
+    </plurals>
+    <plurals name="subscription_rules_count">
+        <item quantity="one">%d قانون</item>
+        <item quantity="other">%d قانون</item>
     </plurals>
 </resources>
