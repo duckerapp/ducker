@@ -105,9 +105,15 @@ check its documentation. No changes to the panel code are needed.
 ## One-tap link
 
 ```
-ducker://install-config?url=<subscription-url>&name=<name>
+ducker://install-config?url=<subscription-url>&name=<name>&mirror=<backup>&mirror=<backup>
 ```
 
 Opens the app's add-subscription window with the URL already filled in. The subscription
 is downloaded only after the user taps **Add**. Encode the embedded subscription URL
 (`https%3A%2F%2F…`). `clash://install-config` and `clashmeta://install-config` work in the same way.
+
+`mirror` is optional and repeats: each is a backup address written as in
+[`ducker-mirrors`](headers.md#subscription-mirrors) — a bare host or a full `https://…` link. They
+are tried at this first download when the link is already blocked. After that, the list comes from
+the header: a response from the link itself without it removes them. When a user shares the
+subscription as a QR code or sends it to a TV, ducker passes its current mirrors along.

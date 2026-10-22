@@ -48,7 +48,9 @@ A mirror must open the same link: point its domain at the same subscription page
 on another server, or at the panel itself — wherever this path gives the subscription. If a backup
 serves it on another path, give that mirror as a full link.
 
-Clients learn mirrors only from a successful update: add them before a block, on another IP or CDN.
+Clients learn mirrors from a successful update, so add them before a block, on another IP or CDN.
+For a user whose first download is already blocked, put them in the
+[one-tap link](start.md#one-tap-link) as well.
 
 ## General rules
 
