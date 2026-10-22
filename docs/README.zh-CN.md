@@ -175,6 +175,20 @@ ducker 还支持常见的订阅响应头：`profile-title`、`profile-update-int
 `profile-web-page-url`、`support-url`、`announce`、`subscription-userinfo`、
 `subscription-refill-date`。
 
+**订阅镜像。** 当订阅域名被封锁或服务器宕机时，ducker 会自动尝试其他地址，用户不会察觉：
+
+- **`ducker-mirrors: <域名或链接>, …`** —— 最多五个备用地址。单独的域名（`sub2.example.com`）表示
+  换一个域名的同一链接，保留原路径和令牌，因此面板中一个值即可适用于所有用户。完整的 `https://…`
+  链接按原样使用；在 Remnawave 中，用户专属部分由 `{{SHORT_UUID}}` 填入。
+- **`fallback-url: <链接>`** —— Happ 的备用链接；ducker 也会读取，作为又一个镜像。
+- **`new-url: <链接>`** 或 **`new-domain: <域名>`** —— 永久迁移，与 Happ 相同。只有当新地址返回了
+  可用的订阅后，ducker 才会更换已保存的链接；在此之前继续从旧链接更新。
+
+ducker 从一次成功的更新中获知镜像，因此请在被封锁之前、在另一个 IP 或 CDN 上添加。上次响应的地址会被
+优先尝试。被封锁的地址最多等待 10 秒，最后一个地址等待整整一分钟。返回网页而不是订阅（封锁页面）视为
+失败；面板关于设备数量上限的回应会停止尝试。`https` 链接的镜像必须是 `https`，并会收到相同的设备
+响应头。如果所有地址都没有响应，ducker 会再直连尝试一次，并通过订阅自身的节点尝试一次。
+
 **设备数量限制。** 每次请求订阅时，ducker 会在 `x-hwid` 中发送稳定的设备 ID，同时发送
 `x-device-os`、`x-ver-os` 和 `x-device-model`，面板可以据此统计设备。用户可以在
 **Settings → Privacy → Device ID** 中看到这个 ID 并将其关闭。设备 ID 只通过 HTTPS 发送。

@@ -187,6 +187,25 @@ ducker also understands the common subscription headers: `profile-title`,
 `profile-update-interval`, `profile-web-page-url`, `support-url`, `announce`,
 `subscription-userinfo`, `subscription-refill-date`.
 
+**Subscription mirrors.** When the subscription's domain is blocked or its server is down, ducker
+tries other addresses on its own, and the user notices nothing:
+
+- **`ducker-mirrors: <host or link>, …`** — up to five backup addresses. A bare host
+  (`sub2.example.com`) means the same link on another domain, with its path and token, so one
+  value in the panel serves every user. A full `https://…` link is used as is; in Remnawave,
+  `{{SHORT_UUID}}` fills in the user's part.
+- **`fallback-url: <link>`** — Happ's backup link; ducker reads it too, as one more mirror.
+- **`new-url: <link>`** or **`new-domain: <domain>`** — Happ's permanent move. ducker switches the
+  stored link only after the new address has given a working subscription; until then it keeps
+  updating from the old one.
+
+ducker learns mirrors from a successful update, so add them before a block, on another IP or CDN.
+The address that answered last time is tried first. A blocked address is given 10 seconds, the
+last one a full minute. A web page instead of a subscription (a block page) counts as a failure;
+the panel's device-limit answer stops the search. Mirrors of an `https` link must be `https` and
+get the same device headers. If no address answers, ducker tries once more directly and through
+the subscription's own node.
+
 **Device limit.** With each subscription request ducker sends a stable device ID in `x-hwid`
 together with `x-device-os`, `x-ver-os` and `x-device-model`, so a panel can count devices. The
 user sees this ID in **Settings → Privacy → Device ID** and can turn it off. The ID is sent over HTTPS
