@@ -70,6 +70,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.focusGroup
@@ -239,11 +240,25 @@ fun BrandAvatar(logo: String?, modifier: Modifier = Modifier) {
         else R.drawable.ducker_mark_light
     )
 
+    val model = remember(logo) { logoModel(logo) }
+    var failed by remember(model) { mutableStateOf(false) }
+
+    // Ours is drawn directly, as on the welcome screen and in «О приложении». Through Coil it kept the
+    // tile of the theme it was first drawn in after the theme changed; and the grey under it showed as a
+    // hairline at the clipped edge — across the duck where it peeks over the tile's bottom.
+    if (model == null || failed) {
+        Image(
+            painter = own,
+            contentDescription = null,
+            modifier = modifier.size(52.dp).clip(MaterialTheme.shapes.medium),
+        )
+        return
+    }
+
     AsyncImage(
-        model = remember(logo) { logoModel(logo) },
+        model = model,
         placeholder = own,
-        error = own,
-        fallback = own,
+        onError = { failed = true },
         contentDescription = null,
         modifier = modifier.size(52.dp)
             .clip(MaterialTheme.shapes.medium)
