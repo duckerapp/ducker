@@ -16,6 +16,7 @@ import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.directoryLastModified
 import com.github.kr328.clash.service.util.generateProfileUUID
 import com.github.kr328.clash.service.util.ProviderInfo
+import com.github.kr328.clash.service.util.SubscriptionMirrors
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.pendingDir
 import com.github.kr328.clash.service.util.sendProfileChanged
@@ -237,6 +238,7 @@ class ProfileManager(private val context: Context) : IProfileManager,
 
         // Сведения от провайдера лежат файлом в каталоге профиля (D-32), а не в базе.
         val provider = ProviderInfo.read(context.importedDir.resolve(uuid.toString()))
+        val moveShown = provider.source == source && System.currentTimeMillis() - provider.movedAt < ProviderInfo.MOVED_SHOWN
 
         return Profile(
             uuid = uuid,
@@ -271,6 +273,13 @@ class ProfileManager(private val context: Context) : IProfileManager,
             templateFromConfig = provider.templateFromConfig,
             followProvider = followProvider,
             providerInterval = TimeUnit.HOURS.toMillis(provider.updateIntervalHours.toLong()),
+            // Only what was learnt for this very link: after an edit of the link the old file speaks of
+            // another one (D-345).
+            backups = provider.mirrorsFor(source).size,
+            servedBy = if (provider.source == source && provider.servedBy != source) SubscriptionMirrors.host(provider.servedBy) else "",
+            servedVia = if (provider.source == source) provider.servedVia else "",
+            movedFrom = if (moveShown) SubscriptionMirrors.host(provider.movedFrom) else "",
+            movedAt = if (moveShown) provider.movedAt else 0,
         )
     }
 

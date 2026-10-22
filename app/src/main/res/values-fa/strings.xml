@@ -518,4 +518,9 @@
     <string name="settings_wallet_copied">نشانی کیف پول کپی شد</string>
     <string name="settings_category_interface">رابط کاربری</string>
     <string name="settings_category_information">اطلاعات</string>
+    <string name="subscription_backups">آدرس‌های پشتیبان: %d</string>
+    <string name="subscription_reached_via">آخرین به‌روزرسانی از طریق %s رسید</string>
+    <string name="subscription_reached_direct">آخرین به‌روزرسانی مستقیم و بدون VPN انجام شد</string>
+    <string name="subscription_reached_proxy">آخرین به‌روزرسانی از طریق سرور اشتراک رسید</string>
+    <string name="subscription_moved">ارائه‌دهنده اشتراک را در %2$s از %1$s منتقل کرد</string>
 </resources>

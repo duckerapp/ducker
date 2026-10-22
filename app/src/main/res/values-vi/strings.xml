@@ -514,4 +514,9 @@
     <string name="settings_wallet_copied">Đã sao chép địa chỉ ví</string>
     <string name="settings_category_interface">Giao diện</string>
     <string name="settings_category_information">Thông tin</string>
+    <string name="subscription_backups">Địa chỉ dự phòng: %d</string>
+    <string name="subscription_reached_via">Lần cập nhật gần nhất đến qua %s</string>
+    <string name="subscription_reached_direct">Lần cập nhật gần nhất đi trực tiếp, không qua VPN</string>
+    <string name="subscription_reached_proxy">Lần cập nhật gần nhất đến qua máy chủ của gói đăng ký</string>
+    <string name="subscription_moved">Nhà cung cấp đã chuyển gói đăng ký từ %1$s vào %2$s</string>
 </resources>

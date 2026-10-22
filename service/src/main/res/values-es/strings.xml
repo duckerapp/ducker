@@ -46,4 +46,6 @@
     <string name="vpn_crashed_title">La VPN se desactivó</string>
     <string name="vpn_crashed">Un error de ducker desactivó la VPN. Vuelve a conectarte</string>
     <string name="vpn_crashed_connect">Conectar</string>
+    <string name="subscription_web_page">Llegó una página web en lugar de la suscripción: el sitio puede estar bloqueado o el enlace lleva a otro lugar. Inténtalo más tarde o revisa el enlace</string>
+    <string name="subscription_backups_failed">%1$s. Las direcciones de respaldo del proveedor (%2$d) tampoco respondieron</string>
 </resources>

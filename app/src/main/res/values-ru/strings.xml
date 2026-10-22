@@ -548,4 +548,9 @@
     <string name="settings_wallet_copied">Адрес кошелька скопирован</string>
     <string name="settings_category_interface">Интерфейс</string>
     <string name="settings_category_information">Информация</string>
+    <string name="subscription_backups">Запасных адресов: %d</string>
+    <string name="subscription_reached_via">Последнее обновление — через %s</string>
+    <string name="subscription_reached_direct">Последнее обновление — напрямую, мимо VPN</string>
+    <string name="subscription_reached_proxy">Последнее обновление — через узел подписки</string>
+    <string name="subscription_moved">Провайдер перенёс подписку с %1$s %2$s</string>
 </resources>

@@ -80,6 +80,7 @@ data class SubscriptionsState(
     val editFollow: Boolean = false,
     val editProviderInterval: Long = 0,
     val editError: String = "",
+    val editReach: SubscriptionReach = SubscriptionReach(),
     val editBusy: Boolean = false,
     /** Какую подписку собираемся удалить. Пусто — вопрос не задан. */
     val deleting: UUID? = null,
@@ -673,6 +674,13 @@ class SubscriptionsViewModel : ViewModel() {
                     editFollow = profile.followProvider,
                     editProviderInterval = profile.providerInterval,
                     editError = "",
+                    editReach = SubscriptionReach(
+                        backups = profile.backups,
+                        servedBy = profile.servedBy,
+                        servedVia = profile.servedVia,
+                        movedFrom = profile.movedFrom,
+                        movedAt = profile.movedAt,
+                    ),
                     editBusy = false,
                 )
             }

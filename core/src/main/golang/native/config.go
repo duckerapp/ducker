@@ -105,6 +105,22 @@ func setSubscriptionHeaders(headers C.c_string) {
 	}
 }
 
+// setSubscriptionMirrors задаёт адреса, по которым пробовать подписку, по порядку (D-345):
+// JSON `{"source": <ссылка подписки>, "order": [<адрес>, …]}`. Пустая строка очищает.
+//
+//export setSubscriptionMirrors
+func setSubscriptionMirrors(plan C.c_string) {
+	defer panicguard.Recover("setSubscriptionMirrors", failExport)
+	if plan == nil {
+		_ = config.SetSubscriptionMirrors("")
+		return
+	}
+
+	if err := config.SetSubscriptionMirrors(C.GoString(plan)); err != nil {
+		log.Warnln("Set subscription mirrors: %s", err.Error())
+	}
+}
+
 //export validateConfig
 func validateConfig(path C.c_string) *C.char {
 	defer panicguard.Recover("validateConfig", failExport)

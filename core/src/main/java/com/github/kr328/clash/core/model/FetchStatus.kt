@@ -28,6 +28,8 @@ data class FetchStatus(
         FetchProviders,
         SubscriptionInfo,
         SubscriptionHeaders,
+        /** Which address gave the subscription and how: [args] — the address, then "", "direct" or "proxy" (D-345). */
+        SubscriptionSource,
         Verifying,
     }
 

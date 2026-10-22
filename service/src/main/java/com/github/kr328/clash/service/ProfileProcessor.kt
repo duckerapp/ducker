@@ -15,6 +15,7 @@ import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.service.util.ProviderInfo
 import com.github.kr328.clash.service.util.SubscriptionHeaders
+import com.github.kr328.clash.service.util.SubscriptionMirrors
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.pendingDir
 import com.github.kr328.clash.service.util.processingDir
@@ -102,6 +103,8 @@ object ProfileProcessor {
                         context.sendProfileChanged(snapshot.uuid)
                     }
                 }
+
+                moveIfAsked(context, snapshot.uuid)
             }
         }
     }
@@ -157,9 +160,73 @@ object ProfileProcessor {
                         context.sendProfileChanged(snapshot.uuid)
                     }
                 }
+
+                moveIfAsked(context, snapshot.uuid)
             }
         }
     }
+
+    /**
+     * The provider moves the subscription (`new-url`, `new-domain`; Q-80). The stored link changes only
+     * after the new address has given a subscription that passed the core's check, in a whole download
+     * of its own; until then the link stays, and the next update tries again while the provider keeps
+     * sending the header. The update that brought the header is already committed from the old link, so
+     * a failed move costs nothing. A move onto a link another subscription has is refused.
+     */
+    private suspend fun moveIfAsked(context: Context, uuid: UUID) {
+        val dir = context.importedDir.resolve(uuid.toString())
+        val from = ImportedDao().queryByUUID(uuid) ?: return
+        val target = ProviderInfo.read(dir).moveTo.takeIf { it.isNotEmpty() && it != from.source } ?: return
+
+        if (linkTaken(uuid, target)) {
+            Log.w("Subscription move refused: another subscription has that link")
+            return
+        }
+
+        profileLock.withLock {
+            context.processingDir.deleteRecursively()
+            context.processingDir.mkdirs()
+
+            dir.copyRecursively(context.processingDir, overwrite = true)
+        }
+
+        val subscriptionInfo = try {
+            fetchProfile(context, target, true, null, brokenConfigAllowed(context, uuid, from.type))
+        } catch (e: Exception) {
+            // The kind only: the core's text carries the new link with the person's token.
+            Log.w("Subscription move postponed, the new address failed: ${Failure.of(e.message).kind}")
+            return
+        }
+
+        profileLock.withLock {
+            val current = ImportedDao().queryByUUID(uuid)
+            if (current == null || current.source != from.source) return@withLock
+
+            ProviderInfo.write(
+                context.processingDir,
+                ProviderInfo.read(context.processingDir).copy(movedFrom = from.source, movedAt = System.currentTimeMillis()),
+            )
+
+            dir.deleteRecursively()
+            context.processingDir.copyRecursively(dir)
+
+            ImportedDao().update(
+                current.copy(
+                    source = target,
+                    upload = subscriptionInfo?.subUpload ?: current.upload,
+                    download = subscriptionInfo?.subDownload ?: current.download,
+                    total = subscriptionInfo?.subTotal ?: current.total,
+                    expire = subscriptionInfo?.subExpire ?: current.expire,
+                )
+            )
+
+            context.sendProfileChanged(uuid)
+        }
+    }
+
+    private suspend fun linkTaken(uuid: UUID, link: String): Boolean =
+        ImportedDao().queryAllUUIDs().any { it != uuid && ImportedDao().queryByUUID(it)?.source == link } ||
+            PendingDao().queryAllUUIDs().any { it != uuid && PendingDao().queryByUUID(it)?.source == link }
 
     private suspend fun <T> withProcessingLock(context: Context, block: suspend () -> T): T =
         processLock.withLock {
@@ -224,6 +291,17 @@ object ProfileProcessor {
 
         var fetchFailure: Exception? = null
 
+        // The previous download's mirrors and the address that answered it: the core tries them in
+        // this order (D-345).
+        val previous = ProviderInfo.read(context.processingDir)
+        var servedBy = ""
+        var servedVia = ""
+
+        Clash.setSubscriptionMirrors(
+            source,
+            SubscriptionMirrors.order(source, previous.mirrorsFor(source), previous.servedBy),
+        )
+
         // Сведения провайдера — только от этого ответа. При обновлении в каталог обработки
         // скопирован прежний файл, и ответ без единого заголовка оставлял бы прежние сведения —
         // в том числе `ducker-local-proxy: off` (D-218). Без `force` готовый конфиг не
@@ -236,13 +314,20 @@ object ProfileProcessor {
                 return@fetchAndValid
             }
 
+            // Comes before the headers (`subscription_mirrors.go`).
+            if (it.action == FetchStatus.Action.SubscriptionSource) {
+                servedBy = it.args.getOrElse(0) { "" }
+                servedVia = it.args.getOrElse(1) { "" }
+                return@fetchAndValid
+            }
+
             // Заголовки ответа пишем сразу в каталог обработки: оттуда они попадут в каталог
             // профиля тем же копированием, что и сам конфиг (D-32). Если дальше проверка
             // не пройдёт, каталог не копируется — и прежние сведения останутся на месте
             // вместе с прежним профилем.
             if (it.action == FetchStatus.Action.SubscriptionHeaders) {
                 it.headers?.let { headers ->
-                    val info = ProviderInfo.of(headers)
+                    val info = ProviderInfo.continued(ProviderInfo.of(headers, source), previous, headers, servedBy, servedVia)
 
                     provider = info
                     ProviderInfo.write(context.processingDir, info)

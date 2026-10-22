@@ -514,4 +514,9 @@
     <string name="settings_wallet_copied">Alamat dompet disalin</string>
     <string name="settings_category_interface">Antarmuka</string>
     <string name="settings_category_information">Informasi</string>
+    <string name="subscription_backups">Alamat cadangan: %d</string>
+    <string name="subscription_reached_via">Pembaruan terakhir datang lewat %s</string>
+    <string name="subscription_reached_direct">Pembaruan terakhir langsung, tanpa lewat VPN</string>
+    <string name="subscription_reached_proxy">Pembaruan terakhir datang lewat server langganan</string>
+    <string name="subscription_moved">Penyedia memindahkan langganan dari %1$s pada %2$s</string>
 </resources>

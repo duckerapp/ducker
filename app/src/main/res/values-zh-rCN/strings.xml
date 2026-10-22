@@ -514,4 +514,9 @@
     <string name="settings_wallet_copied">钱包地址已复制</string>
     <string name="settings_category_interface">界面</string>
     <string name="settings_category_information">信息</string>
+    <string name="subscription_backups">备用地址：%d 个</string>
+    <string name="subscription_reached_via">上次更新来自 %s</string>
+    <string name="subscription_reached_direct">上次更新为直连，不走 VPN</string>
+    <string name="subscription_reached_proxy">上次更新经由订阅的节点</string>
+    <string name="subscription_moved">服务商已于 %2$s 将订阅从 %1$s 迁移过来</string>
 </resources>

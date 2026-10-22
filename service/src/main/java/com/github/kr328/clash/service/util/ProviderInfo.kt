@@ -4,6 +4,7 @@ import android.util.Base64
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 /**
  * Сведения о подписке, пришедшие заголовками ответа: как её назвал провайдер, что он хочет
@@ -52,13 +53,30 @@ data class ProviderInfo(
      * его показывают, чтобы переслал провайдеру.
      */
     val templateFromConfig: Boolean = false,
+    /** The link this response was fetched for: [mirrors] and [movedFrom] belong to it alone (D-345). */
+    val source: String = "",
+    /** The provider's other addresses of [source] (`ducker-mirrors`, `fallback-url`), resolved. */
+    val mirrors: List<String> = emptyList(),
+    /** The address that gave this response, and how: "", "direct" or "proxy" (Q-81). */
+    val servedBy: String = "",
+    val servedVia: String = "",
+    /** Where the provider moves the subscription (`new-url`, `new-domain`; Q-80); empty — nowhere. */
+    val moveTo: String = "",
+    /** The link the provider moved the subscription from, and when: shown in its sheet for [MOVED_SHOWN]. */
+    val movedFrom: String = "",
+    val movedAt: Long = 0,
 ) {
+    fun mirrorsFor(link: String): List<String> = if (source == link) mirrors else emptyList()
+
     companion object {
         private const val FILE_NAME = "provider.json"
 
         private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-        fun of(headers: Map<String, String>): ProviderInfo {
+        val MOVED_SHOWN = TimeUnit.DAYS.toMillis(7)
+
+        /** @param source the link the response was fetched for: bare-host mirrors take its path. */
+        fun of(headers: Map<String, String>, source: String = ""): ProviderInfo {
             val h = headers.mapKeys { it.key.lowercase() }
 
             val maxDevices = h["x-hwid-max-devices-reached"].isTrue()
@@ -84,6 +102,36 @@ data class ProviderInfo(
                     notSupported -> "not_supported"
                     else -> ""
                 },
+                source = source,
+                mirrors = SubscriptionMirrors.resolve(source, h["ducker-mirrors"].decode(), h["fallback-url"].decode()),
+                moveTo = SubscriptionMirrors.moveTarget(source, h["new-url"].decode(), h["new-domain"].decode()).orEmpty(),
+            )
+        }
+
+        /**
+         * [info] of a new response with what it keeps from [previous] of the same link (D-345). A
+         * mirror's response without a mirror header keeps the list: Happ-style backups often sit on a
+         * plain server that does not repeat headers (F-329). The own link's response is authoritative —
+         * no header, no mirrors: that is how a provider removes them. The mark of a move stays a week.
+         */
+        fun continued(
+            info: ProviderInfo,
+            previous: ProviderInfo,
+            headers: Map<String, String>,
+            servedBy: String,
+            servedVia: String,
+            now: Long = System.currentTimeMillis(),
+        ): ProviderInfo {
+            val same = previous.source == info.source
+            val sent = headers.keys.any { it.equals("ducker-mirrors", true) || it.equals("fallback-url", true) }
+            val keep = same && !sent && servedBy != info.source
+
+            return info.copy(
+                servedBy = servedBy,
+                servedVia = servedVia,
+                mirrors = if (keep) previous.mirrors else info.mirrors,
+                movedFrom = if (same && now - previous.movedAt < MOVED_SHOWN) previous.movedFrom else "",
+                movedAt = if (same && now - previous.movedAt < MOVED_SHOWN) previous.movedAt else 0,
             )
         }
 

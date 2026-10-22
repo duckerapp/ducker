@@ -359,6 +359,22 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeSetSubscriptionHeaders(JNIE
     setSubscriptionHeaders(_headers);
 }
 
+JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeSetSubscriptionMirrors(JNIEnv *env,
+                                                                           jobject thiz,
+                                                                           jstring plan) {
+    TRACE_METHOD();
+
+    if (plan == NULL) {
+        setSubscriptionMirrors(NULL);
+        return;
+    }
+
+    scoped_string _plan = get_string(plan);
+
+    setSubscriptionMirrors(_plan);
+}
+
 JNIEXPORT jstring JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeValidateConfig(JNIEnv *env, jobject thiz,
                                                                     jstring path) {

@@ -534,4 +534,9 @@
     <string name="settings_wallet_copied">تم نسخ عنوان المحفظة</string>
     <string name="settings_category_interface">الواجهة</string>
     <string name="settings_category_information">المعلومات</string>
+    <string name="subscription_backups">العناوين الاحتياطية: %d</string>
+    <string name="subscription_reached_via">وصل آخر تحديث عبر %s</string>
+    <string name="subscription_reached_direct">تم آخر تحديث مباشرةً، دون المرور عبر VPN</string>
+    <string name="subscription_reached_proxy">وصل آخر تحديث عبر خادم الاشتراك</string>
+    <string name="subscription_moved">نقل المزوّد الاشتراك من %1$s في %2$s</string>
 </resources>

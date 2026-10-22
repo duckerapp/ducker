@@ -100,4 +100,24 @@ class FailureTest {
         assertEquals(Failure(Kind.Unknown, detail = "tun callback closed"), Failure.of("tun callback closed"))
         assertEquals(Failure(Kind.BadConfig, detail = "yaml: line 3"), Failure.of("yaml: line 3", Kind.BadConfig))
     }
+
+    /** `config/subscription_mirrors.go`: the failure shown, and the mirrors tried besides (D-345). */
+    @Test
+    fun `mirrors tried besides are counted, the failure itself still told apart`() {
+        assertEquals(
+            Failure(Kind.NotFound, 404, backups = 2),
+            Failure.of("DOWNLOAD_FAILED: profile: HTTP 404 Not Found (+2 backups)"),
+        )
+        assertEquals(
+            Failure(Kind.Network, backups = 1),
+            Failure.of("DOWNLOAD_FAILED: profile: Get \"https://sub.example.com/x\": dial tcp: i/o timeout (+1 backups)"),
+        )
+        assertEquals(
+            Failure(Kind.WebPage, backups = 3),
+            Failure.of("DOWNLOAD_FAILED: profile: a web page instead of a subscription (+3 backups)"),
+        )
+        assertEquals(Failure(Kind.WebPage), Failure.of("DOWNLOAD_FAILED: profile: a web page instead of a subscription"))
+        // Only a download carries the count; elsewhere the text stays whole.
+        assertEquals(Failure(Kind.Unknown, detail = "odd (+2 backups)"), Failure.of("odd (+2 backups)"))
+    }
 }

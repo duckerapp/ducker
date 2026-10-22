@@ -52,4 +52,6 @@
     <string name="vpn_crashed_title">VPN turned off</string>
     <string name="vpn_crashed">An error in ducker turned the VPN off. Connect again</string>
     <string name="vpn_crashed_connect">Connect</string>
+    <string name="subscription_web_page">A web page came instead of the subscription: the site may be blocked, or the link leads elsewhere. Try again later or check the link</string>
+    <string name="subscription_backups_failed">%1$s. The provider’s backup addresses (%2$d) didn’t answer either</string>
 </resources>

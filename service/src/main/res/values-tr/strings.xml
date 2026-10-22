@@ -45,4 +45,6 @@
     <string name="vpn_crashed_title">VPN kapandı</string>
     <string name="vpn_crashed">ducker’daki bir hata VPN’i kapattı. Yeniden bağlanın</string>
     <string name="vpn_crashed_connect">Bağlan</string>
+    <string name="subscription_web_page">Abonelik yerine bir web sayfası geldi: site engellenmiş olabilir ya da bağlantı başka bir yere gidiyor. Daha sonra tekrar deneyin veya bağlantıyı kontrol edin</string>
+    <string name="subscription_backups_failed">%1$s. Sağlayıcının yedek adresleri (%2$d) de yanıt vermedi</string>
 </resources>

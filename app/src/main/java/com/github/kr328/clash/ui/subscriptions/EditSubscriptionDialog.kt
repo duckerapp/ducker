@@ -48,6 +48,7 @@ import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.airShadow
 import com.github.kr328.clash.ui.components.PillSegments
+import com.github.kr328.clash.ui.components.formatDate
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -57,6 +58,19 @@ private val STOPS = listOf(2L, 3L, 4L, 6L, 8L, 12L, 24L, 48L, 72L, 144L).map { T
 
 /** Where “Свой” starts when it was not chosen before (D-286). */
 private val OWN_START = TimeUnit.HOURS.toMillis(8)
+
+/**
+ * How the subscription is reached (D-345): the provider's backup addresses, how the last update came,
+ * and the provider's move of the link (Q-80). Hosts only — the path carries the person's token.
+ */
+data class SubscriptionReach(
+    val backups: Int = 0,
+    val servedBy: String = "",
+    /** "", "direct" or "proxy" (Q-81). */
+    val servedVia: String = "",
+    val movedFrom: String = "",
+    val movedAt: Long = 0,
+)
 
 /**
  * Правка подписки (этап 8.3, замена экрана свойств CMFA).
@@ -88,6 +102,7 @@ fun EditSubscriptionDialog(
     /** The provider's hours of the last download; 0 — none sent, and there is no “Провайдер”. */
     providerInterval: Long,
     error: String,
+    reach: SubscriptionReach,
     busy: Boolean,
     onName: (String) -> Unit,
     onLink: (String) -> Unit,
@@ -129,6 +144,8 @@ fun EditSubscriptionDialog(
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
             )
+
+            ReachLines(reach)
         }
 
         if (!local) SubscriptionHttpWarning(link)
@@ -157,6 +174,30 @@ fun EditSubscriptionDialog(
             onClick = onConfirm,
         )
     }
+}
+
+/** Nothing while the subscription comes from its own link the usual way (the owner, 05.10.2026). */
+@Composable
+private fun ReachLines(reach: SubscriptionReach) {
+    val lines = buildList {
+        if (reach.movedFrom.isNotEmpty()) {
+            add(stringResource(R.string.subscription_moved, reach.movedFrom, formatDate(reach.movedAt)))
+        }
+        if (reach.backups > 0) add(stringResource(R.string.subscription_backups, reach.backups))
+        when {
+            reach.servedVia == "proxy" -> add(stringResource(R.string.subscription_reached_proxy))
+            reach.servedVia == "direct" -> add(stringResource(R.string.subscription_reached_direct))
+            reach.servedBy.isNotEmpty() -> add(stringResource(R.string.subscription_reached_via, reach.servedBy))
+        }
+    }
+
+    if (lines.isEmpty()) return
+
+    Text(
+        text = lines.joinToString("\n"),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.bodySmall,
+    )
 }
 
 /** Строка-переход на свой экран — белая плашка, как поля панели. */

@@ -13,7 +13,6 @@ import (
 	P "path"
 	"runtime"
 	"strings"
-	"time"
 
 	"cfa/native/app"
 
@@ -60,6 +59,10 @@ var interestingHeaders = []string{
 	"x-hwid-max-devices-reached",
 	"x-hwid-not-supported",
 	"x-hwid-limit",
+	// Happ's names for a backup link and a move of the subscription (D-345, F-329).
+	"fallback-url",
+	"new-url",
+	"new-domain",
 }
 
 const duckerHeaderPrefix = "ducker-"
@@ -92,7 +95,16 @@ func collectHeaders(raw map[string][]string) map[string]string {
 	return result
 }
 
-func openUrl(ctx context.Context, url string, subscription bool) (io.ReadCloser, fetchHeader, error) {
+// httpStatusError is the server's own answer with a status other than 2xx. Its text starts with
+// «HTTP <code>»: the service picks the explanation by it (F-155).
+type httpStatusError struct{ code int }
+
+func (e *httpStatusError) Error() string {
+	return fmt.Sprintf("HTTP %d %s", e.code, http.StatusText(e.code))
+}
+
+// openUrl fetches a subscription by route r (subscription_mirrors.go); providers ignore r.
+func openUrl(ctx context.Context, url string, subscription bool, r route) (io.ReadCloser, fetchHeader, error) {
 	// Ядро шлёт свои запросы по правилам загруженного конфига. При выключенном VPN там
 	// лежит конфиг для замеров (D-63), и подписка качалась через его узел: мёртвый узел —
 	// и новую подписку не добавить («first record does not look like a TLS handshake»).
@@ -106,11 +118,14 @@ func openUrl(ctx context.Context, url string, subscription bool) (io.ReadCloser,
 	var response *metaHttp.Response
 	var err error
 	if subscription {
-		direct := !app.TunRunning()
+		direct := r.direct || (r.proxy == "" && !app.TunRunning())
 		directDialer := dialer.NewDialer()
 		response, err = subscriptionHttpRequest(ctx, url, headers, func(ctx context.Context, network, address string) (net.Conn, error) {
 			if direct {
 				return directDialer.DialContext(ctx, network, address)
+			}
+			if r.proxy != "" {
+				return dialThroughProxy(ctx, address, r.proxy)
 			}
 			if conn, err := inner.HandleTcp(inner.GetTunnel(), address, ""); err == nil {
 				return conn, nil
@@ -137,7 +152,7 @@ func openUrl(ctx context.Context, url string, subscription bool) (io.ReadCloser,
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		_ = response.Body.Close()
 
-		return nil, header, fmt.Errorf("HTTP %d %s", response.StatusCode, http.StatusText(response.StatusCode))
+		return nil, header, &httpStatusError{response.StatusCode}
 	}
 
 	return response.Body, header, nil
@@ -148,7 +163,12 @@ func openContent(url string) (io.ReadCloser, error) {
 }
 
 func fetch(url *U.URL, file string, subscription bool) (fetchHeader, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	if subscription && (url.Scheme == "http" || url.Scheme == "https") {
+		a := fetchSubscriptionAttempt(url.String(), route{}, file, 0)
+		return a.header, a.err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), fetchTimeout)
 	defer cancel()
 
 	var reader io.ReadCloser
@@ -157,7 +177,7 @@ func fetch(url *U.URL, file string, subscription bool) (fetchHeader, error) {
 
 	switch url.Scheme {
 	case "http", "https":
-		reader, header, err = openUrl(ctx, url.String(), subscription)
+		reader, header, err = openUrl(ctx, url.String(), subscription, route{})
 	case "content":
 		reader, err = openContent(url.String())
 	default:
@@ -232,16 +252,13 @@ func FetchAndValid(
 			return err
 		}
 
-		bytes, _ := json.Marshal(&Status{
-			Action:      "FetchConfiguration",
-			Args:        []string{url.Host},
-			Progress:    -1,
-			MaxProgress: -1,
-		})
-
-		reportStatus(string(bytes))
-
-		header, err := fetch(url, configPath, true)
+		var header fetchHeader
+		if url.Scheme == "http" || url.Scheme == "https" {
+			header, err = fetchSubscription(url.String(), configPath, reportStatus)
+		} else {
+			reportFetching(url.Host, reportStatus)
+			header, err = fetch(url, configPath, true)
+		}
 
 		// Заголовки — и при отказе сервера (F-19, F-155): причину отказа панель пишет в них.
 		reportHeaders(header, reportStatus)

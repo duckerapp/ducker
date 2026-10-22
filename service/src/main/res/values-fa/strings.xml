@@ -45,4 +45,6 @@
     <string name="vpn_crashed_title">VPN خاموش شد</string>
     <string name="vpn_crashed">خطایی در ducker باعث خاموش شدن VPN شد. دوباره وصل شوید</string>
     <string name="vpn_crashed_connect">اتصال</string>
+    <string name="subscription_web_page">به‌جای اشتراک یک صفحه وب رسید: ممکن است سایت مسدود باشد یا لینک به جای دیگری برود. بعداً دوباره تلاش کنید یا لینک را بررسی کنید</string>
+    <string name="subscription_backups_failed">%1$s. آدرس‌های پشتیبان ارائه‌دهنده (%2$d) هم پاسخ ندادند</string>
 </resources>

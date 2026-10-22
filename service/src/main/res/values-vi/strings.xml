@@ -44,4 +44,6 @@
     <string name="vpn_crashed_title">VPN đã tắt</string>
     <string name="vpn_crashed">Lỗi trong ducker đã tắt VPN. Hãy kết nối lại</string>
     <string name="vpn_crashed_connect">Kết nối</string>
+    <string name="subscription_web_page">Nhận được một trang web thay vì gói đăng ký: trang có thể đã bị chặn, hoặc liên kết dẫn sai chỗ. Hãy thử lại sau hoặc kiểm tra liên kết</string>
+    <string name="subscription_backups_failed">%1$s. Các địa chỉ dự phòng của nhà cung cấp (%2$d) cũng không phản hồi</string>
 </resources>

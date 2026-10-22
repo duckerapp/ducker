@@ -15,8 +15,9 @@ import com.github.kr328.clash.service.clash.module.TunModule
  *
  * @param code код ответа сервера подписки — подставляется в объяснение.
  * @param detail текст ядра для незнакомой ошибки: показывать мелко и без адресов (`LogScrubber`).
+ * @param backups how many of the provider's backup addresses failed too (D-345).
  */
-data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "") {
+data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", val backups: Int = 0) {
     /** Что поможет — по этому экран выбирает кнопку. */
     enum class Fix { None, Retry, EditLink, Support, VpnSettings }
 
@@ -35,6 +36,8 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "") {
         ProviderTooLarge(R.string.subscription_provider_too_large, Fix.Support, download = true),
         Redirects(R.string.subscription_redirects, Fix.Support, download = true),
         BadLink(R.string.subscription_bad_link, Fix.EditLink, download = true),
+        /** A web page came instead: a block page, a captive portal, or a link to a site page (D-345). */
+        WebPage(R.string.subscription_web_page, Fix.Retry, download = true),
 
         NotLinks(R.string.subscription_not_links),
         NoServers(R.string.subscription_no_servers, Fix.Support),
@@ -57,7 +60,9 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "") {
         Unknown(R.string.failure_try_again),
     }
 
-    fun text(context: Context): String = context.getString(kind.text, code)
+    fun text(context: Context): String = context.getString(kind.text, code).let {
+        if (backups > 0) context.getString(R.string.subscription_backups_failed, it, backups) else it
+    }
 
     /** The heading of a stop, shared by the notification and the home card. */
     @get:StringRes
@@ -82,13 +87,22 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "") {
         /** «HTTP 503 Service Unavailable» — так ядро сообщает ответ сервера (`fetch.go`, F-155). */
         private val HTTP = Regex("""^HTTP (\d{3})\b""")
 
+        /** The core's mark of the mirrors tried besides the failure shown (`subscription_mirrors.go`). */
+        private val BACKUPS = Regex(""" \(\+(\d+) backups\)$""")
+
         /**
          * @param unknown чем считать незнакомый текст. При загрузке подписки это ошибка разбора
          * конфига: всё, что случилось до него, ядро и служба помечают сами.
          */
         fun of(raw: String?, unknown: Kind = Kind.Unknown): Failure {
             val text = raw.orEmpty()
+            val backups = BACKUPS.find(text)?.takeIf { text.startsWith(DOWNLOAD) }
+            val failure = parse(if (backups != null) text.removeRange(backups.range) else text, unknown)
 
+            return if (backups != null) failure.copy(backups = backups.groupValues[1].toInt()) else failure
+        }
+
+        private fun parse(text: String, unknown: Kind): Failure {
             HTTP.find(text.removePrefix("${DOWNLOAD}profile: "))?.let {
                 val code = it.groupValues[1].toInt()
 
@@ -112,6 +126,7 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "") {
                     when {
                         "unsupported scheme" in text -> Kind.BadLink
                         "after 10 redirects" in text -> Kind.Redirects
+                        "a web page instead of a subscription" in text -> Kind.WebPage
                         else -> Kind.Network
                     }
                 )

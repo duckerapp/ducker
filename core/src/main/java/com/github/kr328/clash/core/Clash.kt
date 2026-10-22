@@ -11,6 +11,8 @@ import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.net.InetSocketAddress
@@ -354,6 +356,19 @@ object Clash {
             else CoreJson.encodeToString(
                 MapSerializer(String.serializer(), String.serializer()),
                 headers,
+            )
+        )
+    }
+
+    /**
+     * The addresses to try, in order, for the subscription whose own link is [source] (D-345). Set before
+     * each download, like the headers; the core ignores them for any other link.
+     */
+    fun setSubscriptionMirrors(source: String, order: List<String>) {
+        Bridge.nativeSetSubscriptionMirrors(
+            CoreJson.encodeToString(
+                JsonObject.serializer(),
+                JsonObject(mapOf("source" to JsonPrimitive(source), "order" to JsonArray(order.map { JsonPrimitive(it) }))),
             )
         )
     }

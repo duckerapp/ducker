@@ -1298,6 +1298,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         follow = subscriptionsState.editFollow,
                         providerInterval = subscriptionsState.editProviderInterval,
                         error = subscriptionsState.editError,
+                        reach = subscriptionsState.editReach,
                         busy = subscriptionsState.editBusy,
                         onName = { subscriptionsViewModel.setEditName(it) },
                         onLink = { subscriptionsViewModel.setEditLink(it) },

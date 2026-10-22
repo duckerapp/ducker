@@ -518,4 +518,9 @@
     <string name="settings_wallet_copied">Cüzdan adresi kopyalandı</string>
     <string name="settings_category_interface">Arayüz</string>
     <string name="settings_category_information">Bilgi</string>
+    <string name="subscription_backups">Yedek adres: %d</string>
+    <string name="subscription_reached_via">Son güncelleme %s üzerinden geldi</string>
+    <string name="subscription_reached_direct">Son güncelleme doğrudan, VPN’i atlayarak geldi</string>
+    <string name="subscription_reached_proxy">Son güncelleme aboneliğin sunucusu üzerinden geldi</string>
+    <string name="subscription_moved">Sağlayıcı aboneliği %2$s tarihinde %1$s adresinden taşıdı</string>
 </resources>

@@ -522,4 +522,9 @@
     <string name="settings_wallet_copied">Adresse du portefeuille copiée</string>
     <string name="settings_category_interface">Interface</string>
     <string name="settings_category_information">Informations</string>
+    <string name="subscription_backups">Adresses de secours : %d</string>
+    <string name="subscription_reached_via">Dernière mise à jour reçue via %s</string>
+    <string name="subscription_reached_direct">Dernière mise à jour reçue en direct, hors VPN</string>
+    <string name="subscription_reached_proxy">Dernière mise à jour reçue via un serveur de l’abonnement</string>
+    <string name="subscription_moved">Le fournisseur a déplacé l’abonnement depuis %1$s le %2$s</string>
 </resources>

@@ -60,4 +60,50 @@ class ProviderInfoTest {
         assertFalse(ProviderInfo.of(mapOf("ducker-local-proxy" to "on")).localProxyOff)
         assertFalse(ProviderInfo.of(emptyMap()).localProxyOff)
     }
+
+    private val link = "https://sub.example.com/sub/TOKEN"
+    private val mirror = "https://sub2.example.net/sub/TOKEN"
+
+    @Test
+    fun `mirrors and a move are read for the link they came with (D-345)`() {
+        val info = ProviderInfo.of(
+            mapOf("Ducker-Mirrors" to "sub2.example.net", "fallback-url" to "https://backup.example.org/b", "new-domain" to "new.example.net"),
+            link,
+        )
+
+        assertEquals(link, info.source)
+        assertEquals(listOf(mirror, "https://backup.example.org/b"), info.mirrors)
+        assertEquals("https://new.example.net/sub/TOKEN", info.moveTo)
+        assertEquals(info.mirrors, info.mirrorsFor(link))
+        assertEquals(emptyList(), info.mirrorsFor("https://other.example.com/sub/OTHER"))
+    }
+
+    private val previous = ProviderInfo(source = link, mirrors = listOf(mirror), movedFrom = "https://old.example.com/sub/TOKEN", movedAt = 1_000)
+
+    @Test
+    fun `a mirror's answer without the header keeps the list, the own link's clears it`() {
+        val fromMirror = ProviderInfo.continued(ProviderInfo.of(emptyMap(), link), previous, emptyMap(), mirror, "", 2_000)
+        assertEquals(listOf(mirror), fromMirror.mirrors)
+        assertEquals(mirror, fromMirror.servedBy)
+
+        val fromLink = ProviderInfo.continued(ProviderInfo.of(emptyMap(), link), previous, emptyMap(), link, "proxy", 2_000)
+        assertEquals(emptyList(), fromLink.mirrors)
+        assertEquals("proxy", fromLink.servedVia)
+
+        // A mirror that sends the header replaces the list, even with a dash — that is how a provider removes them.
+        val dash = mapOf("ducker-mirrors" to "-")
+        assertEquals(emptyList(), ProviderInfo.continued(ProviderInfo.of(dash, link), previous, dash, mirror, "", 2_000).mirrors)
+    }
+
+    @Test
+    fun `nothing is kept from another link, and the move mark lasts a week`() {
+        val other = "https://other.example.com/sub/OTHER"
+        val elsewhere = ProviderInfo.continued(ProviderInfo.of(emptyMap(), other), previous, emptyMap(), mirror, "", 2_000)
+        assertEquals(emptyList(), elsewhere.mirrors)
+        assertEquals("", elsewhere.movedFrom)
+
+        val week = ProviderInfo.MOVED_SHOWN
+        assertEquals(previous.movedFrom, ProviderInfo.continued(ProviderInfo.of(emptyMap(), link), previous, emptyMap(), link, "", 1_000 + week - 1).movedFrom)
+        assertEquals("", ProviderInfo.continued(ProviderInfo.of(emptyMap(), link), previous, emptyMap(), link, "", 1_000 + week).movedFrom)
+    }
 }
