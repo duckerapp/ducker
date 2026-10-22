@@ -391,3 +391,15 @@ func TestBuiltInTemplateMeansTheSame(t *testing.T) {
 		t.Fatal("the rest of the template reads differently")
 	}
 }
+
+// Happ's `#name: value` lines over the links (F-329) are not nodes and do not stop the links after them.
+func TestBodyHeaderLinesAreSkipped(t *testing.T) {
+	proxies, err := Convert("#fallback-url: https://b.example.org/sub\n#profile-title: Duck\n" + links)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(proxies) != 2 {
+		t.Fatalf("узлов %d, а не 2", len(proxies))
+	}
+}

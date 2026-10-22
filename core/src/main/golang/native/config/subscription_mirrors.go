@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -195,7 +196,7 @@ func fetchSubscriptionAttempt(address string, r route, file string, answerTimeou
 		return a
 	}
 
-	body := bufio.NewReader(reader)
+	body := bufio.NewReaderSize(reader, bodyHeadSize)
 	if looksLikeWebPage(body) {
 		_ = reader.Close()
 		a.webPage = true
@@ -203,12 +204,79 @@ func fetchSubscriptionAttempt(address string, r route, file string, answerTimeou
 		return a
 	}
 
+	// Read before the body is written: Peek's bytes are the reader's own buffer.
+	head, _ := body.Peek(bodyHeadSize)
+	lines := bodyHeaders(head, len(head) < bodyHeadSize)
+
 	a.err = writeDownload(file, struct {
 		io.Reader
 		io.Closer
 	}{body, reader}, true)
 
+	// A real header wins over the same line.
+	if a.err == nil {
+		for name, value := range lines {
+			if _, sent := a.header.All[name]; !sent {
+				a.header.All[name] = value
+			}
+		}
+	}
+
 	return a
+}
+
+// bodyHeadSize is how much of a subscription's beginning is read for its `#name: value` lines.
+const bodyHeadSize = 64 * 1024
+
+// bodyHeaderNames may also come as `#name: value` lines at the top of the body, as Happ reads them
+// (F-329): a provider on static hosting cannot send headers.
+var bodyHeaderNames = map[string]bool{"ducker-mirrors": true, "fallback-url": true, "new-url": true, "new-domain": true}
+
+// bodyHeaders reads those lines from head, the body's beginning, up to the first line that is not a
+// `#` one; whole — head is the entire body. A base64 body is decoded first, as the core decodes a list
+// of links.
+func bodyHeaders(head []byte, whole bool) map[string]string {
+	text := bytes.TrimPrefix(head, []byte("\xef\xbb\xbf"))
+	if decoded, ok := decodeBase64Head(text, whole); ok {
+		text = decoded
+	}
+
+	lines := strings.Split(string(text), "\n")
+	// The last line of a cut head may be cut too.
+	if !whole {
+		lines = lines[:len(lines)-1]
+	}
+
+	result := map[string]string{}
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if !strings.HasPrefix(line, "#") {
+			break
+		}
+		name, value, ok := strings.Cut(line[1:], ":")
+		name, value = strings.ToLower(strings.TrimSpace(name)), strings.TrimSpace(value)
+		if ok && bodyHeaderNames[name] && value != "" && result[name] == "" {
+			result[name] = value
+		}
+	}
+
+	return result
+}
+
+// decodeBase64Head decodes a base64 body; a cut one up to its last whole group of four characters.
+// YAML, JSON and plain lines are not base64: `:`, `{` and `#` are outside its alphabet.
+func decodeBase64Head(text []byte, whole bool) ([]byte, bool) {
+	compact := bytes.Join(bytes.Fields(text), nil)
+	if !whole {
+		compact = compact[:len(compact)/4*4]
+	}
+
+	decoded, err := base64.RawStdEncoding.DecodeString(strings.TrimRight(string(compact), "="))
+
+	return decoded, err == nil
 }
 
 // looksLikeWebPage: the body starts as HTML — a block page of the network, a captive portal, a CDN

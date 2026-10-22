@@ -3,12 +3,14 @@ package config
 import (
 	"bufio"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	P "path"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -411,5 +413,71 @@ func TestSubscriptionTriesOfTheLastResortAndAStop(t *testing.T) {
 	_, _ = fetchSubscription(limit.url, previousConfig(t), log.report)
 	if got := log.tries(); len(got) != 2 || got[0].Code != 403 || got[1] != (tryReport{Address: mirror.url, Outcome: "untried"}) {
 		t.Fatalf("tries %+v", got)
+	}
+}
+
+// Happ's `#name: value` lines at the top of the body (F-329): only the mirror ones, only the leading
+// block, a base64 body decoded, a cut head without its last line.
+func TestBodyHeaders(t *testing.T) {
+	encode := func(s string) string { return base64.StdEncoding.EncodeToString([]byte(s)) }
+	// As MIME wraps base64: 76 characters a line.
+	wrap := func(s string) string {
+		var b strings.Builder
+		for ; len(s) > 76; s = s[76:] {
+			b.WriteString(s[:76] + "\r\n")
+		}
+		b.WriteString(s)
+		return b.String()
+	}
+	list := "#profile-title: Duck\n# Fallback-URL :  https://b.example.org/sub \n#new-domain:\n\r\nvless://id@host:443#a\n#new-url: https://late.example.org/x\n"
+
+	for name, c := range map[string]struct {
+		head  string
+		whole bool
+		want  map[string]string
+	}{
+		"plain":          {list, true, map[string]string{"fallback-url": "https://b.example.org/sub"}},
+		"bom and yaml":   {"\xef\xbb\xbf#ducker-mirrors: b.example.org, c.example.net\nproxies: []\n#new-url: https://x/", true, map[string]string{"ducker-mirrors": "b.example.org, c.example.net"}},
+		"base64":         {encode(list), true, map[string]string{"fallback-url": "https://b.example.org/sub"}},
+		"base64 wrapped": {wrap(encode(list)), true, map[string]string{"fallback-url": "https://b.example.org/sub"}},
+		"first wins":     {"#fallback-url: https://a/\n#fallback-url: https://b/\n", true, map[string]string{"fallback-url": "https://a/"}},
+		"cut head":       {"#new-url: https://a.example.org/x\n#fallback-url: https://b.exa", false, map[string]string{"new-url": "https://a.example.org/x"}},
+		"cut base64":     {encode("#new-url: https://a.example.org/x\n#fallback-url: https://b.example.org/sub\nvless://")[:50], false, map[string]string{"new-url": "https://a.example.org/x"}},
+		"no lines":       {"proxies: []\n", true, map[string]string{}},
+		"empty":          {"", true, map[string]string{}},
+		"a json config":  {"{\"outbounds\": []}", true, map[string]string{}},
+	} {
+		if got := bodyHeaders([]byte(c.head), c.whole); !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%s: %v, want %v", name, got, c.want)
+		}
+	}
+}
+
+// A static host's lines join the headers; a real header of the same name wins over its line.
+func TestSubscriptionBodyLinesJoinTheHeaders(t *testing.T) {
+	noLastResort(t)
+	static := mirrorServer(t, func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("#fallback-url: https://b.example.org/sub\n#new-domain: c.example.net\nvless://id@host:443#a\n"))
+	})
+
+	header, err := fetchSubscription(static.url, previousConfig(t), (&statusLog{}).report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if header.All["fallback-url"] != "https://b.example.org/sub" || header.All["new-domain"] != "c.example.net" {
+		t.Fatalf("headers %v", header.All)
+	}
+
+	panel := mirrorServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("fallback-url", "https://header.example.org/sub")
+		_, _ = w.Write([]byte("#fallback-url: https://line.example.org/sub\n#ducker-mirrors: d.example.org\n" + mirrorTestConfig))
+	})
+
+	header, err = fetchSubscription(panel.url, previousConfig(t), (&statusLog{}).report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if header.All["fallback-url"] != "https://header.example.org/sub" || header.All["ducker-mirrors"] != "d.example.org" {
+		t.Fatalf("headers %v", header.All)
 	}
 }
