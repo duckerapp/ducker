@@ -506,3 +506,50 @@ func TestSubscriptionBackupTryIsReported(t *testing.T) {
 		t.Fatalf("backup flags %v", backups)
 	}
 }
+
+// F-335: with the node dead the usual way took the mirror through it too, so the last resort asks every
+// address directly, and the node only for the first one.
+func TestSubscriptionLastResortTriesEveryAddressDirectly(t *testing.T) {
+	shortAnswerTimeout(t, 300*time.Millisecond)
+	old := lastResortRoutes
+	lastResortRoutes = func(string) []route { return []route{{direct: true}, {proxy: "TEST"}} }
+	t.Cleanup(func() { lastResortRoutes = old })
+	source := closedAddress(t)
+	// The first ask stands for the dead node: the connection is dropped without an answer.
+	var asked atomic.Int32
+	mirror := mirrorServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if asked.Add(1) == 1 {
+			conn, _, _ := w.(http.Hijacker).Hijack()
+			_ = conn.Close()
+			return
+		}
+		_, _ = w.Write([]byte(mirrorTestConfig))
+	})
+	setMirrorPlan(t, source, source, mirror.url)
+	log := &statusLog{}
+
+	if _, err := fetchSubscription(source, previousConfig(t), log.report); err != nil {
+		t.Fatal(err)
+	}
+	if got := log.source(); len(got) != 2 || got[0] != mirror.url || got[1] != "direct" {
+		t.Fatalf("source %v", got)
+	}
+	want := []tryReport{
+		{Address: source, Outcome: "connection"},
+		{Address: mirror.url, Outcome: "connection"},
+		{Address: source, Route: "direct", Outcome: "connection"},
+		{Address: mirror.url, Route: "direct", Outcome: "ok"},
+	}
+	if got := log.tries(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("tries %+v", got)
+	}
+	var backups []bool
+	for _, s := range log.statuses {
+		if s.Action == "FetchConfiguration" {
+			backups = append(backups, len(s.Args) == 2)
+		}
+	}
+	if !reflect.DeepEqual(backups, []bool{false, true, false, true}) {
+		t.Fatalf("backup flags %v", backups)
+	}
+}

@@ -26,9 +26,9 @@ import (
 // Subscription mirrors (D-345, stage 21 of PLAN.md). A subscription is tried at several addresses
 // in turn: the one that answered last time, its own link, the provider's mirrors. Kotlin builds the
 // order from the subscription's provider.json and sets it before each download, the way it sets the
-// request headers (F-21). When every address fails without the server answering, the first one is
-// tried the other way round as a last resort (Q-81): directly, if the usual way is the VPN's rules,
-// and through the subscription's own node.
+// request headers (F-21). When every address fails without the server answering, they are tried the
+// other way round as a last resort (Q-81): each directly, if the usual way is the VPN's rules, and the
+// first one through the subscription's own node.
 
 const fetchTimeout = 60 * time.Second
 
@@ -299,12 +299,19 @@ func fetchSubscription(source, file string, report func(string)) (fetchHeader, e
 		address string
 		route   route
 	}
-	steps := make([]step, 0, len(addresses)+len(resort))
+	steps := make([]step, 0, 2*len(addresses)+len(resort))
 	for _, address := range addresses {
 		steps = append(steps, step{address, route{}})
 	}
 	for _, r := range resort {
-		steps = append(steps, step{addresses[0], r})
+		if !r.direct {
+			steps = append(steps, step{addresses[0], r})
+			continue
+		}
+		// Every address directly: with the node dead, the usual way took the mirrors through it too.
+		for _, address := range addresses {
+			steps = append(steps, step{address, r})
+		}
 	}
 
 	var tried []subscriptionAttempt
@@ -323,7 +330,7 @@ func fetchSubscription(source, file string, report func(string)) (fetchHeader, e
 			timeout = 0
 		}
 
-		reportFetching(hostOf(s.address), 0 < i && i < len(addresses), report)
+		reportFetching(hostOf(s.address), s.address != addresses[0], report)
 
 		a := fetchSubscriptionAttempt(s.address, s.route, file, timeout)
 		tried = append(tried, a)
@@ -351,6 +358,7 @@ func fetchSubscription(source, file string, report func(string)) (fetchHeader, e
 // lastResortRoutes are the other ways to reach address when every address failed the usual way
 // (Q-81): directly, if the usual way is the VPN's rules, and through the subscription's own node if a
 // profile is loaded in the core — always with the VPN on, with it off while the app is open (D-63).
+// The direct route is taken for every address, the node's for the first one only.
 // A variable so that tests can choose the routes.
 var lastResortRoutes = func(address string) []route {
 	var routes []route
@@ -479,9 +487,9 @@ func withBackups(err error, n int) error {
 	return &backupsError{err, n}
 }
 
-// reportFetching names the host about to be asked. backup — another address of the subscription, after
-// the first one failed: the sheets say «Пробую запасной адрес…» by the second argument. The last resort
-// asks the first address again and is not one.
+// reportFetching names the host about to be asked. backup — another address of the subscription than the
+// first one, which has failed: the sheets say «Пробую запасной адрес…» by the second argument. The last
+// resort's try of the first address is not one.
 func reportFetching(host string, backup bool, report func(string)) {
 	args := []string{host}
 	if backup {
