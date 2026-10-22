@@ -515,6 +515,7 @@
     <string name="settings_category_information">Thông tin</string>
     <string name="subscription_moved">Nhà cung cấp đã chuyển gói đăng ký từ %1$s vào %2$s</string>
     <string name="subscription_backups_row">Địa chỉ dự phòng</string>
+    <string name="subscription_trying_backup">Đang thử địa chỉ dự phòng…</string>
     <string name="subscription_addresses_title">Địa chỉ gói đăng ký</string>
     <string name="subscription_addresses_hint">Nếu địa chỉ chính không phản hồi, ducker tự thử các địa chỉ dự phòng của nhà cung cấp</string>
     <string name="subscription_addresses_checked">Đã kiểm tra %s</string>

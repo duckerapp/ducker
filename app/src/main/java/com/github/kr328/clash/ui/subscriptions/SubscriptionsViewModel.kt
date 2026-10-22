@@ -86,6 +86,8 @@ data class SubscriptionsState(
     val editError: String = "",
     val editReach: SubscriptionReach = SubscriptionReach(),
     val editBusy: Boolean = false,
+    /** The core asks a backup address of the subscription while it is saved: «Пробую запасной адрес…». */
+    val editBackup: Boolean = false,
     /** Whose «Адреса подписки» are open (Q-82); `null` — closed. */
     val addressesFor: UUID? = null,
     /** Какую подписку собираемся удалить. Пусто — вопрос не задан. */
@@ -114,6 +116,8 @@ data class SubscriptionsState(
     val linked: Boolean = false,
     /** Доля загрузки добавляемой подписки, 0..1, — заливка кнопки «Добавить» (D-212). */
     val addProgress: Float? = null,
+    /** The core asks a backup address of the subscription being added: «Пробую запасной адрес…». */
+    val addBackup: Boolean = false,
     /** Телефон: отсканирован код телевизора — открыта панель отправки (D-162). */
     val sendTo: TvLink? = null,
     val sendChoice: UUID? = null,
@@ -255,7 +259,7 @@ class SubscriptionsViewModel : ViewModel() {
         val mirrors = _state.value.given?.takeIf { it.link == raw }?.mirrors.orEmpty()
 
         addJob = viewModelScope.launch {
-            _state.update { it.copy(busy = true, addError = "", addProgress = 0f) }
+            _state.update { it.copy(busy = true, addError = "", addProgress = 0f, addBackup = false) }
 
             val result = runCatching {
                 val isUrl = raw.startsWith("http://", true) || raw.startsWith("https://", true)
@@ -312,7 +316,7 @@ class SubscriptionsViewModel : ViewModel() {
         if (_state.value.busy) return
 
         addJob = viewModelScope.launch {
-            _state.update { it.copy(busy = true, addError = "", addProgress = 0f) }
+            _state.update { it.copy(busy = true, addError = "", addProgress = 0f, addBackup = false) }
 
             val result = runCatching {
                 val text = try {
@@ -375,6 +379,7 @@ class SubscriptionsViewModel : ViewModel() {
             addProgress(status)?.let { part ->
                 _state.update { it.copy(addProgress = maxOf(it.addProgress ?: 0f, part)) }
             }
+            backupTry(status)?.let { backup -> _state.update { it.copy(addBackup = backup) } }
         }
 
         runCatching { withProfile { commit(uuid, report) } }.onFailure { failure ->
@@ -736,7 +741,7 @@ class SubscriptionsViewModel : ViewModel() {
         val current = _state.value
         val uuid = current.editing ?: return
 
-        _state.update { it.copy(editBusy = true, editError = "") }
+        _state.update { it.copy(editBusy = true, editError = "", editBackup = false) }
 
         val link = current.editLink.trim()
         val typed = current.editName.trim()
@@ -751,7 +756,9 @@ class SubscriptionsViewModel : ViewModel() {
             val result = runCatching {
                 withProfile {
                     patch(uuid, name, link, current.editInterval, current.editFollow, null)
-                    commit(uuid)
+                    commit(uuid, IFetchObserver { status ->
+                        backupTry(status)?.let { backup -> _state.update { it.copy(editBackup = backup) } }
+                    })
                 }
             }
 
@@ -972,6 +979,13 @@ internal fun addProgress(status: FetchStatus): Float? = when (status.action) {
     FetchStatus.Action.Verifying -> CONFIG_PART + PROVIDERS_PART
     else -> null
 }
+
+/**
+ * The core asks another address of the subscription after the first one failed (stage 21): the sheets
+ * say «Пробую запасной адрес…». Each try sets it anew; a message that is not a try — `null`.
+ */
+internal fun backupTry(status: FetchStatus): Boolean? =
+    if (status.action == FetchStatus.Action.FetchConfiguration) status.args.getOrNull(1) == "backup" else null
 
 /**
  * Доли заливки: скачивание конфига и наборы правил; остальное — проверка. По замеру на боевой

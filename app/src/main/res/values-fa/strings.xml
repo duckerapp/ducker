@@ -519,6 +519,7 @@
     <string name="settings_category_information">اطلاعات</string>
     <string name="subscription_moved">ارائه‌دهنده اشتراک را در %2$s از %1$s منتقل کرد</string>
     <string name="subscription_backups_row">آدرس‌های پشتیبان</string>
+    <string name="subscription_trying_backup">در حال امتحان آدرس پشتیبان…</string>
     <string name="subscription_addresses_title">آدرس‌های اشتراک</string>
     <string name="subscription_addresses_hint">اگر آدرس اصلی پاسخ ندهد، ducker خودش آدرس‌های پشتیبانِ ارائه‌دهنده را امتحان می‌کند</string>
     <string name="subscription_addresses_checked">بررسی‌شده %s</string>

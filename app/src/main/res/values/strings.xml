@@ -554,6 +554,7 @@
     <string name="settings_category_information">Information</string>
     <string name="subscription_moved">The provider moved the subscription from %1$s on %2$s</string>
     <string name="subscription_backups_row">Backup addresses</string>
+    <string name="subscription_trying_backup">Trying a backup address…</string>
     <string name="subscription_addresses_title">Subscription addresses</string>
     <string name="subscription_addresses_hint">If the main address doesn’t answer, ducker tries the provider’s backups on its own</string>
     <string name="subscription_addresses_checked">Checked %s</string>

@@ -535,6 +535,7 @@
     <string name="settings_category_information">المعلومات</string>
     <string name="subscription_moved">نقل المزوّد الاشتراك من %1$s في %2$s</string>
     <string name="subscription_backups_row">العناوين الاحتياطية</string>
+    <string name="subscription_trying_backup">جارٍ تجربة عنوان احتياطي…</string>
     <string name="subscription_addresses_title">عناوين الاشتراك</string>
     <string name="subscription_addresses_hint">إذا لم يستجب العنوان الرئيسي، يجرّب ducker تلقائيًا العناوين الاحتياطية من المزوّد</string>
     <string name="subscription_addresses_checked">تم الفحص %s</string>

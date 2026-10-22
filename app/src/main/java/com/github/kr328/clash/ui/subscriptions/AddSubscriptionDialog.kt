@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.subscriptions
 
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -72,6 +73,8 @@ fun AddSubscriptionDialog(
     busy: Boolean,
     /** Доля загрузки подписки, 0..1 (D-212); `null` — пока неизвестна. */
     progress: Float? = null,
+    /** The core asks a backup address of the subscription (stage 21): the line under the button says so. */
+    backup: Boolean = false,
     onValue: (String) -> Unit,
     onPaste: () -> Unit,
     onScan: () -> Unit,
@@ -153,13 +156,15 @@ fun AddSubscriptionDialog(
                 exit = fadeOut(tween(120)),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(R.string.adding_hint),
-                        modifier = Modifier.fillMaxWidth(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
+                    Crossfade(backup, label = "addingHint") { trying ->
+                        Text(
+                            text = stringResource(if (trying) R.string.subscription_trying_backup else R.string.adding_hint),
+                            modifier = Modifier.fillMaxWidth(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
                 }
             }

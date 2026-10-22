@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.SheetField
@@ -103,6 +104,8 @@ fun EditSubscriptionDialog(
     error: String,
     reach: SubscriptionReach,
     busy: Boolean,
+    /** The core asks a backup address of the subscription (stage 21): a line under the button says so. */
+    backup: Boolean = false,
     onName: (String) -> Unit,
     onLink: (String) -> Unit,
     onInterval: (Long) -> Unit,
@@ -169,14 +172,27 @@ fun EditSubscriptionDialog(
         SheetLink(Symbols.Tune, stringResource(R.string.rules_title) + if (rules > 0) " · $rules" else "", !busy, onRules)
         SheetLink(Symbols.Code, stringResource(R.string.config_open), !busy, onConfig)
 
-        SheetButton(
-            text = stringResource(R.string.save),
-            busyText = stringResource(R.string.saving),
-            busy = busy,
-            // Пустое имя — не ошибка: вернётся название провайдера, а без него — домен (D-117).
-            enabled = link.isNotBlank(),
-            onClick = onConfirm,
-        )
+        // The line's gap is its own padding, not the sheet's spacing: it unfolds with the line.
+        Column {
+            SheetButton(
+                text = stringResource(R.string.save),
+                busyText = stringResource(R.string.saving),
+                busy = busy,
+                // Пустое имя — не ошибка: вернётся название провайдера, а без него — домен (D-117).
+                enabled = link.isNotBlank(),
+                onClick = onConfirm,
+            )
+
+            Unfold(visible = busy && backup) {
+                Text(
+                    text = stringResource(R.string.subscription_trying_backup),
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
     }
 }
 

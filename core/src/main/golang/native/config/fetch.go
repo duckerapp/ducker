@@ -257,7 +257,7 @@ func FetchAndValid(
 		if url.Scheme == "http" || url.Scheme == "https" {
 			header, err = fetchSubscription(url.String(), configPath, reportStatus)
 		} else {
-			reportFetching(url.Host, reportStatus)
+			reportFetching(url.Host, false, reportStatus)
 			header, err = fetch(url, configPath, true)
 		}
 

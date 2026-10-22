@@ -515,6 +515,7 @@
     <string name="settings_category_information">信息</string>
     <string name="subscription_moved">服务商已于 %2$s 将订阅从 %1$s 迁移过来</string>
     <string name="subscription_backups_row">备用地址</string>
+    <string name="subscription_trying_backup">正在尝试备用地址…</string>
     <string name="subscription_addresses_title">订阅地址</string>
     <string name="subscription_addresses_hint">主地址无响应时，ducker 会自动尝试服务商提供的备用地址</string>
     <string name="subscription_addresses_checked">检查于 %s</string>

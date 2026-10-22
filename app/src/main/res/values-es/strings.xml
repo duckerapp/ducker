@@ -523,6 +523,7 @@
     <string name="settings_category_information">Información</string>
     <string name="subscription_moved">El proveedor trasladó la suscripción desde %1$s el %2$s</string>
     <string name="subscription_backups_row">Direcciones de respaldo</string>
+    <string name="subscription_trying_backup">Probando una dirección de respaldo…</string>
     <string name="subscription_addresses_title">Direcciones de la suscripción</string>
     <string name="subscription_addresses_hint">Si la dirección principal no responde, ducker prueba sola las de respaldo del proveedor</string>
     <string name="subscription_addresses_checked">Comprobado: %s</string>

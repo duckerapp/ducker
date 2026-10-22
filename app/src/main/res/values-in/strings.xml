@@ -515,6 +515,7 @@
     <string name="settings_category_information">Informasi</string>
     <string name="subscription_moved">Penyedia memindahkan langganan dari %1$s pada %2$s</string>
     <string name="subscription_backups_row">Alamat cadangan</string>
+    <string name="subscription_trying_backup">Mencoba alamat cadangan…</string>
     <string name="subscription_addresses_title">Alamat langganan</string>
     <string name="subscription_addresses_hint">Jika alamat utama tidak merespons, ducker mencoba sendiri alamat cadangan dari penyedia</string>
     <string name="subscription_addresses_checked">Diperiksa %s</string>

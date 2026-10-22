@@ -523,6 +523,7 @@
     <string name="settings_category_information">Informations</string>
     <string name="subscription_moved">Le fournisseur a déplacé l’abonnement depuis %1$s le %2$s</string>
     <string name="subscription_backups_row">Adresses de secours</string>
+    <string name="subscription_trying_backup">Essai d’une adresse de secours…</string>
     <string name="subscription_addresses_title">Adresses de l’abonnement</string>
     <string name="subscription_addresses_hint">Si l’adresse principale ne répond pas, ducker essaie seul celles de secours du fournisseur</string>
     <string name="subscription_addresses_checked">Vérifié : %s</string>

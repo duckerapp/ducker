@@ -523,6 +523,7 @@
     <string name="settings_category_information">Informações</string>
     <string name="subscription_moved">O provedor transferiu a assinatura de %1$s em %2$s</string>
     <string name="subscription_backups_row">Endereços reserva</string>
+    <string name="subscription_trying_backup">Tentando um endereço reserva…</string>
     <string name="subscription_addresses_title">Endereços da assinatura</string>
     <string name="subscription_addresses_hint">Se o endereço principal não responder, o ducker tenta sozinho os reservas do provedor</string>
     <string name="subscription_addresses_checked">Verificado: %s</string>

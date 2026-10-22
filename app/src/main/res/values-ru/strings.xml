@@ -549,6 +549,7 @@
     <string name="settings_category_information">Информация</string>
     <string name="subscription_moved">Провайдер перенёс подписку с %1$s %2$s</string>
     <string name="subscription_backups_row">Запасные адреса</string>
+    <string name="subscription_trying_backup">Пробую запасной адрес…</string>
     <string name="subscription_addresses_title">Адреса подписки</string>
     <string name="subscription_addresses_hint">Если основной адрес не отвечает, ducker сам пробует запасные от провайдера</string>
     <string name="subscription_addresses_checked">Проверено %s</string>

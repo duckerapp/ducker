@@ -481,3 +481,28 @@ func TestSubscriptionBodyLinesJoinTheHeaders(t *testing.T) {
 		t.Fatalf("headers %v", header.All)
 	}
 }
+
+// «Пробую запасной адрес…»: another address after the first failed; not the last resort, which asks the
+// first address again.
+func TestSubscriptionBackupTryIsReported(t *testing.T) {
+	shortAnswerTimeout(t, 300*time.Millisecond)
+	node := configServer(t)
+	lastResortThrough(t, node.url)
+	source, mirror := closedAddress(t), closedAddress(t)
+	setMirrorPlan(t, source, source, mirror)
+	log := &statusLog{}
+
+	if _, err := fetchSubscription(source, previousConfig(t), log.report); err != nil {
+		t.Fatal(err)
+	}
+
+	var backups []bool
+	for _, s := range log.statuses {
+		if s.Action == "FetchConfiguration" {
+			backups = append(backups, len(s.Args) == 2 && s.Args[1] == "backup")
+		}
+	}
+	if !reflect.DeepEqual(backups, []bool{false, true, false}) {
+		t.Fatalf("backup flags %v", backups)
+	}
+}

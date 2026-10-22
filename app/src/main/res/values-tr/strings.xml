@@ -519,6 +519,7 @@
     <string name="settings_category_information">Bilgi</string>
     <string name="subscription_moved">Sağlayıcı aboneliği %2$s tarihinde %1$s adresinden taşıdı</string>
     <string name="subscription_backups_row">Yedek adresler</string>
+    <string name="subscription_trying_backup">Yedek adres deneniyor…</string>
     <string name="subscription_addresses_title">Abonelik adresleri</string>
     <string name="subscription_addresses_hint">Ana adres yanıt vermezse ducker sağlayıcının yedek adreslerini kendisi dener</string>
     <string name="subscription_addresses_checked">Kontrol edildi: %s</string>

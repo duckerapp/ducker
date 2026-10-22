@@ -33,4 +33,11 @@ class AddProgressTest {
         assertNull(addProgress(status(Action.SubscriptionInfo)))
         assertNull(addProgress(status(Action.SubscriptionHeaders)))
     }
+
+    @Test
+    fun `each try says whether it is a backup address`() {
+        assertEquals(false, backupTry(FetchStatus(Action.FetchConfiguration, listOf("sub.example.com"), -1, -1)))
+        assertEquals(true, backupTry(FetchStatus(Action.FetchConfiguration, listOf("b.example.org", "backup"), -1, -1)))
+        assertNull(backupTry(status(Action.Verifying)))
+    }
 }

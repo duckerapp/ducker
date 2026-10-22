@@ -323,7 +323,7 @@ func fetchSubscription(source, file string, report func(string)) (fetchHeader, e
 			timeout = 0
 		}
 
-		reportFetching(hostOf(s.address), report)
+		reportFetching(hostOf(s.address), 0 < i && i < len(addresses), report)
 
 		a := fetchSubscriptionAttempt(s.address, s.route, file, timeout)
 		tried = append(tried, a)
@@ -479,10 +479,18 @@ func withBackups(err error, n int) error {
 	return &backupsError{err, n}
 }
 
-func reportFetching(host string, report func(string)) {
+// reportFetching names the host about to be asked. backup — another address of the subscription, after
+// the first one failed: the sheets say «Пробую запасной адрес…» by the second argument. The last resort
+// asks the first address again and is not one.
+func reportFetching(host string, backup bool, report func(string)) {
+	args := []string{host}
+	if backup {
+		args = append(args, "backup")
+	}
+
 	bytes, _ := json.Marshal(&Status{
 		Action:      "FetchConfiguration",
-		Args:        []string{host},
+		Args:        args,
 		Progress:    -1,
 		MaxProgress: -1,
 	})
