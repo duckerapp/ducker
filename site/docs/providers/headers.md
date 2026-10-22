@@ -50,8 +50,8 @@ How ducker tries them:
   2xx, or a web page instead of a subscription. The panel's device-limit answer
   (`x-hwid-max-devices-reached`, `x-hwid-not-supported`) stops the search: every address would
   say the same.
-- If no address answers at all, ducker tries the first one directly (when the VPN is on) and
-  through the subscription's own node (when its config is loaded).
+- If no address answers at all, ducker tries each of them directly (when the VPN is on) and the
+  first one through the subscription's own node (when its config is loaded).
 - Mirrors of an `https` link must be `https`; an `http` link may have `http` mirrors. Mirrors
   receive the same device headers as the link. Five at most.
 - The list comes with every successful update. A response from the link itself without the
