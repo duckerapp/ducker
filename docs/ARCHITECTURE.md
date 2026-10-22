@@ -112,7 +112,8 @@ published by `.github/workflows/pages.yaml`.
 - **`store/`** — `ServiceStore`, `UserRulesStore` (`files/user-rules/<uuid>.json`).
   **`model/`** — `Profile`, `UserRule`, `AccessControlMode`.
 - **`util/`** — `SubscriptionHeaders.kt` (the `User-Agent` and device headers),
-  `ProviderInfo.kt` (subscription and `ducker-*` headers), `Failure.kt` (a table that turns raw
+  `ProviderInfo.kt` (subscription and `ducker-*` headers), `SubscriptionMirrors.kt` (a
+  subscription's backup addresses and the provider's move), `Failure.kt` (a table that turns raw
   core and service errors into an explanation and a suggested action; `:app` uses it too).
 
 ## `:core`
@@ -121,7 +122,8 @@ published by `.github/workflows/pages.yaml`.
   models).
 - **`G/`** (the Go module `cfa`) — exports in `main.go`, `app.go`, `config.go`, `convert.go`,
   `tun.go`, `tunnel.go`, `log.go`, `proxy.go`; the logic is in packages of the same names:
-  `config/` (user rules placed before the provider's, fetching, overrides), `convert/` (links to
+  `config/` (user rules placed before the provider's, fetching — a subscription's addresses in
+  turn, then a last resort directly and through its own node — overrides), `convert/` (links to
   a config through the built-in template), `tunnel/`, `tun/`, `app/`.
 - **`core/src/foss/golang/`** — the main `go.mod` with `replace` directives and three git
   submodules.
