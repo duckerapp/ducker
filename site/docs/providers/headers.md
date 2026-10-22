@@ -28,6 +28,19 @@ its own, and the user notices nothing.
   link only after the new address has given a subscription that passed the core's check; until
   then it keeps updating from the old link and tries the move again on the next update.
 
+On static hosting, where you cannot set headers, write the same values as lines at the top of the
+subscription file, before the links or the config, as Happ reads them:
+
+```text
+#fallback-url: https://backup.example.org/sub/abc
+#ducker-mirrors: sub2.example.com
+vless://…
+```
+
+ducker reads only these four names from lines, and only from the `#` lines at the top. In a base64
+file the lines are encoded with the rest; in a YAML config they are comments. A header of the
+same name wins over its line.
+
 How ducker tries them:
 
 - The address that answered last time goes first, then the subscription's own link, then the

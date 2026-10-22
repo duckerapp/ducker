@@ -198,6 +198,8 @@ tries other addresses on its own, and the user notices nothing:
 - **`new-url: <link>`** or **`new-domain: <domain>`** — Happ's permanent move. ducker switches the
   stored link only after the new address has given a working subscription; until then it keeps
   updating from the old one.
+- **Without headers** (static hosting) — the same values as `#fallback-url: <link>` lines at the
+  top of the subscription file, before the links, as Happ reads them.
 
 A mirror must open the same link: point its domain at the same subscription page, at a copy of it
 on another server, or at the panel itself — wherever this path gives the subscription. If a backup
