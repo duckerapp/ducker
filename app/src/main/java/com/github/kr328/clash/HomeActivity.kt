@@ -118,6 +118,7 @@ import com.github.kr328.clash.ui.probe.ProbeViewModel
 import com.github.kr328.clash.ui.proxy.ProxyViewModel
 import com.github.kr328.clash.ui.subscriptions.AddSubscriptionDialog
 import com.github.kr328.clash.ui.subscriptions.SendToTvSheet
+import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.ui.subscriptions.SubscriptionAddressesSheet
 import com.github.kr328.clash.ui.subscriptions.sendable
 import com.github.kr328.clash.ui.subscriptions.DeleteSubscriptionDialog
@@ -1327,12 +1328,19 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     if (subscriptionsState.addressesFor != null) addressesShown = true
                 }
 
+                // While it slides away the sheet keeps the last list, as «+» and «Изменить» keep their
+                // content: emptied at once, the sheet shrank on its way down. Not state — it is read
+                // in the same composition that writes it.
+                val keptAddresses = remember { arrayOfNulls<Profile>(1) }
+
                 if (addressesShown) {
                     // The profile is looked up every time: an update while the list is open refreshes it.
-                    val profile = subscriptionsState.profiles.firstOrNull { it.uuid == subscriptionsState.addressesFor }
+                    subscriptionsState.profiles.firstOrNull { it.uuid == subscriptionsState.addressesFor }
+                        ?.let { keptAddresses[0] = it }
+                    val profile = keptAddresses[0]
 
                     SubscriptionAddressesSheet(
-                        open = profile != null,
+                        open = subscriptionsState.addressesFor != null && profile != null,
                         addresses = profile?.addresses.orEmpty(),
                         triedAt = profile?.triedAt ?: 0,
                         onDismiss = { subscriptionsViewModel.showAddresses(null) },
