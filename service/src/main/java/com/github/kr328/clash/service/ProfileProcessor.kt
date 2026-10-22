@@ -127,14 +127,23 @@ object ProfileProcessor {
 
                 Clash.setAgeSecretKey(snapshot.ageSecretKey?.takeIf { it.isNotBlank() })
 
+                var tries = emptyList<FetchStatus.Try>()
+
                 val subscriptionInfo = try {
-                    fetchProfile(context, snapshot.source, true, callback, brokenConfigAllowed(context, snapshot.uuid, snapshot.type))
+                    fetchProfile(context, snapshot.source, true, callback, brokenConfigAllowed(context, snapshot.uuid, snapshot.type)) {
+                        tries = it
+                    }
                 } catch (e: HwidBlockedException) {
                     // Профиль остаётся прежним, но отметку об отказе нужно сохранить рядом
                     // с ним: иначе человек видит только то, что «ничего не изменилось»,
                     // а причину — нигде (D-26). Следующее удачное обновление перезапишет
                     // сведения провайдера целиком и отметка сама исчезнет.
                     markHwidBlocked(context, snapshot.uuid, e)
+                    recordTries(context, snapshot.uuid, tries)
+
+                    throw e
+                } catch (e: Exception) {
+                    recordTries(context, snapshot.uuid, tries)
 
                     throw e
                 }
@@ -254,6 +263,15 @@ object ProfileProcessor {
         return ProviderInfo.read(context.importedDir.resolve(uuid.toString())).templateFromConfig
     }
 
+    /** A failed update keeps the old profile, yet the list of addresses shows this try (Q-82). */
+    private fun recordTries(context: Context, uuid: UUID, tries: List<FetchStatus.Try>) {
+        if (tries.isEmpty()) return
+
+        val dir = context.importedDir.resolve(uuid.toString())
+
+        ProviderInfo.write(dir, ProviderInfo.read(dir).copy(tries = tries, triedAt = System.currentTimeMillis()))
+    }
+
     private fun markHwidBlocked(context: Context, uuid: UUID, failure: HwidBlockedException) {
         val dir = context.importedDir.resolve(uuid.toString())
         val current = ProviderInfo.read(dir)
@@ -279,6 +297,7 @@ object ProfileProcessor {
         force: Boolean,
         callback: IFetchObserver?,
         brokenConfigAllowed: Boolean,
+        tried: (List<FetchStatus.Try>) -> Unit = {},
     ): FetchStatus? {
         var subscriptionInfo: FetchStatus? = null
         var provider: ProviderInfo? = null
@@ -296,6 +315,7 @@ object ProfileProcessor {
         val previous = ProviderInfo.read(context.processingDir)
         var servedBy = ""
         var servedVia = ""
+        var tries = emptyList<FetchStatus.Try>()
 
         Clash.setSubscriptionMirrors(
             source,
@@ -314,10 +334,16 @@ object ProfileProcessor {
                 return@fetchAndValid
             }
 
-            // Comes before the headers (`subscription_mirrors.go`).
+            // These two come before the headers (`subscription_mirrors.go`).
             if (it.action == FetchStatus.Action.SubscriptionSource) {
                 servedBy = it.args.getOrElse(0) { "" }
                 servedVia = it.args.getOrElse(1) { "" }
+                return@fetchAndValid
+            }
+
+            if (it.action == FetchStatus.Action.SubscriptionTries) {
+                tries = it.tries.orEmpty()
+                tried(tries)
                 return@fetchAndValid
             }
 
@@ -328,6 +354,7 @@ object ProfileProcessor {
             if (it.action == FetchStatus.Action.SubscriptionHeaders) {
                 it.headers?.let { headers ->
                     val info = ProviderInfo.continued(ProviderInfo.of(headers, source), previous, headers, servedBy, servedVia)
+                        .copy(tries = tries, triedAt = System.currentTimeMillis())
 
                     provider = info
                     ProviderInfo.write(context.processingDir, info)

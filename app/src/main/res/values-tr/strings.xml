@@ -518,9 +518,28 @@
     <string name="settings_wallet_copied">Cüzdan adresi kopyalandı</string>
     <string name="settings_category_interface">Arayüz</string>
     <string name="settings_category_information">Bilgi</string>
-    <string name="subscription_backups">Yedek adres: %d</string>
-    <string name="subscription_reached_via">Son güncelleme %s üzerinden geldi</string>
-    <string name="subscription_reached_direct">Son güncelleme doğrudan, VPN’i atlayarak geldi</string>
-    <string name="subscription_reached_proxy">Son güncelleme aboneliğin sunucusu üzerinden geldi</string>
     <string name="subscription_moved">Sağlayıcı aboneliği %2$s tarihinde %1$s adresinden taşıdı</string>
+    <string name="subscription_backups_row">Yedek adresler</string>
+    <string name="subscription_addresses_title">Abonelik adresleri</string>
+    <string name="subscription_addresses_hint">Ana adres yanıt vermezse ducker sağlayıcının yedek adreslerini kendisi dener</string>
+    <string name="subscription_addresses_checked">Kontrol edildi: %s</string>
+    <string name="address_own">Ana</string>
+    <string name="address_backup">Yedek</string>
+    <string name="address_direct">Doğrudan, VPN’i atlayarak</string>
+    <string name="address_proxy">Aboneliğin sunucusu üzerinden</string>
+    <string name="address_ok">yanıt verdi</string>
+    <string name="address_connection">bağlantı yok</string>
+    <string name="address_status">sunucu hatası %d</string>
+    <string name="address_webpage">abonelik yerine web sayfası</string>
+    <string name="address_failed">indirilemedi</string>
+    <string name="address_untried">gerekmedi</string>
+    <string name="address_served">Son güncelleme buradan geldi</string>
+    <plurals name="subscription_backup_addresses">
+        <item quantity="one">%d yedek adres</item>
+        <item quantity="other">%d yedek adres</item>
+    </plurals>
+    <plurals name="address_timeout">
+        <item quantity="one">%d saniyede yanıt yok</item>
+        <item quantity="other">%d saniyede yanıt yok</item>
+    </plurals>
 </resources>

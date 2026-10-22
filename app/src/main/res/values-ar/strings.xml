@@ -534,9 +534,36 @@
     <string name="settings_wallet_copied">تم نسخ عنوان المحفظة</string>
     <string name="settings_category_interface">الواجهة</string>
     <string name="settings_category_information">المعلومات</string>
-    <string name="subscription_backups">العناوين الاحتياطية: %d</string>
-    <string name="subscription_reached_via">وصل آخر تحديث عبر %s</string>
-    <string name="subscription_reached_direct">تم آخر تحديث مباشرةً، دون المرور عبر VPN</string>
-    <string name="subscription_reached_proxy">وصل آخر تحديث عبر خادم الاشتراك</string>
     <string name="subscription_moved">نقل المزوّد الاشتراك من %1$s في %2$s</string>
+    <string name="subscription_backups_row">العناوين الاحتياطية</string>
+    <string name="subscription_addresses_title">عناوين الاشتراك</string>
+    <string name="subscription_addresses_hint">إذا لم يستجب العنوان الرئيسي، يجرّب ducker تلقائيًا العناوين الاحتياطية من المزوّد</string>
+    <string name="subscription_addresses_checked">تم الفحص %s</string>
+    <string name="address_own">الرئيسي</string>
+    <string name="address_backup">احتياطي</string>
+    <string name="address_direct">مباشرةً، دون VPN</string>
+    <string name="address_proxy">عبر خادم الاشتراك</string>
+    <string name="address_ok">استجاب</string>
+    <string name="address_connection">لا يوجد اتصال</string>
+    <string name="address_status">خطأ في الخادم %d</string>
+    <string name="address_webpage">صفحة ويب بدلًا من الاشتراك</string>
+    <string name="address_failed">تعذّر التنزيل</string>
+    <string name="address_untried">لم تكن هناك حاجة إليه</string>
+    <string name="address_served">من هنا وصل آخر تحديث</string>
+    <plurals name="subscription_backup_addresses">
+        <item quantity="zero">%d عنوان احتياطي</item>
+        <item quantity="one">عنوان احتياطي واحد</item>
+        <item quantity="two">عنوانان احتياطيان</item>
+        <item quantity="few">%d عناوين احتياطية</item>
+        <item quantity="many">%d عنوانًا احتياطيًا</item>
+        <item quantity="other">%d عنوان احتياطي</item>
+    </plurals>
+    <plurals name="address_timeout">
+        <item quantity="zero">لا رد خلال %d ثانية</item>
+        <item quantity="one">لا رد خلال ثانية واحدة</item>
+        <item quantity="two">لا رد خلال ثانيتين</item>
+        <item quantity="few">لا رد خلال %d ثوانٍ</item>
+        <item quantity="many">لا رد خلال %d ثانية</item>
+        <item quantity="other">لا رد خلال %d ثانية</item>
+    </plurals>
 </resources>

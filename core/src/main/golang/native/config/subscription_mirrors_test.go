@@ -115,6 +115,15 @@ func (l *statusLog) source() []string {
 	return nil
 }
 
+func (l *statusLog) tries() []tryReport {
+	for _, s := range l.statuses {
+		if s.Action == "SubscriptionTries" {
+			return s.Tries
+		}
+	}
+	return nil
+}
+
 func previousConfig(t *testing.T) string {
 	t.Helper()
 	file := P.Join(t.TempDir(), "config.yaml")
@@ -336,5 +345,71 @@ func TestLooksLikeWebPage(t *testing.T) {
 		if got := looksLikeWebPage(bufio.NewReader(strings.NewReader(body))); got != want {
 			t.Errorf("%q: %v", body, got)
 		}
+	}
+}
+
+// Q-82: every try and every address never reached, for the list the person sees.
+func TestSubscriptionTriesAreReported(t *testing.T) {
+	noLastResort(t)
+	shortAnswerTimeout(t, 300*time.Millisecond)
+	closed, silent := closedAddress(t), silentAddress(t)
+	page := mirrorServer(t, func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("<html>")) })
+	busy := mirrorServer(t, func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(503) })
+	good, spare := configServer(t), configServer(t)
+	setMirrorPlan(t, closed, closed, silent, page.url, busy.url, good.url, spare.url)
+	log := &statusLog{}
+
+	if _, err := fetchSubscription(closed, previousConfig(t), log.report); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []tryReport{
+		{Address: closed, Outcome: "connection"},
+		{Address: silent, Outcome: "timeout", Code: 1},
+		{Address: page.url, Outcome: "webpage"},
+		{Address: busy.url, Outcome: "status", Code: 503},
+		{Address: good.url, Outcome: "ok"},
+		{Address: spare.url, Outcome: "untried"},
+	}
+	got := log.tries()
+	if len(got) != len(want) {
+		t.Fatalf("tries %+v", got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("try %d: %+v, want %+v", i, got[i], want[i])
+		}
+	}
+	if spare.hits.Load() != 0 {
+		t.Fatal("an address after the answer was asked")
+	}
+}
+
+// The last resort's tries carry their route; the device limit leaves the rest untried.
+func TestSubscriptionTriesOfTheLastResortAndAStop(t *testing.T) {
+	shortAnswerTimeout(t, 300*time.Millisecond)
+	node := configServer(t)
+	lastResortThrough(t, node.url)
+	source := closedAddress(t)
+	log := &statusLog{}
+
+	if _, err := fetchSubscription(source, previousConfig(t), log.report); err != nil {
+		t.Fatal(err)
+	}
+	if got := log.tries(); len(got) != 2 || got[1] != (tryReport{Address: source, Route: "proxy", Outcome: "ok"}) {
+		t.Fatalf("tries %+v", got)
+	}
+
+	noLastResort(t)
+	limit := mirrorServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("x-hwid-not-supported", "true")
+		w.WriteHeader(403)
+	})
+	mirror := configServer(t)
+	setMirrorPlan(t, limit.url, limit.url, mirror.url)
+	log = &statusLog{}
+	_, _ = fetchSubscription(limit.url, previousConfig(t), log.report)
+	if got := log.tries(); len(got) != 2 || got[0].Code != 403 || got[1] != (tryReport{Address: mirror.url, Outcome: "untried"}) {
+		t.Fatalf("tries %+v", got)
 	}
 }

@@ -1,6 +1,8 @@
 package com.github.kr328.clash.service.util
 
 import com.github.kr328.clash.common.util.providerLink
+import com.github.kr328.clash.core.model.FetchStatus
+import com.github.kr328.clash.service.model.SubscriptionAddress
 import java.net.URI
 
 /**
@@ -52,6 +54,30 @@ object SubscriptionMirrors {
         }
 
         return target?.takeIf { it != itself(source) }
+    }
+
+    /**
+     * The list the person sees (Q-82): the link and the mirrors in the provider's order, each with the
+     * outcome of its usual-way try and the last resort's tries of it. [servedBy] is the address of the
+     * last successful update, the [tries] are of the last download, which may have failed since.
+     */
+    fun addresses(
+        source: String,
+        mirrors: List<String>,
+        tries: List<FetchStatus.Try>,
+        servedBy: String,
+    ): List<SubscriptionAddress> = (listOf(source) + mirrors).map { address ->
+        val usual = tries.firstOrNull { it.address == address && it.route.isEmpty() }
+
+        SubscriptionAddress(
+            host = host(address),
+            own = address == source,
+            outcome = usual?.outcome.orEmpty(),
+            code = usual?.code ?: 0,
+            resorts = tries.filter { it.address == address && it.route.isNotEmpty() }
+                .map { SubscriptionAddress.Resort(it.route, it.outcome, it.code) },
+            served = address == servedBy,
+        )
     }
 
     /** The host (and port) to show for an address: never the path, which carries the person's token. */

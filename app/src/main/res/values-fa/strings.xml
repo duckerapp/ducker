@@ -518,9 +518,28 @@
     <string name="settings_wallet_copied">نشانی کیف پول کپی شد</string>
     <string name="settings_category_interface">رابط کاربری</string>
     <string name="settings_category_information">اطلاعات</string>
-    <string name="subscription_backups">آدرس‌های پشتیبان: %d</string>
-    <string name="subscription_reached_via">آخرین به‌روزرسانی از طریق %s رسید</string>
-    <string name="subscription_reached_direct">آخرین به‌روزرسانی مستقیم و بدون VPN انجام شد</string>
-    <string name="subscription_reached_proxy">آخرین به‌روزرسانی از طریق سرور اشتراک رسید</string>
     <string name="subscription_moved">ارائه‌دهنده اشتراک را در %2$s از %1$s منتقل کرد</string>
+    <string name="subscription_backups_row">آدرس‌های پشتیبان</string>
+    <string name="subscription_addresses_title">آدرس‌های اشتراک</string>
+    <string name="subscription_addresses_hint">اگر آدرس اصلی پاسخ ندهد، ducker خودش آدرس‌های پشتیبانِ ارائه‌دهنده را امتحان می‌کند</string>
+    <string name="subscription_addresses_checked">بررسی‌شده %s</string>
+    <string name="address_own">اصلی</string>
+    <string name="address_backup">پشتیبان</string>
+    <string name="address_direct">مستقیم، بدون VPN</string>
+    <string name="address_proxy">از طریق سرور اشتراک</string>
+    <string name="address_ok">پاسخ داد</string>
+    <string name="address_connection">اتصال برقرار نشد</string>
+    <string name="address_status">خطای سرور %d</string>
+    <string name="address_webpage">صفحه وب به‌جای اشتراک</string>
+    <string name="address_failed">دانلود ممکن نشد</string>
+    <string name="address_untried">لازم نشد</string>
+    <string name="address_served">آخرین به‌روزرسانی از اینجا رسید</string>
+    <plurals name="subscription_backup_addresses">
+        <item quantity="one">%d آدرس پشتیبان</item>
+        <item quantity="other">%d آدرس پشتیبان</item>
+    </plurals>
+    <plurals name="address_timeout">
+        <item quantity="one">بدون پاسخ در %d ثانیه</item>
+        <item quantity="other">بدون پاسخ در %d ثانیه</item>
+    </plurals>
 </resources>

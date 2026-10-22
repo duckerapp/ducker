@@ -60,14 +60,11 @@ private val STOPS = listOf(2L, 3L, 4L, 6L, 8L, 12L, 24L, 48L, 72L, 144L).map { T
 private val OWN_START = TimeUnit.HOURS.toMillis(8)
 
 /**
- * How the subscription is reached (D-345): the provider's backup addresses, how the last update came,
- * and the provider's move of the link (Q-80). Hosts only — the path carries the person's token.
+ * How the subscription is reached: the provider's backup addresses (Q-82) and its move of the link
+ * (Q-80). The host only — the path carries the person's token.
  */
 data class SubscriptionReach(
     val backups: Int = 0,
-    val servedBy: String = "",
-    /** "", "direct" or "proxy" (Q-81). */
-    val servedVia: String = "",
     val movedFrom: String = "",
     val movedAt: Long = 0,
 )
@@ -92,6 +89,8 @@ fun EditSubscriptionDialog(
     rules: Int,
     onRules: () -> Unit,
     onConfig: () -> Unit,
+    /** Opens «Адреса подписки» (Q-82). */
+    onAddresses: () -> Unit,
     /** Свой конфиг без ссылки (D-125): ни ссылки, ни автообновления у него нет. */
     local: Boolean,
     link: String,
@@ -161,6 +160,11 @@ fun EditSubscriptionDialog(
             )
         }
 
+        // Only where the provider gave mirrors (Q-82).
+        if (!local && reach.backups > 0) {
+            SheetLink(Symbols.AltRoute, stringResource(R.string.subscription_backups_row) + " · ${reach.backups}", !busy, onAddresses)
+        }
+
         // Свои правила поверх правил провайдера (D-123) и сам конфиг (D-124) — своими экранами.
         SheetLink(Symbols.Tune, stringResource(R.string.rules_title) + if (rules > 0) " · $rules" else "", !busy, onRules)
         SheetLink(Symbols.Code, stringResource(R.string.config_open), !busy, onConfig)
@@ -176,25 +180,13 @@ fun EditSubscriptionDialog(
     }
 }
 
-/** Nothing while the subscription comes from its own link the usual way (the owner, 05.10.2026). */
+/** The provider's move of the link, for a week (Q-80): the field above already shows the new one. */
 @Composable
 private fun ReachLines(reach: SubscriptionReach) {
-    val lines = buildList {
-        if (reach.movedFrom.isNotEmpty()) {
-            add(stringResource(R.string.subscription_moved, reach.movedFrom, formatDate(reach.movedAt)))
-        }
-        if (reach.backups > 0) add(stringResource(R.string.subscription_backups, reach.backups))
-        when {
-            reach.servedVia == "proxy" -> add(stringResource(R.string.subscription_reached_proxy))
-            reach.servedVia == "direct" -> add(stringResource(R.string.subscription_reached_direct))
-            reach.servedBy.isNotEmpty() -> add(stringResource(R.string.subscription_reached_via, reach.servedBy))
-        }
-    }
-
-    if (lines.isEmpty()) return
+    if (reach.movedFrom.isEmpty()) return
 
     Text(
-        text = lines.joinToString("\n"),
+        text = stringResource(R.string.subscription_moved, reach.movedFrom, formatDate(reach.movedAt)),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.bodySmall,
     )

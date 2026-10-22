@@ -24,6 +24,7 @@ OUT = Path(__file__).resolve().parent.parent / "app/src/main/java/com/github/kr3
 ICONS = [
     ("Add", "add", False, False),
     ("AddCircleOutline", "add_circle", False, False),
+    ("AltRoute", "alt_route", False, False),
     ("Apps", "apps", False, False),
     ("Article", "article", False, False),
     ("ArrowBack", "arrow_back", False, True),
@@ -31,6 +32,7 @@ ICONS = [
     ("BugReport", "bug_report", False, False),
     ("Calculate", "calculate", False, False),
     ("Campaign", "campaign", False, False),
+    ("Cancel", "cancel", True, False),
     ("Category", "category", False, False),
     ("Check", "check", False, False),
     ("CheckCircle", "check_circle", True, False),
@@ -72,6 +74,7 @@ ICONS = [
     ("Palette", "palette", False, False),
     ("PhotoLibrary", "photo_library", False, False),
     ("PowerSettingsNew", "power_settings_new", False, False),
+    ("PriorityHigh", "priority_high", False, False),
     ("QrCode2", "qr_code_2", False, False),
     ("QrCodeScanner", "qr_code_scanner", False, False),
     ("RadioButtonUnchecked", "radio_button_unchecked", False, False),

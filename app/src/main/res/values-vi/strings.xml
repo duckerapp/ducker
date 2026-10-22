@@ -514,9 +514,26 @@
     <string name="settings_wallet_copied">Đã sao chép địa chỉ ví</string>
     <string name="settings_category_interface">Giao diện</string>
     <string name="settings_category_information">Thông tin</string>
-    <string name="subscription_backups">Địa chỉ dự phòng: %d</string>
-    <string name="subscription_reached_via">Lần cập nhật gần nhất đến qua %s</string>
-    <string name="subscription_reached_direct">Lần cập nhật gần nhất đi trực tiếp, không qua VPN</string>
-    <string name="subscription_reached_proxy">Lần cập nhật gần nhất đến qua máy chủ của gói đăng ký</string>
     <string name="subscription_moved">Nhà cung cấp đã chuyển gói đăng ký từ %1$s vào %2$s</string>
+    <string name="subscription_backups_row">Địa chỉ dự phòng</string>
+    <string name="subscription_addresses_title">Địa chỉ gói đăng ký</string>
+    <string name="subscription_addresses_hint">Nếu địa chỉ chính không phản hồi, ducker tự thử các địa chỉ dự phòng của nhà cung cấp</string>
+    <string name="subscription_addresses_checked">Đã kiểm tra %s</string>
+    <string name="address_own">Chính</string>
+    <string name="address_backup">Dự phòng</string>
+    <string name="address_direct">Trực tiếp, không qua VPN</string>
+    <string name="address_proxy">Qua máy chủ của gói đăng ký</string>
+    <string name="address_ok">đã phản hồi</string>
+    <string name="address_connection">không có kết nối</string>
+    <string name="address_status">lỗi máy chủ %d</string>
+    <string name="address_webpage">trang web thay vì gói đăng ký</string>
+    <string name="address_failed">không thể tải xuống</string>
+    <string name="address_untried">không cần đến</string>
+    <string name="address_served">Lần cập nhật gần nhất đến từ đây</string>
+    <plurals name="subscription_backup_addresses">
+        <item quantity="other">%d địa chỉ dự phòng</item>
+    </plurals>
+    <plurals name="address_timeout">
+        <item quantity="other">không có phản hồi trong %d giây</item>
+    </plurals>
 </resources>

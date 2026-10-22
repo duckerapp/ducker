@@ -548,9 +548,32 @@
     <string name="settings_wallet_copied">Адрес кошелька скопирован</string>
     <string name="settings_category_interface">Интерфейс</string>
     <string name="settings_category_information">Информация</string>
-    <string name="subscription_backups">Запасных адресов: %d</string>
-    <string name="subscription_reached_via">Последнее обновление — через %s</string>
-    <string name="subscription_reached_direct">Последнее обновление — напрямую, мимо VPN</string>
-    <string name="subscription_reached_proxy">Последнее обновление — через узел подписки</string>
     <string name="subscription_moved">Провайдер перенёс подписку с %1$s %2$s</string>
+    <string name="subscription_backups_row">Запасные адреса</string>
+    <string name="subscription_addresses_title">Адреса подписки</string>
+    <string name="subscription_addresses_hint">Если основной адрес не отвечает, ducker сам пробует запасные от провайдера</string>
+    <string name="subscription_addresses_checked">Проверено %s</string>
+    <string name="address_own">Основной</string>
+    <string name="address_backup">Запасной</string>
+    <string name="address_direct">Напрямую, мимо VPN</string>
+    <string name="address_proxy">Через узел подписки</string>
+    <string name="address_ok">ответил</string>
+    <string name="address_connection">нет соединения</string>
+    <string name="address_status">ошибка сервера %d</string>
+    <string name="address_webpage">веб-страница вместо подписки</string>
+    <string name="address_failed">не удалось скачать</string>
+    <string name="address_untried">не понадобился</string>
+    <string name="address_served">Отсюда пришло последнее обновление</string>
+    <plurals name="subscription_backup_addresses">
+        <item quantity="one">%d запасной адрес</item>
+        <item quantity="few">%d запасных адреса</item>
+        <item quantity="many">%d запасных адресов</item>
+        <item quantity="other">%d запасного адреса</item>
+    </plurals>
+    <plurals name="address_timeout">
+        <item quantity="one">нет ответа за %d секунду</item>
+        <item quantity="few">нет ответа за %d секунды</item>
+        <item quantity="many">нет ответа за %d секунд</item>
+        <item quantity="other">нет ответа за %d секунды</item>
+    </plurals>
 </resources>

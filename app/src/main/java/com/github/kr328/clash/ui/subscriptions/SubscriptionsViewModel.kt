@@ -82,6 +82,8 @@ data class SubscriptionsState(
     val editError: String = "",
     val editReach: SubscriptionReach = SubscriptionReach(),
     val editBusy: Boolean = false,
+    /** Whose «Адреса подписки» are open (Q-82); `null` — closed. */
+    val addressesFor: UUID? = null,
     /** Какую подписку собираемся удалить. Пусто — вопрос не задан. */
     val deleting: UUID? = null,
     /** Имя остаётся и после закрытия: панель ещё уезжает вниз, и заголовок не должен пустеть. */
@@ -676,8 +678,6 @@ class SubscriptionsViewModel : ViewModel() {
                     editError = "",
                     editReach = SubscriptionReach(
                         backups = profile.backups,
-                        servedBy = profile.servedBy,
-                        servedVia = profile.servedVia,
                         movedFrom = profile.movedFrom,
                         movedAt = profile.movedAt,
                     ),
@@ -686,6 +686,8 @@ class SubscriptionsViewModel : ViewModel() {
             }
         }
     }
+
+    fun showAddresses(uuid: UUID?) = _state.update { it.copy(addressesFor = uuid) }
 
     fun setEditName(value: String) = _state.update { it.copy(editName = value) }
 

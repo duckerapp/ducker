@@ -57,12 +57,13 @@ data class Profile(
     val providerInterval: Long = 0,
     /** How many backup addresses the provider gave for this link (D-345). */
     val backups: Int = 0,
-    /** The host that gave the last update when it was not the link itself; [servedVia] — "", "direct" or "proxy". */
-    val servedBy: String = "",
-    val servedVia: String = "",
     /** The host of the link the provider moved the subscription from, and when (Q-80); shown for a week. */
     val movedFrom: String = "",
     val movedAt: Long = 0,
+    /** The link and its mirrors with the outcome of their last try (Q-82); empty without mirrors. */
+    val addresses: List<SubscriptionAddress> = emptyList(),
+    /** When they were last tried. */
+    val triedAt: Long = 0,
 ) : Parcelable {
     enum class Type {
         File, Url, External

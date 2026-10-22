@@ -522,9 +522,30 @@
     <string name="settings_wallet_copied">Dirección de la cartera copiada</string>
     <string name="settings_category_interface">Interfaz</string>
     <string name="settings_category_information">Información</string>
-    <string name="subscription_backups">Direcciones de respaldo: %d</string>
-    <string name="subscription_reached_via">La última actualización llegó por %s</string>
-    <string name="subscription_reached_direct">La última actualización llegó directamente, sin pasar por la VPN</string>
-    <string name="subscription_reached_proxy">La última actualización llegó por un servidor de la suscripción</string>
     <string name="subscription_moved">El proveedor trasladó la suscripción desde %1$s el %2$s</string>
+    <string name="subscription_backups_row">Direcciones de respaldo</string>
+    <string name="subscription_addresses_title">Direcciones de la suscripción</string>
+    <string name="subscription_addresses_hint">Si la dirección principal no responde, ducker prueba sola las de respaldo del proveedor</string>
+    <string name="subscription_addresses_checked">Comprobado: %s</string>
+    <string name="address_own">Principal</string>
+    <string name="address_backup">Respaldo</string>
+    <string name="address_direct">Directamente, sin pasar por la VPN</string>
+    <string name="address_proxy">Por un servidor de la suscripción</string>
+    <string name="address_ok">respondió</string>
+    <string name="address_connection">sin conexión</string>
+    <string name="address_status">error del servidor %d</string>
+    <string name="address_webpage">una página web en lugar de la suscripción</string>
+    <string name="address_failed">no se pudo descargar</string>
+    <string name="address_untried">no hizo falta</string>
+    <string name="address_served">La última actualización llegó desde aquí</string>
+    <plurals name="subscription_backup_addresses">
+        <item quantity="one">%d dirección de respaldo</item>
+        <item quantity="many">%d direcciones de respaldo</item>
+        <item quantity="other">%d direcciones de respaldo</item>
+    </plurals>
+    <plurals name="address_timeout">
+        <item quantity="one">sin respuesta en %d segundo</item>
+        <item quantity="many">sin respuesta en %d segundos</item>
+        <item quantity="other">sin respuesta en %d segundos</item>
+    </plurals>
 </resources>

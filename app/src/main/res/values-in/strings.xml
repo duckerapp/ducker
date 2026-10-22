@@ -514,9 +514,26 @@
     <string name="settings_wallet_copied">Alamat dompet disalin</string>
     <string name="settings_category_interface">Antarmuka</string>
     <string name="settings_category_information">Informasi</string>
-    <string name="subscription_backups">Alamat cadangan: %d</string>
-    <string name="subscription_reached_via">Pembaruan terakhir datang lewat %s</string>
-    <string name="subscription_reached_direct">Pembaruan terakhir langsung, tanpa lewat VPN</string>
-    <string name="subscription_reached_proxy">Pembaruan terakhir datang lewat server langganan</string>
     <string name="subscription_moved">Penyedia memindahkan langganan dari %1$s pada %2$s</string>
+    <string name="subscription_backups_row">Alamat cadangan</string>
+    <string name="subscription_addresses_title">Alamat langganan</string>
+    <string name="subscription_addresses_hint">Jika alamat utama tidak merespons, ducker mencoba sendiri alamat cadangan dari penyedia</string>
+    <string name="subscription_addresses_checked">Diperiksa %s</string>
+    <string name="address_own">Utama</string>
+    <string name="address_backup">Cadangan</string>
+    <string name="address_direct">Langsung, tanpa lewat VPN</string>
+    <string name="address_proxy">Lewat server langganan</string>
+    <string name="address_ok">merespons</string>
+    <string name="address_connection">tidak ada koneksi</string>
+    <string name="address_status">kesalahan server %d</string>
+    <string name="address_webpage">halaman web, bukan langganan</string>
+    <string name="address_failed">tidak dapat mengunduh</string>
+    <string name="address_untried">tidak diperlukan</string>
+    <string name="address_served">Pembaruan terakhir datang dari sini</string>
+    <plurals name="subscription_backup_addresses">
+        <item quantity="other">%d alamat cadangan</item>
+    </plurals>
+    <plurals name="address_timeout">
+        <item quantity="other">tidak ada jawaban dalam %d detik</item>
+    </plurals>
 </resources>

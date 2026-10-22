@@ -118,6 +118,7 @@ import com.github.kr328.clash.ui.probe.ProbeViewModel
 import com.github.kr328.clash.ui.proxy.ProxyViewModel
 import com.github.kr328.clash.ui.subscriptions.AddSubscriptionDialog
 import com.github.kr328.clash.ui.subscriptions.SendToTvSheet
+import com.github.kr328.clash.ui.subscriptions.SubscriptionAddressesSheet
 import com.github.kr328.clash.ui.subscriptions.sendable
 import com.github.kr328.clash.ui.subscriptions.DeleteSubscriptionDialog
 import com.github.kr328.clash.ui.subscriptions.EditSubscriptionDialog
@@ -931,6 +932,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onFavorite = { subscriptionsViewModel.toggleFavorite(this@HomeActivity, it) },
                                         onMove = { from, to -> subscriptionsViewModel.move(from, to) },
                                         onMoved = { subscriptionsViewModel.saveOrder(this@HomeActivity) },
+                                        onAddresses = { subscriptionsViewModel.showAddresses(it.uuid) },
                                         modifier = Modifier.consumeWindowInsets(insets),
                                         contentPadding = insets,
                                         // Потянуть вниз — обновить подписку, которая сейчас в работе.
@@ -1292,6 +1294,12 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                 subscriptionsViewModel.showEdit(null)
                             }
                         },
+                        onAddresses = {
+                            subscriptionsState.editing?.let { uuid ->
+                                subscriptionsViewModel.showEdit(null)
+                                subscriptionsViewModel.showAddresses(uuid)
+                            }
+                        },
                         local = editLocal,
                         link = subscriptionsState.editLink,
                         interval = subscriptionsState.editInterval,
@@ -1309,6 +1317,25 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         onClosed = {
                             editShown = false
                         },
+                    )
+                }
+
+                var addressesShown by remember { mutableStateOf(false) }
+
+                LaunchedEffect(subscriptionsState.addressesFor) {
+                    if (subscriptionsState.addressesFor != null) addressesShown = true
+                }
+
+                if (addressesShown) {
+                    // The profile is looked up every time: an update while the list is open refreshes it.
+                    val profile = subscriptionsState.profiles.firstOrNull { it.uuid == subscriptionsState.addressesFor }
+
+                    SubscriptionAddressesSheet(
+                        open = profile != null,
+                        addresses = profile?.addresses.orEmpty(),
+                        triedAt = profile?.triedAt ?: 0,
+                        onDismiss = { subscriptionsViewModel.showAddresses(null) },
+                        onClosed = { addressesShown = false },
                     )
                 }
 

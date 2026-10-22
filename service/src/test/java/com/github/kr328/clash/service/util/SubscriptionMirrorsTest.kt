@@ -1,5 +1,7 @@
 package com.github.kr328.clash.service.util
 
+import com.github.kr328.clash.core.model.FetchStatus
+import com.github.kr328.clash.service.model.SubscriptionAddress
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -110,5 +112,32 @@ class SubscriptionMirrorsTest {
         assertEquals("sub2.example.net:8443", SubscriptionMirrors.host("https://sub2.example.net:8443/api/TOKEN"))
         assertEquals("sub.example.com", SubscriptionMirrors.host("https://user:pass@sub.example.com/TOKEN"))
         assertEquals("", SubscriptionMirrors.host(""))
+    }
+
+    @Test
+    fun `the list - the link and the mirrors in the provider's order, then the last resort (Q-82)`() {
+        val m1 = "https://m1.example.net/s"
+        val m2 = "https://m2.example.net/s"
+        val tries = listOf(
+            FetchStatus.Try(m1, "", "timeout", 10),
+            FetchStatus.Try(link, "", "connection"),
+            FetchStatus.Try(link, "proxy", "ok"),
+            FetchStatus.Try(m2, "", "untried"),
+        )
+
+        val list = SubscriptionMirrors.addresses(link, listOf(m1, m2), tries, link)
+
+        assertEquals(listOf("sub.example.com", "m1.example.net", "m2.example.net"), list.map { it.host })
+        assertEquals(listOf(true, false, false), list.map { it.own })
+        assertEquals(listOf("connection", "timeout", "untried"), list.map { it.outcome })
+        assertEquals(listOf(10), list.filter { it.outcome == "timeout" }.map { it.code })
+        // The last resort's try sits with the address it tried.
+        assertEquals(listOf(SubscriptionAddress.Resort("proxy", "ok")), list[0].resorts)
+        assertEquals(listOf(true, false, false), list.map { it.served })
+
+        // Kept from before the list was learnt: no outcome yet, the mark of the update still shown.
+        val kept = SubscriptionMirrors.addresses(link, listOf(m1), emptyList(), m1)
+        assertEquals(listOf("", ""), kept.map { it.outcome })
+        assertEquals(listOf(false, true), kept.map { it.served })
     }
 }

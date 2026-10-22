@@ -34,6 +34,7 @@ type Status struct {
 	SubDownload *int64            `json:"subDownload,omitempty"`
 	SubTotal    *int64            `json:"subTotal,omitempty"`
 	SubExpire   *int64            `json:"subExpire,omitempty"`
+	Tries       []tryReport       `json:"tries,omitempty"`
 }
 
 type fetchHeader struct {

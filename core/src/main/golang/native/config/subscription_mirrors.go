@@ -123,9 +123,40 @@ type subscriptionAttempt struct {
 	route   route
 	header  fetchHeader
 	err     error
-	// status is the server's own answer other than 2xx; webPage — it answered with HTML.
+	// status is the server's own answer other than 2xx; webPage — it answered with HTML; waited —
+	// how long it was given when it did not answer in time.
 	status  int
 	webPage bool
+	waited  time.Duration
+}
+
+// tryReport is one try as the person sees it in the subscription's list of addresses (Q-82).
+// Outcome: ok, connection, timeout (Code — the seconds waited), status (Code — the HTTP status),
+// webpage, failed, untried.
+type tryReport struct {
+	Address string `json:"address"`
+	Route   string `json:"route"`
+	Outcome string `json:"outcome"`
+	Code    int    `json:"code,omitempty"`
+}
+
+func (a subscriptionAttempt) report() tryReport {
+	t := tryReport{Address: a.address, Route: a.route.name()}
+	switch {
+	case a.err == nil:
+		t.Outcome = "ok"
+	case a.status != 0:
+		t.Outcome, t.Code = "status", a.status
+	case a.webPage:
+		t.Outcome = "webpage"
+	case a.waited != 0:
+		t.Outcome, t.Code = "timeout", int((a.waited+time.Second-1)/time.Second)
+	case errors.Is(a.err, errDownloadTooLarge):
+		t.Outcome = "failed"
+	default:
+		t.Outcome = "connection"
+	}
+	return t
 }
 
 // fetchSubscriptionAttempt downloads address into file by route r. A non-zero answerTimeout bounds the
@@ -146,6 +177,7 @@ func fetchSubscriptionAttempt(address string, r route, file string, answerTimeou
 		if reader != nil {
 			_ = reader.Close()
 		}
+		a.waited = answerTimeout
 		a.err = &downloadError{"profile", profileDownloadLimit, fmt.Errorf("no answer in %s", answerTimeout)}
 		return a
 	}
@@ -156,6 +188,8 @@ func fetchSubscriptionAttempt(address string, r route, file string, answerTimeou
 		var status *httpStatusError
 		if errors.As(err, &status) {
 			a.status = status.code
+		} else if errors.Is(err, context.DeadlineExceeded) {
+			a.waited = fetchTimeout
 		}
 		a.err = &downloadError{"profile", profileDownloadLimit, err}
 		return a
@@ -206,6 +240,9 @@ func fetchSubscription(source, file string, report func(string)) (fetchHeader, e
 	}
 
 	var tried []subscriptionAttempt
+	// Every try and every address left untried go to the service, whatever the end (Q-82).
+	defer func() { reportTries(addresses, tried, report) }()
+
 	for i, s := range steps {
 		// The server answered with a status at one of its addresses: another way to the same
 		// server would hear the same, so the last resort is skipped.
@@ -221,6 +258,8 @@ func fetchSubscription(source, file string, report func(string)) (fetchHeader, e
 		reportFetching(hostOf(s.address), report)
 
 		a := fetchSubscriptionAttempt(s.address, s.route, file, timeout)
+		tried = append(tried, a)
+
 		if a.err == nil {
 			reportSource(a, report)
 			return a.header, nil
@@ -230,8 +269,6 @@ func fetchSubscription(source, file string, report func(string)) (fetchHeader, e
 		if finalAnswer(a) {
 			return a.header, a.err
 		}
-
-		tried = append(tried, a)
 
 		if i < len(steps)-1 {
 			log.Warnln("[Subscription] %s%s: %s; trying the next address", hostOf(s.address), routeLabel(s.route), failureReason(a.err))
@@ -380,6 +417,32 @@ func reportFetching(host string, report func(string)) {
 		Args:        []string{host},
 		Progress:    -1,
 		MaxProgress: -1,
+	})
+
+	report(string(bytes))
+}
+
+// reportTries lists the tries in their order, then the addresses never reached. It comes before the
+// headers.
+func reportTries(addresses []string, tried []subscriptionAttempt, report func(string)) {
+	reached := map[string]bool{}
+	reports := make([]tryReport, 0, len(addresses)+len(tried))
+	for _, a := range tried {
+		reached[a.address] = true
+		reports = append(reports, a.report())
+	}
+	for _, address := range addresses {
+		if !reached[address] {
+			reports = append(reports, tryReport{Address: address, Outcome: "untried"})
+		}
+	}
+
+	bytes, _ := json.Marshal(&Status{
+		Action:      "SubscriptionTries",
+		Args:        []string{},
+		Progress:    -1,
+		MaxProgress: -1,
+		Tries:       reports,
 	})
 
 	report(string(bytes))

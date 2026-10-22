@@ -85,6 +85,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -143,6 +144,8 @@ fun SubscriptionsScreen(
     onMove: (from: UUID, to: UUID) -> Unit = { _, _ -> },
     /** Перестановка кончилась — запомнить порядок. */
     onMoved: () -> Unit = {},
+    /** «N запасных адреса» on the active card: its addresses (Q-82). */
+    onAddresses: (Profile) -> Unit = {},
 ) {
     val list = rememberLazyListState()
     val bounce = overscrollFor(list)
@@ -328,6 +331,7 @@ fun SubscriptionsScreen(
                         onEdit = onEdit,
                         onShare = share,
                         onMenu = openMenu,
+                        onAddresses = onAddresses,
                     )
                 }
 
@@ -416,6 +420,7 @@ private fun ActiveCard(
     onEdit: (Profile) -> Unit,
     onShare: (Profile) -> Unit,
     onMenu: (Profile) -> Unit,
+    onAddresses: (Profile) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val tv = LocalTv.current
@@ -496,6 +501,7 @@ private fun ActiveCard(
                     onUpdate = { onUpdate(shown.uuid) },
                     onEdit = { onEdit(shown) },
                     onMenu = { onMenu(shown) },
+                    onAddresses = { onAddresses(shown) },
                 )
             }
         }
@@ -700,6 +706,7 @@ private fun ActiveDetails(
     onUpdate: () -> Unit,
     onEdit: () -> Unit,
     onMenu: () -> Unit,
+    onAddresses: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
 
@@ -721,6 +728,20 @@ private fun ActiveDetails(
             if (loaded && profile.expire > 0 && !profile.local) {
                 Text(stringResource(R.string.valid_until, formatDate(profile.expire)),
                     style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Normal)
+            }
+            // Only where the provider gave mirrors (Q-82); a touch opens them.
+            if (loaded && profile.backups > 0) {
+                Row(
+                    modifier = Modifier.clip(MaterialTheme.shapes.small).clickable(role = Role.Button, onClick = onAddresses),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(Symbols.AltRoute, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Text(
+                        pluralStringResource(R.plurals.subscription_backup_addresses, profile.backups, profile.backups),
+                        style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Normal,
+                    )
+                }
             }
         }
         if (loaded && profile.local) {
@@ -917,7 +938,8 @@ private fun UpdateErrorCard(
                 modifier = Modifier.size(36.dp).clip(CircleShape).background(scheme.error.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Symbols.ErrorOutline, contentDescription = null, tint = scheme.error, modifier = Modifier.size(20.dp))
+                // A bare mark in the round badge: the outlined circle drew a ring inside it.
+                Icon(Symbols.PriorityHigh, contentDescription = null, tint = scheme.error, modifier = Modifier.size(20.dp))
             }
 
             Column(Modifier.weight(1f).padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

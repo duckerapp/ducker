@@ -22,7 +22,16 @@ data class FetchStatus(
      * иначе при отказе панели причина не доедет (FACTS.md, F-19).
      */
     val headers: Map<String, String>? = null,
+    /** Every try of the subscription's addresses, for its list (Q-82): [Action.SubscriptionTries]. */
+    val tries: List<Try>? = null,
 ) : Parcelable {
+    /**
+     * One try. [outcome]: ok, connection, timeout ([code] — the seconds waited), status ([code] — the HTTP
+     * status), webpage, failed, untried. [route]: "" — the usual way, "direct" or "proxy" — the last resort.
+     */
+    @Serializable
+    data class Try(val address: String, val route: String = "", val outcome: String, val code: Int = 0)
+
     enum class Action {
         FetchConfiguration,
         FetchProviders,
@@ -30,6 +39,8 @@ data class FetchStatus(
         SubscriptionHeaders,
         /** Which address gave the subscription and how: [args] — the address, then "", "direct" or "proxy" (D-345). */
         SubscriptionSource,
+        /** [tries]: each address tried and each left untried, whatever the end (Q-82). */
+        SubscriptionTries,
         Verifying,
     }
 

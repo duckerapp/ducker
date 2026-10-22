@@ -553,9 +553,28 @@
     <string name="settings_wallet_copied">Wallet address copied</string>
     <string name="settings_category_interface">Interface</string>
     <string name="settings_category_information">Information</string>
-    <string name="subscription_backups">Backup addresses: %d</string>
-    <string name="subscription_reached_via">Last update came through %s</string>
-    <string name="subscription_reached_direct">Last update went directly, bypassing the VPN</string>
-    <string name="subscription_reached_proxy">Last update came through the subscription’s node</string>
     <string name="subscription_moved">The provider moved the subscription from %1$s on %2$s</string>
+    <string name="subscription_backups_row">Backup addresses</string>
+    <string name="subscription_addresses_title">Subscription addresses</string>
+    <string name="subscription_addresses_hint">If the main address doesn’t answer, ducker tries the provider’s backups on its own</string>
+    <string name="subscription_addresses_checked">Checked %s</string>
+    <string name="address_own">Main</string>
+    <string name="address_backup">Backup</string>
+    <string name="address_direct">Directly, bypassing the VPN</string>
+    <string name="address_proxy">Via the subscription’s node</string>
+    <string name="address_ok">answered</string>
+    <string name="address_connection">no connection</string>
+    <string name="address_status">server error %d</string>
+    <string name="address_webpage">a web page instead of the subscription</string>
+    <string name="address_failed">couldn’t download</string>
+    <string name="address_untried">not needed</string>
+    <string name="address_served">The last update came from here</string>
+    <plurals name="subscription_backup_addresses">
+        <item quantity="one">%d backup address</item>
+        <item quantity="other">%d backup addresses</item>
+    </plurals>
+    <plurals name="address_timeout">
+        <item quantity="one">no answer in %d second</item>
+        <item quantity="other">no answer in %d seconds</item>
+    </plurals>
 </resources>

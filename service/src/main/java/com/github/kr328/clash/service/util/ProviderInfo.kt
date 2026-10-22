@@ -1,6 +1,7 @@
 package com.github.kr328.clash.service.util
 
 import android.util.Base64
+import com.github.kr328.clash.core.model.FetchStatus
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -65,6 +66,9 @@ data class ProviderInfo(
     /** The link the provider moved the subscription from, and when: shown in its sheet for [MOVED_SHOWN]. */
     val movedFrom: String = "",
     val movedAt: Long = 0,
+    /** The last download's tries (Q-82), kept when it failed too; [triedAt] — when. */
+    val tries: List<FetchStatus.Try> = emptyList(),
+    val triedAt: Long = 0,
 ) {
     fun mirrorsFor(link: String): List<String> = if (source == link) mirrors else emptyList()
 
