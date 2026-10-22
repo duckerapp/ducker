@@ -5,6 +5,17 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.40 — 2026-10-22
+
+- While ducker tries a backup address of a subscription, the add and edit sheets say so: “Trying a backup
+  address…”.
+- If no address answers, ducker tries each backup address directly, bypassing the VPN, not only the first one:
+  the subscription updates even when the node is down and the main address is blocked.
+- A provider on plain hosting, without its own headers, can list backup addresses as `#fallback-url:` lines at
+  the top of the subscription file, as in Happ.
+- The duck on the subscription card no longer keeps the previous theme's look after the theme changes, and has
+  no grey rim along its edge.
+
 ## 0.4.39 — 2026-10-22
 
 - Subscription mirrors: when a subscription's address is blocked or its server is down, ducker tries the
