@@ -327,6 +327,14 @@ object ProfileProcessor {
             SubscriptionMirrors.order(source, previous.mirrorsFor(source), previous.servedBy),
         )
 
+        fun answered(headers: Map<String, String>) {
+            val info = ProviderInfo.continued(ProviderInfo.of(headers, source), previous, headers, servedBy, servedVia)
+                .copy(tries = tries, triedAt = System.currentTimeMillis())
+
+            provider = info
+            ProviderInfo.write(context.processingDir, info)
+        }
+
         // Сведения провайдера — только от этого ответа. При обновлении в каталог обработки
         // скопирован прежний файл, и ответ без единого заголовка оставлял бы прежние сведения —
         // в том числе `ducker-local-proxy: off` (D-218). Без `force` готовый конфиг не
@@ -357,13 +365,7 @@ object ProfileProcessor {
             // не пройдёт, каталог не копируется — и прежние сведения останутся на месте
             // вместе с прежним профилем.
             if (it.action == FetchStatus.Action.SubscriptionHeaders) {
-                it.headers?.let { headers ->
-                    val info = ProviderInfo.continued(ProviderInfo.of(headers, source), previous, headers, servedBy, servedVia)
-                        .copy(tries = tries, triedAt = System.currentTimeMillis())
-
-                    provider = info
-                    ProviderInfo.write(context.processingDir, info)
-                }
+                it.headers?.let(::answered)
                 return@fetchAndValid
             }
 
@@ -375,6 +377,11 @@ object ProfileProcessor {
                 Log.w("Report fetch status: $e", e)
             }
         }.runCatching { await() }.onFailure { fetchFailure = it as? Exception ?: Exception(it) }
+
+        // The core passes up only the headers it knows (`collectHeaders`), and a plain mirror may send none
+        // of them. Its response still keeps the list, the address that gave it and the tries, as one
+        // without the mirror header does (D-345); `servedBy` is reported only for an address that answered.
+        if (provider == null && servedBy.isNotEmpty()) answered(emptyMap())
 
         provider?.takeIf { it.hwidBlocked }?.let {
             throw HwidBlockedException(it.hwidReason, it.announce, it.supportUrl)
