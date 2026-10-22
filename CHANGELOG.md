@@ -5,6 +5,22 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.39 — 2026-10-22
+
+- Subscription mirrors: when a subscription's address is blocked or its server is down, ducker tries the
+  provider's backup addresses (`ducker-mirrors`, or Happ's `fallback-url`) on its own and remembers the one
+  that answered. Background updates work the same way, with the app closed.
+- If no address answers, ducker tries once more directly, bypassing the VPN, and through the subscription's
+  own node.
+- A provider can move a subscription to a new address (Happ's `new-url` or `new-domain`): the link changes
+  only after the new address has given a working subscription.
+- The active subscription card shows the subscription's own rules and the provider's backup addresses under
+  its name; a tap opens them. The traffic and the term are on one line above the bar.
+- “Subscription addresses” lists each address with the result of its last try: answered, no connection, no
+  answer in time, a server error, a web page instead of the subscription, or not needed.
+- A web page coming instead of a subscription now gets its own explanation instead of a config error.
+- When a crash turns the VPN off, a notification says so, with a Connect button.
+
 ## 0.4.38 — 2026-10-21
 
 - The core is updated to mihomo v1.19.33: connecting to a DNS-over-HTTPS server no longer waits without
