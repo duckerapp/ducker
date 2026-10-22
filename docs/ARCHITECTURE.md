@@ -77,7 +77,8 @@ published by `.github/workflows/pages.yaml`.
   - `home` — the power button, the node picker, the background-work and VPN-permission sheets;
   - `proxy` — groups and nodes;
   - `subscriptions` — profile dialogs, sharing as a QR code, reordering, and the phone-to-TV
-    transfer (`TvTransfer`: the QR payload, encryption, receiving and sending);
+    transfer (`TvTransfer`: the QR payload, encryption, receiving and sending); `InstallLink` — a
+    link with its mirrors, as the install link, the shared QR and the TV transfer carry it;
   - `settings`; `config` — the YAML editor; `rules` — My rules; `apps` — per-app access;
     `logs`; `probe` — the node test; `update` — the app update sheet.
 - **`ui/components/`** — `DuckerScaffold` (the tab dock), `Tv` (the TV layout, the focus frame and

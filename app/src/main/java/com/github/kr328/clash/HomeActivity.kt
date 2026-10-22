@@ -117,6 +117,7 @@ import com.github.kr328.clash.ui.probe.ProbeScreen
 import com.github.kr328.clash.ui.probe.ProbeViewModel
 import com.github.kr328.clash.ui.proxy.ProxyViewModel
 import com.github.kr328.clash.ui.subscriptions.AddSubscriptionDialog
+import com.github.kr328.clash.ui.subscriptions.InstallLink
 import com.github.kr328.clash.ui.subscriptions.SendToTvSheet
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.ui.subscriptions.SubscriptionAddressesSheet
@@ -1544,11 +1545,12 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
         val uri = intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data ?: return
 
-        if (uri.scheme in LINK_SCHEMES && uri.host == "install-config") {
+        if (uri.scheme in InstallLink.SCHEMES && uri.host == "install-config") {
             val url = uri.getQueryParameter("url")?.trim().orEmpty()
 
             if (url.isNotEmpty()) {
-                subscriptionsViewModel.openLink(url)
+                // `mirror` repeats: the provider's backups for a link blocked from the start (stage 21, package 3).
+                subscriptionsViewModel.openLink(InstallLink(url, uri.getQueryParameters("mirror")))
 
                 // Тот же вход, что у «Подключиться» без подписки: вкладка «Подписки» и панель «+».
                 needSubscription.value = true
@@ -1927,9 +1929,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
         /** Волна на кнопке идёт 520 мс — соседние вкладки обновляем после неё. */
         const val TABS_REFRESH_DELAY = 700L
-
-        /** Схемы ссылки `…://install-config`: своя и те, что выдают панели. */
-        private val LINK_SCHEMES = setOf("ducker", "clash", "clashmeta")
 
         /** Окно «работа в фоне» — после волны, а не поверх неё (D-106). */
         const val BACKGROUND_ASK_DELAY = 1500L

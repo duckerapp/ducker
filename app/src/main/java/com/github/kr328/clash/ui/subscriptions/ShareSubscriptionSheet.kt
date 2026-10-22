@@ -28,7 +28,8 @@ import io.nayuki.qrcodegen.QrCode
 
 /**
  * QR-код ссылки подписки (этап 10): перенести подписку на второй телефон или телевизор, не
- * набирая ссылку. Сканер ducker (D-88) читает его как ссылку, введённую руками.
+ * набирая ссылку. Сканер ducker (D-88) читает его как ссылку, введённую руками. With the provider's
+ * mirrors the code is an `install-config` link carrying them (stage 21, package 3).
  */
 @Composable
 fun ShareSubscriptionSheet(

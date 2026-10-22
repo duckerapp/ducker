@@ -57,6 +57,8 @@ data class Profile(
     val providerInterval: Long = 0,
     /** How many backup addresses the provider gave for this link (D-345). */
     val backups: Int = 0,
+    /** Those addresses in full: «Поделиться» and the TV transfer carry them (stage 21, package 3). */
+    val mirrors: List<String> = emptyList(),
     /** The host of the link the provider moved the subscription from, and when (Q-80); shown for a week. */
     val movedFrom: String = "",
     val movedAt: Long = 0,

@@ -15,6 +15,8 @@ import com.github.kr328.clash.ui.config.fileName
 import com.github.kr328.clash.ui.config.readFile
 import com.github.kr328.clash.log.LogScrubber
 import com.github.kr328.clash.service.util.Failure
+import com.github.kr328.clash.service.util.ProviderInfo
+import com.github.kr328.clash.service.util.SubscriptionMirrors
 import com.github.kr328.clash.service.util.pendingDir
 import com.github.kr328.clash.service.util.sendOverrideChanged
 import com.github.kr328.clash.service.store.UserRulesStore
@@ -66,6 +68,8 @@ data class SubscriptionsState(
     /** Открыт ли диалог добавления и что в нём происходит. */
     val adding: Boolean = false,
     val input: String = "",
+    /** The provider's mirrors that came with a link (stage 21, package 3): only while [input] is that very link. */
+    val given: InstallLink? = null,
     val addError: String = "",
     val busy: Boolean = false,
     /** Какую подписку правим. Пусто — окно правки закрыто. */
@@ -211,7 +215,13 @@ class SubscriptionsViewModel : ViewModel() {
 
     fun showAdd(show: Boolean) {
         _state.update {
-            it.copy(adding = show, input = if (show) it.input else "", addError = "", linked = show && it.linked)
+            it.copy(
+                adding = show,
+                input = if (show) it.input else "",
+                given = if (show) it.given else null,
+                addError = "",
+                linked = show && it.linked,
+            )
         }
     }
 
@@ -224,10 +234,10 @@ class SubscriptionsViewModel : ViewModel() {
      * её в поле, — скачивается она, только когда человек нажмёт «Добавить». Панель открывает
      * главный экран.
      */
-    fun openLink(url: String) {
+    fun openLink(given: InstallLink) {
         if (_state.value.busy) return
 
-        _state.update { it.copy(input = url, addError = "", linked = true) }
+        _state.update { it.copy(input = given.link, given = given, addError = "", linked = true) }
     }
 
     /**
@@ -242,6 +252,7 @@ class SubscriptionsViewModel : ViewModel() {
 
         // Со страницы провайдера подписку добавляют, чтобы включить, — как присланную с телефона.
         val activate = fromPhone || _state.value.linked
+        val mirrors = _state.value.given?.takeIf { it.link == raw }?.mirrors.orEmpty()
 
         addJob = viewModelScope.launch {
             _state.update { it.copy(busy = true, addError = "", addProgress = 0f) }
@@ -262,6 +273,14 @@ class SubscriptionsViewModel : ViewModel() {
                             // лишней загрузки не будет. A new subscription follows its provider's
                             // hours; the eight are what it keeps while the provider sends none (D-286).
                             patch(created, name, raw, UPDATE_INTERVAL, true, null)
+
+                            // The core tries them already at this first download, as it tries the previous
+                            // download's on an update (`ProfileProcessor.fetchProfile`): the link may be blocked
+                            // from the start. The own link's answer then decides, as on every update (D-345).
+                            if (mirrors.isNotEmpty()) ProviderInfo.write(
+                                context.pendingDir.resolve(created.toString()),
+                                ProviderInfo(source = raw, mirrors = SubscriptionMirrors.resolve(raw, mirrors.joinToString(","), "")),
+                            )
                         }
                     } else {
                         // As a file: a long list does not fit into the arguments of a command (F-268).
@@ -404,7 +423,7 @@ class SubscriptionsViewModel : ViewModel() {
 
         result.onSuccess {
             _state.update {
-                it.copy(busy = false, adding = false, input = "", linked = false, toPower = uuid.takeIf { toPower })
+                it.copy(busy = false, adding = false, input = "", given = null, linked = false, toPower = uuid.takeIf { toPower })
             }
         }
 
@@ -450,7 +469,7 @@ class SubscriptionsViewModel : ViewModel() {
 
         receiving?.cancel()
         receiving = viewModelScope.launch {
-            val link = channelFlow<String?> {
+            val link = channelFlow<InstallLink?> {
                 homeAddress(app).collectLatest { address ->
                     if (address != null) {
                         return@collectLatest send(receive(address) { code ->
@@ -474,7 +493,7 @@ class SubscriptionsViewModel : ViewModel() {
 
             // Идёт своё добавление, руками, — дождаться: два разом не ведём.
             _state.first { !it.busy }
-            _state.update { it.copy(input = link, addError = "") }
+            _state.update { it.copy(input = link.link, given = link, addError = "") }
 
             add(app, fromPhone = true)
         }
@@ -505,7 +524,14 @@ class SubscriptionsViewModel : ViewModel() {
      * активная подписка в ней уже выбрана. Всё остальное — ссылка в поле, как раньше.
      */
     fun scanned(text: String) {
-        val tv = TvLink.parse(text.trim()) ?: return setInput(text)
+        val tv = TvLink.parse(text.trim())
+
+        if (tv == null) {
+            // «Поделиться» and a provider's page may give the link with its mirrors (stage 21, package 3).
+            val given = InstallLink.parse(text.trim())
+
+            return _state.update { it.copy(input = given?.link ?: text, given = given, addError = "") }
+        }
 
         _state.update {
             val sendable = it.profiles.sendable
@@ -528,17 +554,20 @@ class SubscriptionsViewModel : ViewModel() {
     /** Выбор, итог и ошибка остаются: панель ещё уезжает вниз. */
     fun closeSend() = _state.update { it.copy(sendTo = null) }
 
-    /** Ссылка выбранной подписки уходит на телевизор, зашифрованная ключом из его кода. */
+    /**
+     * Ссылка выбранной подписки уходит на телевизор, зашифрованная ключом из его кода. With the
+     * provider's mirrors, so the TV does not start from a blocked link (stage 21, package 3).
+     */
     fun confirmSend(context: Context) {
         val state = _state.value
         val to = state.sendTo ?: return
-        val link = state.profiles.firstOrNull { it.uuid == state.sendChoice }?.source ?: return
+        val link = state.profiles.firstOrNull { it.uuid == state.sendChoice }?.let { InstallLink.of(it.source, it.mirrors) } ?: return
 
         viewModelScope.launch {
             _state.update { it.copy(sendBusy = true, sendError = "") }
 
             val accepted = try {
-                send(to, link)
+                send(to, link.toString())
             } catch (e: IOException) {
                 null
             }

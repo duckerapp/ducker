@@ -36,6 +36,7 @@ import javax.crypto.spec.SecretKeySpec
  * Телевизор открывает порт и показывает QR с адресом, номером сеанса и ключом. Телефон шифрует
  * ссылку подписки этим ключом и отправляет одним запросом; телевизор проверяет, что внутри ссылка,
  * и добавляет её как введённую руками. Ключ и сеанс живут, пока QR на экране, и нигде не хранятся.
+ * With the provider's mirrors the message is an `install-config` link carrying them ([InstallLink]).
  *
  * Запрос — HTTP, хотя обе стороны свои: на тот же адрес будет слать и страничка для обычной камеры
  * (пакет 2б). Сокеты простые: `HttpURLConnection` без шифрования система пускает только к
@@ -108,14 +109,14 @@ internal suspend fun send(to: TvLink, link: String): Boolean = withContext(Dispa
 
 /**
  * Телевизор ждёт подписку: слушает [address] на случайном порту, отдаёт код для QR в [onLink] и
- * возвращает принятую ссылку подписки. `null` — сеанс закрыт без неё: вышло время или пришло
+ * возвращает принятую ссылку подписки с её зеркалами. `null` — сеанс закрыт без неё: вышло время или пришло
  * [STRIKES] чужих сообщений. Сеанс одноразовый: первая принятая передача его закрывает.
  */
 internal suspend fun receive(
     address: InetAddress,
     lifetime: Long = LIFETIME_MS,
     onLink: (TvLink) -> Unit,
-): String? = withContext(Dispatchers.IO) {
+): InstallLink? = withContext(Dispatchers.IO) {
     val random = SecureRandom()
     val key = ByteArray(KEY).also(random::nextBytes)
     val session = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(SESSION).also(random::nextBytes))
@@ -169,7 +170,7 @@ private fun CoroutineScope.closeAfter(what: Closeable, after: Long) = launch {
  * [MAX_HEAD] и [MAX_MESSAGE] и ничего из присланного не исполняет. Отказ один на всё: чужому
  * незачем знать, что именно не сошлось.
  */
-private fun answer(socket: Socket, session: String, key: ByteArray): String? {
+private fun answer(socket: Socket, session: String, key: ByteArray): InstallLink? {
     val link = runCatching {
         val input = socket.getInputStream()
         val head = head(input).lines()
@@ -182,7 +183,7 @@ private fun answer(socket: Socket, session: String, key: ByteArray): String? {
 
         if (head.first() != "POST /d/$session HTTP/1.1") return@runCatching null
 
-        unseal(key, message)?.let(::subscriptionLink)
+        unseal(key, message)?.let(InstallLink::parse)
     }.getOrNull()
 
     runCatching {

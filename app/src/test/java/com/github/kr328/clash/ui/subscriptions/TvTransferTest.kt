@@ -68,9 +68,21 @@ class TvTransferTest {
         val to = shown.await()
 
         assertTrue(send(to, link))
-        assertEquals(link, tv.await())
+        assertEquals(InstallLink(link), tv.await())
         // Повтор того же сообщения: порт уже закрыт.
         assertFailsWith<IOException> { send(to, link) }
+
+        Unit
+    }
+
+    @Test
+    fun `the link arrives with its mirrors`() = runBlocking {
+        val shown = CompletableDeferred<TvLink>()
+        val tv = async { receive(loopback) { shown.complete(it) } }
+        val given = InstallLink(link, listOf("sub2.example.com:8443", "https://other.example/x?t=a+b&c"))
+
+        assertTrue(send(shown.await(), given.toString()))
+        assertEquals(given, tv.await())
 
         Unit
     }
@@ -84,7 +96,7 @@ class TvTransferTest {
         // Чужой ключ, чужой сеанс, свой ключ, но внутри не ссылка подписки.
         assertFalse(send(TvLink(to.host, to.port, to.session, ByteArray(32)), link))
         assertFalse(send(TvLink(to.host, to.port, "other", to.key), link))
-        assertFalse(send(to, "vless://uuid@host:443"))
+        assertFalse(send(to, "ducker://install-config?url=file%3A%2F%2F%2Fdata&mirror=sub2.example.com"))
         // Не тот запрос и сообщение больше разрешённого.
         assertEquals("HTTP/1.1 403 Forbidden", raw(to, "GET /d/${to.session} HTTP/1.1\r\n\r\n"))
         assertFalse(tv.isCompleted)

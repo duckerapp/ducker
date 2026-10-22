@@ -200,7 +200,7 @@ fun SubscriptionsScreen(
         ShareSubscriptionSheet(
             open = shareOpen,
             name = profile.shownName,
-            link = profile.source,
+            link = InstallLink.of(profile.source, profile.mirrors).toString(),
             onDismiss = { shareOpen = false },
             onClosed = { shareFor = null },
         )

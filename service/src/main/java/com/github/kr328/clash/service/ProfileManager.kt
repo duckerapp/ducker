@@ -276,6 +276,7 @@ class ProfileManager(private val context: Context) : IProfileManager,
             // Only what was learnt for this very link: after an edit of the link the old file speaks of
             // another one (D-345).
             backups = provider.mirrorsFor(source).size,
+            mirrors = provider.mirrorsFor(source),
             movedFrom = if (moveShown) SubscriptionMirrors.host(provider.movedFrom) else "",
             movedAt = if (moveShown) provider.movedAt else 0,
             // Only where the provider gave mirrors: elsewhere there is no list to show (Q-82).
