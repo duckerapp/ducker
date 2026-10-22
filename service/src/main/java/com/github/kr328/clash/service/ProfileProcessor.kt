@@ -219,9 +219,14 @@ object ProfileProcessor {
             dir.deleteRecursively()
             context.processingDir.copyRecursively(dir)
 
+            // A name that is the old link's domain was given at adding, not by the person (D-117): it follows the
+            // link, or it would read as the person's own and hide the provider's title.
+            val auto = current.name == Uri.parse(from.source).host.orEmpty()
+
             ImportedDao().update(
                 current.copy(
                     source = target,
+                    name = if (auto) Uri.parse(target).host.orEmpty() else current.name,
                     upload = subscriptionInfo?.subUpload ?: current.upload,
                     download = subscriptionInfo?.subDownload ?: current.download,
                     total = subscriptionInfo?.subTotal ?: current.total,
