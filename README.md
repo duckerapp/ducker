@@ -199,6 +199,9 @@ tries other addresses on its own, and the user notices nothing:
   stored link only after the new address has given a working subscription; until then it keeps
   updating from the old one.
 
+A mirror must open the same link: point its domain at the same subscription page, at a copy of it
+on another server, or at the panel itself — wherever this path gives the subscription. If a backup
+serves it on another path, give that mirror as a full link.
 ducker learns mirrors from a successful update, so add them before a block, on another IP or CDN.
 The address that answered last time is tried first. A blocked address is given 10 seconds, the
 last one a full minute. A web page instead of a subscription (a block page) counts as a failure;

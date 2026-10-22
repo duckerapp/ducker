@@ -44,6 +44,10 @@ How ducker tries them:
 - The list comes with every successful update. A response from the link itself without the
   header removes the mirrors; a mirror's response without it keeps them.
 
+A mirror must open the same link: point its domain at the same subscription page, at a copy of it
+on another server, or at the panel itself — wherever this path gives the subscription. If a backup
+serves it on another path, give that mirror as a full link.
+
 Clients learn mirrors only from a successful update: add them before a block, on another IP or CDN.
 
 ## General rules
