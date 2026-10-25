@@ -5,6 +5,26 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.41 — 2026-10-26
+
+- A subscription's menu has “Send to TV”: it opens the scanner for the code a TV shows under “Add subscription”.
+- Starring a node on “Proxies” no longer reshuffles the list: the cards change in place.
+- The theme switch: the wave reveals the whole screen evenly, with no band of the new theme ahead of it; a quick
+  double tap switches once.
+- The power button: its fill follows quick presses instead of vanishing, the button fades to its new colour while
+  the wave leaves its edge, and on a phone a tap makes it dip and spring back, as a remote's OK does on a TV.
+- The duck on the welcome screen is sharp.
+- TV: Home fits the screen whole; the card about a node that does not answer puts its text beside its three buttons.
+- TV: the name above the dock is larger; the dock and its buttons wear the cards' soft shadow; sheets float inside
+  the screen's safe area; scrolled lists run to the screen's edge.
+- TV: a TV that reports a low screen density gets the standard TV layout instead of small screens with wide margins.
+- TV remote: the frame stays on the config editor in full screen and in search, and Back while editing takes it to
+  the top-left arrow; it follows a button that a card pushes down; it never goes to a page or a tab hidden from
+  view; the node panel takes it each time it opens; OK held down acts once; Left leaves a page for the dock unless
+  something is to the left; marking an app in “My rules” moves on to “Add”.
+- TV: Back on the first tab asks “Close ducker?” and says whether the VPN keeps working.
+- TV: no background-work prompts, which have nothing to open there; the “+” sheet keeps its code while it closes.
+
 ## 0.4.40 — 2026-10-22
 
 - While ducker tries a backup address of a subscription, the add and edit sheets say so: “Trying a backup
