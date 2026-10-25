@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.rules
 
 import com.github.kr328.clash.ui.components.tvEdge
+import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.Symbols
 import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
@@ -113,7 +114,7 @@ fun RulesScreen(
 
     val list = rememberLazyListState()
 
-    LazyColumn(
+    TvLazyColumn(
         state = list,
         overscrollEffect = overscrollFor(list),
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),

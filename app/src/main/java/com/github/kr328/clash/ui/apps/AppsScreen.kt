@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.apps
 
 import com.github.kr328.clash.ui.components.tvEdge
+import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
@@ -68,7 +68,7 @@ fun AppsScreen(
 
     val list = rememberLazyListState()
 
-    LazyColumn(
+    TvLazyColumn(
         state = list,
         overscrollEffect = overscrollFor(list),
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),

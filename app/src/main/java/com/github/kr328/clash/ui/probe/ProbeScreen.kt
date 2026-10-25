@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.probe
 
 import com.github.kr328.clash.ui.components.tvEdge
+import com.github.kr328.clash.ui.components.TvLazyColumn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -9,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.ui.semantics.Role
@@ -48,7 +48,7 @@ fun ProbeScreen(
 ) {
     val list = rememberLazyListState()
 
-    LazyColumn(
+    TvLazyColumn(
         state = list,
         overscrollEffect = overscrollFor(list),
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
