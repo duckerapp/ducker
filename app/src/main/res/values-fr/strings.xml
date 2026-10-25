@@ -53,6 +53,8 @@
     <string name="scan_title">Scanner un code QR</string>
     <string name="scan_gallery">Depuis la galerie</string>
     <string name="scan_gallery_miss">Aucun code QR trouvé dans l’image</string>
+    <string name="scan_hint_tv">Pointez la caméra vers le code QR affiché sur le téléviseur</string>
+    <string name="scan_not_tv">Ce n’est pas le code du téléviseur. Sur le téléviseur, ouvrez « Ajouter un abonnement ».</string>
     <string name="scan_torch">Lampe torche</string>
     <string name="scan_no_camera">L’accès à la caméra n’est pas autorisé. Accordez-le dans les paramètres de l’application.</string>
     <string name="share_qr">Partager par code QR</string>

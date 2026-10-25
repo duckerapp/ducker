@@ -53,6 +53,8 @@
     <string name="scan_title">Ler código QR</string>
     <string name="scan_gallery">Da galeria</string>
     <string name="scan_gallery_miss">Nenhum código QR encontrado na imagem</string>
+    <string name="scan_hint_tv">Aponte a câmera para o código QR na tela da TV</string>
+    <string name="scan_not_tv">Este não é o código da TV. Na TV, abra “Adicionar assinatura”.</string>
     <string name="scan_torch">Lanterna</string>
     <string name="scan_no_camera">Sem acesso à câmera. Conceda a permissão nas configurações do aplicativo.</string>
     <string name="share_qr">Compartilhar código QR</string>

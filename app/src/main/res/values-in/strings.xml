@@ -53,6 +53,8 @@
     <string name="scan_title">Pindai kode QR</string>
     <string name="scan_gallery">Dari galeri</string>
     <string name="scan_gallery_miss">Tidak ada kode QR dalam gambar</string>
+    <string name="scan_hint_tv">Arahkan kamera ke kode QR di layar TV</string>
+    <string name="scan_not_tv">Ini bukan kode TV. Di TV, buka “Tambah langganan”.</string>
     <string name="scan_torch">Senter</string>
     <string name="scan_no_camera">Tidak ada akses kamera. Berikan izin di pengaturan aplikasi.</string>
     <string name="share_qr">Bagikan kode QR</string>

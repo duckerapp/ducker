@@ -207,7 +207,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
     private val starts = mutableIntStateOf(0)
 
     private val qrScanner = registerForActivityResult(QrScanActivity.Scan) { text ->
-        if (text != null) subscriptionsViewModel.scanned(text)
+        subscriptionsViewModel.scanned(text)
     }
 
     /** «Файл» в окне добавления подписки: любой тип — у `.yaml` на телефоне часто нет своего. */
@@ -936,6 +936,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onMoved = { subscriptionsViewModel.saveOrder(this@HomeActivity) },
                                         onAddresses = { subscriptionsViewModel.showAddresses(it.uuid) },
                                         onRules = { subscriptionsViewModel.openRules(this@HomeActivity, it.uuid) },
+                                        onSendToTv = {
+                                            subscriptionsViewModel.scanForTv(it.uuid)
+                                            qrScanner.launch(true)
+                                        },
                                         modifier = Modifier.consumeWindowInsets(insets),
                                         contentPadding = insets,
                                         // Потянуть вниз — обновить подписку, которая сейчас в работе.
@@ -1388,7 +1392,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         backup = subscriptionsState.addBackup,
                         onValue = { subscriptionsViewModel.setInput(it) },
                         onPaste = { paste() },
-                        onScan = { qrScanner.launch(Unit) },
+                        onScan = { qrScanner.launch(false) },
                         onFile = { pickSubscriptionFile.launch(arrayOf("*/*")) },
                         onConfirm = { subscriptionsViewModel.add(this@HomeActivity) },
                         onDismiss = {

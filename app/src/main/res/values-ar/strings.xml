@@ -53,6 +53,8 @@
     <string name="scan_title">مسح رمز QR</string>
     <string name="scan_gallery">من المعرض</string>
     <string name="scan_gallery_miss">لم يُعثر على رمز QR في الصورة</string>
+    <string name="scan_hint_tv">وجّه الكاميرا نحو رمز QR على شاشة التلفزيون</string>
+    <string name="scan_not_tv">هذا ليس رمز التلفزيون. افتح «إضافة اشتراك» على التلفزيون.</string>
     <string name="scan_torch">المصباح</string>
     <string name="scan_no_camera">لا يوجد إذن للوصول إلى الكاميرا. امنحه من إعدادات التطبيق.</string>
     <string name="share_qr">مشاركة رمز QR</string>

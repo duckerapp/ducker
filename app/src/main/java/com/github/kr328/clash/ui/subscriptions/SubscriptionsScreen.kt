@@ -150,6 +150,8 @@ fun SubscriptionsScreen(
     onAddresses: (Profile) -> Unit = {},
     /** «N правил» on the active card: its own rules (Q-83). */
     onRules: (Profile) -> Unit = {},
+    /** «Отправить на телевизор» in the menu: the scanner for the TV's code (D-162). */
+    onSendToTv: (Profile) -> Unit = {},
 ) {
     val list = rememberLazyListState()
     val bounce = overscrollFor(list)
@@ -222,6 +224,8 @@ fun SubscriptionsScreen(
                 MenuAction.Support.takeIf { support != null },
                 MenuAction.Renew.takeIf { renew != null },
                 MenuAction.Share.takeIf { !profile.local },
+                // A link the TV can load itself; a TV has no camera to scan another TV with.
+                MenuAction.SendTv.takeIf { !tv && subscriptionLink(profile.source) != null },
                 MenuAction.Delete,
             ),
             favorite = profile.uuid in state.favorites,
@@ -232,6 +236,7 @@ fun SubscriptionsScreen(
                     MenuAction.Renew -> ({ renew?.let(onOpenLink) })
                     MenuAction.Support -> ({ support?.let(onOpenLink) })
                     MenuAction.Share -> ({ share(profile) })
+                    MenuAction.SendTv -> ({ onSendToTv(profile) })
                     // After the sheet has gone, so the row is seen moving to its group.
                     MenuAction.Favorite -> ({ onFavorite(profile.uuid) })
                     MenuAction.Delete -> ({ onDelete(profile) })
@@ -857,7 +862,7 @@ private fun ActiveDetails(
     }
 }
 
-private enum class MenuAction { Update, Edit, Renew, Support, Share, Favorite, Delete }
+private enum class MenuAction { Update, Edit, Renew, Support, Share, SendTv, Favorite, Delete }
 
 /** The same actions apply to active and inactive subscriptions. */
 @Composable
@@ -877,6 +882,7 @@ private fun ProfileMenu(
                     MenuAction.Update -> Symbols.Refresh
                     MenuAction.Edit -> Symbols.Edit
                     MenuAction.Share -> Symbols.QrCode2
+                    MenuAction.SendTv -> Symbols.Send
                     MenuAction.Favorite -> if (favorite) Symbols.Star else Symbols.StarOutline
                     MenuAction.Renew -> Symbols.CreditCard
                     MenuAction.Support -> Symbols.SupportAgent
@@ -886,6 +892,7 @@ private fun ProfileMenu(
                     MenuAction.Update -> R.string.update
                     MenuAction.Edit -> R.string.edit
                     MenuAction.Share -> R.string.share_qr
+                    MenuAction.SendTv -> R.string.send_tv_title
                     MenuAction.Favorite -> if (favorite) R.string.unfavorite else R.string.favorite
                     MenuAction.Renew -> R.string.renew
                     MenuAction.Support -> R.string.support

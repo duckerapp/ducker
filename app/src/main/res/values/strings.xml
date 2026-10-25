@@ -72,6 +72,8 @@
     <string name="scan_title">Scan a QR code</string>
     <string name="scan_gallery">From gallery</string>
     <string name="scan_gallery_miss">No QR code found in the picture</string>
+    <string name="scan_hint_tv">Point the camera at the QR code on the TV screen</string>
+    <string name="scan_not_tv">This is not a TV code. On the TV, open “Add subscription”.</string>
     <string name="scan_torch">Flashlight</string>
     <string name="scan_no_camera">No camera access. Allow it in app settings.</string>
     <!-- Поделиться подпиской QR-кодом (этап 10) -->

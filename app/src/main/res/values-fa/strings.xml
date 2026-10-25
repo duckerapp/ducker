@@ -53,6 +53,8 @@
     <string name="scan_title">اسکن کد QR</string>
     <string name="scan_gallery">از گالری</string>
     <string name="scan_gallery_miss">کد QR در تصویر پیدا نشد</string>
+    <string name="scan_hint_tv">دوربین را به سمت کد QR روی صفحهٔ تلویزیون بگیرید</string>
+    <string name="scan_not_tv">این کد تلویزیون نیست. در تلویزیون «افزودن اشتراک» را باز کنید.</string>
     <string name="scan_torch">چراغ‌قوه</string>
     <string name="scan_no_camera">دسترسی به دوربین وجود ندارد. در تنظیمات برنامه اجازه دهید.</string>
     <string name="share_qr">اشتراک‌گذاری با کد QR</string>

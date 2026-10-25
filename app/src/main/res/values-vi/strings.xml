@@ -53,6 +53,8 @@
     <string name="scan_title">Quét mã QR</string>
     <string name="scan_gallery">Từ thư viện</string>
     <string name="scan_gallery_miss">Không tìm thấy mã QR trong ảnh</string>
+    <string name="scan_hint_tv">Hướng camera vào mã QR trên màn hình TV</string>
+    <string name="scan_not_tv">Đây không phải mã của TV. Trên TV, hãy mở “Thêm gói đăng ký”.</string>
     <string name="scan_torch">Đèn pin</string>
     <string name="scan_no_camera">Không có quyền truy cập camera. Hãy cấp quyền trong cài đặt ứng dụng.</string>
     <string name="share_qr">Chia sẻ mã QR</string>

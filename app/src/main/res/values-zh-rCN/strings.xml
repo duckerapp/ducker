@@ -53,6 +53,8 @@
     <string name="scan_title">扫描二维码</string>
     <string name="scan_gallery">从相册选择</string>
     <string name="scan_gallery_miss">图片中未识别到二维码</string>
+    <string name="scan_hint_tv">将相机对准电视屏幕上的二维码</string>
+    <string name="scan_not_tv">这不是电视的二维码。请在电视上打开“添加订阅”。</string>
     <string name="scan_torch">手电筒</string>
     <string name="scan_no_camera">无相机权限，请在应用设置中允许访问相机。</string>
     <string name="share_qr">分享二维码</string>

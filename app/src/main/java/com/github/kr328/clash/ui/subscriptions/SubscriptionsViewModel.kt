@@ -524,11 +524,24 @@ class SubscriptionsViewModel : ViewModel() {
     /** Главная показана: на телевизоре пульт встал на кнопку питания. */
     fun atPower() = _state.update { it.copy(toPower = null) }
 
+    /** «Отправить на телевизор» in a subscription's menu: the sheet starts with it chosen, not the active one. */
+    private var sendNext: UUID? = null
+
+    /** The scanner opens for the TV's code to send [uuid] to. */
+    fun scanForTv(uuid: UUID) {
+        sendNext = uuid
+    }
+
     /**
      * Сканер вернул текст. Код телевизора (D-162) — вместо поля открывается панель отправки, и
-     * активная подписка в ней уже выбрана. Всё остальное — ссылка в поле, как раньше.
+     * активная подписка в ней уже выбрана. Всё остальное — ссылка в поле, как раньше. `null`: the scanner was
+     * closed.
      */
-    fun scanned(text: String) {
+    fun scanned(text: String?) {
+        val from = sendNext.also { sendNext = null }
+
+        if (text == null) return
+
         val tv = TvLink.parse(text.trim())
 
         if (tv == null) {
@@ -540,13 +553,15 @@ class SubscriptionsViewModel : ViewModel() {
 
         _state.update {
             val sendable = it.profiles.sendable
+            val chosen = sendable.firstOrNull { profile -> profile.uuid == from }
+                ?: sendable.firstOrNull { profile -> profile.active } ?: sendable.firstOrNull()
 
             it.copy(
                 adding = false,
                 input = "",
                 addError = "",
                 sendTo = tv,
-                sendChoice = (sendable.firstOrNull { profile -> profile.active } ?: sendable.firstOrNull())?.uuid,
+                sendChoice = chosen?.uuid,
                 sendError = "",
                 sendBusy = false,
                 sent = false,

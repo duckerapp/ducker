@@ -5,6 +5,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import androidx.annotation.StringRes
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -88,6 +89,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import com.github.kr328.clash.ui.subscriptions.SourceTile
+import com.github.kr328.clash.ui.subscriptions.TvLink
 import com.github.kr328.clash.ui.theme.DuckerTheme
 import kotlinx.coroutines.delay
 import zxingcpp.BarcodeReader
@@ -130,6 +132,12 @@ class QrScanActivity : AppCompatActivity() {
     /** На выбранной картинке кода не нашлось — говорим об этом в панели. */
     private val galleryMiss = mutableStateOf(false)
 
+    /** Opened from «Отправить на телевизор»: only a TV's code is taken (D-162). */
+    private val tvOnly by lazy { intent.getBooleanExtra(EXTRA_TV, false) }
+
+    /** In [tvOnly] mode another code was read: the panel says so and the scan goes on. */
+    private val notTv = mutableStateOf(false)
+
     private val permission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -170,6 +178,7 @@ class QrScanActivity : AppCompatActivity() {
     }
 
     private fun catch(text: String) {
+        if (tvOnly && TvLink.parse(text.trim()) == null) return runOnUiThread { notTv.value = true }
         if (found.compareAndSet(false, true)) runOnUiThread { caught.value = text }
     }
 
@@ -206,7 +215,13 @@ class QrScanActivity : AppCompatActivity() {
                 ScanScreen(
                     controller = controller,
                     caught = caught.value,
-                    galleryMiss = galleryMiss.value,
+                    hint = when {
+                        galleryMiss.value -> R.string.scan_gallery_miss
+                        notTv.value -> R.string.scan_not_tv
+                        tvOnly -> R.string.scan_hint_tv
+                        else -> R.string.scan_hint
+                    },
+                    error = galleryMiss.value || notTv.value,
                     torch = torch,
                     onTorch = {
                         torch = !torch
@@ -214,6 +229,7 @@ class QrScanActivity : AppCompatActivity() {
                     },
                     onGallery = {
                         galleryMiss.value = false
+                        notTv.value = false
                         gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                     },
                     onClose = ::finish,
@@ -252,10 +268,13 @@ class QrScanActivity : AppCompatActivity() {
     private fun List<BarcodeReader.Result>.firstText(): String? =
         firstNotNullOfOrNull { result -> result.text?.takeIf { it.isNotBlank() } }
 
-    /** Открывает сканер; результат — текст кода или `null`, если человек закрыл экран. */
-    object Scan : ActivityResultContract<Unit, String?>() {
-        override fun createIntent(context: Context, input: Unit) =
-            Intent(context, QrScanActivity::class.java)
+    /**
+     * Открывает сканер; результат — текст кода или `null`, если человек закрыл экран. Input `true`: only a TV's
+     * code, with a hint about it; any other code is refused on the spot instead of being returned.
+     */
+    object Scan : ActivityResultContract<Boolean, String?>() {
+        override fun createIntent(context: Context, input: Boolean) =
+            Intent(context, QrScanActivity::class.java).putExtra(EXTRA_TV, input)
 
         override fun parseResult(resultCode: Int, intent: Intent?): String? =
             intent?.takeIf { resultCode == RESULT_OK }?.getStringExtra(EXTRA_TEXT)
@@ -263,6 +282,7 @@ class QrScanActivity : AppCompatActivity() {
 
     private companion object {
         const val EXTRA_TEXT = "text"
+        const val EXTRA_TV = "tv"
         const val MAX_IMAGE = 2048
     }
 }
@@ -271,7 +291,8 @@ class QrScanActivity : AppCompatActivity() {
 private fun ScanScreen(
     controller: LifecycleCameraController,
     caught: String?,
-    galleryMiss: Boolean,
+    @StringRes hint: Int,
+    error: Boolean,
     torch: Boolean,
     onTorch: () -> Unit,
     onGallery: () -> Unit,
@@ -305,7 +326,7 @@ private fun ScanScreen(
             SideEffect { onBars(light && !wide) }
 
             val panel = @Composable { modifier: Modifier ->
-                ScanPanel(caught == null, galleryMiss, torch, onTorch, onGallery, wide, modifier)
+                ScanPanel(caught == null, hint, error, torch, onTorch, onGallery, wide, modifier)
             }
 
             if (wide) {
@@ -402,7 +423,8 @@ private fun Finder(caught: Boolean, sides: WindowInsetsSides, modifier: Modifier
 @Composable
 private fun ScanPanel(
     enabled: Boolean,
-    galleryMiss: Boolean,
+    @StringRes hint: Int,
+    error: Boolean,
     torch: Boolean,
     onTorch: () -> Unit,
     onGallery: () -> Unit,
@@ -428,9 +450,9 @@ private fun ScanPanel(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = stringResource(if (galleryMiss) R.string.scan_gallery_miss else R.string.scan_hint),
+                text = stringResource(hint),
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (galleryMiss) scheme.error else scheme.onSurfaceVariant,
+                color = if (error) scheme.error else scheme.onSurfaceVariant,
             )
         }
 
