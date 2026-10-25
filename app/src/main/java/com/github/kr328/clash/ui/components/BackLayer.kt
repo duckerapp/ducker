@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.InputMode
@@ -116,11 +117,15 @@ fun BackLayer(
     // Пульт (этап 6): экран открылся или снова стал верхним — фокус в него, туда, где стоял.
     // Только с клавишами: на касании фокус встал бы в поле поиска и поднял клавиатуру.
     val focus = remember { FocusRequester() }
+    val room = remember { RoomFocus() }
     val input = LocalInputModeManager.current
     val tv = LocalTv.current
 
+    // A screen that already has the focus keeps it where it is. Settings and the page open in them become top
+    // together when a screen over them closes: the outer layer's request already restored the row, and the page's
+    // second request entered it anew, on its back arrow.
     LaunchedEffect(visible && enabled) {
-        if (tv && visible && enabled && input.inputMode == InputMode.Keyboard) focus.requestFocus()
+        if (tv && visible && enabled && input.inputMode == InputMode.Keyboard && !room.focused) focus.requestFocus()
     }
 
     // The top screen takes back focus that got lost on it, see [TvFocus.cover].
@@ -184,11 +189,16 @@ fun BackLayer(
                     }
                 }
                 .then(if (enabled) Modifier else Modifier.clearAndSetSemantics {})
-                .then(if (tv) Modifier.focusRoom(focus) else Modifier),
+                .then(if (tv) Modifier.onFocusChanged { room.focused = it.hasFocus }.focusRoom(focus) else Modifier),
         ) {
             if (frameContent) ScreenFrame(wide, content = content) else content()
         }
     }
+}
+
+/** Whether the focus is inside the layer; read by its focus request, not drawn — no state. */
+private class RoomFocus {
+    var focused = false
 }
 
 private const val ENTER_MS = 220
