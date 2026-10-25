@@ -344,7 +344,7 @@ internal fun DuckerSheet(
         Box(
             // Панель — своё окно, и рамка выделения пультом (этап 6) у неё своя.
             Modifier.fillMaxSize()
-                .then(if (tv) Modifier.focusRing().ringHold(!open || !settled) else Modifier)
+                .then(if (tv) Modifier.okOnce().focusRing().ringHold(!open || !settled) else Modifier)
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .then(if (tv) Modifier.padding(vertical = TV_TOP) else Modifier)
                 .onSizeChanged { room = it.height.toFloat() },

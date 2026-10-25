@@ -777,6 +777,50 @@ private class FocusNudgeNode : Modifier.Node(), FocusEventModifierNode, Traversa
 
 private object RoomKey
 
+/**
+ * OK held down on a remote is one press with repeats and acts once. Held on the computer's keyboard in the
+ * emulator — and on some remotes passed through HDMI-CEC — it arrives as a stream of separate presses, and each
+ * acted: the VPN went on and off until the key was let go. A press of OK that follows the previous release within
+ * [REPEAT_GAP_MS] is such a repeat — no hand lets go and presses again that fast — and is dropped with its release.
+ * Set on the root of each window: the tab layout and every sheet.
+ */
+internal fun Modifier.okOnce(): Modifier = this then OkOnceElement
+
+private data object OkOnceElement : ModifierNodeElement<OkOnceNode>() {
+    override fun create() = OkOnceNode()
+
+    override fun update(node: OkOnceNode) = Unit
+}
+
+private class OkOnceNode : Modifier.Node(), KeyInputModifierNode {
+    private var releasedAt = 0L
+    private var dropping = false
+
+    override fun onPreKeyEvent(event: KeyEvent): Boolean {
+        if (event.key != Key.DirectionCenter && event.key != Key.Enter && event.key != Key.NumPadEnter) return false
+
+        val native = event.nativeKeyEvent
+
+        return when (event.type) {
+            KeyEventType.KeyDown -> {
+                if (native.repeatCount == 0) dropping = releasedAt > 0 && native.eventTime - releasedAt < REPEAT_GAP_MS
+                dropping
+            }
+
+            KeyEventType.KeyUp -> {
+                releasedAt = native.eventTime
+                dropping.also { dropping = false }
+            }
+
+            else -> false
+        }
+    }
+
+    override fun onKeyEvent(event: KeyEvent): Boolean = false
+}
+
+private const val REPEAT_GAP_MS = 40L
+
 private data class LeaveLeftElement(val onLeft: () -> Unit) : ModifierNodeElement<LeaveLeftNode>() {
     override fun create() = LeaveLeftNode(onLeft)
 
@@ -1088,6 +1132,7 @@ internal fun TvScaffold(
         // Поверхностью, а не одним фоном: она же задаёт цвет текста, как Scaffold на телефоне.
         Surface(
             Modifier.fillMaxSize()
+                .okOnce()
                 .focusRing { if (!covered) enter(selected()) else focus.cover?.requestFocus() }
                 // Пульт припаркован на вкладке дока, а фокус остался в странице (D-161): клавиши до
                 // страницы не доходят. Вправо и ОК возвращают рамку на место, вверх и вниз ведут
