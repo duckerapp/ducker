@@ -5,6 +5,11 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.42 — 2026-10-26
+
+- TV: the theme is dark by default even when the settings came back from a phone's backup with the light one; a
+  theme chosen on the TV itself is kept for the TV.
+
 ## 0.4.41 — 2026-10-26
 
 - A subscription's menu has “Send to TV”: it opens the scanner for the code a TV shows under “Add subscription”.
