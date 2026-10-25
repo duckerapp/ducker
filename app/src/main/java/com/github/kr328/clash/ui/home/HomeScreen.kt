@@ -921,7 +921,9 @@ private fun HeroCard(
             if (pickerShown) {
                 val scheme = MaterialTheme.colorScheme
 
-                LaunchedEffect(Unit) { if (keys) panelFocus.requestFocus() }
+                // On every opening, not only when the panel appears: opened again while it was still folding away,
+                // it stayed in place, and the focus stayed on the node row under it.
+                LaunchedEffect(picking) { if (keys && picking) panelFocus.requestFocus() }
 
                 CompositionLocalProvider(
                     LocalContentColor provides if (active) scheme.onPrimaryContainer else scheme.onSurface,
