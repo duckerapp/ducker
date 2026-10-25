@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A TV is driven by a remote: the hints that name a touch say “press” there (stage 6). -->
+<resources>
+    <string name="hero_off_hint">Tekan untuk mengaktifkan</string>
+    <string name="config_draft_hint">Terakhir kali Anda mengedit konfigurasi ini, perubahan belum disimpan. Pulihkan perubahan ke editor? Konfigurasinya sendiri tidak akan berubah sampai Anda menekan “Simpan”</string>
+</resources>

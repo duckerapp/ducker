@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A TV is driven by a remote: the hints that name a touch say “press” there (stage 6). -->
+<resources>
+    <string name="hero_off_hint">Press to turn on</string>
+    <string name="config_draft_hint">Last time you edited this config and didn’t save. Put the edit back into the editor? The config itself won’t change until you press Save</string>
+</resources>

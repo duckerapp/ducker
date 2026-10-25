@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A TV is driven by a remote: the hints that name a touch say “press” there (stage 6). -->
+<resources>
+    <string name="hero_off_hint">Açmak için basın</string>
+    <string name="config_draft_hint">Bu yapılandırmayı son düzenlediğinizde kaydetmediniz. Değişiklik düzenleyiciye geri yüklensin mi? “Kaydet” düğmesine basana kadar yapılandırmanın kendisi değişmez</string>
+</resources>

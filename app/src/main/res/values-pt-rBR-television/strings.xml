@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A TV is driven by a remote: the hints that name a touch say “press” there (stage 6). -->
+<resources>
+    <string name="hero_off_hint">Pressione para ativar</string>
+    <string name="config_draft_hint">Na última vez, você editou esta configuração sem salvar. Quer restaurar as alterações no editor? A configuração só mudará quando você pressionar “Salvar”</string>
+</resources>
