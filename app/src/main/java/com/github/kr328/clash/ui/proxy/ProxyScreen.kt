@@ -37,7 +37,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -315,7 +315,7 @@ fun ProxyScreen(
                                     groupScroll = scope.launch {
                                         listState.reveal(
                                             header = "header-${group.name}",
-                                            firstRow = "${group.name}-${group.proxies.first().name}",
+                                            firstRow = "${group.name}-0",
                                             rows = (group.proxies.size + columns - 1) / columns,
                                         )
                                     }
@@ -330,10 +330,12 @@ fun ProxyScreen(
                         )
                     }
 
-                    items(
+                    // Rows are keyed by position: a starred node moving up changes the cards in place
+                    // rather than crossfading every row below it (D-359).
+                    itemsIndexed(
                         if (open) group.proxies.chunked(columns) else emptyList(),
-                        key = { "${group.name}-${it.first().name}" },
-                    ) { proxies ->
+                        key = { i, _ -> "${group.name}-$i" },
+                    ) { _, proxies ->
                         ProxyRow(
                             group = group, proxies = proxies, columns = columns, column = column,
                             onSelect = onSelect, onFavorite = onFavorite,
