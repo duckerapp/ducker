@@ -714,7 +714,12 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     // Лента доезжает до вкладки дока, даже если её перебили: прокрутка к элементу в
                     // фокусе на прежней странице останавливала её между страницами (D-159).
-                    LaunchedEffect(pagerState.settledPage) { tvTarget = pagerState.settledPage }
+                    // Settled elsewhere by itself (restored state, the jump to «Подписки») — the dock follows. Not
+                    // while the dock is paging: after a quick Down-Up the stale settle on «Прокси» overwrote the
+                    // fresh choice of «Главная», and Right then sent the remote into the page off the screen.
+                    LaunchedEffect(pagerState.settledPage) {
+                        if (paging?.isActive != true) tvTarget = pagerState.settledPage
+                    }
                     LaunchedEffect(Unit) {
                         snapshotFlow { pagerState.isScrollInProgress }.collect { scrolling ->
                             if (!scrolling && pagerState.currentPageOffsetFraction != 0f) pagerState.animateScrollToPage(tvTarget)
@@ -737,8 +742,17 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         }
                     }
 
-                    // Вход во вкладку — с начала (D-158): «Прокси» — к первой группе, где точка входа.
-                    tvFocus.reset = { if (it == 1) proxyList.scrollToItem(0) }
+                    // Вход во вкладку — с начала (D-158): «Прокси» — к первой группе, где точка входа. And only into a
+                    // page the tape shows or is heading to: otherwise it comes on screen first, or the frame would
+                    // go to an element off the screen.
+                    tvFocus.reset = { page ->
+                        if (pagerState.targetPage != page) {
+                            tvTarget = page
+                            pagerState.animateScrollToPage(page)
+                        }
+
+                        if (page == 1) proxyList.scrollToItem(0)
+                    }
 
                     // Ждёт подписку с телефона, пока открыта панель «+» (D-162).
                     DisposableEffect(subscriptionsState.adding) {
