@@ -1,5 +1,11 @@
 package com.github.kr328.clash.ui.theme
 
+import android.graphics.Bitmap
+import android.os.Handler
+import android.os.Looper
+import android.view.PixelCopy
+import android.view.Window
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -17,19 +23,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.graphics.rememberGraphicsLayer
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 import kotlin.math.hypot
+import kotlin.math.roundToInt
 
 /**
  * Смена темы накатом волны от кнопки (D-66).
@@ -47,23 +56,20 @@ val LocalThemeSwitch = staticCompositionLocalOf<ThemeSwitch?> { null }
 
 @Composable
 fun ThemeReveal(onToggle: () -> Unit, content: @Composable () -> Unit) {
-    // Экран рисуется через слой, чтобы с него можно было снять последний кадр. Сам слой
-    // поверх положить нельзя: вложенные в него RenderNode'ы карточек перерисовались бы
-    // новой темой, и «снимок» вышел бы наполовину перекрашенным. Снимок в битмап
-    // замораживает всё, и стоит он на этом экране 5–9 мс (замер на Redmi).
-    //
-    // Через слой — только на кадр снимка (D-91). Пока экран всегда шёл через него,
-    // любая мелочь перезаписывала этот слой целиком, система теряла, какой кусок
-    // экрана поменялся, и перерисовывала всё: тик часов стоил видеочипу 9–12 мс.
-    val layer = rememberGraphicsLayer()
-    var capturing by remember { mutableStateOf(false) }
+    // Снимок в битмап замораживает всё. The frame is read back from the window as it is on screen
+    // ([snapshot]): the old way, drawing the screen through a layer for one frame and rendering that
+    // layer to a bitmap, sometimes returned it drawn only partly — on the emulator 5 switches of 16
+    // showed the new theme under a straight line at two thirds of the screen. Nothing is drawn
+    // through a layer now, so D-91's whole-screen redraws cannot come back either.
+    val window = LocalActivity.current?.window
     val scope = rememberCoroutineScope()
     val radius = remember { Animatable(0f) }
     val toggle by rememberUpdatedState(onToggle)
 
     var frozen by remember { mutableStateOf<ImageBitmap?>(null) }
     var origin by remember { mutableStateOf(Offset.Zero) }
-    var bounds by remember { mutableStateOf(Size.Zero) }
+    // Where the reveal is in the window, pixels: the snapshot is taken from there.
+    var area by remember { mutableStateOf(Rect.Zero) }
 
     val switch = remember {
         // Not a state: a second press in the same frame must already see it.
@@ -71,8 +77,8 @@ fun ThemeReveal(onToggle: () -> Unit, content: @Composable () -> Unit) {
 
         ThemeSwitch { from ->
             // Второе нажатие посреди наката оставило бы поверх экрана кадр, которому
-            // уже нечего накрывать. Dropped from the press on: let through during the two frames
-            // of the snapshot, it ran a second switch beside the first, and the theme came back.
+            // уже нечего накрывать. Dropped from the press on: let through while the snapshot was
+            // being taken, it ran a second switch beside the first, and the theme came back.
             if (running) return@ThemeSwitch
 
             running = true
@@ -83,17 +89,12 @@ fun ThemeReveal(onToggle: () -> Unit, content: @Composable () -> Unit) {
 
                     radius.snapTo(0f)
 
-                    // Слой пишется в ближайшей отрисовке. Первый кадр её запускает, ко второму
-                    // она уже прошла.
-                    capturing = true
-                    withFrameNanos {}
-                    withFrameNanos {}
-
-                    frozen = layer.toImageBitmap()
-
-                    capturing = false
+                    frozen = window?.let { snapshot(it, area) }
 
                     toggle()
+
+                    // No picture of the old theme: it just switches, without a wave.
+                    if (frozen == null) return@launch
 
                     // The new palette recomposes the whole screen — the switch's heaviest frame (18 ms of
                     // the UI thread on the emulator, more on a TV). It passes under the whole old frame:
@@ -101,9 +102,8 @@ fun ThemeReveal(onToggle: () -> Unit, content: @Composable () -> Unit) {
                     withFrameNanos {}
                     withFrameNanos {}
 
-                    radius.animateTo(bounds.farthestFrom(from), tween(520, easing = FastOutSlowInEasing))
+                    radius.animateTo(area.size.farthestFrom(from), tween(520, easing = FastOutSlowInEasing))
                 } finally {
-                    capturing = false
                     frozen = null
                     running = false
                 }
@@ -111,20 +111,8 @@ fun ThemeReveal(onToggle: () -> Unit, content: @Composable () -> Unit) {
         }
     }
 
-    Box(Modifier.fillMaxSize().onSizeChanged { bounds = Size(it.width.toFloat(), it.height.toFloat()) }) {
-        Box(
-            Modifier.fillMaxSize().drawWithContent {
-                if (capturing) {
-                    layer.record { this@drawWithContent.drawContent() }
-
-                    drawLayer(layer)
-                } else {
-                    drawContent()
-                }
-            },
-        ) {
-            CompositionLocalProvider(LocalThemeSwitch provides switch, content = content)
-        }
+    Box(Modifier.fillMaxSize().onGloballyPositioned { area = it.boundsInWindow() }) {
+        CompositionLocalProvider(LocalThemeSwitch provides switch, content = content)
 
         // Старый кадр поверх нового с вырезанным кругом: видно не перекраску, а накат.
         // Круг вырезаем `BlendMode.Clear` в отдельном слое — клип по пути с чётно-нечётной
@@ -140,6 +128,28 @@ fun ThemeReveal(onToggle: () -> Unit, content: @Composable () -> Unit) {
                 drawCircle(Color.Black, radius.value, origin, blendMode = BlendMode.Clear)
             }
         }
+    }
+}
+
+/**
+ * What the window shows inside [area] (window pixels) now, read back by the system; `null` if it could not.
+ * The copy is of a frame already on screen, whole, and is made off the main thread.
+ */
+private suspend fun snapshot(window: Window, area: Rect): ImageBitmap? {
+    val bounds = android.graphics.Rect(
+        area.left.roundToInt(), area.top.roundToInt(), area.right.roundToInt(), area.bottom.roundToInt(),
+    )
+
+    if (bounds.isEmpty) return null
+
+    val bitmap = Bitmap.createBitmap(bounds.width(), bounds.height(), Bitmap.Config.ARGB_8888)
+
+    return suspendCancellableCoroutine { done ->
+        PixelCopy.request(
+            window, bounds, bitmap,
+            { result -> done.resume(if (result == PixelCopy.SUCCESS) bitmap.asImageBitmap() else null) },
+            Handler(Looper.getMainLooper()),
+        )
     }
 }
 
