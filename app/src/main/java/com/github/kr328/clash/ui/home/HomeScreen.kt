@@ -51,6 +51,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -85,6 +86,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -766,6 +768,9 @@ private fun HeroCard(
 
     // Нажатие одно на обе копии: иначе под волной и над ней кнопка проседала бы по-разному.
     val press = remember { MutableInteractionSource() }
+    // And one size: the copy over the wave, made after the press, stood at full size at once while the one under it
+    // was still springing back from the dip, and the button grew back with a jerk.
+    val buttonScale = pressScale(press)
 
     LaunchedEffect(active) {
         // Передумали посреди наката: the circle closes from where it is. Removed at once, the new copy vanished,
@@ -887,6 +892,7 @@ private fun HeroCard(
                 state = state,
                 metrics = metrics,
                 press = press,
+                buttonScale = { buttonScale.value },
                 onToggle = onToggle,
                 onNode = onNode,
                 compact = compact,
@@ -905,6 +911,7 @@ private fun HeroCard(
                     state = state,
                     metrics = metrics,
                     press = press,
+                    buttonScale = { buttonScale.value },
                     onToggle = onToggle,
                     onNode = onNode,
                     compact = compact,
@@ -995,6 +1002,7 @@ private fun HeroFace(
     state: HomeState,
     metrics: () -> HomeMetrics,
     press: MutableInteractionSource,
+    buttonScale: () -> Float,
     onToggle: () -> Unit,
     onNode: () -> Unit,
     compact: Boolean,
@@ -1067,6 +1075,7 @@ private fun HeroFace(
                 running = running,
                 busy = state.busy,
                 press = press,
+                scale = buttonScale,
                 onToggle = onToggle,
                 compact = compact,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -1137,21 +1146,15 @@ private fun PowerButton(
     running: Boolean,
     busy: Boolean,
     press: MutableInteractionSource,
+    /** The button's size, one for both copies: see [pressScale]. */
+    scale: () -> Float,
     onToggle: () -> Unit,
     compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
-
-    val pressed by press.collectIsPressedAsState()
-    // Пульт (D-161): в фокусе кнопка чуть вырастает — белую кнопку на тёмной карточке одной
-    // рамкой с дивана не отличить. Источник нажатий общий у обеих копий, под волной и над ней.
-    val lifted = LocalTv.current && press.collectIsFocusedAsState().value
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.92f else if (lifted) TV_LIFT else 1f,
-        animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow),
-        label = "press",
-    )
+    val scope = rememberCoroutineScope()
+    val tv = LocalTv.current
 
     val face = LocalContentColor.current
     val fill = if (running) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
@@ -1191,8 +1194,8 @@ private fun PowerButton(
         Box(
             modifier = Modifier.size(diameter)
                 .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
+                    scaleX = scale()
+                    scaleY = scale()
                 }
                 .clip(CircleShape)
                 .background(face)
@@ -1207,6 +1210,12 @@ private fun PowerButton(
                     onClickLabel = stringResource(if (running) R.string.ducker_disconnect else R.string.ducker_connect),
                     onClick = {
                         if (busy) return@clickable
+
+                        if (!tv) scope.launch {
+                            press.emit(Dip.Start)
+                            delay(DIP_MS)
+                            press.emit(Dip.End)
+                        }
 
                         // Отклик рукой: подключение — главное действие приложения. Системные
                         // типы сами уважают выключенную в настройках вибрацию.
@@ -1230,6 +1239,34 @@ private fun PowerButton(
         }
     }
 }
+
+/** The power button's size: dipping while pressed, lifted under the remote's focus; springs between them. */
+@Composable
+private fun pressScale(press: MutableInteractionSource): State<Float> {
+    val pressed by press.collectIsPressedAsState()
+    // A tap ends before a touch screen shows the press, so on a phone the button did not move; a remote's OK holds
+    // it for a moment, and on a TV it dips and springs back. A tap now dips it as long ([Dip], from [PowerButton]).
+    val dipping by produceState(false, press) {
+        press.interactions.collect { if (it is Dip) value = it == Dip.Start }
+    }
+    // Пульт (D-161): в фокусе кнопка чуть вырастает — белую кнопку на тёмной карточке одной
+    // рамкой с дивана не отличить. Источник нажатий общий у обеих копий, под волной и над ней.
+    val lifted = LocalTv.current && press.collectIsFocusedAsState().value
+
+    return animateFloatAsState(
+        targetValue = if (pressed || dipping) 0.92f else if (lifted) TV_LIFT else 1f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow),
+        label = "press",
+    )
+}
+
+/** A tap's dip of the power button on a phone, see [PowerButton]. */
+private sealed interface Dip : Interaction {
+    data object Start : Dip
+    data object End : Dip
+}
+
+private const val DIP_MS = 120L
 
 /** Плавный переход 0→1 на участке [from, to] хода волны. */
 private fun fade(progress: Float, from: Float, to: Float): Float {
