@@ -1,6 +1,9 @@
 package com.github.kr328.clash.ui.components
 
 import kotlin.math.roundToInt
+import android.content.Context
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.SystemClock
 import android.view.ViewTreeObserver
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -1335,6 +1338,34 @@ private fun TvTab(icon: ImageVector, label: String, color: Color, modifier: Modi
         )
     }
 }
+
+/**
+ * Android TV lays its screens out on 960×540 dp at 720p, 1080p and 4K alike, and ours are built for that canvas. A TV
+ * that reports a lower density has a larger canvas, and the screens stood small in its middle with wide empty
+ * margins: the density is raised until the canvas is 960×540. A higher one — a larger display size — is kept.
+ * Off a TV [base] is returned as it is.
+ */
+internal fun tvCanvas(base: Context): Context {
+    if (!base.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)) return base
+
+    val config = base.resources.configuration
+    val metrics = base.resources.displayMetrics
+    val dpi = min(metrics.widthPixels * 160 / TV_CANVAS_WIDTH, metrics.heightPixels * 160 / TV_CANVAS_HEIGHT)
+
+    if (dpi <= config.densityDpi) return base
+
+    return base.createConfigurationContext(
+        Configuration(config).apply {
+            densityDpi = dpi
+            screenWidthDp = metrics.widthPixels * 160 / dpi
+            screenHeightDp = metrics.heightPixels * 160 / dpi
+            smallestScreenWidthDp = min(screenWidthDp, screenHeightDp)
+        },
+    )
+}
+
+private const val TV_CANVAS_WIDTH = 960
+private const val TV_CANVAS_HEIGHT = 540
 
 /**
  * The safe area's top and bottom on a TV ([TV_TOP]), zero elsewhere. A scrolling screen puts it inside its list:

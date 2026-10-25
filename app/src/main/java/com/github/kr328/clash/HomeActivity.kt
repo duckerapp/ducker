@@ -26,6 +26,7 @@ import androidx.compose.ui.focus.focusRequester
 import com.github.kr328.clash.ui.home.ThemeButton
 import com.github.kr328.clash.ui.home.BrandTitle
 import com.github.kr328.clash.ui.components.TvTool
+import com.github.kr328.clash.ui.components.tvCanvas
 import com.github.kr328.clash.ui.components.focusRoom
 import com.github.kr328.clash.ui.components.pageBoundary
 import com.github.kr328.clash.ui.components.TvPagerScroll
@@ -275,6 +276,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
             // не нажимаемой до истечения таймаута.
             viewModel.cancelToggling()
         }
+    }
+
+    // A TV with a larger canvas than Android TV's 960×540 gets that canvas (see [tvCanvas]).
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(tvCanvas(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
