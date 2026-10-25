@@ -983,9 +983,19 @@ internal fun TvLazyColumn(
  * неё элементы с анимацией перестановки подскакивали на следующем же переходе фокуса (F-194).
  */
 internal suspend fun LazyListState.tvScrollToStart() {
-    if (firstVisibleItemIndex == 0) animateScrollBy(-firstVisibleItemScrollOffset.toFloat(), TvSpring)
+    val distance = startDistance()
+
+    if (distance != null) animateScrollBy(-distance.toFloat(), TvSpring)
     else animateScrollToItem(0)
 }
+
+/**
+ * How far the list is from its start while its first item is on screen, else `null`. Read from that item's place,
+ * not `firstVisibleItemIndex`: a screen header that has slid under the list's top padding is still on screen, cut,
+ * but the list already counts the next item as the first visible one, and the header stayed cut.
+ */
+private fun LazyListState.startDistance(): Int? =
+    layoutInfo.visibleItemsInfo.firstOrNull()?.takeIf { it.index == 0 }?.let { (-it.offset).coerceAtLeast(0) }
 
 private data class SoftScrollElement(val state: ScrollableState) : ModifierNodeElement<SoftScrollNode>() {
     override fun create() = SoftScrollNode(state)
@@ -1019,8 +1029,7 @@ private class SoftScrollNode(var state: ScrollableState) : Modifier.Node(), Brin
     }
 
     /** Сколько осталось до начала списка; ноль — уже там или неизвестно (первый элемент не виден). */
-    private fun toStart(): Float =
-        (state as? LazyListState)?.takeIf { it.firstVisibleItemIndex == 0 }?.firstVisibleItemScrollOffset?.toFloat() ?: 0f
+    private fun toStart(): Float = (state as? LazyListState)?.startDistance()?.toFloat() ?: 0f
 
     private suspend fun run() {
         val w = sqrt(TV_SPRING)
