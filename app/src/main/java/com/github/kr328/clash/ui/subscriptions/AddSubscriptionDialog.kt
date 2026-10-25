@@ -87,6 +87,10 @@ fun AddSubscriptionDialog(
     onNewCode: () -> Unit = {},
 ) {
     val tv = LocalTv.current
+    // Closing stops the reception at once and clears its code: the sheet, still sliding down, keeps the code it
+    // showed, not an empty frame.
+    val last = remember { arrayOf(receive) }
+    if (open) last[0] = receive
 
     DuckerSheet(
         open = open,
@@ -172,7 +176,7 @@ fun AddSubscriptionDialog(
 
         if (tv) {
             Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                ReceiveCode(receive, onNewCode, Modifier.size(CODE_SIZE))
+                ReceiveCode(last[0], onNewCode, Modifier.size(CODE_SIZE))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp), content = manual)
             }
         } else {
