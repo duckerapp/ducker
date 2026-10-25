@@ -2,6 +2,10 @@ package com.github.kr328.clash.ui.config
 
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvKeys
+import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Offset
+import com.github.kr328.clash.ui.components.ringAnchor
 import androidx.compose.foundation.border
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -244,21 +248,38 @@ fun ConfigScreen(
     }
     val onBack = { if (state.dirty) onAskLeave(true) else onClose() }
 
-    // Несохранённое — не терять одним «назад»: сначала спросить (ловит раньше, чем слой).
-    BackHandler(enabled = state.dirty) { onAskLeave(true) }
-    // Объявлен позже — ловит раньше: из полного экрана «назад» возвращает обычный вид.
-    BackHandler(enabled = bare) { full = false }
-
     // Пульт (D-158): код — одна кнопка, как поле ввода. Иначе фокус заходил в редактор, стрелки
     // двигали в нём курсор, и до «Сохранить» было не добраться. ОК — править: стрелки ведут курсор;
-    // «назад» — закончить, фокус снова на карточке.
+    // «назад» — закончить, фокус на стрелке в левом верхнем углу.
     val keys = tvKeys()
     val code = remember { FocusRequester() }
     var typing by remember { mutableStateOf(false) }
+    // The back arrow in the top-left corner of either view. The remote returns there when editing ends and
+    // when the view changes: the fullscreen button under the frame disappears with it, and the lost focus
+    // went to the tab under this screen.
+    val corner = remember { FocusRequester() }
+    var toCorner by remember { mutableStateOf(false) }
+
+    LaunchedEffect(full, toCorner) {
+        if (toCorner) {
+            toCorner = false
+            corner.requestFocus()
+        }
+    }
+
+    fun view(fullscreen: Boolean) {
+        full = fullscreen
+        toCorner = keys
+    }
+
+    // Несохранённое — не терять одним «назад»: сначала спросить (ловит раньше, чем слой).
+    BackHandler(enabled = state.dirty) { onAskLeave(true) }
+    // Объявлен позже — ловит раньше: из полного экрана «назад» возвращает обычный вид.
+    BackHandler(enabled = bare) { view(false) }
 
     BackHandler(enabled = keys && typing) {
         typing = false
-        code.requestFocus()
+        toCorner = true
     }
 
     // Строка с ошибкой — волной прямо в коде, пока её не поправят.
@@ -291,7 +312,8 @@ fun ConfigScreen(
                         kind = stringResource(if (state.file != null) R.string.config_kind_file else R.string.config_kind_subscription),
                         name = state.name,
                         onBack = onBack,
-                        onFull = { full = true },
+                        onFull = { view(true) },
+                        back = Modifier.focusRequester(corner),
                     )
 
                     if (state.fromSubscription || state.file != null) {
@@ -390,7 +412,7 @@ fun ConfigScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack)
+                                HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack, Modifier.focusRequester(corner))
                                 Text(
                                     text = state.name,
                                     modifier = Modifier.widthIn(max = 160.dp),
@@ -415,7 +437,10 @@ fun ConfigScreen(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (full) {
                                 ToolGroup {
-                                    ToolButton(Symbols.ArrowBack, stringResource(R.string.config_fullscreen_exit), true) { full = false }
+                                    ToolButton(
+                                        Symbols.ArrowBack, stringResource(R.string.config_fullscreen_exit), true,
+                                        Modifier.focusRequester(corner),
+                                    ) { view(false) }
                                 }
                             }
                             edits()
@@ -437,12 +462,16 @@ fun ConfigScreen(
                     .background(MaterialTheme.colorScheme.surface)
                     .then(
                         if (keys) {
-                            Modifier.focusRequester(code).clickable(interactionSource = null, indication = null) {
-                                editor?.let {
-                                    typing = true
-                                    it.requestFocus()
+                            // The frame keeps to the code's own bounds: the place Compose gives for the focused editor
+                            // moved with the text as it scrolled and took the frame off the screen.
+                            Modifier.ringAnchor(corner = 24.dp) { Rect(Offset.Zero, it.toSize()) }
+                                .focusRequester(code)
+                                .clickable(interactionSource = null, indication = null) {
+                                    editor?.let {
+                                        typing = true
+                                        it.requestFocus()
+                                    }
                                 }
-                            }
                         } else Modifier,
                     ),
                 contentAlignment = Alignment.Center,
@@ -643,13 +672,13 @@ private fun CodeEditor.scrollTo(x: Int, y: Int, animate: Boolean) {
 
 /** Шапка: мелко — что это, крупно — чьё; справа — «во весь экран». */
 @Composable
-private fun Header(kind: String, name: String, onBack: () -> Unit, onFull: () -> Unit) {
+private fun Header(kind: String, name: String, onBack: () -> Unit, onFull: () -> Unit, back: Modifier) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack)
+        HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack, back)
 
         Column(Modifier.weight(1f).padding(start = 4.dp)) {
             Text(
@@ -797,10 +826,16 @@ private fun ToolGroup(content: @Composable RowScope.() -> Unit) {
 }
 
 @Composable
-private fun ToolButton(icon: ImageVector, description: String, enabled: Boolean, onClick: () -> Unit) {
+private fun ToolButton(
+    icon: ImageVector,
+    description: String,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
     Box(
         // 40, а не 44: в полном экране в строку встают шесть кнопок и на узком телефоне.
-        modifier = Modifier.size(40.dp)
+        modifier = modifier.size(40.dp)
             .clip(CircleShape)
             .clickable(enabled = enabled, role = Role.Button, onClickLabel = description, onClick = onClick),
         contentAlignment = Alignment.Center,

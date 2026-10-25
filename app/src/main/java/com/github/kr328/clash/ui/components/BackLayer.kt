@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -120,6 +121,15 @@ fun BackLayer(
 
     LaunchedEffect(visible && enabled) {
         if (tv && visible && enabled && input.inputMode == InputMode.Keyboard) focus.requestFocus()
+    }
+
+    // The top screen takes back focus that got lost on it, see [TvFocus.cover].
+    val tvFocus = LocalTvFocus.current
+
+    DisposableEffect(tvFocus, visible && enabled) {
+        if (visible && enabled) tvFocus?.cover = focus
+
+        onDispose { if (tvFocus != null && tvFocus.cover === focus) tvFocus.cover = null }
     }
 
     // Открыли снова — от прошлого жеста не должно остаться сдвинутой карточки.

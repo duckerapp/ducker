@@ -153,6 +153,12 @@ class TvFocus {
     /** Шестерёнка под доком: настройки закрылись — фокус обратно на неё. */
     val gear = FocusRequester()
 
+    /**
+     * The screen over the tabs that has the remote now, see [BackLayer]. Focus lost on it (the element under
+     * the frame disappeared) returns to it: otherwise the next key put the frame on the tab under the screen.
+     */
+    var cover: FocusRequester? = null
+
     /** Что сбросить на странице перед входом: список уехал — точки входа в нём может не быть. */
     var reset: suspend (page: Int) -> Unit = {}
 
@@ -197,6 +203,9 @@ val LocalTv = staticCompositionLocalOf { false }
 /** Телевизор, и его сейчас ведут пультом, а не указкой. Вне телевизора — всегда нет. */
 @Composable
 internal fun tvKeys(): Boolean = LocalTv.current && LocalInputModeManager.current.inputMode == InputMode.Keyboard
+
+/** The remote's focus of the tab layout; `null` off a TV. */
+val LocalTvFocus = staticCompositionLocalOf<TvFocus?> { null }
 
 /** Точка входа в страницу: её даёт вкладка, экран вешает [tabEntry] на нужный элемент. */
 val LocalTabEntry = staticCompositionLocalOf<FocusRequester?> { null }
@@ -1041,11 +1050,11 @@ internal fun TvScaffold(
         label = "dock",
     )
 
-    CompositionLocalProvider(LocalBringIntoViewSpec provides TvBringIntoView) {
+    CompositionLocalProvider(LocalBringIntoViewSpec provides TvBringIntoView, LocalTvFocus provides focus) {
         // Поверхностью, а не одним фоном: она же задаёт цвет текста, как Scaffold на телефоне.
         Surface(
             Modifier.fillMaxSize()
-                .focusRing { if (!covered) enter(selected()) }
+                .focusRing { if (!covered) enter(selected()) else focus.cover?.requestFocus() }
                 // Пульт припаркован на вкладке дока, а фокус остался в странице (D-161): клавиши до
                 // страницы не доходят. Вправо и ОК возвращают рамку на место, вверх и вниз ведут
                 // по колонке уже по-настоящему — оттуда вход в страницу снова с начала.
