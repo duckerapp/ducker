@@ -114,6 +114,15 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.requireLayoutCoordinates
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+import androidx.compose.ui.node.RootForTest
+import androidx.compose.ui.node.TraversableNode.Companion.TraverseDescendantsAction
+import androidx.compose.ui.node.currentValueOf
+import androidx.compose.ui.node.traverseDescendants
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -204,13 +213,15 @@ fun Modifier.tabEntry(): Modifier = composed {
  * на старое место. Экран поверх вкладок ([entry] нет) место помнит: из журнала назад в
  * настройки — на «Журнал».
  * Стрелками из комнаты не выйти: за краем страницы — соседние вкладки, под экраном поверх
- * вкладок — невидимая лента. Кроме [onLeft]: влево со страницы — её вкладка в доке.
+ * вкладок — невидимая лента. Кроме [onLeft]: влево со страницы — её вкладка в доке, as soon as the element has
+ * nothing to its left in its own row ([LeaveLeftNode]).
  */
 internal fun Modifier.focusRoom(
     requester: FocusRequester,
     entry: FocusRequester? = null,
     onLeft: (() -> Unit)? = null,
 ): Modifier = this then FocusNudgeElement
+    .then(if (onLeft != null) LeaveLeftElement(onLeft) else Modifier)
     .focusProperties {
         onExit = {
             val direction = requestedFocusDirection
@@ -709,10 +720,68 @@ private data object FocusNudgeElement : ModifierNodeElement<FocusNudgeNode>() {
     override fun update(node: FocusNudgeNode) = Unit
 }
 
-private class FocusNudgeNode : Modifier.Node(), FocusEventModifierNode {
+private class FocusNudgeNode : Modifier.Node(), FocusEventModifierNode, TraversableNode {
+    override val traverseKey: Any get() = RoomKey
+
+    /** Focus is inside: [LeaveLeftNode] leaves a nested room's keys to it. */
+    var focused = false
+
     override fun onFocusEvent(focusState: FocusState) {
+        focused = focusState.hasFocus
         traverseAncestors(RingKey) { (it as FocusRingNode).follow(); false }
     }
+}
+
+private object RoomKey
+
+private data class LeaveLeftElement(val onLeft: () -> Unit) : ModifierNodeElement<LeaveLeftNode>() {
+    override fun create() = LeaveLeftNode(onLeft)
+
+    override fun update(node: LeaveLeftNode) {
+        node.onLeft = onLeft
+    }
+}
+
+/**
+ * Left goes to the dock unless the focused element has something to its left in its own row (F-346). Compose's
+ * search takes a candidate from another row when the row has none: the power button's Left landed on «Обновить»
+ * below it, and so did the node row's, which starts a few pixels right of the card under it. Compose cannot be
+ * asked what its search would pick, so the room reads the semantics tree, which lists the focusable elements with
+ * their bounds; `RootForTest` is the public way to it. Without it Left goes as before.
+ */
+private class LeaveLeftNode(var onLeft: () -> Unit) :
+    Modifier.Node(), KeyInputModifierNode, CompositionLocalConsumerModifierNode {
+    override fun onPreKeyEvent(event: KeyEvent): Boolean {
+        if (event.key != Key.DirectionLeft || event.type != KeyEventType.KeyDown) return false
+
+        var nested = false
+        traverseDescendants(RoomKey) {
+            nested = (it as FocusNudgeNode).focused
+            if (nested) TraverseDescendantsAction.CancelTraversal else TraverseDescendantsAction.ContinueTraversal
+        }
+        if (nested) return false
+
+        val owner = (currentValueOf(LocalView) as? RootForTest)?.semanticsOwner ?: return false
+        val room = requireLayoutCoordinates().boundsInRoot()
+        val focusable = owner.getAllSemanticsNodes(mergingEnabled = false).filter {
+            SemanticsProperties.Focused in it.config && SemanticsProperties.Disabled !in it.config
+        }
+        val from = focusable.firstOrNull { it.config[SemanticsProperties.Focused] }?.boundsInRoot ?: return false
+        // Compose's own test for a candidate to the left, kept to the element's row and to what is on the page.
+        val beside = focusable.any {
+            val r = it.boundsInRoot
+
+            !r.isEmpty && r.overlaps(room) && r.left < from.left && r.right < from.right &&
+                r.top < from.bottom && r.bottom > from.top
+        }
+
+        if (beside) return false
+
+        onLeft()
+        return true
+    }
+
+    override fun onKeyEvent(event: KeyEvent): Boolean = false
 }
 
 private const val FOLLOW_NS = 700_000_000L
