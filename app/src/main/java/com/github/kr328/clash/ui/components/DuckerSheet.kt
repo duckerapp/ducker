@@ -168,7 +168,10 @@ internal fun DuckerSheet(
     val dismiss by rememberUpdatedState(onDismiss)
     val closed by rememberUpdatedState(onClosed)
     val ask by rememberUpdatedState(onAsk)
-    val sheetShape = remember { RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp) }
+    val tv = LocalTv.current
+    // On a TV the panel floats inside the safe area, rounded all round: a TV may cut the frame's edges, and
+    // glued to the bottom edge the panel's last button stood outside that area.
+    val sheetShape = remember(tv) { if (tv) RoundedCornerShape(28.dp) else RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp) }
 
     /** Жест закрытия: занята — нельзя, есть что бросить — спросить, иначе закрыть. Закрылась ли. */
     fun close(): Boolean {
@@ -291,7 +294,7 @@ internal fun DuckerSheet(
         // Пульт (этап 6): пальца нет, а к полю в фокусе Compose прокручивает тем же путём, что и
         // жест (F-190). Панель принимала это за свайп, бросала выезд и оставалась за нижним краем.
         val keys by rememberUpdatedState(tvKeys())
-        val tv = LocalTv.current
+        val margin = with(density) { if (tv) TV_TOP.toPx() else 0f }
         // Панель встала на место: пока она выезжает или уезжает, рамки пульта нет — иначе рамка
         // оставалась висеть на месте поля, а панель с ним уже уехала (D-161).
         val settled by remember { derivedStateOf { offset <= 0f } }
@@ -343,6 +346,7 @@ internal fun DuckerSheet(
             Modifier.fillMaxSize()
                 .then(if (tv) Modifier.focusRing().ringHold(!open || !settled) else Modifier)
                 .windowInsetsPadding(WindowInsets.statusBars)
+                .then(if (tv) Modifier.padding(vertical = TV_TOP) else Modifier)
                 .onSizeChanged { room = it.height.toFloat() },
             contentAlignment = Alignment.BottomCenter,
         ) {
@@ -364,7 +368,13 @@ internal fun DuckerSheet(
                         val now = with(density) { keyboard(ime) }
                         if (now == 0f || height < room) natural = height - now
                     }
-                    .offset { IntOffset(0, (offset.coerceAtMost(height) + lag()).roundToInt()) }
+                    // Down by its height and, on a TV, its margin too: it leaves and enters from under the edge.
+                    .offset {
+                        val shift = offset.coerceAtMost(height)
+                        val below = if (height > 0f) margin * shift / height else 0f
+
+                        IntOffset(0, (shift + below + lag()).roundToInt())
+                    }
                     // Уезжающая панель не нажимается ни пальцем, ни пультом (аудит 9в.11): за время
                     // отъезда кнопка успевала сработать второй раз.
                     .pointerInput(open) {
@@ -385,13 +395,17 @@ internal fun DuckerSheet(
                     .clip(sheetShape)
                     .background(MaterialTheme.colorScheme.background),
             ) {
-                // Ручка — знак, что панель тянется.
-                Box(
-                    Modifier.align(Alignment.CenterHorizontally)
-                        .padding(vertical = 22.dp)
-                        .size(width = 32.dp, height = 4.dp)
-                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), CircleShape),
-                )
+                // Ручка — знак, что панель тянется. Пульту тянуть нечем: на телевизоре на её месте поле.
+                if (tv) {
+                    Spacer(Modifier.height(24.dp))
+                } else {
+                    Box(
+                        Modifier.align(Alignment.CenterHorizontally)
+                            .padding(vertical = 22.dp)
+                            .size(width = 32.dp, height = 4.dp)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), CircleShape),
+                    )
+                }
 
                 // Lookahead hands the height spring below the final height at once, so a block with its
                 // own size animation — the slider under “Свой” (D-311) — and the panel move together on

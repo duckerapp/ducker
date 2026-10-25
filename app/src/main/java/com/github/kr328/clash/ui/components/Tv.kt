@@ -1338,7 +1338,7 @@ private fun TvTab(icon: ImageVector, label: String, color: Color, modifier: Modi
 
 /** Поля от краёв кадра: 48 по бокам и 27 сверху и снизу — безопасная зона Android TV. */
 private val TV_EDGE = 48.dp
-private val TV_TOP = 27.dp
+internal val TV_TOP = 27.dp
 private val TV_GAP = 24.dp
 private val TV_TAB_HEIGHT = 60.dp
 private val TV_TAB_CORNER = 20.dp

@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,7 +47,8 @@ fun ShareSubscriptionSheet(
         if (qr != null) {
             Box(
                 Modifier.align(Alignment.CenterHorizontally)
-                    .widthIn(max = 280.dp)
+                    // Smaller on a TV, so the sheet fits its short screen whole; a phone reads it from a metre away.
+                    .widthIn(max = if (LocalTv.current) 180.dp else 280.dp)
                     .fillMaxWidth()
                     .aspectRatio(1f)
                     .dropShadow(MaterialTheme.shapes.large, DuckerCardShadow)
