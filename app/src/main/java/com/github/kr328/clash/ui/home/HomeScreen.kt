@@ -130,6 +130,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.geometry.isSpecified
 import com.github.kr328.clash.ui.components.ThinBar
@@ -766,6 +767,12 @@ private fun HeroCard(
         wave.snapTo(0f)
 
         if (active == settled) return@LaunchedEffect
+
+        // The frame that composes the new copy — with the rest of Home rearranging after the change — is the heavy
+        // one (70 ms on the emulator when VPN went off). It passes while the circle has no size yet: inside the
+        // wave it made the circle jump at its start.
+        withFrameNanos {}
+        withFrameNanos {}
 
         wave.animateTo(1f, tween(WAVE_MS, easing = WaveEasing))
 

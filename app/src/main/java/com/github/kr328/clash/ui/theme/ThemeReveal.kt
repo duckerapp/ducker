@@ -66,31 +66,47 @@ fun ThemeReveal(onToggle: () -> Unit, content: @Composable () -> Unit) {
     var bounds by remember { mutableStateOf(Size.Zero) }
 
     val switch = remember {
+        // Not a state: a second press in the same frame must already see it.
+        var running = false
+
         ThemeSwitch { from ->
             // Второе нажатие посреди наката оставило бы поверх экрана кадр, которому
-            // уже нечего накрывать.
-            if (frozen != null) return@ThemeSwitch
+            // уже нечего накрывать. Dropped from the press on: let through during the two frames
+            // of the snapshot, it ran a second switch beside the first, and the theme came back.
+            if (running) return@ThemeSwitch
+
+            running = true
 
             scope.launch {
-                origin = from
+                try {
+                    origin = from
 
-                radius.snapTo(0f)
+                    radius.snapTo(0f)
 
-                // Слой пишется в ближайшей отрисовке. Первый кадр её запускает, ко второму
-                // она уже прошла.
-                capturing = true
-                withFrameNanos {}
-                withFrameNanos {}
+                    // Слой пишется в ближайшей отрисовке. Первый кадр её запускает, ко второму
+                    // она уже прошла.
+                    capturing = true
+                    withFrameNanos {}
+                    withFrameNanos {}
 
-                frozen = layer.toImageBitmap()
+                    frozen = layer.toImageBitmap()
 
-                capturing = false
+                    capturing = false
 
-                toggle()
+                    toggle()
 
-                radius.animateTo(bounds.farthestFrom(from), tween(520, easing = FastOutSlowInEasing))
+                    // The new palette recomposes the whole screen — the switch's heaviest frame (18 ms of
+                    // the UI thread on the emulator, more on a TV). It passes under the whole old frame:
+                    // inside the wave it made the circle jump at its start.
+                    withFrameNanos {}
+                    withFrameNanos {}
 
-                frozen = null
+                    radius.animateTo(bounds.farthestFrom(from), tween(520, easing = FastOutSlowInEasing))
+                } finally {
+                    capturing = false
+                    frozen = null
+                    running = false
+                }
             }
         }
     }
@@ -112,7 +128,8 @@ fun ThemeReveal(onToggle: () -> Unit, content: @Composable () -> Unit) {
 
         // Старый кадр поверх нового с вырезанным кругом: видно не перекраску, а накат.
         // Круг вырезаем `BlendMode.Clear` в отдельном слое — клип по пути с чётно-нечётной
-        // заливкой аппаратный холст молча игнорирует и дыры не делает.
+        // заливкой аппаратный холст молча игнорирует и дыры не делает. A clip outside the circle it
+        // does make, but on the emulator that cost 3–5 ms a frame more than this layer and missed frames.
         frozen?.let { frame ->
             Canvas(
                 Modifier.fillMaxSize()
