@@ -36,7 +36,6 @@ import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -45,6 +44,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -1117,7 +1117,9 @@ internal fun TvScaffold(
                     PaddingValues(horizontal = TV_EDGE, vertical = TV_TOP),
                 )
 
-                Box(
+                // One column, so that a large display size squeezes only the gaps: as three corners of a box
+                // the title, the dock and the tools overlapped on a short screen.
+                Column(
                     modifier = Modifier.fillMaxHeight()
                         .padding(start = TV_EDGE, top = TV_TOP, bottom = TV_TOP)
                         .graphicsLayer { translationX = -hidden * (size.width + TV_EDGE.toPx() + 40.dp.toPx()) }
@@ -1142,14 +1144,16 @@ internal fun TvScaffold(
                 ) {
                     // Марка не шире дока: правее уже экран.
                     Row(
-                        modifier = Modifier.align(Alignment.TopStart).widthIn(max = reserved).heightIn(min = TV_TOOL),
+                        modifier = Modifier.widthIn(max = reserved).heightIn(min = TV_TOOL),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         content = title,
                     )
 
+                    Spacer(Modifier.weight(1f))
+
                     Column(
-                        modifier = Modifier.align(Alignment.CenterStart).onSizeChanged { dockWidth = it.width },
+                        modifier = Modifier.onSizeChanged { dockWidth = it.width },
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
@@ -1183,10 +1187,12 @@ internal fun TvScaffold(
                         }
                     }
 
+                    Spacer(Modifier.weight(1f))
+
                     Row(
                         // Вправо с последней кнопки — в экран, как с вкладки: иначе поиск находил
                         // «плюс», он правее и выше.
-                        modifier = Modifier.align(Alignment.BottomStart)
+                        modifier = Modifier
                             .focusProperties {
                                 onExit = {
                                     if (requestedFocusDirection == FocusDirection.Right) {
@@ -1205,15 +1211,14 @@ internal fun TvScaffold(
     }
 }
 
-/** Кнопка под доком — тема, настройки: круг в цвет дока, чтобы читалась с ним одним целым. */
+/** Кнопка под доком — тема, настройки: круг в цвет и с тенью дока, чтобы читалась с ним одним целым. */
 @Composable
 internal fun TvTool(icon: ImageVector, description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
-        modifier = modifier.size(TV_TOOL),
+        modifier = modifier.size(TV_TOOL).airShadow(CircleShape),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = description, tint = MaterialTheme.colorScheme.onSurface)
@@ -1243,11 +1248,13 @@ private fun SideDock(
     // прежняя вкладка держала чёрную подпись на тёмном, пока лента не доедет.
     val current by remember(position) { derivedStateOf { position().roundToInt() } }
 
+    val shape = RoundedCornerShape(TV_TAB_CORNER + TV_DOCK_PAD)
+
+    // The cards' soft shadow: the platform one with an outline stood out heavier than the cards beside it.
     Surface(
-        shape = RoundedCornerShape(TV_TAB_CORNER + TV_DOCK_PAD),
+        modifier = Modifier.airShadow(shape),
+        shape = shape,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shadowElevation = 10.dp,
     ) {
         Column(
             Modifier.width(IntrinsicSize.Max)

@@ -1061,7 +1061,12 @@ private fun ProfileSkeleton(modifier: Modifier = Modifier) {
 fun AddSubscriptionButton() {
     Box(
         modifier = Modifier.size(ACTION_SIZE)
-            .shadow(6.dp, CircleShape)
+            // Under the TV dock it wears the dock's soft shadow; the phone's dock floats over the list, and its
+            // button keeps the heavier one.
+            .then(
+                if (LocalTv.current) Modifier.airShadow(CircleShape, MaterialTheme.colorScheme.primaryContainer)
+                else Modifier.shadow(6.dp, CircleShape),
+            )
             .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
         contentAlignment = Alignment.Center,
     ) {

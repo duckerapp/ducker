@@ -112,6 +112,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
@@ -663,11 +664,14 @@ internal fun RowScope.BrandTitle(profile: Profile?) {
     // ничего не добавляет и забирает место у двух кнопок.
     if (logo != null) BrandAvatar(logo)
 
+    // Two steps of the type scale larger on a TV: above the dock, seen from the sofa, the phone's size read small.
+    val style = if (LocalTv.current) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineSmall
+
     if (brand != null) {
-        Text(brand, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall,
+        Text(brand, modifier = Modifier.weight(1f), style = style,
             fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     } else {
-        Wordmark(Modifier.weight(1f))
+        Wordmark(style, Modifier.weight(1f))
     }
 }
 
@@ -676,11 +680,11 @@ internal fun RowScope.BrandTitle(profile: Profile?) {
  * написано — в чёрно-белом стиле это единственный способ сделать шапку заметной.
  */
 @Composable
-private fun Wordmark(modifier: Modifier = Modifier) {
+private fun Wordmark(style: TextStyle, modifier: Modifier = Modifier) {
     Text(
         text = "DUCKER",
         modifier = modifier,
-        style = MaterialTheme.typography.headlineSmall,
+        style = style,
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Black,
         letterSpacing = 0.14.em,
