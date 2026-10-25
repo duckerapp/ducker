@@ -393,6 +393,7 @@ fun SubscriptionsScreen(
                     favorite = favorite,
                     updating = state.updating == profile.uuid,
                     rules = state.ruleCounts[profile.uuid] ?: 0,
+                    upTo = cardFocus.takeIf { index == 0 && active != null },
                     onSelect = { onSelect(profile) },
                     onMenu = { openMenu(profile) },
                 )
@@ -548,6 +549,11 @@ private fun ProfileRow(
     updating: Boolean,
     /** Свои правила подписки — маленьким значком у имени (D-123). */
     rules: Int,
+    /**
+     * The remote's Up from the first row: the active card's first button, where the remote enters the card, as Up
+     * from a row on «Прокси» goes to the left column. Compose took the nearest one, «Изменить».
+     */
+    upTo: FocusRequester?,
     onSelect: () -> Unit,
     onMenu: () -> Unit,
 ) {
@@ -600,7 +606,12 @@ private fun ProfileRow(
                 .background(scheme.surface)
                 .then(if (tv) Modifier.ringCorner(ROW_CORNER) else Modifier)
                 .focusRequester(self)
-                .focusProperties { if (tv) right = menu }
+                .focusProperties {
+                    if (tv) {
+                        right = menu
+                        if (upTo != null) this.up = upTo
+                    }
+                }
                 .selectable(
                     selected = false,
                     interactionSource = interactions,
