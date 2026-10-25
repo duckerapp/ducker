@@ -756,6 +756,14 @@ private class RingHoldNode(private var hold: Boolean) : Modifier.Node() {
     }
 }
 
+/**
+ * Left from this element goes to [target], inside the page: the page's room leaves the key to it, as to a nested
+ * room ([LeaveLeftNode]). A subscription row's «⋯» goes back to its row, which holds it and starts to its left, so
+ * the room saw nothing beside it and sent Left to the dock.
+ */
+internal fun Modifier.ownLeft(target: FocusRequester): Modifier =
+    this then FocusNudgeElement.focusProperties { left = target }
+
 /** Фокус вошёл в группу или вышел из неё — пусть рамка сверится. */
 private data object FocusNudgeElement : ModifierNodeElement<FocusNudgeNode>() {
     override fun create() = FocusNudgeNode()
@@ -766,7 +774,7 @@ private data object FocusNudgeElement : ModifierNodeElement<FocusNudgeNode>() {
 private class FocusNudgeNode : Modifier.Node(), FocusEventModifierNode, TraversableNode {
     override val traverseKey: Any get() = RoomKey
 
-    /** Focus is inside: [LeaveLeftNode] leaves a nested room's keys to it. */
+    /** Focus is inside: [LeaveLeftNode] leaves a nested room's keys to it, and Left to an [ownLeft] element. */
     var focused = false
 
     override fun onFocusEvent(focusState: FocusState) {

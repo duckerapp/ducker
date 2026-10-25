@@ -9,6 +9,7 @@ import androidx.compose.ui.focus.FocusRequester
 import com.github.kr328.clash.ui.components.tabEntry
 import com.github.kr328.clash.ui.components.keepFocus
 import com.github.kr328.clash.ui.components.ringCorner
+import com.github.kr328.clash.ui.components.ownLeft
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -653,7 +654,7 @@ private fun ProfileRow(
                     }
                 }
 
-                IconButton(onClick = onMenu, modifier = Modifier.focusRequester(menu).focusProperties { if (tv) left = self }) {
+                IconButton(onClick = onMenu, modifier = Modifier.focusRequester(menu).then(if (tv) Modifier.ownLeft(self) else Modifier)) {
                     Icon(Symbols.MoreHoriz, contentDescription = stringResource(R.string.more_actions))
                 }
             }
