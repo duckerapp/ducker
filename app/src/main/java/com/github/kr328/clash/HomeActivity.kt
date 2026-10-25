@@ -35,6 +35,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.PagerScope
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.input.InputMode
@@ -883,6 +885,15 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             if (tv) {
                                 Modifier.padding(start = tabs.calculateStartPadding(direction), end = tabs.calculateEndPadding(direction))
                                     .onFocusChanged { pageFocused = it.hasFocus }
+                                    // Under a screen over the tabs the remote does not enter them. When the element
+                                    // under the frame disappeared there (the config editor's full-screen and search
+                                    // buttons), Compose gave the focus to the first page it found — the tab under it.
+                                    .focusProperties {
+                                        onEnter = {
+                                            if (overlay != null) tvFocus?.cover?.requestFocus() ?: cancelFocusChange()
+                                        }
+                                    }
+                                    .focusGroup()
                             } else Modifier,
                         )
 
