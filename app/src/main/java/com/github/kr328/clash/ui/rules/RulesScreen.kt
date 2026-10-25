@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -30,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,6 +39,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -52,6 +61,7 @@ import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.EmptyState
 import com.github.kr328.clash.ui.components.IconBadge
 import com.github.kr328.clash.ui.components.LeaveSheet
+import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.SheetField
@@ -334,6 +344,13 @@ private fun AddRuleSheet(
     // Several apps at once, in the order they were picked; each gets a rule of its own (D-326).
     var apps by remember { mutableStateOf(listOf<String>()) }
     var target by remember { mutableStateOf(UserRule.Target.Direct) }
+    // On a TV OK on an app moves the frame on to «Добавить», and Up from «Куда» comes back to that app (D-357):
+    // otherwise the remote walked the whole list to reach the button. Letting an app go keeps the frame in the list.
+    val tv = LocalTv.current
+    var marked by remember { mutableStateOf<String?>(null) }
+    val appList = rememberLazyListState()
+    val appFocus = remember { FocusRequester() }
+    val addFocus = remember { FocusRequester() }
     // Введённое правило молча не бросаем: закрыть — значит сначала спросить (D-135).
     var asking by remember { mutableStateOf(false) }
     val entered = if (type == UserRule.Type.App) apps.isNotEmpty() else input.isNotBlank()
@@ -376,6 +393,11 @@ private fun AddRuleSheet(
             .sortedWith(compareBy({ !it.startsWith(needle) }, { it.length }, { it }))
             .take(SUGGESTIONS)
     }
+    // After the recomposition that enables the button: a disabled one takes no focus.
+    LaunchedEffect(marked) {
+        if (marked != null) addFocus.requestFocus()
+    }
+
     // Недописанная категория с подходящими подсказками — ещё не ошибка.
     val choosing = type == UserRule.Type.Geosite && value == null && needle.isNotEmpty() && codes.isNotEmpty()
     // Список категорий ещё читается — «Добавить» ждёт, но ошибкой это не называем.
@@ -404,8 +426,16 @@ private fun AddRuleSheet(
                 selected = apps,
                 existing = remember(rules) { rules.filter { it.type == UserRule.Type.App }.associate { it.value to it.target } },
                 bypass = bypass,
+                list = appList,
+                marked = marked,
+                markedFocus = appFocus,
                 // A tap marks an app, a second one lets it go (D-326).
-                onSelect = { apps = if (it in apps) apps - it else apps + it },
+                onSelect = {
+                    val add = it !in apps
+
+                    apps = if (add) apps + it else apps - it
+                    if (tv) marked = it.takeIf { add }
+                },
             )
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -468,6 +498,16 @@ private fun AddRuleSheet(
                 labels = targets.map { stringResource(targetLabel(it)) },
                 selected = targets.indexOf(target),
                 onSelect = { target = targets[it] },
+                // Only to a row still composed: the list may have scrolled it away since, then Up goes as usual.
+                modifier = Modifier.onPreviewKeyEvent { event ->
+                    val back = marked?.takeIf { app ->
+                        type == UserRule.Type.App && appList.layoutInfo.visibleItemsInfo.any { it.key == app }
+                    }
+
+                    if (back == null || event.key != Key.DirectionUp) return@onPreviewKeyEvent false
+                    if (event.type == KeyEventType.KeyDown) appFocus.requestFocus()
+                    true
+                },
             )
         }
 
@@ -483,6 +523,7 @@ private fun AddRuleSheet(
                 if (type == UserRule.Type.App) onAdd(picked.map { UserRule(type, it, target) })
                 else value?.let { onAdd(listOf(UserRule(type, it, target))) }
             },
+            modifier = Modifier.focusRequester(addFocus),
         )
     }
 }
@@ -546,6 +587,10 @@ private fun AppPicker(
     selected: List<String>,
     existing: Map<String, UserRule.Target>,
     bypass: Bypass?,
+    list: LazyListState,
+    /** The app the remote marked last; its row takes [markedFocus]. */
+    marked: String?,
+    markedFocus: FocusRequester,
     onSelect: (String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -576,7 +621,7 @@ private fun AppPicker(
             }
 
             // A gap between the rows, or several marked one after another merge into one black block (D-326).
-            LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            LazyColumn(Modifier.fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 items(filtered, key = { it.packageName }) { app ->
                     val chosen = app.packageName in selected
                     val outside = bypass?.reason(app.packageName)
@@ -604,6 +649,7 @@ private fun AppPicker(
                         modifier = Modifier.fillMaxWidth()
                             .clip(MaterialTheme.shapes.small)
                             .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = fill))
+                            .then(if (app.packageName == marked) Modifier.focusRequester(markedFocus) else Modifier)
                             // No press wave: it is tinted for the unfilled row, played over the fresh fill
                             // and dimmed the text for a third of a second (D-292). The fill is the answer.
                             .toggleable(

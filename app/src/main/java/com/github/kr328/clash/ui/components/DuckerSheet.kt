@@ -614,6 +614,7 @@ internal fun SheetButton(
     progress: Float? = null,
     /** Before the label, while not busy: «＋» of «Добавить правило». */
     icon: ImageVector? = null,
+    modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
     val container = if (danger) scheme.error else scheme.primaryContainer
@@ -632,7 +633,7 @@ internal fun SheetButton(
     val edge = airEdge(if (filling) scheme.surface else container)
 
     Box(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
             .heightIn(min = 56.dp)
             // Нечего отправлять — кнопка приглушена целиком, вместе с фоном.
             // Before the shadow, which would otherwise show through the faded button.
