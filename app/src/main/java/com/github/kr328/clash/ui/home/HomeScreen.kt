@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import com.github.kr328.clash.ui.components.ringCorner
 import com.github.kr328.clash.ui.components.ringHold
 import com.github.kr328.clash.ui.components.tvKeys
+import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.proxy.ProxyState
 import com.github.kr328.clash.core.model.ProxySort
@@ -299,7 +300,7 @@ private fun Welcome(
     Column(
         modifier = modifier.fillMaxSize()
             .screenInsets()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp + tvEdge()),
     ) {
         if (header) BrandHeader(null, onSettings)
 
@@ -443,7 +444,7 @@ private fun HomeRegular(
             // помещаться целиком: 12 между карточками вместо 16 — ровно та разница,
             // из-за которой подписка уезжала под панель.
             .verticalScroll(scroll, overscrollEffect = overscrollFor(scroll))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp + tvEdge()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (header) BrandHeader(profile, onSettings)

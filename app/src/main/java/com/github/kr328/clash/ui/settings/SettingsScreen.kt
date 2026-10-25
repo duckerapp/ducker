@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.settings
 
+import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -214,7 +215,7 @@ fun SettingsScreen(
                 modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp)
                     .then(if (LocalTv.current) Modifier.focusRestorer() else Modifier),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 16.dp),
+                contentPadding = PaddingValues(vertical = 16.dp + tvEdge()),
             ) {
                 item(key = "header") {
                     ScreenHeader(stringResource(page.title), onBack = back)

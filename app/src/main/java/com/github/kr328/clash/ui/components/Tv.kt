@@ -1336,6 +1336,14 @@ private fun TvTab(icon: ImageVector, label: String, color: Color, modifier: Modi
     }
 }
 
+/**
+ * The safe area's top and bottom on a TV ([TV_TOP]), zero elsewhere. A scrolling screen puts it inside its list:
+ * at rest the content stands where it did, and scrolled it runs to the screen's edge — a padding outside the list
+ * cut it at an empty band.
+ */
+@Composable
+internal fun tvEdge(): Dp = if (LocalTv.current) TV_TOP else 0.dp
+
 /** Поля от краёв кадра: 48 по бокам и 27 сверху и снизу — безопасная зона Android TV. */
 private val TV_EDGE = 48.dp
 internal val TV_TOP = 27.dp

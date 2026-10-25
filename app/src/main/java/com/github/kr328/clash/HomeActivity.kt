@@ -862,6 +862,12 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     val insets = if (tv) {
                         PaddingValues(top = tabs.calculateTopPadding(), bottom = tabs.calculateBottomPadding())
                     } else tabs
+                    // A TV's lists take the safe area's top and bottom inside themselves (`tvEdge`) and run to the
+                    // screen's edge; these are the paddings left outside them.
+                    val homeInsets = if (tv) PaddingValues() else insets
+                    val listInsets = if (tv) {
+                        PaddingValues(start = overlayInsets.calculateStartPadding(direction), end = overlayInsets.calculateEndPadding(direction))
+                    } else overlayInsets
 
                     // Под экраном поверх вкладок лента не должна ни читаться TalkBack,
                     // ни ловить фокус: человек её не видит.
@@ -1033,7 +1039,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                                             viewModel.nodeChanged(name, delay)
                                         },
-                                        modifier = Modifier.padding(insets).consumeWindowInsets(insets),
+                                        modifier = Modifier.padding(homeInsets).consumeWindowInsets(insets),
                                     )
                                 }
                             }
@@ -1136,7 +1142,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onLanguage = { settingsViewModel.setLanguage(it) },
                             active = showSettings && !showApps && !showLogs && !showProbe,
                             onBack = closeSettings,
-                            modifier = Modifier.padding(overlayInsets).consumeWindowInsets(overlayInsets),
+                            modifier = Modifier.padding(listInsets).consumeWindowInsets(overlayInsets),
                         )
                     }
 
@@ -1153,7 +1159,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onSelectAll = { appsViewModel.selectAll() },
                             onSelectNone = { appsViewModel.selectNone() },
                             onBack = closeApps,
-                            modifier = Modifier.padding(overlayInsets).consumeWindowInsets(overlayInsets),
+                            modifier = Modifier.padding(listInsets).consumeWindowInsets(overlayInsets),
                         )
                     }
 
@@ -1233,7 +1239,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onAdd = { subscriptionsViewModel.addRules(this@HomeActivity, it) },
                             onRemove = { subscriptionsViewModel.removeRule(this@HomeActivity, it) },
                             onBack = { subscriptionsViewModel.closeRules() },
-                            modifier = Modifier.padding(overlayInsets).consumeWindowInsets(overlayInsets),
+                            modifier = Modifier.padding(listInsets).consumeWindowInsets(overlayInsets),
                         )
                     }
 
@@ -1248,7 +1254,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onStop = { probeViewModel.stop() },
                             onCopy = { copyReport(probeViewModel.report()) },
                             onBack = closeProbe,
-                            modifier = Modifier.padding(overlayInsets).consumeWindowInsets(overlayInsets),
+                            modifier = Modifier.padding(listInsets).consumeWindowInsets(overlayInsets),
                         )
                     }
                 }

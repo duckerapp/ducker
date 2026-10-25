@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.apps
 
+import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -72,7 +73,7 @@ fun AppsScreen(
         overscrollEffect = overscrollFor(list),
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 16.dp),
+        contentPadding = PaddingValues(vertical = 16.dp + tvEdge()),
     ) {
         item {
             ScreenHeader(stringResource(R.string.access_control), onBack = onBack)

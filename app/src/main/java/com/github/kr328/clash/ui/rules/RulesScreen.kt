@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.rules
 
+import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.Symbols
 import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
@@ -117,7 +118,7 @@ fun RulesScreen(
         overscrollEffect = overscrollFor(list),
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 16.dp),
+        contentPadding = PaddingValues(vertical = 16.dp + tvEdge()),
     ) {
         item { ScreenHeader(stringResource(R.string.rules_title), onBack = onBack) }
 
