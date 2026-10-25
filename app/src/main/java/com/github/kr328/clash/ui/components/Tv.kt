@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.components
 
 import kotlin.math.roundToInt
 import android.os.SystemClock
+import android.view.ViewTreeObserver
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -375,7 +376,8 @@ private data class FocusRingElement(val onLost: (() -> Unit)?) : ModifierNodeEle
 }
 
 private class FocusRingNode(var onLost: (() -> Unit)?) :
-    DelegatingNode(), DrawModifierNode, KeyInputModifierNode, TraversableNode, LayoutAwareModifierNode {
+    DelegatingNode(), DrawModifierNode, KeyInputModifierNode, TraversableNode, LayoutAwareModifierNode,
+    CompositionLocalConsumerModifierNode {
     override val traverseKey: Any get() = RingKey
     // Фокус в окне появился или пропал совсем — это тоже повод сверить рамку. Пропал, потому что
     // элемент под ним исчез или выключился, — пусть раскладка вернёт его ([onLost], D-158): иначе
@@ -421,7 +423,36 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
     private var glideRound = 0f
     private var shownAt = 0L
 
-    override fun onAttach() = follow()
+    // The element under the frame also moves without a key: a card that appears above the power button pushes it
+    // down, and the frame stayed where the button had been. After each frame of the window it checks its place —
+    // after, because Compose lays out in its own drawing; the check asks for no frame of its own.
+    private val check = Runnable {
+        checking = false
+        if (isAttached && size != IntSize.Zero && following?.isActive != true && aim() != aimed) follow(arm = false)
+    }
+    private val moved = ViewTreeObserver.OnPreDrawListener {
+        if (!checking) {
+            checking = true
+            view?.post(check)
+        }
+        true
+    }
+    private var checking = false
+    private var view: android.view.View? = null
+
+    override fun onAttach() {
+        view = currentValueOf(LocalView).also { it.viewTreeObserver.addOnPreDrawListener(moved) }
+        follow()
+    }
+
+    override fun onDetach() {
+        view?.let {
+            it.viewTreeObserver.removeOnPreDrawListener(moved)
+            it.removeCallbacks(check)
+        }
+        view = null
+        checking = false
+    }
 
     // Окно сменило размер (выехала или ушла клавиатура) — всё съехало, и рамка вместе с ним.
     override fun onRemeasured(size: IntSize) {
