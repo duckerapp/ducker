@@ -125,7 +125,6 @@
     <string name="ducker_expand_group">باز کردن گروه</string>
     <string name="ducker_collapse_group">بستن گروه</string>
     <string name="ducker_active">فعال</string>
-    <string name="ducker_until_end">اعتبار تا</string>
     <string name="provider_announcement">اطلاعیهٔ ارائه‌دهنده</string>
     <string name="announcement_read_more">بیشتر بخوانید</string>
     <string name="sort_default">ترتیب پیش‌فرض</string>

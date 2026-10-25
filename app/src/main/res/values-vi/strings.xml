@@ -125,7 +125,6 @@
     <string name="ducker_expand_group">Mở rộng nhóm</string>
     <string name="ducker_collapse_group">Thu gọn nhóm</string>
     <string name="ducker_active">Đang dùng</string>
-    <string name="ducker_until_end">Có hiệu lực đến</string>
     <string name="provider_announcement">Thông báo của nhà cung cấp</string>
     <string name="announcement_read_more">Xem thêm</string>
     <string name="sort_default">Thứ tự mặc định</string>

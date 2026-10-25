@@ -125,7 +125,6 @@
     <string name="ducker_expand_group">Grubu genişlet</string>
     <string name="ducker_collapse_group">Grubu daralt</string>
     <string name="ducker_active">Etkin</string>
-    <string name="ducker_until_end">Son geçerlilik</string>
     <string name="provider_announcement">Sağlayıcı duyurusu</string>
     <string name="announcement_read_more">Devamını oku</string>
     <string name="sort_default">Varsayılan sıra</string>

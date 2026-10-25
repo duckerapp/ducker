@@ -394,8 +394,9 @@ private fun HomeRegular(
     var pickerMounted by remember { mutableStateOf(false) }
     var pendingPick by remember { mutableStateOf<Pair<String, String>?>(null) }
     val tv = LocalTv.current
-    // Display-size changes alter the logical window height; text keeps the system's own scale.
-    val compact = !tv && LocalConfiguration.current.screenHeightDp < 840
+    // Display-size changes alter the logical window height; text keeps the system's own scale. A TV is
+    // 540 tall: there the full-size power button pushed the subscription card's buttons under the bottom edge.
+    val compact = LocalConfiguration.current.screenHeightDp < if (tv) 640 else 840
     val requestNodes by rememberUpdatedState(onOpenPicker)
     val nodesLoaded by rememberUpdatedState(pickerState.loaded)
     var viewport by remember { mutableStateOf<LayoutCoordinates?>(null) }
@@ -604,7 +605,7 @@ private fun HomeSkeleton(compact: Boolean) {
             }
 
             Box(
-                modifier = Modifier.size(if (compact) 96.dp else 112.dp)
+                modifier = Modifier.size(if (compact && !LocalTv.current) 96.dp else 112.dp)
                     .align(Alignment.CenterHorizontally)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
@@ -1126,7 +1127,9 @@ private fun PowerButton(
     val face = LocalContentColor.current
     val fill = if (running) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
 
-    val diameter = if (compact) 96.dp else 112.dp
+    // A TV keeps the full-size button with the compact card around it: it is what the remote is there for.
+    val small = compact && !LocalTv.current
+    val diameter = if (small) 96.dp else 112.dp
     Box(modifier.size(diameter + 20.dp), contentAlignment = Alignment.Center) {
         AnimatedVisibility(
             visible = busy,
@@ -1191,7 +1194,7 @@ private fun PowerButton(
                 imageVector = Symbols.PowerSettingsNew,
                 // Без названия TalkBack читал кнопку питания просто «кнопкой».
                 contentDescription = stringResource(if (running) R.string.ducker_disconnect else R.string.ducker_connect),
-                modifier = Modifier.size(if (compact) 44.dp else 48.dp),
+                modifier = Modifier.size(if (small) 44.dp else 48.dp),
                 // Значок — цвета карточки: кружок залит её содержимым наоборот.
                 tint = fill,
             )
@@ -1588,77 +1591,133 @@ private fun LinkFailedCard(
     onOpenProxies: () -> Unit,
     onFastest: (() -> Unit)?,
 ) {
+    val tv = LocalTv.current
+    // A step larger on a TV: beside the column of buttons the text has the room, and it is read from the sofa.
+    val type = MaterialTheme.typography
+    val body = if (tv) type.bodyMedium else type.bodySmall
+
+    val about: @Composable () -> Unit = {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(Symbols.WarningAmber, contentDescription = null,
+                modifier = Modifier.size(if (tv) 22.dp else 20.dp))
+            Text(stringResource(R.string.link_failed),
+                style = if (tv) type.titleMedium else type.titleSmall, fontWeight = FontWeight.SemiBold)
+        }
+
+        Text(stringResource(R.string.link_failed_hint), style = body)
+
+        if (state.linkError.isNotEmpty()) {
+            // Причину показываем, адрес узла — нет: этот экран первым уходит
+            // скриншотом в поддержку. Правило то же, что для выгрузки журнала
+            // (инвариант 4), и чистильщик тот же.
+            Text(nodeFailure(state.linkError)?.let { stringResource(it) } ?: LogScrubber.scrub(state.linkError),
+                style = if (tv) type.bodySmall else type.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+
+        // Не ответил ни один узел — менять узел бесполезно, дело в сети.
+        if (state.noneAnswered) {
+            Text(stringResource(R.string.link_none_answered), style = body, fontWeight = FontWeight.SemiBold)
+        }
+    }
+
+    @Composable
+    fun Fastest(modifier: Modifier) {
+        if (onFastest != null) {
+            Pill(
+                text = stringResource(if (state.switching) R.string.link_fastest_busy else R.string.link_fastest),
+                onClick = { if (!state.switching) onFastest() },
+                modifier = modifier,
+                selected = true,
+                enabled = keepFocus(!state.switching),
+                fit = true,
+            )
+        }
+    }
+
+    @Composable
+    fun Check(modifier: Modifier) {
+        Pill(
+            text = stringResource(if (state.checking) R.string.checking else R.string.link_check),
+            onClick = { if (!state.checking) onCheckLink() },
+            modifier = modifier,
+            enabled = keepFocus(!state.checking),
+            fit = true,
+        )
+    }
+
+    @Composable
+    fun Other(modifier: Modifier) {
+        Pill(
+            text = stringResource(R.string.link_other_node),
+            onClick = onOpenProxies,
+            modifier = modifier,
+            fit = true,
+        )
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer,
         ),
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        if (tv) {
+            // The TV's screen is short and the card wide: what happened on the left, the ways out on the right,
+            // one under another and as wide as the longest of their labels, the busy ones included — a press
+            // does not move them. Stacked under the text, the card took a third of the screen.
+            val width = labelWeights(
+                listOf(
+                    stringResource(R.string.link_fastest), stringResource(R.string.link_fastest_busy),
+                    stringResource(R.string.link_check), stringResource(R.string.checking),
+                    stringResource(R.string.link_other_node),
+                ),
+                MaterialTheme.typography.labelLarge,
+                PILL_EDGE,
+            ).max()
+
             Row(
+                modifier = Modifier.padding(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(Symbols.WarningAmber, contentDescription = null,
-                    modifier = Modifier.size(20.dp))
-                Text(stringResource(R.string.link_failed),
-                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    about()
+                }
+
+                // No gap of their own: a pill's touch margin already parts them, and the card stays lower.
+                Column(Modifier.width(with(LocalDensity.current) { width.toDp() })) {
+                    Fastest(Modifier.fillMaxWidth())
+                    Check(Modifier.fillMaxWidth())
+                    Other(Modifier.fillMaxWidth())
+                }
             }
+        } else {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                about()
 
-            Text(stringResource(R.string.link_failed_hint),
-                style = MaterialTheme.typography.bodySmall)
+                // Главное действие — во всю ширину: рядом с двумя другими кнопками длинная
+                // подпись не влезает, а искать узел руками человеку в этот момент некогда.
+                Fastest(Modifier.fillMaxWidth().heightIn(min = 44.dp))
 
-            if (state.linkError.isNotEmpty()) {
-                // Причину показываем, адрес узла — нет: этот экран первым уходит
-                // скриншотом в поддержку. Правило то же, что для выгрузки журнала
-                // (инвариант 4), и чистильщик тот же.
-                Text(nodeFailure(state.linkError)?.let { stringResource(it) } ?: LogScrubber.scrub(state.linkError),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            // Не ответил ни один узел — менять узел бесполезно, дело в сети.
-            if (state.noneAnswered) {
-                Text(stringResource(R.string.link_none_answered),
-                    style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
-            }
-
-            // Главное действие — во всю ширину: рядом с двумя другими кнопками длинная
-            // подпись не влезает, а искать узел руками человеку в этот момент некогда.
-            if (onFastest != null) {
-                Pill(
-                    text = stringResource(if (state.switching) R.string.link_fastest_busy else R.string.link_fastest),
-                    onClick = { if (!state.switching) onFastest() },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
-                    selected = true,
-                    enabled = keepFocus(!state.switching),
-                    fit = true,
-                )
-            }
-
-            // Обе кнопки делят строку поровну — во всю ширину, как кнопка над ними.
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Pill(
-                    text = stringResource(if (state.checking) R.string.checking else R.string.link_check),
-                    onClick = { if (!state.checking) onCheckLink() },
-                    modifier = Modifier.weight(1f),
-                    enabled = keepFocus(!state.checking),
-                    fit = true,
-                )
-
-                Pill(
-                    text = stringResource(R.string.link_other_node),
-                    onClick = onOpenProxies,
-                    modifier = Modifier.weight(1f),
-                    fit = true,
-                )
+                // Обе кнопки делят строку поровну — во всю ширину, как кнопка над ними.
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Check(Modifier.weight(1f))
+                    Other(Modifier.weight(1f))
+                }
             }
         }
     }
 }
+
+/** A pill's side padding ([Pill]): its label's width plus this on both sides is the whole pill. */
+private val PILL_EDGE = 14.dp
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -1672,7 +1731,6 @@ private fun SubscriptionCard(
     onOpen: (String) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
-    val compact = !LocalTv.current
     // «Сейчас» — заново при каждом возврате на экран и раз в час: главная бывает открыта сутками,
     // и срок оставался вчерашним (аудит 9в.8).
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -1707,28 +1765,18 @@ private fun SubscriptionCard(
 
     Card(Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(if (compact) 14.dp else 16.dp),
-            verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // One line on a TV as well: there the date under its own label cost the short screen a row.
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    if (!compact) {
-                        Text(
-                            text = stringResource(R.string.ducker_until_end),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = scheme.onSurfaceVariant,
-                        )
-                    }
-                    Text(
-                        text = if (profile.expire > 0) {
-                            if (compact) stringResource(R.string.valid_until, formatDate(profile.expire))
-                            else formatDate(profile.expire)
-                        }
-                        else stringResource(R.string.traffic_unlimited),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Normal,
-                    )
-                }
+                Text(
+                    text = if (profile.expire > 0) stringResource(R.string.valid_until, formatDate(profile.expire))
+                    else stringResource(R.string.traffic_unlimited),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Normal,
+                )
 
                 if (left != null) {
                     Text(

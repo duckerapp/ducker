@@ -125,7 +125,6 @@
     <string name="ducker_expand_group">Développer le groupe</string>
     <string name="ducker_collapse_group">Replier le groupe</string>
     <string name="ducker_active">Actif</string>
-    <string name="ducker_until_end">Valable jusqu’au</string>
     <string name="provider_announcement">Annonce du fournisseur</string>
     <string name="announcement_read_more">Lire la suite</string>
     <string name="sort_default">Ordre par défaut</string>
