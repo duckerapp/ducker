@@ -138,6 +138,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -1033,35 +1034,65 @@ private class SoftScrollNode(var state: ScrollableState) : Modifier.Node(), Brin
             else tvScrollDistance(rect.top, rect.height, childCoordinates.size.height.toFloat(), toStart())
         }
 
-        if (job?.isActive != true) job = coroutineScope.launch { run() }
+        if (job?.isActive != true) job = coroutineScope.launch { state.springScroll({ wanted() }) }
     }
 
     /** Сколько осталось до начала списка; ноль — уже там или неизвестно (первый элемент не виден). */
     private fun toStart(): Float = (state as? LazyListState)?.startDistance()?.toFloat() ?: 0f
+}
 
-    private suspend fun run() {
-        val w = sqrt(TV_SPRING)
-        // Скорость остатка, пикселей в секунду.
-        var speed = 0f
-        var last = 0L
+/**
+ * Едет пружиной [TvSpring] к цели, которая может сдвинуться по дороге: [left] каждый кадр говорит, сколько ещё
+ * осталось, [onScrolled] — сколько проехали за кадр. Скорость при сдвиге цели сохраняется — быстрые нажатия не
+ * дёргают список.
+ */
+private suspend fun ScrollableState.springScroll(left: () -> Float, onScrolled: (Float) -> Unit = {}) {
+    val w = sqrt(TV_SPRING)
+    // Скорость остатка, пикселей в секунду.
+    var speed = 0f
+    var last = 0L
 
-        state.scroll {
-            while (true) {
-                // Сначала кадр, потом место: раскладка прошлого шага к этому времени уже прошла.
-                val dt = withFrameNanos { now -> (if (last == 0L) 0f else (now - last) / 1e9f).also { last = now } }
-                val left = wanted()
+    scroll {
+        while (true) {
+            // Сначала кадр, потом место: раскладка прошлого шага к этому времени уже прошла.
+            val dt = withFrameNanos { now -> (if (last == 0L) 0f else (now - last) / 1e9f).also { last = now } }
+            val rest = left()
 
-                if (abs(left) < 0.5f && abs(speed) < 30f) break
+            if (abs(rest) < 0.5f && abs(speed) < 30f) break
 
-                // Шаг пружины без колебаний за время кадра: точное решение, а не приближение.
-                val c = speed + w * left
-                val e = exp(-w * dt)
-                val step = left - (left + c * dt) * e
+            // Шаг пружины без колебаний за время кадра: точное решение, а не приближение.
+            val c = speed + w * rest
+            val e = exp(-w * dt)
+            val step = rest - (rest + c * dt) * e
 
-                speed = (speed - c * w * dt) * e
+            speed = (speed - c * w * dt) * e
 
-                // Край списка: дальше ехать некуда.
-                if (abs(scrollBy(step) - step) > 0.5f) break
+            val done = scrollBy(step)
+
+            onScrolled(done)
+            // Край списка: дальше ехать некуда.
+            if (abs(done - step) > 0.5f) break
+        }
+    }
+}
+
+/**
+ * A list the remote scrolls by keys rather than by focus — the log, whose lines take no focus. Each [by] adds to
+ * the way still left, so a held key moves the list evenly instead of restarting the spring at every repeat.
+ */
+internal class TvKeyScroll(private val state: ScrollableState, private val scope: CoroutineScope) {
+    private var left = 0f
+    private var job: Job? = null
+
+    fun by(distance: Float) {
+        left += distance
+
+        if (job?.isActive != true) job = scope.launch {
+            try {
+                state.springScroll({ left }) { left -= it }
+            } finally {
+                // Reached, stopped at the list's edge or taken over by another scroll: nothing is owed.
+                left = 0f
             }
         }
     }

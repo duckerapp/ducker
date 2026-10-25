@@ -2,6 +2,15 @@ package com.github.kr328.clash.ui.logs
 
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.LocalTv
+import com.github.kr328.clash.ui.components.TvKeyScroll
+import androidx.compose.foundation.focusable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.horizontalScroll
@@ -69,6 +78,8 @@ fun LogsScreen(
 ) {
     val listState = rememberLazyListState()
     val tv = LocalTv.current
+    val scope = rememberCoroutineScope()
+    val keyScroll = remember(listState, scope) { TvKeyScroll(listState, scope) }
 
     // Following the stream is a state of its own (D-290), not a guess from where the list happens
     // to stand: on — the list keeps to the newest line. A scroll that comes to rest above the end
@@ -166,10 +177,35 @@ fun LogsScreen(
 
         Card(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxSize()) {
+                // On a TV the lines take no focus, so the list takes the remote as a whole (stage 6): Up and Down
+                // scroll it by a third, Up at the top goes on to the buttons above, OK goes to the new lines — the
+                // corner button's job. Up takes the list from the stream at once, as a finger does.
+                val keys = if (tv) {
+                    Modifier
+                        .onKeyEvent { event ->
+                            if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+
+                            val step = listState.layoutInfo.viewportSize.height / 3f
+
+                            when (event.key) {
+                                Key.DirectionUp -> listState.canScrollBackward.also {
+                                    if (it) {
+                                        follow = false
+                                        keyScroll.by(-step)
+                                    }
+                                }
+                                Key.DirectionDown -> listState.canScrollForward.also { if (it) keyScroll.by(step) }
+                                Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> (!follow).also { follow = true }
+                                else -> false
+                            }
+                        }
+                        .focusable()
+                } else Modifier
+
                 LazyColumn(
                     state = listState,
                     overscrollEffect = overscrollFor(listState),
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().then(keys),
                     contentPadding = PaddingValues(12.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
@@ -197,7 +233,11 @@ fun LogsScreen(
                     exit = fadeOut(),
                     modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
                 ) {
-                    FilledIconButton(onClick = { follow = true }) {
+                    // On a TV OK on the list does this; the frame stays on the list.
+                    FilledIconButton(
+                        onClick = { follow = true },
+                        modifier = if (tv) Modifier.focusProperties { canFocus = false } else Modifier,
+                    ) {
                         Icon(Symbols.KeyboardArrowDown, contentDescription = stringResource(R.string.logs_follow))
                     }
                 }
