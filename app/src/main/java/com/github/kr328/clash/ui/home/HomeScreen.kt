@@ -761,6 +761,8 @@ private fun HeroCard(
     var card by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var center by remember { mutableStateOf(Offset.Unspecified) }
     var reach by remember { mutableFloatStateOf(0f) }
+    // The button's own radius: the wave leaves from its edge.
+    var start by remember { mutableFloatStateOf(0f) }
 
     // Нажатие одно на обе копии: иначе под волной и над ней кнопка проседала бы по-разному.
     val press = remember { MutableInteractionSource() }
@@ -802,6 +804,7 @@ private fun HeroCard(
         val c = box.localPositionOf(button, Offset(button.size.width / 2f, button.size.height / 2f))
 
         center = c
+        start = button.size.width / 2f
         reach = Size(box.size.width.toFloat(), box.size.height.toFloat()).farthestFrom(c)
     }
 
@@ -910,9 +913,12 @@ private fun HeroCard(
                     textAlpha = { fade(wave.value, TEXT_IN, 1f) },
                     modifier = Modifier.matchParentSize().graphicsLayer {
                         clip = true
+                        // The button changes by a crossfade and the wave leaves from its edge: a circle growing from
+                        // the centre crossed the small button in a frame or two, and the press filled it with a jerk.
+                        alpha = fade(wave.value, 0f, BUTTON_FADE)
                         shape = WaveShape(
                             center = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f),
-                            radius = reach * wave.value,
+                            radius = start + (reach - start).coerceAtLeast(0f) * wave.value,
                         )
                     },
                 )
@@ -1264,6 +1270,8 @@ private const val ONBOARDING_MS = 360
 /** До какой доли волны гаснут старые надписи и с какой проявляются новые. */
 private const val TEXT_OUT = 0.3f
 private const val TEXT_IN = 0.45f
+/** До какой доли волны кнопка перетекает в новый цвет. */
+private const val BUTTON_FADE = 0.15f
 private const val HINT_OUT_MS = 90
 private const val HINT_IN_MS = 150
 private const val RING_DELAY_MS = 150
