@@ -113,6 +113,8 @@ data class SettingsState(
     val autoRestart: Boolean = false,
     /** Android держит ducker «Постоянным VPN» (этап 10). */
     val alwaysOn: Boolean = false,
+    /** Android has a screen to turn «Постоянный VPN» on: Google TV does not (F-346). */
+    val alwaysOnSettings: Boolean = true,
     val hideRecents: Boolean = false,
     /** На рабочем столе — «Калькулятор» (D-147). */
     val disguise: Boolean = false,
@@ -183,6 +185,7 @@ fun SettingsScreen(
     active: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
+    val tv = LocalTv.current
     var destination by rememberSaveable { mutableStateOf(SettingsPage.Appearance.name) }
     var sectionOpen by rememberSaveable { mutableStateOf(false) }
     val pages = rememberSaveableStateHolder()
@@ -342,8 +345,11 @@ fun SettingsScreen(
                         }
                     }
                     SettingsPage.Connection -> {
-                        item {
-                            BackgroundCard(state.backgroundAllowed, onAllowBackground, onVendor)
+                        // Not on a TV, as Home's prompt (F-346).
+                        if (!tv) {
+                            item {
+                                BackgroundCard(state.backgroundAllowed, onAllowBackground, onVendor)
+                            }
                         }
 
                         item {
@@ -379,14 +385,17 @@ fun SettingsScreen(
                         }
 
                         // Автозапуск ждёт своей очереди среди событий загрузки — на слабом телефоне полторы
-                        // минуты (D-128). Сразу поднимает только «Постоянный VPN» Android (этап 10).
-                        item {
-                            LinkRow(
-                                title = stringResource(R.string.always_on),
-                                subtitle = stringResource(if (state.alwaysOn) R.string.always_on_enabled else R.string.always_on_hint),
-                                onClick = onAlwaysOn,
-                                icon = Symbols.VpnLock,
-                            )
+                        // минуты (D-128). Сразу поднимает только «Постоянный VPN» Android (этап 10). Google TV has
+                        // no screen for it (F-346).
+                        if (state.alwaysOnSettings) {
+                            item {
+                                LinkRow(
+                                    title = stringResource(R.string.always_on),
+                                    subtitle = stringResource(if (state.alwaysOn) R.string.always_on_enabled else R.string.always_on_hint),
+                                    onClick = onAlwaysOn,
+                                    icon = Symbols.VpnLock,
+                                )
+                            }
                         }
 
                         item {

@@ -522,9 +522,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                 // Первое подключение удалось — самое время объяснить, зачем работа в фоне, и
                 // только потом показать системное окно. Один раз; дальше — карточка на
-                // главной и «Работа в фоне» в настройках.
+                // главной и «Работа в фоне» в настройках. Not on a TV: it is never off the charger, where Doze acts,
+                // its request screens are stubs, and a TV's brand would pick a phone vendor's steps (F-346).
                 LaunchedEffect(state.running) {
-                    if (!state.running || tips.backgroundAsked || backgroundAllowed()) return@LaunchedEffect
+                    if (tv || !state.running || tips.backgroundAsked || backgroundAllowed()) return@LaunchedEffect
 
                     delay(BACKGROUND_ASK_DELAY)
 
@@ -549,6 +550,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 }
 
                 val backgroundNotice = when {
+                    tv -> null
+
                     !settingsState.backgroundAllowed && tips.backgroundAsked &&
                         System.currentTimeMillis() >= snoozedUntil -> BackgroundNotice.Restricted(
                         onAllow = { openBackground(BackgroundStep.Allow) },

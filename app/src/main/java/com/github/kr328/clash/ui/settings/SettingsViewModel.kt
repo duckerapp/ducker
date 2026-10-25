@@ -2,8 +2,10 @@ package com.github.kr328.clash.ui.settings
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.VpnService
+import android.provider.Settings
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
@@ -96,6 +98,7 @@ class SettingsViewModel : ViewModel() {
                     autoRestart = pm.getComponentEnabledSetting(RestartReceiver::class.componentName) !=
                         PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                     alwaysOn = alwaysOnVpn(),
+                    alwaysOnSettings = pm.resolveActivity(Intent(Settings.ACTION_VPN_SETTINGS), 0) != null,
                     backgroundAllowed = context.backgroundAllowed(),
                 )
             }
