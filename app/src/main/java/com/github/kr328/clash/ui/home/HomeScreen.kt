@@ -142,6 +142,7 @@ import com.github.kr328.clash.ui.components.rememberUpdateShown
 import com.github.kr328.clash.ui.components.HeaderButton
 import com.github.kr328.clash.ui.components.overscrollFor
 import kotlin.math.hypot
+import kotlin.math.roundToInt
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -753,6 +754,8 @@ private fun HeroCard(
 
     // Какое состояние лежит внизу целиком. Пока идёт волна, поверх него — новое.
     var settled by remember { mutableStateOf(active) }
+    // What the circle holds: the state the wave goes to, and, once the change went back, the one it closes over.
+    var upper by remember { mutableStateOf(active) }
     val wave = remember { Animatable(0f) }
 
     var card by remember { mutableStateOf<LayoutCoordinates?>(null) }
@@ -763,18 +766,28 @@ private fun HeroCard(
     val press = remember { MutableInteractionSource() }
 
     LaunchedEffect(active) {
-        // Передумали посреди наката — просто убираем верхнюю копию.
-        wave.snapTo(0f)
+        // Передумали посреди наката: the circle closes from where it is. Removed at once, the new copy vanished,
+        // and with quick presses on the button the fill was never seen.
+        if (active == settled) {
+            if (wave.value > 0f) wave.animateTo(0f, tween((WAVE_MS * wave.value).roundToInt(), easing = WaveEasing))
 
-        if (active == settled) return@LaunchedEffect
+            upper = settled
 
-        // The frame that composes the new copy — with the rest of Home rearranging after the change — is the heavy
-        // one (70 ms on the emulator when VPN went off). It passes while the circle has no size yet: inside the
-        // wave it made the circle jump at its start.
-        withFrameNanos {}
-        withFrameNanos {}
+            return@LaunchedEffect
+        }
 
-        wave.animateTo(1f, tween(WAVE_MS, easing = WaveEasing))
+        // Changed back and forth: the wave to this state is still there and goes on from where it is.
+        if (upper != active || wave.value == 0f) {
+            upper = active
+
+            // The frame that composes the new copy — with the rest of Home rearranging after the change — is the
+            // heavy one (70 ms on the emulator when VPN went off). It passes while the circle has no size yet:
+            // inside the wave it made the circle jump at its start.
+            withFrameNanos {}
+            withFrameNanos {}
+        }
+
+        wave.animateTo(1f, tween((WAVE_MS * (1f - wave.value)).roundToInt(), easing = WaveEasing))
 
         settled = active
 
@@ -880,12 +893,12 @@ private fun HeroCard(
                 // Надписи прежнего состояния гаснут в первой трети волны, новые проявляются
                 // во второй половине. Фронт проходит по пустому месту, и два разных слова не
                 // встречаются на экране — без этого волна резала заголовок пополам.
-                textAlpha = { if (settled != active) 1f - fade(wave.value, 0f, TEXT_OUT) else 1f },
+                textAlpha = { if (settled != upper) 1f - fade(wave.value, 0f, TEXT_OUT) else 1f },
             )
 
-            if (settled != active) {
+            if (settled != upper) {
                 HeroFace(
-                    running = active,
+                    running = upper,
                     state = state,
                     metrics = metrics,
                     press = press,
