@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.settings
 
 import android.content.Context
+import android.content.pm.PackageManager
 
 /**
  * Настройки внешнего вида приложения.
@@ -12,10 +13,16 @@ import android.content.Context
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
 
+    // A TV keeps a theme of its own. These settings go into Android's cloud backup, and a TV signed in to the same
+    // Google account can get a phone's light theme back on install instead of its own dark default (D-254).
+    private val themeKey by lazy {
+        if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)) KEY_THEME_TV else KEY_THEME
+    }
+
     /** `system`, `light` или `dark`. */
     var theme: String
-        get() = prefs.getString(KEY_THEME, THEME_SYSTEM) ?: THEME_SYSTEM
-        set(value) = prefs.edit().putString(KEY_THEME, value).apply()
+        get() = prefs.getString(themeKey, THEME_SYSTEM) ?: THEME_SYSTEM
+        set(value) = prefs.edit().putString(themeKey, value).apply()
 
     /** Настоящий чёрный фон вместо тёмно-серого — заметная экономия на OLED (D-21). */
     var oled: Boolean
@@ -74,6 +81,7 @@ class SettingsStore(context: Context) {
         const val CONFIG_TEXT_DEFAULT = 13f
 
         private const val KEY_THEME = "theme"
+        private const val KEY_THEME_TV = "theme_tv"
         private const val KEY_OLED = "oled"
         private const val KEY_DYNAMIC = "dynamic_color"
         private const val KEY_HIDE_RECENTS = "hide_from_recents"
