@@ -149,6 +149,11 @@
     <string name="link_other_node">اختيار خادم آخر</string>
     <string name="link_fastest">الانتقال إلى الأسرع</string>
     <string name="link_fastest_busy">جارٍ البحث عن الأسرع…</string>
+    <string name="exit_title">إغلاق ducker؟</string>
+    <string name="exit_vpn_on">يستمر VPN في العمل في الخلفية. لإيقافه، استخدم الزر في «الرئيسية».</string>
+    <string name="exit_vpn_off">VPN متوقف. يمكنك فتح ducker مجددًا من الشاشة الرئيسية للتلفزيون.</string>
+    <string name="exit_yes">نعم، أغلِق</string>
+    <string name="exit_no">لا، ابقَ</string>
     <string name="link_none_answered">لم يستجب أي خادم؛ يبدو أن هذه الشبكة تحظرها. جرّب التبديل بين Wi-Fi وبيانات الهاتف</string>
     <string name="apps_mode_only">عبر VPN</string>
     <string name="apps_mode_except">دون VPN</string>

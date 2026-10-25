@@ -149,6 +149,11 @@
     <string name="link_other_node">Choisir un autre serveur</string>
     <string name="link_fastest">Passer au plus rapide</string>
     <string name="link_fastest_busy">Recherche du plus rapide…</string>
+    <string name="exit_title">Fermer ducker ?</string>
+    <string name="exit_vpn_on">Le VPN continue de fonctionner en arrière-plan. Pour l’arrêter, utilisez le bouton de l’onglet « Accueil ».</string>
+    <string name="exit_vpn_off">Le VPN est désactivé. Vous pouvez rouvrir ducker depuis l’écran d’accueil du téléviseur.</string>
+    <string name="exit_yes">Oui, fermer</string>
+    <string name="exit_no">Non, rester</string>
     <string name="link_none_answered">Aucun serveur n’a répondu. Ce réseau semble les bloquer. Essayez de passer du Wi-Fi aux données mobiles, ou l’inverse</string>
     <string name="apps_mode_only">Via le VPN</string>
     <string name="apps_mode_except">Sans VPN</string>

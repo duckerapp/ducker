@@ -149,6 +149,11 @@
     <string name="link_other_node">Pilih server lain</string>
     <string name="link_fastest">Ganti ke yang tercepat</string>
     <string name="link_fastest_busy">Mencari server tercepat…</string>
+    <string name="exit_title">Tutup ducker?</string>
+    <string name="exit_vpn_on">VPN tetap berjalan di latar belakang. Untuk mematikannya, gunakan tombol di “Beranda”.</string>
+    <string name="exit_vpn_off">VPN mati. Anda bisa membuka ducker lagi dari layar utama TV.</string>
+    <string name="exit_yes">Ya, tutup</string>
+    <string name="exit_no">Tidak, tetap di sini</string>
     <string name="link_none_answered">Tidak ada server yang merespons, sepertinya jaringan ini memblokirnya. Coba beralih antara Wi-Fi dan data seluler</string>
     <string name="apps_mode_only">Melalui VPN</string>
     <string name="apps_mode_except">Tanpa VPN</string>

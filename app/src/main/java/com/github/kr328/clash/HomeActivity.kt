@@ -26,6 +26,7 @@ import androidx.compose.ui.focus.focusRequester
 import com.github.kr328.clash.ui.home.ThemeButton
 import com.github.kr328.clash.ui.home.BrandTitle
 import com.github.kr328.clash.ui.components.TvTool
+import com.github.kr328.clash.ui.components.LeaveSheet
 import com.github.kr328.clash.ui.components.tvCanvas
 import com.github.kr328.clash.ui.components.focusRoom
 import com.github.kr328.clash.ui.components.pageBoundary
@@ -685,6 +686,24 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 var paging by remember { mutableStateOf<Job?>(null) }
                 // Настройки открыты шестерёнкой под доком, а не со страницы.
                 var fromGear by remember { mutableStateOf(false) }
+                // A TV asks before Back closes the app.
+                var exitAsk by remember { mutableStateOf(false) }
+
+                if (exitAsk) {
+                    LeaveSheet(
+                        title = stringResource(R.string.exit_title),
+                        hint = stringResource(if (state.running) R.string.exit_vpn_on else R.string.exit_vpn_off),
+                        leave = stringResource(R.string.exit_yes),
+                        stay = stringResource(R.string.exit_no),
+                        danger = false,
+                        // As the system's own Back on the first screen: the app goes to the background.
+                        onLeave = {
+                            exitAsk = false
+                            moveTaskToBack(true)
+                        },
+                        onStay = { exitAsk = false },
+                    )
+                }
 
                 if (tvFocus != null) {
                     // Подписок нет — во всём доке одна кнопка, и она на месте первой вкладки (D-98).
@@ -699,6 +718,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     // Со страницы «назад» паркует пульт на её вкладке (D-161): фокус остаётся, где был,
                     // и вправо возвращает на то же место. Из дока — настоящий переход на «Главную».
                     val inPage = pageFocused && !tvFocus.parked
+
+                    // On the dock's first tab Back closed the app at once: on a TV a stray press of the remote
+                    // left it. Now it asks first. Declared before the handler below, which takes Back while it can.
+                    BackHandler(enabled = overlay == null) { exitAsk = true }
 
                     BackHandler(enabled = overlay == null && (inPage || pagerState.settledPage != 0)) {
                         if (inPage) {

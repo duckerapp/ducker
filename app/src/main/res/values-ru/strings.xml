@@ -163,6 +163,11 @@
     <string name="link_other_node">Выбрать другой узел</string>
     <string name="link_fastest">Переключиться на доступный</string>
     <string name="link_fastest_busy">Ищу доступный…</string>
+    <string name="exit_title">Закрыть ducker?</string>
+    <string name="exit_vpn_on">VPN продолжит работать в фоне. Выключить его можно кнопкой на «Главной».</string>
+    <string name="exit_vpn_off">VPN выключен. Открыть ducker снова можно с главного экрана телевизора.</string>
+    <string name="exit_yes">Да, закрыть</string>
+    <string name="exit_no">Нет, остаться</string>
     <string name="link_none_answered">Ни один узел не ответил — похоже, эта сеть их блокирует. Переключитесь между Wi-Fi и мобильной сетью</string>
     <!-- Приложения в туннеле (этап 8.3) -->
     <string name="apps_mode_only">Через VPN</string>

@@ -149,6 +149,11 @@
     <string name="link_other_node">Chọn máy chủ khác</string>
     <string name="link_fastest">Chuyển sang máy chủ nhanh nhất</string>
     <string name="link_fastest_busy">Đang tìm máy chủ nhanh nhất…</string>
+    <string name="exit_title">Đóng ducker?</string>
+    <string name="exit_vpn_on">VPN vẫn tiếp tục chạy ở chế độ nền. Để tắt, hãy dùng nút trên “Trang chủ”.</string>
+    <string name="exit_vpn_off">VPN đang tắt. Bạn có thể mở lại ducker từ màn hình chính của TV.</string>
+    <string name="exit_yes">Có, đóng</string>
+    <string name="exit_no">Không, ở lại</string>
     <string name="link_none_answered">Không máy chủ nào phản hồi; có vẻ mạng này đang chặn chúng. Hãy thử chuyển giữa Wi-Fi và dữ liệu di động</string>
     <string name="apps_mode_only">Qua VPN</string>
     <string name="apps_mode_except">Không qua VPN</string>

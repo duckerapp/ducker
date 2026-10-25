@@ -149,6 +149,11 @@
     <string name="link_other_node">更换节点</string>
     <string name="link_fastest">切换到最快节点</string>
     <string name="link_fastest_busy">正在寻找最快节点…</string>
+    <string name="exit_title">关闭 ducker？</string>
+    <string name="exit_vpn_on">VPN 会在后台继续运行。要关闭它，请使用“首页”上的按钮。</string>
+    <string name="exit_vpn_off">VPN 已关闭。可以从电视主屏幕再次打开 ducker。</string>
+    <string name="exit_yes">是，关闭</string>
+    <string name="exit_no">否，留下</string>
     <string name="link_none_answered">所有节点均无响应，当前网络似乎屏蔽了这些节点。请尝试切换 Wi-Fi 和移动数据</string>
     <string name="apps_mode_only">走 VPN</string>
     <string name="apps_mode_except">不走 VPN</string>

@@ -496,6 +496,7 @@ private const val FLING = 1500f
 /**
  * Вопрос перед тем, как бросить несохранённое: правку конфига (D-124), новое правило (D-135)
  * или черновик правки (D-228). Красная кнопка — [leave], [stay] («Остаться») — текстом.
+ * [danger] off — leaving loses nothing, and the button is the ordinary black one.
  */
 @Composable
 internal fun LeaveSheet(
@@ -505,6 +506,7 @@ internal fun LeaveSheet(
     onLeave: () -> Unit,
     onStay: () -> Unit,
     stay: String = stringResource(R.string.config_stay),
+    danger: Boolean = true,
 ) {
     var open by remember { mutableStateOf(true) }
     var leaving by remember { mutableStateOf(false) }
@@ -533,7 +535,7 @@ internal fun LeaveSheet(
                 leaving = true
                 open = false
             },
-            danger = true,
+            danger = danger,
         )
 
         TextButton(onClick = { open = false }, modifier = Modifier.fillMaxWidth().focusRequester(safe)) {

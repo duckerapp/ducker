@@ -149,6 +149,11 @@
     <string name="link_other_node">Başka sunucu seç</string>
     <string name="link_fastest">En hızlıya geç</string>
     <string name="link_fastest_busy">En hızlı sunucu aranıyor…</string>
+    <string name="exit_title">ducker kapatılsın mı?</string>
+    <string name="exit_vpn_on">VPN arka planda çalışmaya devam eder. Kapatmak için “Ana sayfa”daki düğmeyi kullanın.</string>
+    <string name="exit_vpn_off">VPN kapalı. ducker’ı TV’nin ana ekranından yeniden açabilirsiniz.</string>
+    <string name="exit_yes">Evet, kapat</string>
+    <string name="exit_no">Hayır, kal</string>
     <string name="link_none_answered">Hiçbir sunucu yanıt vermedi; bu ağ onları engelliyor olabilir. Wi-Fi ile mobil veri arasında geçiş yapmayı deneyin</string>
     <string name="apps_mode_only">VPN üzerinden</string>
     <string name="apps_mode_except">VPN dışında</string>
