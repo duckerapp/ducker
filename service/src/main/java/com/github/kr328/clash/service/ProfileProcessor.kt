@@ -94,6 +94,13 @@ object ProfileProcessor {
                             ImportedDao().update(new)
                         } else {
                             ImportedDao().insert(new)
+
+                            // A new subscription with none chosen is chosen here, not by the screen that added it:
+                            // that screen's process may be gone by the end of the download, and the subscription
+                            // stayed downloaded but unchosen — «Подписка не выбрана» (D-370).
+                            val store = ServiceStore(context)
+
+                            if (store.activeProfile?.let { ImportedDao().exists(it) } != true) store.activeProfile = snapshot.uuid
                         }
 
                         PendingDao().remove(snapshot.uuid)

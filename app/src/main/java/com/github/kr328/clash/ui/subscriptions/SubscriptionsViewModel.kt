@@ -367,10 +367,10 @@ class SubscriptionsViewModel : ViewModel() {
 
     /**
      * Заготовка загружается: не загрузилась — убираем её, иначе в списке остаётся подписка, которая
-     * ни разу не загрузилась, и каждая новая попытка добавляет ещё одну (D-100). Первая
-     * добавленная подписка становится активной сама: иначе человек добавит её и упрётся в «нет
-     * профиля» при попытке подключиться. Присланная с телефона или добавленная ссылкой со страницы
-     * провайдера ([activate], D-163, D-211) — тоже: её добавляют, чтобы включить.
+     * ни разу не загрузилась, и каждая новая попытка добавляет ещё одну (D-100). A new subscription
+     * with none chosen is chosen by the service itself (D-370). One sent from a phone or added by a
+     * link from the provider's page ([activate], D-163, D-211) is chosen over another one too: it is
+     * added to be turned on.
      */
     private suspend fun commitNew(uuid: UUID, activate: Boolean = false) {
         // Ядро сообщает ход загрузки (D-212). Доля только растёт: запасной путь через встроенный
@@ -387,10 +387,7 @@ class SubscriptionsViewModel : ViewModel() {
             throw failure
         }
 
-        val profiles = withProfile { queryAll() }
-        if (activate || profiles.count { it.imported } == 1) {
-            profiles.firstOrNull { it.uuid == uuid }?.let { withProfile { setActive(it) } }
-        }
+        if (activate) withProfile { queryByUUID(uuid) }?.let { withProfile { setActive(it) } }
     }
 
     /** Загрузка удалась: кнопка доливается до конца — и только потом панель закрывается (D-212). */
