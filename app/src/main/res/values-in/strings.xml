@@ -232,6 +232,7 @@
     <string name="external_control_activity">Kontrol eksternal</string>
     <string name="logs_save_failed">Tidak dapat menyimpan log</string>
     <string name="group_auto">%1$d server · pilih otomatis</string>
+    <string name="group_picks_itself">Grup ini memilih server secara otomatis</string>
     <string name="delete_subscription">Hapus “%1$s”?</string>
     <string name="delete_subscription_hint">Tautan langganan juga akan dihapus. Jika tidak disimpan di tempat lain, hanya tim bantuan penyedia yang dapat memulihkan akses. Jika langganan ini sedang digunakan, VPN akan terputus</string>
     <string name="tile_connecting">Menghubungkan…</string>

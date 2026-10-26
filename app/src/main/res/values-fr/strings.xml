@@ -234,6 +234,7 @@
     <string name="external_control_activity">Contrôle externe</string>
     <string name="logs_save_failed">Impossible d’enregistrer le journal</string>
     <string name="group_auto">Serveurs : %1$d · sélection automatique</string>
+    <string name="group_picks_itself">Ce groupe choisit le serveur automatiquement</string>
     <string name="delete_subscription">Supprimer « %1$s » ?</string>
     <string name="delete_subscription_hint">Le lien de l’abonnement sera aussi supprimé. Si vous ne l’avez pas conservé ailleurs, seule l’assistance du fournisseur pourra rétablir l’accès. Si cet abonnement est en cours d’utilisation, le VPN sera déconnecté</string>
     <string name="tile_connecting">Connexion…</string>

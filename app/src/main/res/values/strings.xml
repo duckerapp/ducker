@@ -264,6 +264,7 @@
     <string name="external_control_activity">External control</string>
     <string name="logs_save_failed">Could not save the log</string>
     <string name="group_auto">%1$d nodes · auto-select</string>
+    <string name="group_picks_itself">This group picks its node automatically</string>
     <string name="delete_subscription">Delete “%1$s”?</string>
     <string name="delete_subscription_hint">The subscription link is deleted too. If you don\'t have it saved elsewhere, only your provider\'s support can restore access. If this subscription is in use, the VPN disconnects</string>
     <string name="tile_connecting">Connecting…</string>

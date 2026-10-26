@@ -233,6 +233,7 @@
     <string name="external_control_activity">کنترل خارجی</string>
     <string name="logs_save_failed">ذخیره گزارش ممکن نشد</string>
     <string name="group_auto">%1$d سرور · انتخاب خودکار</string>
+    <string name="group_picks_itself">این گروه سرور را خودکار انتخاب می‌کند</string>
     <string name="delete_subscription">«%1$s» حذف شود؟</string>
     <string name="delete_subscription_hint">لینک اشتراک هم حذف می‌شود. اگر آن را جای دیگری ذخیره نکرده باشید، فقط پشتیبانی ارائه‌دهنده می‌تواند دسترسی را برگرداند. اگر این اشتراک در حال استفاده باشد، VPN قطع می‌شود</string>
     <string name="tile_connecting">در حال اتصال…</string>

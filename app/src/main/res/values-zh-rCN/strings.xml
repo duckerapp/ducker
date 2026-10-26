@@ -232,6 +232,7 @@
     <string name="external_control_activity">外部控制</string>
     <string name="logs_save_failed">无法保存日志</string>
     <string name="group_auto">%1$d 个节点 · 自动选择</string>
+    <string name="group_picks_itself">此组会自动选择节点</string>
     <string name="delete_subscription">删除“%1$s”？</string>
     <string name="delete_subscription_hint">订阅链接也会一并删除。如果你没有在其他地方备份该链接，只能联系服务商客服找回。如果当前正在使用此订阅，VPN 将会断开</string>
     <string name="tile_connecting">正在连接…</string>

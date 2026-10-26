@@ -234,6 +234,7 @@
     <string name="external_control_activity">Controle externo</string>
     <string name="logs_save_failed">Não foi possível salvar o registro</string>
     <string name="group_auto">Servidores: %1$d · seleção automática</string>
+    <string name="group_picks_itself">Este grupo escolhe o servidor automaticamente</string>
     <string name="delete_subscription">Excluir “%1$s”?</string>
     <string name="delete_subscription_hint">O link da assinatura também será excluído. Se ele não estiver salvo em outro lugar, apenas o suporte do provedor poderá restaurar o acesso. Se esta assinatura estiver em uso, a VPN será desconectada</string>
     <string name="tile_connecting">Conectando…</string>

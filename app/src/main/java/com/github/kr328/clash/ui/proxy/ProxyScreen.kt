@@ -14,6 +14,9 @@ import com.github.kr328.clash.ui.components.keepFocus
 import com.github.kr328.clash.ui.components.logoModel
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.focus.onFocusChanged
@@ -611,6 +614,14 @@ private val ItemFadeIn = tween<Float>(220)
 private val ItemFadeOut = tween<Float>(120)
 private val ItemMove = spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = IntOffset.VisibilityThreshold)
 
+// One message at a time: OK pressed again replaces it instead of queuing the same text for seconds.
+private var groupToast: Toast? = null
+
+private fun groupPicks(context: Context) {
+    groupToast?.cancel()
+    groupToast = Toast.makeText(context.applicationContext, R.string.group_picks_itself, Toast.LENGTH_SHORT).apply { show() }
+}
+
 
 @Composable
 private fun ProxyOption(
@@ -633,6 +644,7 @@ private fun ProxyOption(
 ) {
     val focusManager = LocalFocusManager.current
     val tv = LocalTv.current
+    val context = LocalContext.current
 
     Card(
         modifier = modifier,
@@ -646,12 +658,13 @@ private fun ProxyOption(
                 if (previous != null) left = previous
             }
             // В группе, которая выбирает сама, узлы не нажимаются — но с пульта фокус берут, иначе
-            // он проваливался сквозь них на звёздочки (D-158).
+            // он проваливался сквозь них на звёздочки (D-158). OK on one says why nothing happens:
+            // silence read as a broken button.
             .selectable(
                 selected = selected,
                 enabled = keepFocus(enabled),
                 role = Role.RadioButton,
-                onClick = { if (enabled) onSelect() },
+                onClick = { if (enabled) onSelect() else groupPicks(context) },
             ),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(

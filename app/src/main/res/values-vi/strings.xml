@@ -232,6 +232,7 @@
     <string name="external_control_activity">Điều khiển bên ngoài</string>
     <string name="logs_save_failed">Không thể lưu nhật ký</string>
     <string name="group_auto">%1$d máy chủ · tự động chọn</string>
+    <string name="group_picks_itself">Nhóm này tự động chọn máy chủ</string>
     <string name="delete_subscription">Xóa “%1$s”?</string>
     <string name="delete_subscription_hint">Liên kết gói đăng ký cũng sẽ bị xóa. Nếu không lưu ở nơi khác, chỉ bộ phận hỗ trợ của nhà cung cấp mới có thể giúp khôi phục quyền truy cập. Nếu đang dùng gói đăng ký này, VPN sẽ ngắt kết nối</string>
     <string name="tile_connecting">Đang kết nối…</string>

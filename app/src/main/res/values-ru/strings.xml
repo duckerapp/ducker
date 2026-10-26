@@ -254,6 +254,7 @@
     <string name="external_control_activity">Внешнее управление</string>
     <string name="logs_save_failed">Не удалось сохранить журнал</string>
     <string name="group_auto">Узлов: %1$d · автовыбор</string>
+    <string name="group_picks_itself">Эта группа выбирает узел сама</string>
     <string name="delete_subscription">Удалить «%1$s»?</string>
     <string name="delete_subscription_hint">Ссылка на подписку удалится вместе с ней. Если её нет где-то ещё, вернуть доступ поможет только поддержка провайдера. Если подписка активна, VPN отключится</string>
     <string name="tile_connecting">Подключение…</string>

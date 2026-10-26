@@ -234,6 +234,7 @@
     <string name="external_control_activity">Control externo</string>
     <string name="logs_save_failed">No se pudo guardar el registro</string>
     <string name="group_auto">Servidores: %1$d · selección automática</string>
+    <string name="group_picks_itself">Este grupo elige el servidor automáticamente</string>
     <string name="delete_subscription">¿Eliminar “%1$s”?</string>
     <string name="delete_subscription_hint">También se eliminará el enlace. Si no lo tienes guardado en otro sitio, solo el soporte del proveedor podrá restablecer el acceso. Si esta suscripción está en uso, la VPN se desconectará</string>
     <string name="tile_connecting">Conectando…</string>

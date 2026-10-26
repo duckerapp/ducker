@@ -237,6 +237,7 @@
     <string name="external_control_activity">التحكم الخارجي</string>
     <string name="logs_save_failed">تعذّر حفظ السجل</string>
     <string name="group_auto">الخوادم: %1$d · اختيار تلقائي</string>
+    <string name="group_picks_itself">هذه المجموعة تختار الخادم تلقائيًا</string>
     <string name="delete_subscription">حذف «%1$s»؟</string>
     <string name="delete_subscription_hint">سيُحذف رابط الاشتراك أيضًا. إن لم يكن محفوظًا في مكان آخر، فلن يتمكن من استعادة الوصول إلا دعم مزوّد الخدمة. إذا كان الاشتراك قيد الاستخدام، فسينقطع اتصال VPN</string>
     <string name="tile_connecting">جارٍ الاتصال…</string>

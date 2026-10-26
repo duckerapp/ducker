@@ -233,6 +233,7 @@
     <string name="external_control_activity">Harici kontrol</string>
     <string name="logs_save_failed">Günlük kaydedilemedi</string>
     <string name="group_auto">%1$d sunucu · otomatik seçim</string>
+    <string name="group_picks_itself">Bu grup sunucuyu otomatik seçer</string>
     <string name="delete_subscription">“%1$s” silinsin mi?</string>
     <string name="delete_subscription_hint">Abonelik bağlantısı da silinir. Başka bir yerde kayıtlı değilse erişimi yalnızca sağlayıcınızın destek ekibi geri getirebilir. Bu abonelik kullanımdaysa VPN bağlantısı kesilir</string>
     <string name="tile_connecting">Bağlanıyor…</string>
