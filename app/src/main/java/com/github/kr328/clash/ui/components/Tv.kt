@@ -668,6 +668,11 @@ internal class RingAnchorNode(
     }
 
     override fun onFocusEvent(focusState: FocusState) {
+        // With nothing focused (after a touch or a pointer) Compose tells a removed node it lost focus after
+        // detaching it (`FocusInvalidationManager.invalidateNodes`): its ancestors are out of reach, and the app
+        // fell. The same in [RingCornerNode] and [FocusNudgeNode].
+        if (!isAttached) return
+
         focused = focusState.hasFocus
         sync()
     }
@@ -709,6 +714,8 @@ private data class RingCornerElement(val corner: Dp) : ModifierNodeElement<RingC
 
 internal class RingCornerNode(var corner: Dp) : Modifier.Node(), FocusEventModifierNode {
     override fun onFocusEvent(focusState: FocusState) {
+        if (!isAttached) return
+
         traverseAncestors(RingKey) {
             val ring = it as FocusRingNode
 
@@ -779,6 +786,8 @@ private class FocusNudgeNode : Modifier.Node(), FocusEventModifierNode, Traversa
     var focused = false
 
     override fun onFocusEvent(focusState: FocusState) {
+        if (!isAttached) return
+
         focused = focusState.hasFocus
         traverseAncestors(RingKey) { (it as FocusRingNode).follow(); false }
     }
