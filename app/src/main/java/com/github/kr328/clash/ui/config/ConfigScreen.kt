@@ -63,6 +63,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -256,6 +257,7 @@ fun ConfigScreen(
     val tv = LocalTv.current
     val code = remember { FocusRequester() }
     var typing by remember { mutableStateOf(false) }
+    val tvTyping = keys && typing
     // The back arrow in the top-left corner of either view. The remote returns there when editing ends and
     // when the view changes: the fullscreen button under the frame disappears with it, and the lost focus
     // went to the tab under this screen.
@@ -305,149 +307,153 @@ fun ConfigScreen(
 
     Box(modifier.fillMaxSize().screenInsets()) {
         Column(Modifier.fillMaxSize().aboveKeyboard(ime, navigation) { if (bare || compact) 0 else bar }) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = if (compact) 4.dp else if (bare) 8.dp else 16.dp),
-                verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp),
-            ) {
-                if (!bare && !compact) {
-                    Header(
-                        kind = stringResource(if (state.file != null) R.string.config_kind_file else R.string.config_kind_subscription),
-                        name = state.name,
-                        onBack = onBack,
-                        onFull = { view(true) },
-                        back = Modifier.focusRequester(corner),
-                    )
+            // On a TV the keyboard leaves the app a strip of the screen: while typing the code takes all of it.
+            // With the header above it the code got no height, and Android took its focus away with the keyboard.
+            if (!tvTyping) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = if (compact) 4.dp else if (bare) 8.dp else 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp),
+                ) {
+                    if (!bare && !compact) {
+                        Header(
+                            kind = stringResource(if (state.file != null) R.string.config_kind_file else R.string.config_kind_subscription),
+                            name = state.name,
+                            onBack = onBack,
+                            onFull = { view(true) },
+                            back = Modifier.focusRequester(corner),
+                        )
 
-                    if (state.fromSubscription || state.file != null) {
-                        Hint(stringResource(if (state.file != null) R.string.config_file_hint else R.string.config_subscription_hint))
+                        if (state.fromSubscription || state.file != null) {
+                            Hint(stringResource(if (state.file != null) R.string.config_file_hint else R.string.config_subscription_hint))
+                        }
                     }
-                }
 
-                if (searching) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SearchLines(side = compact) { line ->
-                            Row(line, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Box(Modifier.weight(1f)) {
-                                    SheetField(
-                                        value = query,
-                                        onValue = {
-                                            query = it
-                                            val searcher = editor?.searcher ?: return@SheetField
-                                            if (it.isEmpty()) searcher.takeIf { s -> s.hasQuery() }?.stopSearch()
-                                            else searcher.search(it, EditorSearcher.SearchOptions(true, false))
-                                        },
-                                        placeholder = stringResource(R.string.config_search),
-                                        enabled = true,
-                                    )
-                                }
-
-                                ToolGroup {
-                                    ToolButton(Symbols.KeyboardArrowUp, stringResource(R.string.config_search_previous), matches > 0) {
-                                        editor?.searcher?.takeIf { it.hasQuery() }?.gotoPrevious()
+                    if (searching) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SearchLines(side = compact) { line ->
+                                Row(line, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Box(Modifier.weight(1f)) {
+                                        SheetField(
+                                            value = query,
+                                            onValue = {
+                                                query = it
+                                                val searcher = editor?.searcher ?: return@SheetField
+                                                if (it.isEmpty()) searcher.takeIf { s -> s.hasQuery() }?.stopSearch()
+                                                else searcher.search(it, EditorSearcher.SearchOptions(true, false))
+                                            },
+                                            placeholder = stringResource(R.string.config_search),
+                                            enabled = true,
+                                        )
                                     }
-                                    ToolButton(Symbols.KeyboardArrowDown, stringResource(R.string.config_search_next), matches > 0) {
-                                        editor?.searcher?.takeIf { it.hasQuery() }?.gotoNext()
+
+                                    ToolGroup {
+                                        ToolButton(Symbols.KeyboardArrowUp, stringResource(R.string.config_search_previous), matches > 0) {
+                                            editor?.searcher?.takeIf { it.hasQuery() }?.gotoPrevious()
+                                        }
+                                        ToolButton(Symbols.KeyboardArrowDown, stringResource(R.string.config_search_next), matches > 0) {
+                                            editor?.searcher?.takeIf { it.hasQuery() }?.gotoNext()
+                                        }
+                                        ToolButton(Symbols.Close, stringResource(R.string.config_search_close), true) { closeSearch() }
                                     }
-                                    ToolButton(Symbols.Close, stringResource(R.string.config_search_close), true) { closeSearch() }
                                 }
-                            }
 
-                            // Замена; пустое «на что» — удаление найденного.
-                            Row(line, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Box(Modifier.weight(1f)) {
-                                    SheetField(
-                                        value = replacement,
-                                        onValue = { replacement = it },
-                                        placeholder = stringResource(R.string.config_replace_with),
-                                        enabled = true,
+                                // Замена; пустое «на что» — удаление найденного.
+                                Row(line, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Box(Modifier.weight(1f)) {
+                                        SheetField(
+                                            value = replacement,
+                                            onValue = { replacement = it },
+                                            placeholder = stringResource(R.string.config_replace_with),
+                                            enabled = true,
+                                        )
+                                    }
+
+                                    TextPill(
+                                        stringResource(if (replacement.isEmpty()) R.string.config_delete_one else R.string.config_replace_one),
+                                        matches > 0,
+                                        ::replaceOne,
                                     )
+                                    TextPill(stringResource(R.string.config_replace_all), matches > 0, ::replaceAll)
                                 }
-
-                                TextPill(
-                                    stringResource(if (replacement.isEmpty()) R.string.config_delete_one else R.string.config_replace_one),
-                                    matches > 0,
-                                    ::replaceOne,
-                                )
-                                TextPill(stringResource(R.string.config_replace_all), matches > 0, ::replaceAll)
                             }
-                        }
 
-                        if (query.isNotEmpty()) {
-                            Text(
-                                text = if (matches > 0) stringResource(R.string.config_search_found, (current + 1).coerceAtLeast(1), matches)
-                                else stringResource(R.string.config_search_none),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(start = 4.dp),
-                            )
-                        }
-                    }
-                } else {
-                    val edits: @Composable () -> Unit = {
-                        ToolGroup {
-                            ToolButton(Symbols.Undo, stringResource(R.string.config_undo), canUndo) { editor?.undo() }
-                            ToolButton(Symbols.Redo, stringResource(R.string.config_redo), canRedo) { editor?.redo() }
-                        }
-                        ToolGroup {
-                            ToolButton(Symbols.TextDecrease, stringResource(R.string.config_text_smaller), textSize > MIN_TEXT) { resize(-1f) }
-                            ToolButton(Symbols.TextIncrease, stringResource(R.string.config_text_larger), textSize < MAX_TEXT) { resize(1f) }
-                        }
-                    }
-                    val tools: @Composable () -> Unit = {
-                        ToolGroup {
-                            // Проверка и выравнивание — одна кнопка: выравнивает только то, что ядро
-                            // разобрало. В полном экране — только правка, как и без этой кнопки.
-                            if (!bare) {
-                                ToolButton(Symbols.TaskAlt, stringResource(R.string.config_format), !state.busy && state.text != null && editor != null) { format() }
-                            }
-                            ToolButton(Symbols.List, stringResource(R.string.config_sections), editor != null) { showSections = true }
-                            ToolButton(Symbols.Search, stringResource(R.string.config_search), editor != null) { searching = true }
-                        }
-                    }
-
-                    if (compact) {
-                        // «Сохранить» всегда на виду справа; остальное, если не влезло (узкий
-                        // телефон боком, длинные подписи), листается вбок, а не обрезает её.
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(
-                                modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack, Modifier.focusRequester(corner))
+                            if (query.isNotEmpty()) {
                                 Text(
-                                    text = state.name,
-                                    modifier = Modifier.widthIn(max = 160.dp),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
+                                    text = if (matches > 0) stringResource(R.string.config_search_found, (current + 1).coerceAtLeast(1), matches)
+                                    else stringResource(R.string.config_search_none),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 4.dp),
                                 )
-                                edits()
-                                tools()
-                                TextPill(stringResource(R.string.config_save_as), !state.busy && state.text != null) { showSaveAs = true }
                             }
-                            SaveButton(
-                                label = stringResource(R.string.save),
-                                main = true,
-                                state = state,
-                                onClick = { editor?.text?.toString()?.let(onSave) },
-                                modifier = Modifier.heightIn(min = 44.dp),
-                            )
                         }
                     } else {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (full) {
-                                ToolGroup {
-                                    ToolButton(
-                                        Symbols.ArrowBack, stringResource(R.string.config_fullscreen_exit), true,
-                                        Modifier.focusRequester(corner),
-                                    ) { view(false) }
-                                }
+                        val edits: @Composable () -> Unit = {
+                            ToolGroup {
+                                ToolButton(Symbols.Undo, stringResource(R.string.config_undo), canUndo) { editor?.undo() }
+                                ToolButton(Symbols.Redo, stringResource(R.string.config_redo), canRedo) { editor?.redo() }
                             }
-                            edits()
-                            Spacer(Modifier.weight(1f))
-                            tools()
+                            ToolGroup {
+                                ToolButton(Symbols.TextDecrease, stringResource(R.string.config_text_smaller), textSize > MIN_TEXT) { resize(-1f) }
+                                ToolButton(Symbols.TextIncrease, stringResource(R.string.config_text_larger), textSize < MAX_TEXT) { resize(1f) }
+                            }
+                        }
+                        val tools: @Composable () -> Unit = {
+                            ToolGroup {
+                                // Проверка и выравнивание — одна кнопка: выравнивает только то, что ядро
+                                // разобрало. В полном экране — только правка, как и без этой кнопки.
+                                if (!bare) {
+                                    ToolButton(Symbols.TaskAlt, stringResource(R.string.config_format), !state.busy && state.text != null && editor != null) { format() }
+                                }
+                                ToolButton(Symbols.List, stringResource(R.string.config_sections), editor != null) { showSections = true }
+                                ToolButton(Symbols.Search, stringResource(R.string.config_search), editor != null) { searching = true }
+                            }
+                        }
+
+                        if (compact) {
+                            // «Сохранить» всегда на виду справа; остальное, если не влезло (узкий
+                            // телефон боком, длинные подписи), листается вбок, а не обрезает её.
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack, Modifier.focusRequester(corner))
+                                    Text(
+                                        text = state.name,
+                                        modifier = Modifier.widthIn(max = 160.dp),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    edits()
+                                    tools()
+                                    TextPill(stringResource(R.string.config_save_as), !state.busy && state.text != null) { showSaveAs = true }
+                                }
+                                SaveButton(
+                                    label = stringResource(R.string.save),
+                                    main = true,
+                                    state = state,
+                                    onClick = { editor?.text?.toString()?.let(onSave) },
+                                    modifier = Modifier.heightIn(min = 44.dp),
+                                )
+                            }
+                        } else {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                if (full) {
+                                    ToolGroup {
+                                        ToolButton(
+                                            Symbols.ArrowBack, stringResource(R.string.config_fullscreen_exit), true,
+                                            Modifier.focusRequester(corner),
+                                        ) { view(false) }
+                                    }
+                                }
+                                edits()
+                                Spacer(Modifier.weight(1f))
+                                tools()
+                            }
                         }
                     }
                 }
@@ -455,7 +461,7 @@ fun ConfigScreen(
 
             // Keep the code surface's bounds; the editor clips inside its outer shadow.
             Box(
-                modifier = Modifier.weight(1f).fillMaxWidth()
+                modifier = Modifier.then(if (tvTyping) Modifier.fillMaxHeight(TV_TYPING_PART) else Modifier.weight(1f)).fillMaxWidth()
                     .padding(start = 16.dp, end = 16.dp, top = if (compact) 8.dp else 12.dp, bottom = if (compact) 8.dp else if (bare) 16.dp else 0.dp)
                     // The editor resizes with the IME; keep its shadow on the platform outline.
                     .then(airEdge()?.let { Modifier.border(it, MaterialTheme.shapes.large) }
@@ -472,6 +478,8 @@ fun ConfigScreen(
                                     editor?.let {
                                         typing = true
                                         it.requestFocus()
+                                        // sora shows the keyboard on a touch only: OK gave the code focus and no keyboard.
+                                        it.showSoftInput()
                                     }
                                 }
                         } else Modifier,
@@ -503,6 +511,9 @@ fun ConfigScreen(
                                     tabWidth = 2
                                     // A remote moves the code by rows, not sideways: on a TV long lines wrap.
                                     isWordwrap = tv
+                                    // On a TV the system decides on the keyboard, as for every other field: sora hid it
+                                    // whenever the TV reported a keyboard of its own.
+                                    isDisableSoftKbdIfHardKbdAvailable = !tv
                                     setPinLineNumber(true)
                                     setDividerWidth(0f)
                                     // Плашка с номером строки у ползунка — чёрный прямоугольник на пол-экрана, пугала.
@@ -1112,6 +1123,11 @@ private fun SaveOption(icon: ImageVector, title: String, hint: String, onClick: 
 
 private const val MIN_TEXT = 9f
 private const val MAX_TEXT = 22f
+
+// ponytail: Gboard on a TV lies over the bottom 44% of the screen and tells the app nothing (its `ime` inset is
+// empty), so the code would run under it. While typing on a TV the code keeps to the upper half. A taller keyboard
+// still covers the code's last rows; if TVs turn out to report the inset, the inset alone can size the code.
+private const val TV_TYPING_PART = 0.5f
 
 /**
  * Окно ниже 480dp (граница компактной высоты у Material) — телефон боком или половина экрана.
