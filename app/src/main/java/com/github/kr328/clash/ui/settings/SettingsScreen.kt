@@ -363,8 +363,9 @@ fun SettingsScreen(
                         }
 
                         // Плитка в быстрых настройках есть давно, но найти её в редакторе шторки умеют
-                        // немногие. С Android 13 система может предложить добавить её сама (D-87).
-                        if (onAddTile != null) {
+                        // немногие. С Android 13 система может предложить добавить её сама (D-87). A TV has no
+                        // quick-settings shade.
+                        if (onAddTile != null && !tv) {
                             item {
                                 LinkRow(
                                     title = stringResource(R.string.add_tile),
@@ -399,7 +400,8 @@ fun SettingsScreen(
                             }
                         }
 
-                        item {
+                        // Not on a TV: it has no notification shade to show the speed in.
+                        if (!tv) item {
                             SwitchRow(
                                 title = stringResource(R.string.traffic_notification),
                                 subtitle = stringResource(R.string.traffic_notification_hint),
