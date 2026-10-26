@@ -137,6 +137,7 @@
              (F-159), а подменить можно. -->
         <activity-alias
             android:name=".DisguiseAlias"
+            android:banner="@drawable/ic_disguise_banner"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_disguise"

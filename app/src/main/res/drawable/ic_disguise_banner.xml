@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Маскировка (D-147) на телевизоре: лаунчер рисует баннер, а не значок, и алиас без своего баннера
+     показывал баннер ducker под именем «Калькулятор». The calculator of the icon on its colour; the TV writes the
+     name itself. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="320dp"
+        android:height="180dp">
+        <shape>
+            <solid android:color="@color/ic_disguise_background" />
+        </shape>
+    </item>
+    <item
+        android:width="180dp"
+        android:height="180dp"
+        android:drawable="@drawable/ic_disguise_foreground"
+        android:gravity="center" />
+</layer-list>
