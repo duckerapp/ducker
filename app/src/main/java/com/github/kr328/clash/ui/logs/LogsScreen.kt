@@ -214,7 +214,11 @@ fun LogsScreen(
                         val line = state.lines[index]
                         val row = rememberScrollState()
 
-                        Row(Modifier.fillMaxWidth().horizontalScroll(row, overscrollEffect = overscrollFor(row))) {
+                        // A remote cannot scroll a line sideways: on a TV long lines wrap instead.
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .then(if (tv) Modifier else Modifier.horizontalScroll(row, overscrollEffect = overscrollFor(row))),
+                        ) {
                             Text(
                                 text = line.message,
                                 style = MaterialTheme.typography.bodySmall,

@@ -1223,6 +1223,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showLogs,
                         onBack = closeLogs,
+                        // On a TV the log takes the whole width: its lines wrap there, and in the readable
+                        // width nearly every one did.
+                        wide = tv,
                     ) {
                         LogsScreen(
                             state = logsState,
