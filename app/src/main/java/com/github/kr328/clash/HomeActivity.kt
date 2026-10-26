@@ -711,8 +711,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     // тогда он встаёт в док с первым же нажатием клавиши.
                     val keys = LocalInputModeManager.current.inputMode == InputMode.Keyboard
 
+                    // Not under a screen over the tabs: recreated with settings open (a new language), the dock took
+                    // the focus from them and the frame showed through settings on the tab underneath. That screen
+                    // takes the focus itself (`BackLayer`), and the page gets it back when it closes (below).
                     LaunchedEffect(onboarding, keys) {
-                        if (keys) tvFocus.tabs[if (onboarding) 0 else pagerState.settledPage].requestFocus()
+                        if (keys && overlay == null) tvFocus.tabs[if (onboarding) 0 else pagerState.settledPage].requestFocus()
                     }
 
                     // Со страницы «назад» паркует пульт на её вкладке (D-161): фокус остаётся, где был,
