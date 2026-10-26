@@ -552,7 +552,9 @@ fun SettingsScreen(
                             )
                         }
 
-                        item {
+                        // Not on a TV: a web panel is heavy for a TV's memory, hard to drive with a remote, and Back did
+                        // not lead out of it.
+                        if (!tv) item {
                             LinkRow(
                                 title = stringResource(R.string.dashboard),
                                 subtitle = stringResource(R.string.dashboard_hint),
