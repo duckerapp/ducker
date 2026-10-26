@@ -160,10 +160,9 @@ fun LogsScreen(
         // самописца — то, что было до того, как журнал открыли (D-111).
         // Кнопки делят ширину по длине подписей: без этого на узком экране или с крупным
         // шрифтом последние сжимались, и «Сохранить» переносилось по буквам (D-114).
-        val actions = listOfNotNull(
+        val actions = listOf(
             Triple(stringResource(R.string.logs_share), onShare, true),
-            // Not on a TV: the report goes to the clipboard whole, and a TV with little memory can hang on it.
-            Triple(stringResource(R.string.logs_copy), onCopy, true).takeIf { !tv },
+            Triple(stringResource(R.string.logs_copy), onCopy, true),
             Triple(stringResource(R.string.logs_save), onSave, true),
             Triple(stringResource(R.string.logs_clear), onClear, state.lines.isNotEmpty()),
         )
