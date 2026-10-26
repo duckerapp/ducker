@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A TV is driven by a remote and is not a phone: these hints say “press” and “TV” there (stage 6). -->
+<resources>
+    <string name="auto_restart_hint">电视重启或应用更新后自动重新开启 VPN</string>
+    <string name="always_on_hint">电视一开机就立即启动 VPN；而“自动启动”会稍晚一些（在较慢的电视上可能要等一两分钟）。请在系统 VPN 设置中按下 ducker 旁的 ⚙，开启“始终开启的 VPN”。</string>
+    <string name="always_on_enabled">已开启：Android 会在电视开机时立即启动 VPN</string>
+    <string name="config_file_hint">这是电视上的本地文件。“保存”会将修改直接写回原文件，“另存为”可存为新文件或添加到订阅</string>
+    <string name="config_save_file">存为电视文件</string>
+</resources>

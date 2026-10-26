@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A TV is driven by a remote and is not a phone: these hints say “press” and “TV” there (stage 6). -->
+<resources>
+    <string name="auto_restart_hint">Réactive le VPN après un redémarrage du téléviseur ou une mise à jour de l’application</string>
+    <string name="always_on_hint">Lance le VPN dès le démarrage du téléviseur. Le « Démarrage automatique » intervient plus tard : une à deux minutes sur les téléviseurs lents. Dans les paramètres VPN, appuyez sur ⚙ à côté de ducker et activez « VPN permanent ».</string>
+    <string name="always_on_enabled">Activé : Android lance le VPN dès le démarrage du téléviseur</string>
+    <string name="config_file_hint">Un fichier de votre téléviseur. « Enregistrer » écrit vos modifications dans ce fichier ; « Enregistrer sous », dans un nouveau fichier ou dans les abonnements</string>
+    <string name="config_save_file">Fichier sur le téléviseur</string>
+</resources>

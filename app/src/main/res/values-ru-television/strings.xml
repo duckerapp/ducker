@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A TV is driven by a remote and is not a phone: these hints say “press” and “TV” there (stage 6). -->
+<resources>
+    <string name="auto_restart_hint">Включать VPN после перезагрузки телевизора или обновления приложения</string>
+    <string name="always_on_hint">Включает VPN сразу при запуске телевизора; автозапуск срабатывает позже — на слабых телевизорах через минуту-две. В настройках VPN нажмите ⚙ у ducker и включите постоянный VPN.</string>
+    <string name="always_on_enabled">Включён: Android включает VPN сразу при запуске телевизора</string>
+    <string name="config_file_hint">Файл с телевизора. «Сохранить» запишет правки в него, «Сохранить как» — в новый файл или в подписки</string>
+    <string name="config_save_file">Файлом на телевизор</string>
+</resources>

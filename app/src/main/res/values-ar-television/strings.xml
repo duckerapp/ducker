@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A TV is driven by a remote and is not a phone: these hints say “press” and “TV” there (stage 6). -->
+<resources>
+    <string name="auto_restart_hint">إعادة تشغيل VPN بعد إعادة تشغيل التلفاز أو تحديث التطبيق</string>
+    <string name="always_on_hint">يشغّل VPN فور بدء تشغيل التلفاز، بينما يتأخر «التشغيل التلقائي» قليلًا، وقد يستغرق دقيقة أو دقيقتين على أجهزة التلفاز البطيئة. في إعدادات VPN، اضغط ⚙ بجانب ducker وفعّل «شبكة VPN قيد التشغيل دائمًا».</string>
+    <string name="always_on_enabled">مفعّل: يشغّل Android اتصال VPN فور بدء تشغيل التلفاز</string>
+    <string name="config_file_hint">ملف من تلفازك. يكتب «حفظ» تعديلاتك في الملف نفسه؛ أما «حفظ باسم» فيحفظها في ملف جديد أو ضمن الاشتراكات</string>
+    <string name="config_save_file">كملف على التلفاز</string>
+</resources>

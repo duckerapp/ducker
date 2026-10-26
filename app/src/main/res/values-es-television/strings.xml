@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A TV is driven by a remote: the hints that name a touch say “press” there (stage 6). -->
+<!-- A TV is driven by a remote and is not a phone: these hints say “press” and “TV” there (stage 6). -->
 <resources>
     <string name="hero_off_hint">Pulsa para activar</string>
     <string name="config_draft_hint">La última vez editaste esta configuración sin guardar. ¿Quieres recuperar los cambios en el editor? La configuración no cambiará hasta que pulses “Guardar”</string>
+    <string name="auto_restart_hint">Vuelve a activar la VPN tras reiniciar el televisor o actualizar la aplicación</string>
+    <string name="always_on_hint">Inicia la VPN en cuanto arranca el televisor. “Inicio automático” actúa más tarde: puede tardar uno o dos minutos en televisores lentos. En los ajustes de VPN, pulsa ⚙ junto a ducker y activa “VPN siempre activada”.</string>
+    <string name="always_on_enabled">Activada: Android inicia la VPN en cuanto arranca el televisor</string>
+    <string name="config_file_hint">Un archivo de tu televisor. “Guardar” escribe los cambios en el mismo archivo; “Guardar como”, en un archivo nuevo o en las suscripciones</string>
+    <string name="config_save_file">Como archivo en el televisor</string>
 </resources>

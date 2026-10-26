@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A TV is driven by a remote and is not a phone: these hints say “press” and “TV” there (stage 6). -->
+<resources>
+    <string name="auto_restart_hint">روشن کردن دوباره VPN پس از راه‌اندازی مجدد تلویزیون یا به‌روزرسانی برنامه</string>
+    <string name="always_on_hint">به محض روشن شدن تلویزیون، VPN را راه‌اندازی می‌کند؛ «اجرای خودکار» دیرتر عمل می‌کند — در تلویزیون‌های کند یک یا دو دقیقه بعد. در تنظیمات VPN، روی ⚙ کنار ducker بزنید و «VPN همیشه روشن» را فعال کنید.</string>
+    <string name="always_on_enabled">روشن: Android به محض روشن شدن تلویزیون، VPN را راه‌اندازی می‌کند</string>
+    <string name="config_file_hint">فایلی از تلویزیون شما. «ذخیره» ویرایش‌ها را در همان فایل می‌نویسد، «ذخیره به‌عنوان» — در یک فایل جدید یا در اشتراک‌ها</string>
+    <string name="config_save_file">به‌عنوان فایل در تلویزیون</string>
+</resources>

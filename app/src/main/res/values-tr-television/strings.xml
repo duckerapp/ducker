@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A TV is driven by a remote: the hints that name a touch say “press” there (stage 6). -->
+<!-- A TV is driven by a remote and is not a phone: these hints say “press” and “TV” there (stage 6). -->
 <resources>
     <string name="hero_off_hint">Açmak için basın</string>
     <string name="config_draft_hint">Bu yapılandırmayı son düzenlediğinizde kaydetmediniz. Değişiklik düzenleyiciye geri yüklensin mi? “Kaydet” düğmesine basana kadar yapılandırmanın kendisi değişmez</string>
+    <string name="auto_restart_hint">Televizyon yeniden başlatıldıktan veya uygulama güncellendikten sonra VPN bağlantısını yeniden açar</string>
+    <string name="always_on_hint">Televizyon açılır açılmaz VPN bağlantısını başlatır. “Otomatik başlat” daha sonra devreye girer; yavaş televizyonlarda bir iki dakika sürebilir. VPN ayarlarında ducker yanındaki ⚙ simgesine basıp “Her zaman açık VPN” seçeneğini açın.</string>
+    <string name="always_on_enabled">Açık: Android televizyon açılır açılmaz VPN bağlantısını başlatır</string>
+    <string name="config_file_hint">Televizyonunuzdaki bir dosya. “Kaydet” değişiklikleri aynı dosyaya, “Farklı kaydet” ise yeni bir dosyaya veya aboneliklere kaydeder</string>
+    <string name="config_save_file">Televizyona dosya olarak</string>
 </resources>

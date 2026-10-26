@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A TV is driven by a remote: the hints that name a touch say “press” there (stage 6). -->
+<!-- A TV is driven by a remote and is not a phone: these hints say “press” and “TV” there (stage 6). -->
 <resources>
     <string name="hero_off_hint">Pressione para ativar</string>
     <string name="config_draft_hint">Na última vez, você editou esta configuração sem salvar. Quer restaurar as alterações no editor? A configuração só mudará quando você pressionar “Salvar”</string>
+    <string name="auto_restart_hint">Reativa a VPN após reiniciar a TV ou atualizar o aplicativo</string>
+    <string name="always_on_hint">Inicia a VPN assim que a TV liga. A “Inicialização automática” atua depois: pode levar um ou dois minutos em TVs lentas. Nas configurações de VPN, pressione ⚙ ao lado do ducker e ative “VPN sempre ativa”.</string>
+    <string name="always_on_enabled">Ativada: o Android inicia a VPN assim que a TV liga</string>
+    <string name="config_file_hint">Um arquivo da sua TV. “Salvar” grava as alterações no próprio arquivo; “Salvar como”, em um novo arquivo ou nas assinaturas</string>
+    <string name="config_save_file">Como arquivo na TV</string>
 </resources>

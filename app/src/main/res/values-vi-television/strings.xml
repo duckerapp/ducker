@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A TV is driven by a remote and is not a phone: these hints say “press” and “TV” there (stage 6). -->
+<resources>
+    <string name="auto_restart_hint">Bật lại VPN sau khi khởi động lại TV hoặc cập nhật ứng dụng</string>
+    <string name="always_on_hint">Khởi động VPN ngay khi TV bật; “Tự khởi động” sẽ chạy muộn hơn, có thể sau một đến hai phút trên TV chậm. Trong cài đặt VPN, nhấn ⚙ cạnh ducker rồi bật “VPN luôn bật”.</string>
+    <string name="always_on_enabled">Đã bật: Android khởi động VPN ngay khi TV bật</string>
+    <string name="config_file_hint">Tệp trên TV. “Lưu” ghi chỉnh sửa vào tệp đó; “Lưu thành” lưu vào tệp mới hoặc thêm vào gói đăng ký</string>
+    <string name="config_save_file">Lưu thành tệp trên TV</string>
+</resources>

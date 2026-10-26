@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A TV is driven by a remote: the hints that name a touch say “press” there (stage 6). -->
+<!-- A TV is driven by a remote and is not a phone: these hints say “press” and “TV” there (stage 6). -->
 <resources>
     <string name="hero_off_hint">Tekan untuk mengaktifkan</string>
     <string name="config_draft_hint">Terakhir kali Anda mengedit konfigurasi ini, perubahan belum disimpan. Pulihkan perubahan ke editor? Konfigurasinya sendiri tidak akan berubah sampai Anda menekan “Simpan”</string>
+    <string name="auto_restart_hint">Aktifkan kembali VPN setelah TV dimulai ulang atau aplikasi diperbarui</string>
+    <string name="always_on_hint">Memulai VPN segera setelah TV menyala. “Mulai otomatis” bekerja lebih lambat, bisa satu atau dua menit pada TV lambat. Di pengaturan VPN, tekan ⚙ di samping ducker lalu aktifkan “VPN selalu aktif”.</string>
+    <string name="always_on_enabled">Aktif: Android memulai VPN segera setelah TV menyala</string>
+    <string name="config_file_hint">File dari TV Anda. “Simpan” menulis perubahan ke file yang sama, sedangkan “Simpan sebagai” menyimpannya ke file baru atau ke langganan</string>
+    <string name="config_save_file">Sebagai file di TV</string>
 </resources>
