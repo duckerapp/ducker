@@ -444,14 +444,22 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
     private var checking = false
     private var view: android.view.View? = null
 
+    // A sheet is a window of its own with its own frame. The window under it keeps its focused element, and the
+    // dock's «+» kept a second frame under the open «+» sheet: a window without the remote draws none.
+    private val windowFocus = ViewTreeObserver.OnWindowFocusChangeListener { follow() }
+
     override fun onAttach() {
-        view = currentValueOf(LocalView).also { it.viewTreeObserver.addOnPreDrawListener(moved) }
+        view = currentValueOf(LocalView).also {
+            it.viewTreeObserver.addOnPreDrawListener(moved)
+            it.viewTreeObserver.addOnWindowFocusChangeListener(windowFocus)
+        }
         follow()
     }
 
     override fun onDetach() {
         view?.let {
             it.viewTreeObserver.removeOnPreDrawListener(moved)
+            it.viewTreeObserver.removeOnWindowFocusChangeListener(windowFocus)
             it.removeCallbacks(check)
         }
         view = null
@@ -530,7 +538,8 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
 
     /** Что обводить: место, которое дал док, или элемент в фокусе; в своих координатах. */
     private fun aim(): Rect? =
-        if (holds > 0) null else anchor?.rectIn(requireLayoutCoordinates()) ?: target.getFocusedRect()
+        if (holds > 0 || view?.hasWindowFocus() == false) null
+        else anchor?.rectIn(requireLayoutCoordinates()) ?: target.getFocusedRect()
 
     override fun ContentDrawScope.draw() {
         drawContent()
