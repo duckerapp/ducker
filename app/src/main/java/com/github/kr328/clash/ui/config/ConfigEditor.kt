@@ -41,12 +41,6 @@ import io.github.rosemoe.sora.widget.style.builtin.HandleStyleSideDrop
  * промахивались. Запас — ещё [GRAB] внутрь от края; рисуются полосы как прежде.
  */
 internal class ConfigEditor(context: Context) : CodeEditor(context) {
-    /**
-     * On a TV the keyboard lies over the code's lower part and tells the app nothing (its `ime` inset is empty,
-     * F-358): while the cursor is up the code keeps it in the upper half.
-     */
-    var keyboardOver = false
-
     /** A TV: the keyboard does not move the cursor to the end, see [onCreateInputConnection]. */
     var holdCursor = false
 
@@ -64,7 +58,7 @@ internal class ConfigEditor(context: Context) : CodeEditor(context) {
     }
 
     /** Сколько держать под строкой с курсором: не в упор к клавиатуре и не под полосой прокрутки. */
-    val room: Int get() = rowHeight * ROOM + if (keyboardOver) height / 2 else 0
+    val room: Int get() = rowHeight * ROOM
 
     init {
         // Номера строк закреплены и рисуются поверх капель: у первой колонки капля курсора

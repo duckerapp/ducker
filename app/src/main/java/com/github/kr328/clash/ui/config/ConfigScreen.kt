@@ -36,9 +36,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.activity.compose.LocalActivity
 import androidx.core.view.WindowCompat
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.horizontalScroll
@@ -289,8 +291,26 @@ fun ConfigScreen(
         code.requestFocus()
     }
 
-    // The cursor keeps above where the TV's keyboard lies.
-    LaunchedEffect(editor, tvTyping) { (editor as? ConfigEditor)?.keyboardOver = tvTyping }
+    // On a TV the keyboard now and then lies over the code without saying how high it is (its `ime` inset stays empty
+    // while it is shown, F-360): then the code kept its height and the lower rows were typed blind. While it is shown
+    // the code keeps above the screen's middle at least, as Gboard's top is lower; a keyboard that tells more gets more.
+    // Compose reads such a keyboard as hidden and no insets reach the editor's view, so the window is asked.
+    // ponytail: polled a few times a second, only while the cursor is up on a TV; an insets listener once Compose
+    // reports a keyboard without height as shown.
+    val view = LocalView.current
+    var keyboardShown by remember { mutableStateOf(false) }
+
+    LaunchedEffect(tvTyping) {
+        keyboardShown = false
+        if (!tvTyping) return@LaunchedEffect
+
+        while (true) {
+            keyboardShown = ViewCompat.getRootWindowInsets(view)?.isVisible(WindowInsetsCompat.Type.ime()) == true
+            delay(KEYBOARD_POLL_MS)
+        }
+    }
+
+    val tvKeyboard = if (keyboardShown) LocalWindowInfo.current.containerSize.height / 2 else 0
 
     // Строка с ошибкой — волной прямо в коде, пока её не поправят.
     LaunchedEffect(editor, state.result) {
@@ -312,7 +332,7 @@ fun ConfigScreen(
     val navigation = WindowInsets.navigationBars
 
     Box(modifier.fillMaxSize().screenInsets()) {
-        Column(Modifier.fillMaxSize().aboveKeyboard(ime, navigation) { if (bare || compact) 0 else bar }) {
+        Column(Modifier.fillMaxSize().aboveKeyboard(ime, navigation) { maxOf(if (bare || compact) 0 else bar, tvKeyboard) }) {
             // On a TV the keyboard leaves the app a strip of the screen: while typing the code takes all of it.
             // With the header above it the code got no height, and Android took its focus away with the keyboard.
             if (!tvTyping) {
@@ -1144,6 +1164,7 @@ private fun SaveOption(icon: ImageVector, title: String, hint: String, onClick: 
 }
 
 private const val MIN_TEXT = 9f
+private const val KEYBOARD_POLL_MS = 200L
 private const val MAX_TEXT = 22f
 
 /**
