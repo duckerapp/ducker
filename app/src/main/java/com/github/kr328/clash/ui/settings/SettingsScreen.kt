@@ -506,7 +506,9 @@ fun SettingsScreen(
                             )
                         }
 
-                        item {
+                        // On a TV only while it is on, so it can be turned off: the TV's launcher went on showing the
+                        // app's own picture under the new name, and a TV is not the device people check for a VPN.
+                        if (!tv || state.disguise) item {
                             SwitchRow(
                                 title = stringResource(R.string.disguise),
                                 subtitle = stringResource(R.string.disguise_hint),
