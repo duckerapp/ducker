@@ -16,6 +16,9 @@ import android.view.ViewGroup
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputConnectionWrapper
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import com.github.kr328.clash.R
@@ -38,8 +41,30 @@ import io.github.rosemoe.sora.widget.style.builtin.HandleStyleSideDrop
  * промахивались. Запас — ещё [GRAB] внутрь от края; рисуются полосы как прежде.
  */
 internal class ConfigEditor(context: Context) : CodeEditor(context) {
+    /**
+     * On a TV the keyboard lies over the code's lower part and tells the app nothing (its `ime` inset is empty,
+     * F-358): while the cursor is up the code keeps it in the upper half.
+     */
+    var keyboardOver = false
+
+    /** A TV: the keyboard does not move the cursor to the end, see [onCreateInputConnection]. */
+    var holdCursor = false
+
+    // Gboard on a TV puts the cursor at the end of the text as it opens, as for a one-line field, and the typing
+    // went to the config's last line instead of where the remote had put the cursor (F-358). On a TV a move of a
+    // plain cursor to the very end that comes from the keyboard is left undone.
+    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
+        val connection = super.onCreateInputConnection(outAttrs) ?: return null
+        if (!holdCursor) return connection
+
+        return object : InputConnectionWrapper(connection, true) {
+            override fun setSelection(start: Int, end: Int): Boolean =
+                if (start == end && start == text.length && start != cursor.left) true else super.setSelection(start, end)
+        }
+    }
+
     /** Сколько держать под строкой с курсором: не в упор к клавиатуре и не под полосой прокрутки. */
-    val room: Int get() = rowHeight * ROOM
+    val room: Int get() = rowHeight * ROOM + if (keyboardOver) height / 2 else 0
 
     init {
         // Номера строк закреплены и рисуются поверх капель: у первой колонки капля курсора

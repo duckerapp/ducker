@@ -27,6 +27,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import android.graphics.Typeface
 import androidx.compose.runtime.withFrameNanos
 import android.os.SystemClock
+import android.view.InputDevice
+import android.view.KeyEvent
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.github.kr328.clash.ui.components.HeaderButton
 import com.github.kr328.clash.ui.settings.SettingsStore
@@ -56,6 +58,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -63,7 +66,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -251,16 +253,17 @@ fun ConfigScreen(
     val onBack = { if (state.dirty) onAskLeave(true) else onClose() }
 
     // Пульт (D-158): код — одна кнопка, как поле ввода. Иначе фокус заходил в редактор, стрелки
-    // двигали в нём курсор, и до «Сохранить» было не добраться. ОК — править: стрелки ведут курсор;
-    // «назад» — закончить, фокус на стрелке в левом верхнем углу.
+    // двигали в нём курсор, и до «Сохранить» было не добраться. On OK the cursor comes up without a keyboard and
+    // the arrows move it; OK again brings the keyboard from there; Back hides the keyboard, the next Back puts the
+    // frame back on the code, from where Down leads to «Сохранить» (D-373).
     val keys = tvKeys()
     val tv = LocalTv.current
     val code = remember { FocusRequester() }
+    val save = remember { FocusRequester() }
     var typing by remember { mutableStateOf(false) }
     val tvTyping = keys && typing
-    // The back arrow in the top-left corner of either view. The remote returns there when editing ends and
-    // when the view changes: the fullscreen button under the frame disappears with it, and the lost focus
-    // went to the tab under this screen.
+    // The back arrow in the top-left corner of either view. The remote returns there when the view changes: the
+    // fullscreen button under the frame disappears with it, and the lost focus went to the tab under this screen.
     val corner = remember { FocusRequester() }
     var toCorner by remember { mutableStateOf(false) }
 
@@ -283,8 +286,11 @@ fun ConfigScreen(
 
     BackHandler(enabled = keys && typing) {
         typing = false
-        toCorner = true
+        code.requestFocus()
     }
+
+    // The cursor keeps above where the TV's keyboard lies.
+    LaunchedEffect(editor, tvTyping) { (editor as? ConfigEditor)?.keyboardOver = tvTyping }
 
     // Строка с ошибкой — волной прямо в коде, пока её не поправят.
     LaunchedEffect(editor, state.result) {
@@ -461,7 +467,7 @@ fun ConfigScreen(
 
             // Keep the code surface's bounds; the editor clips inside its outer shadow.
             Box(
-                modifier = Modifier.then(if (tvTyping) Modifier.fillMaxHeight(TV_TYPING_PART) else Modifier.weight(1f)).fillMaxWidth()
+                modifier = Modifier.weight(1f).fillMaxWidth()
                     .padding(start = 16.dp, end = 16.dp, top = if (compact) 8.dp else 12.dp, bottom = if (compact) 8.dp else if (bare) 16.dp else 0.dp)
                     // The editor resizes with the IME; keep its shadow on the platform outline.
                     .then(airEdge()?.let { Modifier.border(it, MaterialTheme.shapes.large) }
@@ -474,12 +480,13 @@ fun ConfigScreen(
                             // moved with the text as it scrolled and took the frame off the screen.
                             Modifier.ringAnchor(corner = 24.dp) { Rect(Offset.Zero, it.toSize()) }
                                 .focusRequester(code)
+                                // Down from the code is «Сохранить», not «Сохранить как» beside it.
+                                .focusProperties { if (!bare && !compact) down = save }
                                 .clickable(interactionSource = null, indication = null) {
                                     editor?.let {
                                         typing = true
                                         it.requestFocus()
-                                        // sora shows the keyboard on a touch only: OK gave the code focus and no keyboard.
-                                        it.showSoftInput()
+                                        it.ensureSelectionVisible()
                                     }
                                 }
                         } else Modifier,
@@ -511,9 +518,22 @@ fun ConfigScreen(
                                     tabWidth = 2
                                     // A remote moves the code by rows, not sideways: on a TV long lines wrap.
                                     isWordwrap = tv
-                                    // On a TV the system decides on the keyboard, as for every other field: sora hid it
-                                    // whenever the TV reported a keyboard of its own.
+                                    // On a TV what the person presses decides on the on-screen keyboard, not whether a
+                                    // keyboard is connected: one left on in a drawer must not keep it from the remote.
+                                    // sora's own check hid it whenever a keyboard was connected, the emulator's included.
                                     isDisableSoftKbdIfHardKbdAvailable = !tv
+                                    holdCursor = tv
+                                    // The remote's OK at the cursor asks for the keyboard; Enter of a real keyboard is a
+                                    // new line, and so is the on-screen keyboard's own.
+                                    if (tv) setOnKeyListener { _, key, event ->
+                                        val ok = key == KeyEvent.KEYCODE_DPAD_CENTER ||
+                                            (key == KeyEvent.KEYCODE_ENTER || key == KeyEvent.KEYCODE_NUMPAD_ENTER) &&
+                                            event.flags and KeyEvent.FLAG_SOFT_KEYBOARD == 0 &&
+                                            event.device?.keyboardType != InputDevice.KEYBOARD_TYPE_ALPHABETIC
+
+                                        if (ok && event.action == KeyEvent.ACTION_DOWN) showSoftInput()
+                                        ok
+                                    }
                                     setPinLineNumber(true)
                                     setDividerWidth(0f)
                                     // Плашка с номером строки у ползунка — чёрный прямоугольник на пол-экрана, пугала.
@@ -597,7 +617,7 @@ fun ConfigScreen(
         // снова значило дёргать рамку кода, когда клавиатура уезжала.
         if (!bare && !compact) {
             Box(Modifier.align(Alignment.BottomCenter).onSizeChanged { bar = it.height }) {
-                ActionBar(state, onSaveAs = { showSaveAs = true }, onSave) { editor?.text?.toString() }
+                ActionBar(state, onSaveAs = { showSaveAs = true }, onSave, save) { editor?.text?.toString() }
             }
         }
     }
@@ -724,6 +744,7 @@ private fun ActionBar(
     state: ConfigState,
     onSaveAs: () -> Unit,
     onSave: (String) -> Unit,
+    save: FocusRequester,
     text: () -> String?,
 ) {
     val labels = listOf(
@@ -758,7 +779,8 @@ private fun ActionBar(
                         main = i == labels.lastIndex,
                         state = state,
                         onClick = { text()?.let(actions[i]) },
-                        modifier = Modifier.weight(words[i] + fields).heightIn(min = 48.dp),
+                        modifier = Modifier.weight(words[i] + fields).heightIn(min = 48.dp)
+                            .then(if (i == labels.lastIndex) Modifier.focusRequester(save) else Modifier),
                     )
                 }
             }
@@ -1123,11 +1145,6 @@ private fun SaveOption(icon: ImageVector, title: String, hint: String, onClick: 
 
 private const val MIN_TEXT = 9f
 private const val MAX_TEXT = 22f
-
-// ponytail: Gboard on a TV lies over the bottom 44% of the screen and tells the app nothing (its `ime` inset is
-// empty), so the code would run under it. While typing on a TV the code keeps to the upper half. A taller keyboard
-// still covers the code's last rows; if TVs turn out to report the inset, the inset alone can size the code.
-private const val TV_TYPING_PART = 0.5f
 
 /**
  * Окно ниже 480dp (граница компактной высоты у Material) — телефон боком или половина экрана.
