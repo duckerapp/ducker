@@ -167,6 +167,7 @@
     <string name="probe_jitter">Spread between requests</string>
     <string name="probe_failures">Failure reasons</string>
     <string name="probe_copied">Report copied</string>
+    <string name="copy_failed">Couldn’t copy the report</string>
     <string name="link_failed">The node is not answering</string>
     <string name="link_failed_hint">The VPN is on, but no traffic gets through. Usually the network is blocking the node — try another node or another network</string>
     <string name="link_check">Check again</string>

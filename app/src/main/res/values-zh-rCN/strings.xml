@@ -143,6 +143,7 @@
     <string name="probe_jitter">请求间波动</string>
     <string name="probe_failures">失败原因</string>
     <string name="probe_copied">报告已复制</string>
+    <string name="copy_failed">无法复制报告</string>
     <string name="link_failed">节点无响应</string>
     <string name="link_failed_hint">VPN 已开启，但无法传输流量。通常是当前网络屏蔽了该节点，请尝试切换节点或网络</string>
     <string name="link_check">重新检测</string>

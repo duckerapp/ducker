@@ -143,6 +143,7 @@
     <string name="probe_jitter">Variação entre solicitações</string>
     <string name="probe_failures">Motivos das falhas</string>
     <string name="probe_copied">Relatório copiado</string>
+    <string name="copy_failed">Não foi possível copiar o relatório</string>
     <string name="link_failed">O servidor não responde</string>
     <string name="link_failed_hint">A VPN está ativa, mas o tráfego não passa. Geralmente a rede está bloqueando o servidor: tente outro servidor ou outra rede</string>
     <string name="link_check">Verificar novamente</string>

@@ -143,6 +143,7 @@
     <string name="probe_jitter">İstekler arası gecikme değişimi</string>
     <string name="probe_failures">Başarısızlık nedenleri</string>
     <string name="probe_copied">Rapor kopyalandı</string>
+    <string name="copy_failed">Rapor kopyalanamadı</string>
     <string name="link_failed">Sunucu yanıt vermiyor</string>
     <string name="link_failed_hint">VPN açık, ancak trafik iletilemiyor. Genellikle ağ sunucuyu engelliyordur; başka bir sunucu veya ağ deneyin</string>
     <string name="link_check">Yeniden kontrol et</string>

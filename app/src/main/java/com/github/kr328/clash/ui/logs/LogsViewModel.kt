@@ -32,6 +32,35 @@ private const val LIMIT = 2000
 /** Реже, чем раз в треть секунды, человеку и не нужно, а перерисовок это экономит много. */
 private const val FLUSH_MS = 300L
 
+/** The clipboard's share of the report: about 200 KB as the system carries text (two bytes a character). */
+internal const val CLIP_CHARS = 100_000
+
+/**
+ * The newest whole lines of [text] that fit in [budget] characters, under a line that says how many older ones were
+ * left out. [text] that fits is returned as it is.
+ */
+internal fun newestLines(text: String, budget: Int): String {
+    if (text.length <= budget) return text
+
+    val lines = text.lines().dropLastWhile { it.isEmpty() }
+    var size = 0
+    var kept = 0
+
+    // A line's length and its line break; the note above them takes its own share.
+    for (line in lines.asReversed()) {
+        if (size + line.length + 1 > budget - NOTE_ROOM) break
+
+        size += line.length + 1
+        kept++
+    }
+
+    val note = "# ${lines.size - kept} older lines left out to fit the clipboard; Share or Save gives the whole report"
+
+    return (listOf(note) + lines.takeLast(kept)).joinToString("\n", postfix = "\n")
+}
+
+private const val NOTE_ROOM = 120
+
 class LogsViewModel : ViewModel() {
     private val _state = MutableStateFlow(LogsState())
     val state: StateFlow<LogsState> = _state.asStateFlow()
@@ -95,20 +124,35 @@ class LogsViewModel : ViewModel() {
      * сбой обычно случается не тогда, когда журнал открыт. Читается с диска, поэтому не в
      * главном потоке.
      */
-    suspend fun report(context: Context): String = withContext(Dispatchers.IO) {
-        val writer = StringWriter()
+    suspend fun report(context: Context): String = parts(context).let { (device, events) -> device + events }
 
-        LogcatFilter(writer, context).use { filter ->
+    /**
+     * The report for the clipboard: at most [CLIP_CHARS], the device part whole and then the newest of the rest
+     * ([newestLines]). The whole report went to the clipboard in one piece — the black box alone holds up to 1500
+     * lines — and a phone hung on it (a Mi 9T); one call to the system carries about 1 MB at most, and a larger
+     * clip fails. «Отправить» and «Сохранить» keep the whole report.
+     */
+    suspend fun clipReport(context: Context): String =
+        parts(context).let { (device, events) -> device + newestLines(events, CLIP_CHARS - device.length) }
+
+    /** The report in two parts: the device's own, then what happened — the black box, crashes, this screen's lines. */
+    private suspend fun parts(context: Context): Pair<String, String> = withContext(Dispatchers.IO) {
+        val device = StringWriter()
+        val events = StringWriter()
+
+        LogcatFilter(device, context).use { filter ->
             filter.writeHeader(Date())
             filter.writeDevice()
             filter.writeExitReasons()
+        }
+        LogcatFilter(events, context).use { filter ->
             filter.writeFlight()
             filter.writeCrashes()
 
             _state.value.lines.forEach(filter::writeMessage)
         }
 
-        writer.toString()
+        device.toString() to events.toString()
     }
 
     override fun onCleared() {

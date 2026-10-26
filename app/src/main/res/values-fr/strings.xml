@@ -143,6 +143,7 @@
     <string name="probe_jitter">Variation entre les requêtes</string>
     <string name="probe_failures">Causes des échecs</string>
     <string name="probe_copied">Rapport copié</string>
+    <string name="copy_failed">Impossible de copier le rapport</string>
     <string name="link_failed">Le serveur ne répond pas</string>
     <string name="link_failed_hint">Le VPN est actif, mais aucun trafic ne passe. Le réseau bloque probablement ce serveur : essayez un autre serveur ou un autre réseau</string>
     <string name="link_check">Vérifier à nouveau</string>

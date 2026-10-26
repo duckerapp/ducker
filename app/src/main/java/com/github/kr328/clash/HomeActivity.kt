@@ -1229,7 +1229,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             verbose = settingsState.debugLog,
                             onVerbose = { settingsViewModel.setDebugLog(this@HomeActivity, it) },
                             onCopy = {
-                                lifecycleScope.launch { copyReport(logsViewModel.report(this@HomeActivity)) }
+                                lifecycleScope.launch { copyReport(logsViewModel.clipReport(this@HomeActivity)) }
                             },
                             onShare = { shareLog() },
                             onSave = { saveLog.launch("ducker-log.txt") },
@@ -1901,10 +1901,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
     private fun copyReport(text: String, done: Int = R.string.probe_copied) {
         val clipboard = getSystemService(ClipboardManager::class.java)
+        // A clip the system refuses (too large for one call) is a message, not a fall of the app.
+        val copied = runCatching { clipboard?.setPrimaryClip(ClipData.newPlainText("ducker", text)) }.isSuccess
 
-        clipboard?.setPrimaryClip(ClipData.newPlainText("ducker", text))
-
-        Toast.makeText(this, done, Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, if (copied) done else R.string.copy_failed, Toast.LENGTH_SHORT).show()
     }
 
     /**

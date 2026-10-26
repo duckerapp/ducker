@@ -157,6 +157,7 @@
     <string name="probe_jitter">Разброс между замерами</string>
     <string name="probe_failures">Причины неудач</string>
     <string name="probe_copied">Отчёт скопирован</string>
+    <string name="copy_failed">Не удалось скопировать отчёт</string>
     <string name="link_failed">Узел не отвечает</string>
     <string name="link_failed_hint">VPN включён, но трафик не проходит. Обычно сеть блокирует узел — попробуйте другой узел или другую сеть</string>
     <string name="link_check">Проверить снова</string>
