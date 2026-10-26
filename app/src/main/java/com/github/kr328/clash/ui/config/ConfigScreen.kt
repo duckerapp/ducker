@@ -37,6 +37,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import kotlin.math.roundToInt
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.activity.compose.LocalActivity
 import androidx.core.view.WindowCompat
@@ -310,7 +313,10 @@ fun ConfigScreen(
         }
     }
 
-    val tvKeyboard = if (keyboardShown) LocalWindowInfo.current.containerSize.height / 2 else 0
+    // The code ends above the screen's middle, counted from where it stands in the window: when the keyboard does say its
+    // height the window above has already given way, and half of the rest left the code no height (F-361).
+    var codeTop by remember { mutableIntStateOf(0) }
+    val middle = LocalWindowInfo.current.containerSize.height / 2
 
     // Строка с ошибкой — волной прямо в коде, пока её не поправят.
     LaunchedEffect(editor, state.result) {
@@ -332,7 +338,13 @@ fun ConfigScreen(
     val navigation = WindowInsets.navigationBars
 
     Box(modifier.fillMaxSize().screenInsets()) {
-        Column(Modifier.fillMaxSize().aboveKeyboard(ime, navigation) { maxOf(if (bare || compact) 0 else bar, tvKeyboard) }) {
+        Column(
+            Modifier.fillMaxSize()
+                .onGloballyPositioned { codeTop = it.positionInWindow().y.roundToInt() }
+                .aboveKeyboard(ime, navigation) { height ->
+                    if (keyboardShown) codeTop + height - middle else if (bare || compact) 0 else bar
+                },
+        ) {
             // On a TV the keyboard leaves the app a strip of the screen: while typing the code takes all of it.
             // With the header above it the code got no height, and Android took its focus away with the keyboard.
             if (!tvTyping) {
@@ -607,7 +619,12 @@ fun ConfigScreen(
                                     }
 
                                     // Фокус ушёл из кода сам (стрелкой за край) — правка кончилась.
-                                    setOnFocusChangeListener { _, has -> if (!has) typing = false }
+                                    setOnFocusChangeListener { _, has ->
+                                        if (has) return@setOnFocusChangeListener
+                                        typing = false
+                                        // A keyboard left without the code hung over the whole app on a TV (F-361).
+                                        if (tv) hideSoftInput()
+                                    }
 
                                     editor = this
                                 }
@@ -634,8 +651,9 @@ fun ConfigScreen(
         }
 
         // Кнопки — у нижнего края, клавиатура их просто накрывает: прятать их и показывать
-        // снова значило дёргать рамку кода, когда клавиатура уезжала.
-        if (!bare && !compact) {
+        // снова значило дёргать рамку кода, когда клавиатура уезжала. On a TV they go while the keyboard is up: one that
+        // says its height lifted them above it and the code came out shorter than under one that does not (F-361).
+        if (!bare && !compact && !keyboardShown) {
             Box(Modifier.align(Alignment.BottomCenter).onSizeChanged { bar = it.height }) {
                 ActionBar(state, onSaveAs = { showSaveAs = true }, onSave, save) { editor?.text?.toString() }
             }
@@ -697,12 +715,13 @@ fun ConfigScreen(
 
 /**
  * Низ — над клавиатурой или над кнопками [bar], что выше, кадр в кадр: отступы читаются при
- * раскладке, и экран не пересобирается на каждый кадр выезда клавиатуры.
+ * раскладке, и экран не пересобирается на каждый кадр выезда клавиатуры. [bar] gets the height there is: on a TV it
+ * also keeps room for a keyboard that does not say its height.
  */
-private fun Modifier.aboveKeyboard(ime: WindowInsets, navigation: WindowInsets, bar: () -> Int) =
+private fun Modifier.aboveKeyboard(ime: WindowInsets, navigation: WindowInsets, bar: (height: Int) -> Int) =
     layout { measurable, constraints ->
         val keyboard = (ime.getBottom(this) - navigation.getBottom(this)).coerceAtLeast(0)
-        val bottom = maxOf(keyboard, bar()).coerceAtMost(constraints.maxHeight)
+        val bottom = maxOf(keyboard, bar(constraints.maxHeight)).coerceAtMost(constraints.maxHeight)
         val placeable = measurable.measure(constraints.copy(minHeight = 0, maxHeight = constraints.maxHeight - bottom))
 
         layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
