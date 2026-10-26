@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.config
 
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvKeys
+import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
@@ -252,6 +253,7 @@ fun ConfigScreen(
     // двигали в нём курсор, и до «Сохранить» было не добраться. ОК — править: стрелки ведут курсор;
     // «назад» — закончить, фокус на стрелке в левом верхнем углу.
     val keys = tvKeys()
+    val tv = LocalTv.current
     val code = remember { FocusRequester() }
     var typing by remember { mutableStateOf(false) }
     // The back arrow in the top-left corner of either view. The remote returns there when editing ends and
@@ -499,7 +501,8 @@ fun ConfigScreen(
                                     typefaceLineNumber = Typeface.MONOSPACE
                                     setTextSize(textSize)
                                     tabWidth = 2
-                                    isWordwrap = false
+                                    // A remote moves the code by rows, not sideways: on a TV long lines wrap.
+                                    isWordwrap = tv
                                     setPinLineNumber(true)
                                     setDividerWidth(0f)
                                     // Плашка с номером строки у ползунка — чёрный прямоугольник на пол-экрана, пугала.
@@ -516,7 +519,8 @@ fun ConfigScreen(
                                     addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
                                         val was = oldBottom - oldTop
                                         val now = bottom - top
-                                        val row = getRowBottom(cursor.rightLine)
+                                        // A row, not a line: with wrapping one line takes several.
+                                        val row = getRowBottom(layout.getRowIndexForPosition(cursor.right))
 
                                         if (now in 1 until was && row <= offsetY + was) {
                                             val hidden = row + room - (offsetY + now)
@@ -658,7 +662,7 @@ private fun CodeEditor.jumpTo(line: Int) {
     val target = line.coerceIn(0, (lineCount - 1).coerceAtLeast(0))
 
     setSelection(target, 0, false)
-    scrollTo(0, getRowTop(target) - height / 3, animate = true)
+    scrollTo(0, getRowTop(layout.getRowIndexForPosition(text.getCharIndex(target, 0))) - height / 3, animate = true)
 }
 
 private fun CodeEditor.scrollTo(x: Int, y: Int, animate: Boolean) {

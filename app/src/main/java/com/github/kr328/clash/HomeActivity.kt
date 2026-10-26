@@ -1262,8 +1262,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showConfig,
                         onBack = { configViewModel.close() },
-                        // Телефон боком — редактору вся ширина (D-145).
-                        wide = lowWindow(),
+                        // Телефон боком — редактору вся ширина (D-145). A TV gives it the whole width too, in both
+                        // views: its lines wrap there.
+                        wide = lowWindow() || tv,
                     ) {
                         ConfigScreen(
                             state = configState,
