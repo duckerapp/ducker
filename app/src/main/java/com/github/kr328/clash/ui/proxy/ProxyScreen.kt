@@ -153,6 +153,11 @@ fun ProxyScreen(
     val firstGroup = remember { FocusRequester() }
     // «Готово» of the search on a TV takes the frame to the first node found (D-377).
     val firstRow = remember { FocusRequester() }
+    // The search hangs over the list, outside it: the remote looked for a neighbour inside the list first, Up from
+    // the first group went to the header's sort and Down from there back to the group, so the search never took the
+    // frame (D-377). Both are sent to it, and Up from it goes to the header.
+    val searchFocus = remember { FocusRequester() }
+    val headerFocus = remember { FocusRequester() }
 
     // Поиск идёт по узлам, а не по группам: человек помнит имя города, а не то,
     // в какой группе оно лежит. Группа без совпадений просто исчезает из списка.
@@ -239,7 +244,12 @@ fun ProxyScreen(
                 ),
             ) {
                 item {
-                    ScreenHeader(stringResource(R.string.proxies_tab)) {
+                    ScreenHeader(
+                        stringResource(R.string.proxies_tab),
+                        modifier = if (tv && searchable) {
+                            Modifier.focusRequester(headerFocus).focusProperties { down = searchFocus }
+                        } else Modifier,
+                    ) {
                         // Global — в шапке, а не отдельным рядом над списком (D-136).
                         if (state.running && state.modeSwitch) GlobalChip(state.mode, onMode)
 
@@ -331,7 +341,12 @@ fun ProxyScreen(
                             // вниз — узлы (этап 6).
                             modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = ItemMove)
                                 .then(if (tv) Modifier.onFocusChanged { if (it.hasFocus) column[0] = 0 } else Modifier)
-                                .then(if (index == 0) Modifier.tabEntry().focusRequester(firstGroup) else Modifier),
+                                .then(if (index == 0) Modifier.tabEntry().focusRequester(firstGroup) else Modifier)
+                                .then(
+                                    if (index == 0 && tv) Modifier.focusProperties {
+                                        onExit = { if (requestedFocusDirection == FocusDirection.Up) searchFocus.requestFocus() }
+                                    } else Modifier,
+                                ),
                         )
                     }
 
@@ -371,9 +386,11 @@ fun ProxyScreen(
                     },
                     modifier = Modifier.screenInsets()
                         .padding(start = start, end = end)
+                        .focusRequester(searchFocus)
                         .focusProperties {
                             if (!tv) return@focusProperties
 
+                            up = headerFocus
                             val first = groups.firstOrNull()?.let { "header-${it.name}" }
                             down = if (listState.layoutInfo.visibleItemsInfo.any { it.key == first }) firstGroup else listFocus
                         }
