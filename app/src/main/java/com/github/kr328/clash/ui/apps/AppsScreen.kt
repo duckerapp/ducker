@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.apps
 
 import com.github.kr328.clash.ui.components.tvEdge
+import com.github.kr328.clash.ui.components.keepFocus
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.foundation.Image
@@ -199,7 +200,13 @@ private fun AppItem(app: AppRow, checked: Boolean, onToggle: () -> Unit, modifie
     Card(modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth()
-                .toggleable(value = checked, enabled = !app.locked, role = Role.Checkbox, onValueChange = { onToggle() })
+                // The rows the config decided stand first; on a TV they take the remote too and do nothing on OK.
+                // Skipped, they made the remote search past them all: the frame stalled and leapt over them, and
+                // past a few dozen it never reached the list.
+                .toggleable(
+                    value = checked, enabled = keepFocus(!app.locked), role = Role.Checkbox,
+                    onValueChange = { if (!app.locked) onToggle() },
+                )
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
