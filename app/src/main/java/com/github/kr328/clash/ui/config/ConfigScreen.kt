@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.config
 
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvKeys
+import com.github.kr328.clash.ui.components.tvKeyboardTop
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.geometry.Rect
@@ -29,6 +30,7 @@ import androidx.compose.runtime.withFrameNanos
 import android.os.SystemClock
 import android.view.InputDevice
 import android.view.KeyEvent
+import android.view.ViewConfiguration
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.github.kr328.clash.ui.components.HeaderButton
 import com.github.kr328.clash.ui.settings.SettingsStore
@@ -36,14 +38,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import kotlin.math.roundToInt
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.activity.compose.LocalActivity
 import androidx.core.view.WindowCompat
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.horizontalScroll
@@ -294,29 +294,11 @@ fun ConfigScreen(
         code.requestFocus()
     }
 
-    // On a TV the keyboard now and then lies over the code without saying how high it is (its `ime` inset stays empty
-    // while it is shown, F-360): then the code kept its height and the lower rows were typed blind. While it is shown
-    // the code keeps above the screen's middle at least, as Gboard's top is lower; a keyboard that tells more gets more.
-    // Compose reads such a keyboard as hidden and no insets reach the editor's view, so the window is asked.
-    // ponytail: polled a few times a second, only while the cursor is up on a TV; an insets listener once Compose
-    // reports a keyboard without height as shown.
-    val view = LocalView.current
-    var keyboardShown by remember { mutableStateOf(false) }
-
-    LaunchedEffect(tvTyping) {
-        keyboardShown = false
-        if (!tvTyping) return@LaunchedEffect
-
-        while (true) {
-            keyboardShown = ViewCompat.getRootWindowInsets(view)?.isVisible(WindowInsetsCompat.Type.ime()) == true
-            delay(KEYBOARD_POLL_MS)
-        }
-    }
-
-    // The code ends above the screen's middle, counted from where it stands in the window: when the keyboard does say its
-    // height the window above has already given way, and half of the rest left the code no height (F-361).
+    // On a TV the keyboard lies over the app, whether or not it says how high it is (F-360, D-377): while it is shown
+    // the code ends above its top, counted from where the code stands in the window (F-361).
+    val keyboardTop = if (tv) tvKeyboardTop(tvTyping) else null
+    val keyboardShown = keyboardTop != null
     var codeTop by remember { mutableIntStateOf(0) }
-    val middle = LocalWindowInfo.current.containerSize.height / 2
 
     // Строка с ошибкой — волной прямо в коде, пока её не поправят.
     LaunchedEffect(editor, state.result) {
@@ -342,7 +324,7 @@ fun ConfigScreen(
             Modifier.fillMaxSize()
                 .onGloballyPositioned { codeTop = it.positionInWindow().y.roundToInt() }
                 .aboveKeyboard(ime, navigation) { height ->
-                    if (keyboardShown) codeTop + height - middle else if (bare || compact) 0 else bar
+                    if (keyboardTop != null) codeTop + height - keyboardTop else if (bare || compact) 0 else bar
                 },
         ) {
             // On a TV the keyboard leaves the app a strip of the screen: while typing the code takes all of it.
@@ -555,16 +537,38 @@ fun ConfigScreen(
                                     // sora's own check hid it whenever a keyboard was connected, the emulator's included.
                                     isDisableSoftKbdIfHardKbdAvailable = !tv
                                     holdCursor = tv
-                                    // The remote's OK at the cursor asks for the keyboard; Enter of a real keyboard is a
-                                    // new line, and so is the on-screen keyboard's own.
-                                    if (tv) setOnKeyListener { _, key, event ->
-                                        val ok = key == KeyEvent.KEYCODE_DPAD_CENTER ||
-                                            (key == KeyEvent.KEYCODE_ENTER || key == KeyEvent.KEYCODE_NUMPAD_ENTER) &&
-                                            event.flags and KeyEvent.FLAG_SOFT_KEYBOARD == 0 &&
-                                            event.device?.keyboardType != InputDevice.KEYBOARD_TYPE_ALPHABETIC
+                                    // The remote's OK at the cursor asks for the keyboard. Gboard's «Готово» closes it on a TV,
+                                    // so the remote's OK held puts the new line: under the cursor's line, with the keyboard
+                                    // there (D-377). Enter of a real keyboard is a new line.
+                                    if (tv) {
+                                        var pressed = false
+                                        var held = false
+                                        val longPress = ViewConfiguration.getLongPressTimeout()
 
-                                        if (ok && event.action == KeyEvent.ACTION_DOWN) showSoftInput()
-                                        ok
+                                        setOnKeyListener { _, key, event ->
+                                            val ok = key == KeyEvent.KEYCODE_DPAD_CENTER ||
+                                                (key == KeyEvent.KEYCODE_ENTER || key == KeyEvent.KEYCODE_NUMPAD_ENTER) &&
+                                                event.flags and KeyEvent.FLAG_SOFT_KEYBOARD == 0 &&
+                                                event.device?.keyboardType != InputDevice.KEYBOARD_TYPE_ALPHABETIC
+                                            // A remote that sends no repeats while held is judged on release.
+                                            val long = event.eventTime - event.downTime >= longPress
+
+                                            if (ok) when (event.action) {
+                                                KeyEvent.ACTION_DOWN -> if (event.repeatCount == 0) {
+                                                    pressed = true
+                                                    held = false
+                                                } else if (pressed && !held && long) {
+                                                    held = true
+                                                    newLineBelow()
+                                                }
+                                                KeyEvent.ACTION_UP -> {
+                                                    if (pressed && !held) if (long) newLineBelow() else showSoftInput()
+                                                    pressed = false
+                                                }
+                                            }
+                                            ok
+                                        }
+                                        onImeAction = ::hideSoftInput
                                     }
                                     setPinLineNumber(true)
                                     setDividerWidth(0f)
@@ -651,8 +655,8 @@ fun ConfigScreen(
         }
 
         // Кнопки — у нижнего края, клавиатура их просто накрывает: прятать их и показывать
-        // снова значило дёргать рамку кода, когда клавиатура уезжала. On a TV they go while the keyboard is up: one that
-        // says its height lifted them above it and the code came out shorter than under one that does not (F-361).
+        // снова значило дёргать рамку кода, когда клавиатура уезжала. On a TV they go while the keyboard is up: it lies
+        // over them, and the code ends above it (F-361, D-377).
         if (!bare && !compact && !keyboardShown) {
             Box(Modifier.align(Alignment.BottomCenter).onSizeChanged { bar = it.height }) {
                 ActionBar(state, onSaveAs = { showSaveAs = true }, onSave, save) { editor?.text?.toString() }
@@ -716,7 +720,7 @@ fun ConfigScreen(
 /**
  * Низ — над клавиатурой или над кнопками [bar], что выше, кадр в кадр: отступы читаются при
  * раскладке, и экран не пересобирается на каждый кадр выезда клавиатуры. [bar] gets the height there is: on a TV it
- * also keeps room for a keyboard that does not say its height.
+ * also keeps the room the keyboard lies over.
  */
 private fun Modifier.aboveKeyboard(ime: WindowInsets, navigation: WindowInsets, bar: (height: Int) -> Int) =
     layout { measurable, constraints ->
@@ -1183,7 +1187,6 @@ private fun SaveOption(icon: ImageVector, title: String, hint: String, onClick: 
 }
 
 private const val MIN_TEXT = 9f
-private const val KEYBOARD_POLL_MS = 200L
 private const val MAX_TEXT = 22f
 
 /**

@@ -44,17 +44,39 @@ internal class ConfigEditor(context: Context) : CodeEditor(context) {
     /** A TV: the keyboard does not move the cursor to the end, see [onCreateInputConnection]. */
     var holdCursor = false
 
+    /** A TV: the keyboard's «Готово», see [onCreateInputConnection]. */
+    var onImeAction: (() -> Unit)? = null
+
     // Gboard on a TV puts the cursor at the end of the text as it opens, as for a one-line field, and the typing
     // went to the config's last line instead of where the remote had put the cursor (F-358). On a TV a move of a
     // plain cursor to the very end that comes from the keyboard is left undone.
+    // There the code also asks for «Готово» instead of Enter, and «Готово» does not end in a new line: sora asks
+    // for no action, Gboard's «Готово» was Enter, and the keyboard could be closed only with Back (F-362, D-377).
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
         val connection = super.onCreateInputConnection(outAttrs) ?: return null
         if (!holdCursor) return connection
 
+        outAttrs.imeOptions = outAttrs.imeOptions and
+            (EditorInfo.IME_MASK_ACTION or EditorInfo.IME_FLAG_NO_ENTER_ACTION).inv() or EditorInfo.IME_ACTION_DONE
+
         return object : InputConnectionWrapper(connection, true) {
             override fun setSelection(start: Int, end: Int): Boolean =
                 if (start == end && start == text.length && start != cursor.left) true else super.setSelection(start, end)
+
+            override fun performEditorAction(editorAction: Int): Boolean {
+                onImeAction?.invoke()
+                return true
+            }
         }
+    }
+
+    /** A new line under the cursor's line, the cursor on it and the keyboard up: the remote's OK held on a TV (D-377). */
+    fun newLineBelow() {
+        val line = cursor.leftLine
+
+        setSelection(line, text.getColumnCount(line))
+        commitText("\n")
+        showSoftInput()
     }
 
     /** Сколько держать под строкой с курсором: не в упор к клавиатуре и не под полосой прокрутки. */

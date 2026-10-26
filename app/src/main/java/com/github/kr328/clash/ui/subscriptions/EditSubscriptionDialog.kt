@@ -26,6 +26,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -114,6 +116,9 @@ fun EditSubscriptionDialog(
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
 ) {
+    // «Готово» on a TV takes the frame to «Сохранить» (D-377).
+    val save = remember { FocusRequester() }
+
     DuckerSheet(
         open = open,
         title = stringResource(R.string.edit_subscription),
@@ -127,6 +132,7 @@ fun EditSubscriptionDialog(
                 onValue = onName,
                 placeholder = title.ifEmpty { stringResource(R.string.subscription_name) },
                 enabled = !busy,
+                next = save,
             )
         }
 
@@ -138,6 +144,7 @@ fun EditSubscriptionDialog(
                 enabled = !busy,
                 error = error.isNotEmpty(),
                 maxLines = 4,
+                next = save,
             )
 
             Text(
@@ -181,6 +188,7 @@ fun EditSubscriptionDialog(
                 // Пустое имя — не ошибка: вернётся название провайдера, а без него — домен (D-117).
                 enabled = link.isNotBlank(),
                 onClick = onConfirm,
+                modifier = Modifier.focusRequester(save),
             )
 
             Unfold(visible = busy && backup) {

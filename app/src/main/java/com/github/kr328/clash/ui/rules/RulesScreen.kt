@@ -455,6 +455,7 @@ private fun AddRuleSheet(
                     ),
                     enabled = true,
                     error = invalid,
+                    next = addFocus,
                 )
 
                 val note = when {
@@ -602,12 +603,15 @@ private fun AppPicker(
         }
     }
     var query by remember { mutableStateOf("") }
+    // «Готово» on a TV takes the frame to the first app found (D-377).
+    val first = remember { FocusRequester() }
 
     SheetField(
         value = query,
         onValue = { query = it },
         placeholder = stringResource(R.string.rule_find_app),
         enabled = true,
+        next = first,
     )
 
     Box(Modifier.fillMaxWidth().height(PICKER_HEIGHT), contentAlignment = Alignment.Center) {
@@ -652,6 +656,7 @@ private fun AppPicker(
                             .clip(MaterialTheme.shapes.small)
                             .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = fill))
                             .then(if (app.packageName == marked) Modifier.focusRequester(markedFocus) else Modifier)
+                            .then(if (app === filtered.first()) Modifier.focusRequester(first) else Modifier)
                             // No press wave: it is tinted for the unfilled row, played over the fresh fill
                             // and dimmed the text for a third of a second (D-292). The fill is the answer.
                             .toggleable(

@@ -58,6 +58,7 @@ import android.provider.DocumentsContract
 import android.provider.Settings
 import android.view.View
 import android.view.ViewTreeObserver
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
@@ -298,6 +299,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
         // Телевизор (этап 6, D-12): тот же APK, но док слева и управление пультом.
         val tv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+        // On a TV the keyboard lies over the app (D-377): up to Android 14 the window is not drawn edge to edge, and
+        // `adjustResize` shrank the whole app — the dock included — whenever Gboard reported its height (F-362).
+        if (tv) window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
 
         // Whether there is a subscription, known before the service answers: its folder of
         // downloaded ones. The first frame is drawn by it — the welcome or home — instead of home

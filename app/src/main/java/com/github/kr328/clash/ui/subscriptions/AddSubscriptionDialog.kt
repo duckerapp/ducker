@@ -25,6 +25,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -91,6 +93,8 @@ fun AddSubscriptionDialog(
     // showed, not an empty frame.
     val last = remember { arrayOf(receive) }
     if (open) last[0] = receive
+    // «Готово» on a TV takes the frame to «Добавить» (D-377).
+    val add = remember { FocusRequester() }
 
     DuckerSheet(
         open = open,
@@ -110,6 +114,7 @@ fun AddSubscriptionDialog(
                 error = error.isNotEmpty(),
                 maxLines = 4,
                 readOnly = longText,
+                next = add,
             )
 
             if (longText) {
@@ -151,6 +156,7 @@ fun AddSubscriptionDialog(
                 enabled = value.isNotBlank(),
                 progress = progress,
                 onClick = onConfirm,
+                modifier = Modifier.focusRequester(add),
             )
 
             // Только растворение: рост высоты под строку ведёт сама панель (DuckerSheet).

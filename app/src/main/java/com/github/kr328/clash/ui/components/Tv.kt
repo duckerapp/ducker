@@ -138,8 +138,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.exp
@@ -257,6 +265,70 @@ internal fun Modifier.focusRoom(
 internal fun keepFocus(active: Boolean): Boolean = active || tvKeys()
 
 /**
+ * The field being typed into on a TV, for the sheet around it: the keyboard lies over the app there, and the sheet lifts
+ * the field above it by itself (D-377). [field] is the field's row; [active] says a field is focused for typing.
+ */
+internal class TvTyping {
+    var field: LayoutCoordinates? = null
+    var active by mutableStateOf(false)
+}
+
+internal val LocalTvTyping = staticCompositionLocalOf<TvTyping?> { null }
+
+/**
+ * The on-screen keyboard's top on a TV, in window pixels, while [active] and the keyboard is shown; `null` otherwise.
+ * Gboard on a TV reports its height now and then (F-360, F-362); one that does not is taken to start at [KEYBOARD_LINE]
+ * of the window. Compose reads such a keyboard as hidden and no insets reach the views, so the window is asked.
+ * ponytail: polled a few times a second while [active]; an insets listener once Compose reports a keyboard without
+ * height as shown.
+ */
+@Composable
+internal fun tvKeyboardTop(active: Boolean): Int? {
+    val view = LocalView.current
+    var top by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(active) {
+        top = null
+        if (!active) return@LaunchedEffect
+
+        while (true) {
+            val insets = ViewCompat.getRootWindowInsets(view)
+            val reported = insets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
+            val height = view.rootView.height
+
+            top = when {
+                insets?.isVisible(WindowInsetsCompat.Type.ime()) != true -> null
+                reported > 0 -> height - reported
+                else -> (height * KEYBOARD_LINE).roundToInt()
+            }
+            delay(KEYBOARD_POLL_MS)
+        }
+    }
+
+    return top
+}
+
+/**
+ * The on-screen keyboard's «Готово» on a TV (D-377): it closes the keyboard and takes the frame to [next], the step after
+ * the field, or leaves it on the field. `null` off a TV, where the keyboard's keys stay as they were.
+ */
+@Composable
+internal fun tvDone(next: FocusRequester?): KeyboardActions? {
+    if (!LocalTv.current) return null
+
+    val keyboard = LocalSoftwareKeyboardController.current
+
+    return KeyboardActions {
+        keyboard?.hide()
+        next?.requestFocus()
+    }
+}
+
+/** Gboard's top on a TV that does not report it: 600 of 1080 on the emulator, ~61% on the owner's TV (F-362). */
+private const val KEYBOARD_LINE = 0.555f
+private const val KEYBOARD_POLL_MS = 200L
+
+/**
  * Поле ввода под пульт (F-188): в клавишном режиме строка с полем — одна кнопка, ввод открывается
  * по ОК. Иначе фокус проходил через поле по пути дальше, клавиатура выезжала от одного наведения,
  * а рамка обводила только поле без значков. Уходит фокус из поля — строка снова кнопка.
@@ -272,22 +344,44 @@ internal fun keyField(corner: Dp? = null): Pair<Modifier, Modifier> {
     val pill = remember { FocusRequester() }
     var editing by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+    // The sheet around the field keeps it above the keyboard (D-377): it is told which row is being typed into.
+    val typing = LocalTvTyping.current
+    val place = remember { arrayOfNulls<LayoutCoordinates>(1) }
 
-    val row = if (keys) {
+    fun typed(now: Boolean) {
+        if (typing == null) return
+        if (now) {
+            typing.field = place[0]
+            typing.active = true
+        } else if (typing.field === place[0]) {
+            typing.field = null
+            typing.active = false
+        }
+    }
+
+    if (typing != null) DisposableEffect(Unit) { onDispose { typed(false) } }
+
+    val row = (if (keys) {
         Modifier.ringAnchor(corner = corner) { Rect(Offset.Zero, Size(it.width.toFloat(), it.height.toFloat())) }
             .focusRequester(pill)
             .clickable(interactionSource = null, indication = null) {
                 editing = true
                 field.requestFocus()
             }
-    } else Modifier
+    } else Modifier).onGloballyPositioned {
+        place[0] = it
+        if (editing) typing?.field = it
+    }
 
     return row to Modifier.focusRequester(field)
         .focusProperties { canFocus = !keys || editing }
         // Ввод идёт, пока поле в фокусе, откуда бы он ни пришёл: пальцем на телефоне тоже.
         // Иначе первая клавиша настоящей клавиатуры переводила бы в клавишный режим и
         // выбивала фокус из поля посреди набора.
-        .onFocusChanged { editing = it.isFocused }
+        .onFocusChanged {
+            editing = it.isFocused
+            typed(it.isFocused)
+        }
         // Вверх и вниз поле забирает себе под курсор, и фокус из него не уходил. С клавишами
         // они заканчивают ввод: фокус — на строку, и уже с неё шаг, как с обычной кнопки.
         // Пока открыта клавиатура, стрелки у неё, а закрывает её «назад».

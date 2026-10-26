@@ -23,6 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,6 +70,8 @@ fun AppsScreen(
     val choosing = state.mode != null
 
     val list = rememberLazyListState()
+    // «Готово» of the search on a TV takes the frame to the first app (D-377).
+    val firstApp = remember { FocusRequester() }
 
     TvLazyColumn(
         state = list,
@@ -136,7 +141,7 @@ fun AppsScreen(
 
         if (choosing) {
             item {
-                SearchField(value = state.query, onValue = onQuery, hint = stringResource(R.string.apps_search))
+                SearchField(value = state.query, onValue = onQuery, hint = stringResource(R.string.apps_search), next = firstApp)
             }
 
             // The count and two pills on one line instead of a card with a switch and two text buttons
@@ -182,6 +187,7 @@ fun AppsScreen(
                     app = app,
                     checked = app.packageName in state.selected,
                     onToggle = { onToggle(app.packageName) },
+                    modifier = if (app === state.apps.first()) Modifier.focusRequester(firstApp) else Modifier,
                 )
             }
         }
@@ -189,8 +195,8 @@ fun AppsScreen(
 }
 
 @Composable
-private fun AppItem(app: AppRow, checked: Boolean, onToggle: () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+private fun AppItem(app: AppRow, checked: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+    Card(modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth()
                 .toggleable(value = checked, enabled = !app.locked, role = Role.Checkbox, onValueChange = { onToggle() })

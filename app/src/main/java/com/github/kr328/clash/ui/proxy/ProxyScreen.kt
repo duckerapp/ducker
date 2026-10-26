@@ -151,6 +151,8 @@ fun ProxyScreen(
     // вниз его не находила. Вниз из поиска — на первую группу, а если она уехала — в список.
     val listFocus = remember { FocusRequester() }
     val firstGroup = remember { FocusRequester() }
+    // «Готово» of the search on a TV takes the frame to the first node found (D-377).
+    val firstRow = remember { FocusRequester() }
 
     // Поиск идёт по узлам, а не по группам: человек помнит имя города, а не то,
     // в какой группе оно лежит. Группа без совпадений просто исчезает из списка.
@@ -338,13 +340,13 @@ fun ProxyScreen(
                     itemsIndexed(
                         if (open) group.proxies.chunked(columns) else emptyList(),
                         key = { i, _ -> "${group.name}-$i" },
-                    ) { _, proxies ->
+                    ) { row, proxies ->
                         ProxyRow(
                             group = group, proxies = proxies, columns = columns, column = column,
                             onSelect = onSelect, onFavorite = onFavorite,
                             modifier = Modifier.animateItem(
                                 fadeInSpec = ItemFadeIn, fadeOutSpec = ItemFadeOut, placementSpec = ItemMove,
-                            ),
+                            ).then(if (index == 0 && row == 0) Modifier.focusRequester(firstRow) else Modifier),
                         )
                     }
                 }
@@ -360,6 +362,7 @@ fun ProxyScreen(
                     value = query,
                     onValue = onQuery,
                     hint = stringResource(R.string.proxy_search),
+                    next = firstRow,
                     shadowLift = {
                         with(density) {
                             val (slot, floating) = searchPlace()
@@ -374,7 +377,12 @@ fun ProxyScreen(
                             val first = groups.firstOrNull()?.let { "header-${it.name}" }
                             down = if (listState.layoutInfo.visibleItemsInfo.any { it.key == first }) firstGroup else listFocus
                         }
-                        .onFocusChanged { if (it.hasFocus && keys) scope.launch { listState.tvScrollToStart() } }
+                        .onFocusChanged {
+                            if (!it.hasFocus || !keys) return@onFocusChanged
+                            // The first node found is the left one, as from a group's header.
+                            column[0] = 0
+                            scope.launch { listState.tvScrollToStart() }
+                        }
                         .onSizeChanged { searchHeight = it.height.toFloat() }
                         .offset {
                             val (slot, floating) = searchPlace()

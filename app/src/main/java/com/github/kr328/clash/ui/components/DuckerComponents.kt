@@ -65,6 +65,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.IconButton
@@ -314,6 +315,8 @@ fun SearchField(
     modifier: Modifier = Modifier,
     shadowLift: () -> Float = { 0f },
     compact: Boolean = false,
+    /** On a TV, where «Готово» takes the frame: the first result (D-377). */
+    next: FocusRequester? = null,
 ) {
     val visualHeight = with(LocalDensity.current) {
         MaterialTheme.typography.bodyMedium.lineHeight.toDp() + 8.dp
@@ -356,6 +359,8 @@ fun SearchField(
                 .copy(color = MaterialTheme.colorScheme.onSurface),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            // Search's own key did nothing, and the keyboard stayed over the list (F-362).
+            keyboardActions = tvDone(next) ?: KeyboardActions.Default,
             decorationBox = { field ->
                 Row(
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 14.dp, end = 4.dp),

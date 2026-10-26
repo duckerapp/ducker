@@ -7,6 +7,7 @@ import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animate
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -41,6 +42,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LookaheadScope
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -98,6 +100,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -209,8 +214,12 @@ internal fun DuckerSheet(
                 clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
                 addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
                 setWindowAnimations(0)
+                // On a TV the keyboard lies over the sheet; the sheet lifts the field itself (D-377).
                 @Suppress("DEPRECATION")
-                setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+                setSoftInputMode(
+                    if (tv) WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+                    else WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE,
+                )
                 @Suppress("DEPRECATION")
                 statusBarColor = android.graphics.Color.TRANSPARENT
                 @Suppress("DEPRECATION")
@@ -272,6 +281,8 @@ internal fun DuckerSheet(
          * к концу выезда отставания нет: панель там же, где стояла бы.
          */
         fun Density.lag(): Float {
+            if (tv) return 0f
+
             val now = keyboard(ime)
             val full = maxOf(keyboard(imeFrom), keyboard(imeTo))
             val gap = room - natural
@@ -279,6 +290,24 @@ internal fun DuckerSheet(
             if (full <= gap || now >= full) return 0f
 
             return (minOf(now, gap) - gap * now / full).coerceIn(0f, now)
+        }
+
+        // On a TV the keyboard lies over the sheet, and the sheet does not grow by its height: Gboard there jumps in
+        // without animating its inset, and the sheet's top jumped to the screen's top with it (F-362). The sheet stays,
+        // and only when the field being typed into would end under the keyboard it slides up by that much (D-377).
+        val typing = remember { TvTyping() }
+        val keyboardTop = if (tv) tvKeyboardTop(typing.active) else null
+        val lift = remember { Animatable(0f) }
+
+        if (tv) LaunchedEffect(keyboardTop, typing.active) {
+            val field = typing.field?.takeIf { it.isAttached }
+            val target = if (keyboardTop == null || field == null) 0f else {
+                val bottom = field.boundsInWindow().bottom + lift.value
+
+                (bottom + with(density) { LIFT_GAP.toPx() } - keyboardTop).coerceIn(0f, (room - height).coerceAtLeast(0f))
+            }
+
+            lift.animateTo(target, tween(LIFT_MS, easing = FastOutSlowInEasing))
         }
 
         // Выезд и отъезд — от того места, где панель сейчас: закрытие жестом продолжается
@@ -355,7 +384,7 @@ internal fun DuckerSheet(
                     .then(
                         if (heightFraction != null) Modifier.layout { measurable, constraints ->
                             val fullWindow = constraints.maxHeight + status.getTop(this)
-                            val target = (fullWindow * heightFraction + keyboard(ime)).roundToInt()
+                            val target = (fullWindow * heightFraction + if (tv) 0f else keyboard(ime)).roundToInt()
                                 .coerceIn(0, constraints.maxHeight)
                             val placeable = measurable.measure(constraints.copy(minHeight = target, maxHeight = target))
                             layout(placeable.width, placeable.height) { placeable.place(0, 0) }
@@ -373,7 +402,7 @@ internal fun DuckerSheet(
                         val shift = offset.coerceAtMost(height)
                         val below = if (height > 0f) margin * shift / height else 0f
 
-                        IntOffset(0, (shift + below + lag()).roundToInt())
+                        IntOffset(0, (shift + below + lag() - lift.value).roundToInt())
                     }
                     // Уезжающая панель не нажимается ни пальцем, ни пультом (аудит 9в.11): за время
                     // отъезда кнопка успевала сработать второй раз.
@@ -421,7 +450,7 @@ internal fun DuckerSheet(
                             )
                             .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                             .navigationBarsPadding()
-                            .imePadding()
+                            .then(if (tv) Modifier else Modifier.imePadding())
                             // Высота меняется плавно: подсказка при загрузке, строка ошибки, лишняя
                             // строка в поле — без этого панель прыгала вверх рывком (D-101). Стоит
                             // внутри отступа клавиатуры: за клавиатурой панель и так едет кадр в кадр,
@@ -441,7 +470,10 @@ internal fun DuckerSheet(
                     ) {
                         // Цвет текста — под фон панели: окно диалога берёт чёрный по умолчанию, и в
                         // тёмной теме заголовок и строки-переходы пропадали на фоне.
-                        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
+                        CompositionLocalProvider(
+                            LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+                            LocalTvTyping provides typing,
+                        ) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 if (titleAction == null) {
                                     Text(
@@ -484,6 +516,10 @@ internal fun DuckerSheet(
 
 private const val ENTER_MS = 280
 private const val EXIT_MS = 220
+private const val LIFT_MS = 240
+
+/** Between the field being typed into and a TV keyboard's top. */
+private val LIFT_GAP = 16.dp
 private const val SETTLE_MS = 200
 private const val SCRIM = 0.32f
 
@@ -554,6 +590,8 @@ internal fun SheetField(
     error: Boolean = false,
     maxLines: Int = 1,
     readOnly: Boolean = false,
+    /** On a TV, where «Готово» takes the frame: the sheet's next step (D-377). */
+    next: FocusRequester? = null,
 ) {
     val shape = RoundedCornerShape(20.dp)
     val scheme = MaterialTheme.colorScheme
@@ -561,6 +599,8 @@ internal fun SheetField(
     // Пульт (этап 6): ввод по ОК, как у поиска, — иначе панель открывалась сразу с клавиатурой.
     // Скругление — рамке: по высоте поле сошло бы за кнопку-пилюлю.
     val (row, input) = keyField(corner = 20.dp)
+    // On a TV the link fields take no new lines either: Gboard's «Готово» put one into them (F-362).
+    val done = tvDone(next)
     val flat = airEdge()
     val edge = if (error) BorderStroke(1.dp, scheme.error) else flat
 
@@ -583,6 +623,8 @@ internal fun SheetField(
             modifier = Modifier.weight(1f).heightIn(min = 56.dp).then(input).padding(vertical = 14.dp),
             singleLine = maxLines == 1,
             maxLines = maxLines,
+            keyboardOptions = if (done != null) KeyboardOptions(imeAction = ImeAction.Done) else KeyboardOptions.Default,
+            keyboardActions = done ?: KeyboardActions.Default,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
             cursorBrush = SolidColor(scheme.onSurface),
             decorationBox = { field ->
