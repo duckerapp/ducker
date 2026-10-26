@@ -61,6 +61,10 @@ import com.github.kr328.clash.ui.components.SheetField
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.airShadow
+import com.github.kr328.clash.ui.components.ringAnchor
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.unit.toSize
 import com.github.kr328.clash.ui.components.PillSegments
 import com.github.kr328.clash.ui.components.formatDate
 import java.util.concurrent.TimeUnit
@@ -443,6 +447,8 @@ private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Un
 
     Box(
         modifier = modifier.fillMaxWidth()
+            // On a TV the frame goes round the whole pill, not the slider inside its padding.
+            .then(if (LocalTv.current) Modifier.ringAnchor(corner = 20.dp) { Rect(Offset.Zero, it.toSize()) } else Modifier)
             .airShadow(RoundedCornerShape(20.dp))
             .clip(RoundedCornerShape(20.dp))
             .background(scheme.surface)
