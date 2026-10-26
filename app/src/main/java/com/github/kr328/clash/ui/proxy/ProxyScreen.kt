@@ -5,6 +5,8 @@ import com.github.kr328.clash.ui.components.tvScrollToStart
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.tvKeys
 import com.github.kr328.clash.ui.components.LocalTv
+import com.github.kr328.clash.ui.components.ownLeft
+import com.github.kr328.clash.ui.components.ringCorner
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusRequester
@@ -554,6 +556,8 @@ private fun GroupHeader(
     Card(modifier.fillMaxWidth().focusGroup()) {
         Row(
             modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
+                // The card's 24 dp: by its size the frame took the usual 20 and stood off the card's corners.
+                .then(if (tv) Modifier.ringCorner(24.dp) else Modifier)
                 .focusRequester(head)
                 .focusProperties { if (tv && canCheck) right = ping }
                 .clickable(
@@ -600,7 +604,8 @@ private fun GroupHeader(
                     checking = checking,
                     enabled = checkEnabled,
                     onClick = onHealthCheck,
-                    modifier = Modifier.focusRequester(ping).focusProperties { if (tv) left = head },
+                    // Its own Left: the header holds it, and the page sent Left to the dock.
+                    modifier = Modifier.focusRequester(ping).then(if (tv) Modifier.ownLeft(head) else Modifier),
                 )
             }
             Icon(if (open) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown, contentDescription = null,
@@ -721,10 +726,12 @@ private fun ProxyOption(
                     contentDescription = stringResource(R.string.favorite),
                     modifier = Modifier.size(20.dp)
                         .focusRequester(star)
+                        // Left to its own card, as the subscription row's «⋯»: the first column's card holds the
+                        // star, and the page sent Left to the dock.
+                        .then(if (tv) Modifier.ownLeft(card) else Modifier)
                         .focusProperties {
                             if (!tv) return@focusProperties
 
-                            left = card
                             if (next != null) right = next
                         }
                         .onPreviewKeyEvent {
