@@ -28,6 +28,17 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.activity.compose.BackHandler
+import com.github.kr328.clash.ui.components.LocalTv
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -293,6 +304,23 @@ private fun IntervalPicker(
     )
     val widest = listOf(labels[0], "$own · ${hoursLabel(STOPS.last())}", labels[2])
 
+    // On a TV the slider unfolds only while the hours are picked: OK on «Свой» opens it with the frame on it, OK or Back
+    // folds it with the hours in «Свой», Up and Down leave it. The slider takes all four arrows, and the remote could
+    // leave it only with Back (F-362, D-377).
+    val tv = LocalTv.current
+    var choosing by remember { mutableStateOf(false) }
+    val pills = remember { FocusRequester() }
+    val slider = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
+    fun fold() {
+        choosing = false
+        pills.requestFocus()
+    }
+
+    BackHandler(enabled = tv && choosing) { fold() }
+    LaunchedEffect(choosing) { if (choosing) slider.requestFocus() }
+
     // The gaps are paddings, not the column's spacing: the slider's gap comes and goes with it,
     // instead of jumping when the slider leaves the layout.
     Column {
@@ -302,20 +330,36 @@ private fun IntervalPicker(
             selected = selected,
             enabled = enabled,
             onSelect = { index ->
+                choosing = tv && index == 1
                 when (index) {
                     0 -> onInterval(0)
                     1 -> onInterval(if (interval > 0) interval else lastOwn[0])
                     else -> onFollow()
                 }
             },
+            modifier = Modifier.focusRequester(pills),
         )
 
-        Unfold(visible = selected == 1) {
+        Unfold(visible = selected == 1 && (!tv || choosing)) {
             OwnSlider(
                 interval = if (selected == 1) interval else lastOwn[0],
                 enabled = enabled,
                 onInterval = onInterval,
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = 8.dp).then(
+                    if (tv) Modifier.focusRequester(slider).onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                        when (event.key) {
+                            Key.DirectionUp, Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> fold()
+                            Key.DirectionDown -> {
+                                if (!focusManager.moveFocus(FocusDirection.Down)) pills.requestFocus()
+                                choosing = false
+                            }
+                            else -> return@onPreviewKeyEvent false
+                        }
+                        true
+                    } else Modifier,
+                ),
             )
         }
 
