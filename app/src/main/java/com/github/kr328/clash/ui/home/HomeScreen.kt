@@ -14,6 +14,9 @@ import com.github.kr328.clash.ui.components.ringCorner
 import com.github.kr328.clash.ui.components.ringHold
 import com.github.kr328.clash.ui.components.tvKeys
 import com.github.kr328.clash.ui.components.tvEdge
+import com.github.kr328.clash.ui.components.tvBringIntoView
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.proxy.ProxyState
 import com.github.kr328.clash.core.model.ProxySort
@@ -354,6 +357,7 @@ private fun Welcome(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeRegular(
     state: HomeState,
@@ -420,146 +424,151 @@ private fun HomeRegular(
         }
     }
 
-    Column(
-        modifier = modifier
-            // Во всю высоту, а не по содержимому: иначе касание в пустое место под
-            // карточками было мимо главной и панель узлов не сворачивало.
-            .fillMaxSize()
-            .screenInsets()
-            // Панель открыта — касание мимо карточки только сворачивает её: как выйти,
-            // человек не гадает, а «Обновить» или шестерёнка под пальцем не срабатывают.
-            .onGloballyPositioned { viewport = it }
-            .pointerInput(picking) {
-                if (!picking || !tv) return@pointerInput
+    // On a TV the column comes all the way to its start near it, as the lazy lists do.
+    val bring = remember(scroll) { tvBringIntoView(scroll) }
 
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                    val box = viewport?.takeIf { it.isAttached }
-                    val card = heroCard?.takeIf { it.isAttached }
+    CompositionLocalProvider(LocalBringIntoViewSpec provides if (tv) bring else LocalBringIntoViewSpec.current) {
+        Column(
+            modifier = modifier
+                // Во всю высоту, а не по содержимому: иначе касание в пустое место под
+                // карточками было мимо главной и панель узлов не сворачивало.
+                .fillMaxSize()
+                .screenInsets()
+                // Панель открыта — касание мимо карточки только сворачивает её: как выйти,
+                // человек не гадает, а «Обновить» или шестерёнка под пальцем не срабатывают.
+                .onGloballyPositioned { viewport = it }
+                .pointerInput(picking) {
+                    if (!picking || !tv) return@pointerInput
 
-                    if (box == null || card == null || down.position !in box.localBoundingBoxOf(card)) {
-                        down.consume()
-                        picking = false
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                        val box = viewport?.takeIf { it.isAttached }
+                        val card = heroCard?.takeIf { it.isAttached }
+
+                        if (box == null || card == null || down.position !in box.localBoundingBoxOf(card)) {
+                            down.consume()
+                            picking = false
+                        }
                     }
                 }
+                // Прокрутка остаётся страховкой на крупный шрифт и редкие карточки
+                // (лимит устройств, потеря связи), но в обычном состоянии экран должен
+                // помещаться целиком: 12 между карточками вместо 16 — ровно та разница,
+                // из-за которой подписка уезжала под панель.
+                .verticalScroll(scroll, overscrollEffect = overscrollFor(scroll))
+                .padding(horizontal = 16.dp, vertical = 12.dp + tvEdge()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (header) BrandHeader(profile, onSettings)
+
+            if (profile != null && profile.hwidBlocked) {
+                LimitCard(profile, onSupport, onRefresh)
             }
-            // Прокрутка остаётся страховкой на крупный шрифт и редкие карточки
-            // (лимит устройств, потеря связи), но в обычном состоянии экран должен
-            // помещаться целиком: 12 между карточками вместо 16 — ровно та разница,
-            // из-за которой подписка уезжала под панель.
-            .verticalScroll(scroll, overscrollEffect = overscrollFor(scroll))
-            .padding(horizontal = 16.dp, vertical = 12.dp + tvEdge()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        if (header) BrandHeader(profile, onSettings)
 
-        if (profile != null && profile.hwidBlocked) {
-            LimitCard(profile, onSupport, onRefresh)
-        }
+            if (profile != null && profile.announce.isNotEmpty() && !profile.hwidBlocked) {
+                AnnouncementCard(profile.announce)
+            }
 
-        if (profile != null && profile.announce.isNotEmpty() && !profile.hwidBlocked) {
-            AnnouncementCard(profile.announce)
-        }
+            // Список ссылок — сообщение без текста ошибки ядра (D-81): ошибка там всегда одна и
+            // та же, «это не конфиг mihomo», и советовать «покажите провайдеру» не за что —
+            // ничего не сломалось. Другое дело, когда шаблон включён из-за ошибки в конфиге
+            // провайдера (D-246): тут ошибка настоящая, и её стоит переслать.
+            if (profile != null && profile.usedTemplate) {
+                if (profile.templateFromConfig) {
+                    InfoCard(
+                        stringResource(R.string.template_config),
+                        Symbols.WarningAmber,
+                        action = stringResource(R.string.template_config_copy) to { onCopyError(profile.lastError) },
+                    )
+                } else {
+                    InfoCard(stringResource(R.string.template_used), Symbols.Info)
+                }
+            }
 
-        // Список ссылок — сообщение без текста ошибки ядра (D-81): ошибка там всегда одна и
-        // та же, «это не конфиг mihomo», и советовать «покажите провайдеру» не за что —
-        // ничего не сломалось. Другое дело, когда шаблон включён из-за ошибки в конфиге
-        // провайдера (D-246): тут ошибка настоящая, и её стоит переслать.
-        if (profile != null && profile.usedTemplate) {
-            if (profile.templateFromConfig) {
+            // Банк «сломался» ровно после включения блокировки в настройках Android — связать
+            // одно с другим человек сам не сможет, поэтому говорим прямо и ведём куда надо.
+            if (state.running && state.lockdownOffline) {
                 InfoCard(
-                    stringResource(R.string.template_config),
+                    stringResource(R.string.lockdown_offline),
                     Symbols.WarningAmber,
-                    action = stringResource(R.string.template_config_copy) to { onCopyError(profile.lastError) },
+                    action = stringResource(R.string.vpn_settings) to onVpnSettings,
                 )
-            } else {
-                InfoCard(stringResource(R.string.template_used), Symbols.Info)
             }
-        }
 
-        // Банк «сломался» ровно после включения блокировки в настройках Android — связать
-        // одно с другим человек сам не сможет, поэтому говорим прямо и ведём куда надо.
-        if (state.running && state.lockdownOffline) {
-            InfoCard(
-                stringResource(R.string.lockdown_offline),
-                Symbols.WarningAmber,
-                action = stringResource(R.string.vpn_settings) to onVpnSettings,
-            )
-        }
+            // Работа в фоне (D-109): человек винит в обрывах VPN, а не телефон, который его
+            // усыпил. Пока Android может усыплять ducker — просим разрешить; разрешил, но оболочка
+            // телефона закрывает приложения сама (F-116, F-121), — ведём к её настройкам.
+            if (state.running) {
+                when (backgroundNotice) {
+                    is BackgroundNotice.Restricted -> InfoCard(
+                        stringResource(R.string.background_restricted_card),
+                        Symbols.ErrorOutline,
+                        action = stringResource(R.string.background_allow) to backgroundNotice.onAllow,
+                        secondary = stringResource(R.string.not_now) to backgroundNotice.onLater,
+                    )
 
-        // Работа в фоне (D-109): человек винит в обрывах VPN, а не телефон, который его
-        // усыпил. Пока Android может усыплять ducker — просим разрешить; разрешил, но оболочка
-        // телефона закрывает приложения сама (F-116, F-121), — ведём к её настройкам.
-        if (state.running) {
-            when (backgroundNotice) {
-                is BackgroundNotice.Restricted -> InfoCard(
-                    stringResource(R.string.background_restricted_card),
-                    Symbols.ErrorOutline,
-                    action = stringResource(R.string.background_allow) to backgroundNotice.onAllow,
-                    secondary = stringResource(R.string.not_now) to backgroundNotice.onLater,
-                )
+                    is BackgroundNotice.Shell -> InfoCard(
+                        stringResource(R.string.background_hint, stringResource(backgroundNotice.vendor.names)),
+                        Symbols.ErrorOutline,
+                        action = stringResource(R.string.background_hint_action) to backgroundNotice.onSetUp,
+                    )
 
-                is BackgroundNotice.Shell -> InfoCard(
-                    stringResource(R.string.background_hint, stringResource(backgroundNotice.vendor.names)),
-                    Symbols.ErrorOutline,
-                    action = stringResource(R.string.background_hint_action) to backgroundNotice.onSetUp,
-                )
-
-                null -> Unit
+                    null -> Unit
+                }
             }
+
+            if (state.loaded && profile == null) {
+                // Сюда попадают, только когда подписки есть, а активной нет — её удалили: без подписок
+                // вовсе вместо главной приветствие (D-98). Прежний текст говорил «подписок пока нет».
+                EmptyState(
+                    icon = Symbols.Shield,
+                    title = stringResource(R.string.home_no_active_title),
+                    message = stringResource(R.string.home_no_active_text),
+                    action = stringResource(R.string.home_choose_subscription) to onChooseSubscription,
+                )
+            } else if (!state.loaded) {
+                HomeSkeleton(compact)
+            }
+
+            // VPN остановился не по команде (D-227) — почему и что с этим делать. Без подписки
+            // причина уже не к месту: об этом говорит заглушка выше.
+            if (profile != null && state.stopFailure != null) {
+                StopCard(state.stopFailure, profile, onRefresh, onSupport, onVpnSettings, onDismissStop)
+            }
+
+            // Туннель поднят, а связи нет — про это надо сказать прямо, иначе человек
+            // видит «Подключено» и считает, что сломалось приложение (D-58).
+            if (state.linkOk == false) {
+                LinkFailedCard(state, onCheckLink, onOpenProxies, onFastest)
+            }
+
+            // Новая версия приложения: карточка висит, пока её не поставят, — обновление по
+            // умолчанию решает человек, и напоминание должно быть на виду.
+            appCards?.invoke()
+
+            if (profile != null || state.running) {
+                HeroCard(
+                    state = state,
+                    metrics = metrics,
+                    onToggle = onToggle,
+                    onOpenProxies = onOpenProxies,
+                    picker = picker,
+                    picking = picking,
+                    onPicking = { picking = it },
+                    onOpenPicker = onOpenPicker,
+                    onPickNode = onPickNode,
+                    onPreviewNode = onPreviewNode,
+                    compact = compact,
+                    modifier = Modifier.onGloballyPositioned { heroCard = it },
+                )
+            }
+
+            // Свой конфиг — без срока, трафика и обновлений: карточке нечего показать (D-125).
+            if (profile != null && !profile.local) {
+                SubscriptionCard(profile, updating, updateFailed, onRefresh, onSupport)
+            }
+
         }
-
-        if (state.loaded && profile == null) {
-            // Сюда попадают, только когда подписки есть, а активной нет — её удалили: без подписок
-            // вовсе вместо главной приветствие (D-98). Прежний текст говорил «подписок пока нет».
-            EmptyState(
-                icon = Symbols.Shield,
-                title = stringResource(R.string.home_no_active_title),
-                message = stringResource(R.string.home_no_active_text),
-                action = stringResource(R.string.home_choose_subscription) to onChooseSubscription,
-            )
-        } else if (!state.loaded) {
-            HomeSkeleton(compact)
-        }
-
-        // VPN остановился не по команде (D-227) — почему и что с этим делать. Без подписки
-        // причина уже не к месту: об этом говорит заглушка выше.
-        if (profile != null && state.stopFailure != null) {
-            StopCard(state.stopFailure, profile, onRefresh, onSupport, onVpnSettings, onDismissStop)
-        }
-
-        // Туннель поднят, а связи нет — про это надо сказать прямо, иначе человек
-        // видит «Подключено» и считает, что сломалось приложение (D-58).
-        if (state.linkOk == false) {
-            LinkFailedCard(state, onCheckLink, onOpenProxies, onFastest)
-        }
-
-        // Новая версия приложения: карточка висит, пока её не поставят, — обновление по
-        // умолчанию решает человек, и напоминание должно быть на виду.
-        appCards?.invoke()
-
-        if (profile != null || state.running) {
-            HeroCard(
-                state = state,
-                metrics = metrics,
-                onToggle = onToggle,
-                onOpenProxies = onOpenProxies,
-                picker = picker,
-                picking = picking,
-                onPicking = { picking = it },
-                onOpenPicker = onOpenPicker,
-                onPickNode = onPickNode,
-                onPreviewNode = onPreviewNode,
-                compact = compact,
-                modifier = Modifier.onGloballyPositioned { heroCard = it },
-            )
-        }
-
-        // Свой конфиг — без срока, трафика и обновлений: карточке нечего показать (D-125).
-        if (profile != null && !profile.local) {
-            SubscriptionCard(profile, updating, updateFailed, onRefresh, onSupport)
-        }
-
     }
 
     if (!tv && pickerMounted) {

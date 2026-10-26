@@ -19,6 +19,7 @@ import android.graphics.BlurMaskFilter
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -1050,6 +1051,21 @@ internal val TvBringIntoView = object : BringIntoViewSpec {
 
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
         tvScrollDistance(offset, size, containerSize)
+}
+
+/**
+ * [TvBringIntoView] for a column scrolled by [state]: near its start it goes all the way there, as [TvLazyColumn] does.
+ * «Главная» came back up to the power button and left a provider's announcement above it cut, as the announcement takes
+ * no focus. A sheet opened from inside the column inherits this spec; another container keeps the plain rule.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+internal fun tvBringIntoView(state: ScrollState): BringIntoViewSpec = object : BringIntoViewSpec {
+    @Suppress("OVERRIDE_DEPRECATION")
+    override val scrollAnimationSpec: AnimationSpec<Float> = TvSpring
+
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
+        if (containerSize.roundToInt() != state.viewportSize) tvScrollDistance(offset, size, containerSize)
+        else tvScrollDistance(offset, size, containerSize, state.value.toFloat())
 }
 
 /** Список, который к фокусу подъезжает сам ([softScroll]): штатной прокрутке делать нечего. */
