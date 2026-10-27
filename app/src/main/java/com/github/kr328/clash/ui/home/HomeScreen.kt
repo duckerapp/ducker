@@ -101,6 +101,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
@@ -121,6 +122,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.TextStyle
@@ -1121,10 +1123,18 @@ private fun HeroFace(
                 maxItemsInEachRow = 2,
             ) {
                 Column(Modifier.weight(1f).widthIn(min = 160.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    FitLabel(
-                        text = stringResource(if (running) R.string.hero_protected else R.string.hero_off),
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    )
+                    val title = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    val hintStyle = MaterialTheme.typography.bodyMedium
+
+                    // Both copies take the room of every title and hint, so the card keeps one height whatever
+                    // the state (D-389): under a larger font «Нажмите, чтобы включить» took a second line, the
+                    // card grew when VPN went off, and the button jumped down.
+                    Reserved({ HERO_TITLES.forEach { FitLabel(stringResource(it), title) } }) {
+                        FitLabel(
+                            text = stringResource(if (running) R.string.hero_protected else R.string.hero_off),
+                            style = title,
+                        )
+                    }
 
                     // Пока служба не ответила, подпись говорит, что происходит, — и сменяется
                     // мягко: это единственный текст, который меняет не волна. Старая гаснет,
@@ -1137,22 +1147,24 @@ private fun HeroFace(
                         else -> R.string.hero_off_hint
                     }
 
-                    // Копия сменила состояние, когда волна закончилась, — подпись встаёт сразу:
-                    // иначе она доигрывала бы свой переход и на миг пропадала.
-                    key(running) {
-                        AnimatedContent(
-                            targetState = hint,
-                            transitionSpec = {
-                                fadeIn(tween(HINT_IN_MS, delayMillis = HINT_OUT_MS)) togetherWith
-                                    fadeOut(tween(HINT_OUT_MS))
-                            },
-                            label = "hint",
-                        ) {
-                            Text(
-                                text = stringResource(it),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = LocalContentColor.current.copy(alpha = 0.7f),
-                            )
+                    Reserved({ HERO_HINTS.forEach { Text(stringResource(it), style = hintStyle) } }) {
+                        // Копия сменила состояние, когда волна закончилась, — подпись встаёт сразу:
+                        // иначе она доигрывала бы свой переход и на миг пропадала.
+                        key(running) {
+                            AnimatedContent(
+                                targetState = hint,
+                                transitionSpec = {
+                                    fadeIn(tween(HINT_IN_MS, delayMillis = HINT_OUT_MS)) togetherWith
+                                        fadeOut(tween(HINT_OUT_MS))
+                                },
+                                label = "hint",
+                            ) {
+                                Text(
+                                    text = stringResource(it),
+                                    style = hintStyle,
+                                    color = LocalContentColor.current.copy(alpha = 0.7f),
+                                )
+                            }
                         }
                     }
                 }
@@ -1176,6 +1188,24 @@ private fun HeroFace(
                 NodeRow(state, onNode, Modifier.onGloballyPositioned(onNodePlaced).then(nodeFocus))
             }
         }
+    }
+}
+
+private val HERO_TITLES = listOf(R.string.hero_protected, R.string.hero_off)
+private val HERO_HINTS = listOf(
+    R.string.hero_protected_hint, R.string.hero_off_hint, R.string.hero_connecting, R.string.hero_disconnecting,
+)
+
+/** [content] in the room of the biggest of [variants], which are measured but neither drawn nor read out (D-389). */
+@Composable
+private fun Reserved(
+    variants: @Composable () -> Unit,
+    contentAlignment: Alignment = Alignment.TopStart,
+    content: @Composable () -> Unit,
+) {
+    Box(contentAlignment = contentAlignment) {
+        Box(Modifier.drawWithContent {}.clearAndSetSemantics {}) { variants() }
+        content()
     }
 }
 
@@ -1213,15 +1243,24 @@ private fun UptimePill(running: Boolean, metrics: () -> HomeMetrics) {
         // секунду показывало бы время прошлого сеанса.
         if (!running) last[0] = 0
 
-        Text(
-            // Включённый туннель сразу показывает нули, а не прочерк: под волной и над ней
-            // иначе стояли бы разные строки, и первая секунда перещёлкивала бы плашку.
-            text = if (running) formatUptime(if (uptime > 0) uptime else last[0]) else "--:--:--",
-            // Цифры одной ширины: пропорциональные каждую секунду чуть двигали строку.
-            style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
-            color = LocalContentColor.current.copy(alpha = if (running) 1f else 0.7f),
-            maxLines = 1,
-        )
+        // Цифры одной ширины: пропорциональные каждую секунду чуть двигали строку.
+        val style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
+
+        // One width in both states: the dashes are narrower than the digits, and the title beside the pill
+        // got a different width to wrap in (D-389).
+        Reserved(
+            { listOf(NO_UPTIME, formatUptime(0)).forEach { Text(it, style = style, maxLines = 1) } },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                // Включённый туннель сразу показывает нули, а не прочерк: под волной и над ней
+                // иначе стояли бы разные строки, и первая секунда перещёлкивала бы плашку.
+                text = if (running) formatUptime(if (uptime > 0) uptime else last[0]) else NO_UPTIME,
+                style = style,
+                color = LocalContentColor.current.copy(alpha = if (running) 1f else 0.7f),
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -1475,6 +1514,9 @@ private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
         )
     }
 }
+
+/** The uptime pill while the tunnel is off. */
+private const val NO_UPTIME = "--:--:--"
 
 /** Часы работы туннеля: `02:41:18`. */
 private fun formatUptime(ms: Long): String {
