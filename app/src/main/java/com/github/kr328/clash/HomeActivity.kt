@@ -317,12 +317,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
         // Not when the data is already there, as after a change of language: the splash would only blink.
         splashing.value = tv && !(viewModel.state.value.loaded && subscriptionsViewModel.state.value.loaded)
-        // ponytail: the two looks of D-379 by turns, a launch each, until the owner picks one; the other goes then.
-        val splashDuck = splashing.value && getSharedPreferences("splash", MODE_PRIVATE).run {
-            val launches = getInt("launches", 0)
-            edit().putInt("launches", launches + 1).apply()
-            launches % 2 == 0
-        }
 
         setContent {
             val settingsState by settingsViewModel.state.collectAsState()
@@ -1600,7 +1594,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     )
                 }
 
-                if (tv) TvSplash(visible = splashing.value, duck = splashDuck)
+                if (tv) TvSplash(visible = splashing.value)
             }
         }
 

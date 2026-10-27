@@ -25,14 +25,15 @@ import androidx.compose.ui.unit.sp
 import com.github.kr328.clash.R
 
 /**
- * ducker's own splash on a TV (D-379): the first frame, with Home built behind it, fading into Home once its data is
- * there. The system's splash before it shows only the window colour (`values-television/splash.xml`).
+ * ducker's own splash on a TV (D-379): the duck and «ducker» side by side, as the banner (the owner's choice, D-382) —
+ * the first frame, with Home built behind it, fading into Home once its data is there. The system's splash before it
+ * shows only the window colour (`values-television/splash.xml`).
  *
  * The duck is the system splash's own image, drawn at its 288 dp canvas, so every density gets its bitmap pixel for
  * pixel — 1152 px at 4K; it is tinted, as its colour is flat and its shape is in the alpha (D-342).
  */
 @Composable
-internal fun TvSplash(visible: Boolean, duck: Boolean) {
+internal fun TvSplash(visible: Boolean) {
     AnimatedVisibility(visible = visible, enter = EnterTransition.None, exit = fadeOut(tween(FADE_MS))) {
         Box(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -41,24 +42,20 @@ internal fun TvSplash(visible: Boolean, duck: Boolean) {
             val color = MaterialTheme.colorScheme.onBackground
 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                if (duck) {
-                    // The duck's own bounds; its canvas spills over them, transparent.
-                    Box(Modifier.size(width = 124.dp, height = 132.dp), contentAlignment = Alignment.Center) {
-                        Image(
-                            painter = painterResource(R.drawable.splash_duck),
-                            contentDescription = null,
-                            modifier = Modifier.requiredSize(288.dp),
-                            colorFilter = ColorFilter.tint(color),
-                        )
-                    }
+                // The duck's own bounds; its canvas spills over them, transparent.
+                Box(Modifier.size(width = 124.dp, height = 132.dp), contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = painterResource(R.drawable.splash_duck),
+                        contentDescription = null,
+                        modifier = Modifier.requiredSize(288.dp),
+                        colorFilter = ColorFilter.tint(color),
+                    )
                 }
-
-                val size = if (duck) 72.sp else 96.sp
 
                 Text(
                     text = "ducker",
                     color = color,
-                    style = MaterialTheme.typography.displayLarge.copy(fontSize = size, lineHeight = size),
+                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 72.sp, lineHeight = 72.sp),
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                 )
