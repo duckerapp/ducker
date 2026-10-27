@@ -54,6 +54,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.window.Dialog
@@ -177,7 +180,7 @@ internal fun DuckerSheet(
     val closed by rememberUpdatedState(onClosed)
     val ask by rememberUpdatedState(onAsk)
     val tv = LocalTv.current
-    val sheetShape = remember { RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp) }
+    val sheetShape = remember(tv) { if (tv) TvSheetShape else RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp) }
 
     /** Жест закрытия: занята — нельзя, есть что бросить — спросить, иначе закрыть. Закрылась ли. */
     fun close(): Boolean {
@@ -416,7 +419,7 @@ internal fun DuckerSheet(
                     // a full-sheet blur mask for each new height.
                     .shadow(8.dp, sheetShape, clip = false)
                     .clip(sheetShape)
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(MaterialTheme.colorScheme.background, sheetShape),
             ) {
                 // Ручка — знак, что панель тянется. Пульту тянуть нечем: на телевизоре на её месте поле.
                 if (tv) {
@@ -531,6 +534,20 @@ private fun SheetBody(tv: Boolean, content: @Composable @UiComposable LookaheadS
         LookaheadScope(content)
     }
 }
+
+/**
+ * A sheet on a TV: rounded at the top, its outline running on [LIFT_ROOM] below its bottom edge. The keyboard lifts the
+ * sheet off that edge (D-377), and a hole opened under it; now its background and shadow reach the screen's edge.
+ */
+private val TvSheetShape = object : Shape {
+    private val top = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
+        top.createOutline(size.copy(height = size.height + with(density) { LIFT_ROOM.toPx() }), layoutDirection, density)
+}
+
+/** No lift goes higher than a TV's canvas, 540 dp high (`tvCanvas`). */
+private val LIFT_ROOM = 540.dp
 
 /** Between the field being typed into and a TV keyboard's top. */
 private val LIFT_GAP = 16.dp
