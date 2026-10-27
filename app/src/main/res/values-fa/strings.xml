@@ -58,7 +58,7 @@
     <string name="scan_torch">چراغ‌قوه</string>
     <string name="scan_no_camera">دسترسی به دوربین وجود ندارد. در تنظیمات برنامه اجازه دهید.</string>
     <string name="share_qr">اشتراک‌گذاری با کد QR</string>
-    <string name="share_qr_hint">در دستگاه دیگر: ducker ← «افزودن» ← «اسکن QR». اسکرین‌شات این صفحه هم کار می‌کند — از گزینه «از گالری» استفاده کنید.</string>
+    <string name="share_qr_hint">در دستگاه دیگر: ducker ← «اشتراک‌ها» ← «افزودن» ← «اسکن QR». اسکرین‌شات این صفحه هم کار می‌کند — از گزینه «از گالری» استفاده کنید.</string>
     <string name="share_qr_warning">هر کسی که این کد را اسکن کند می‌تواند از اشتراک شما استفاده کند. آن را فقط به دستگاه‌های خودتان نشان دهید.</string>
     <string name="receive_hint">کد را با گوشی اسکن کنید: ducker ← «اشتراک‌ها» ← «افزودن» ← «اسکن QR». یا لینک را اینجا وارد کنید.</string>
     <string name="receive_code">کد QR برای فرستادن اشتراک از گوشی</string>

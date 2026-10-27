@@ -78,7 +78,7 @@
     <string name="scan_no_camera">No camera access. Allow it in app settings.</string>
     <!-- Поделиться подпиской QR-кодом (этап 10) -->
     <string name="share_qr">Share as QR code</string>
-    <string name="share_qr_hint">On the other device, open ducker:\n“Add” → “Scan QR”</string>
+    <string name="share_qr_hint">On the other device, open ducker:\nProfiles → “Add” → “Scan QR”</string>
     <string name="share_qr_warning">This code gives access to your subscription.\nShow it only to your own devices.</string>
     <!-- Передача подписки с телефона на телевизор (D-162) -->
     <string name="receive_hint">Scan the code with your phone: ducker → Profiles → “Add” → “Scan QR”. Or enter the link here.</string>

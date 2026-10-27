@@ -58,7 +58,7 @@
     <string name="scan_torch">El feneri</string>
     <string name="scan_no_camera">Kamera erişimi yok. Uygulama ayarlarından izin verin.</string>
     <string name="share_qr">QR koduyla paylaş</string>
-    <string name="share_qr_hint">Diğer telefonda: ducker → “Ekle” → “QR tara”. Bu ekranın görüntüsü de kullanılabilir; “Galeriden” seçeneğini kullanın.</string>
+    <string name="share_qr_hint">Diğer telefonda: ducker → Abonelikler → “Ekle” → “QR tara”. Bu ekranın görüntüsü de kullanılabilir; “Galeriden” seçeneğini kullanın.</string>
     <string name="share_qr_warning">Bu kodu tarayan herkes aboneliğinizi kullanabilir. Yalnızca kendi cihazlarınıza gösterin.</string>
     <string name="receive_hint">Telefonunuzla kodu tarayın: ducker → Abonelikler → “Ekle” → “QR tara”. Ya da bağlantıyı buraya girin.</string>
     <string name="receive_code">Telefondan abonelik göndermek için QR kodu</string>

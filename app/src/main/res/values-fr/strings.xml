@@ -58,7 +58,7 @@
     <string name="scan_torch">Lampe torche</string>
     <string name="scan_no_camera">L’accès à la caméra n’est pas autorisé. Accordez-le dans les paramètres de l’application.</string>
     <string name="share_qr">Partager par code QR</string>
-    <string name="share_qr_hint">Sur l’autre téléphone : ducker → « Ajouter » → « Scanner un QR ». Une capture de cet écran fonctionne aussi : choisissez « Depuis la galerie ».</string>
+    <string name="share_qr_hint">Sur l’autre téléphone : ducker → Abonnements → « Ajouter » → « Scanner un QR ». Une capture de cet écran fonctionne aussi : choisissez « Depuis la galerie ».</string>
     <string name="share_qr_warning">Toute personne qui scanne ce code peut utiliser votre abonnement. Réservez ce code à vos propres appareils.</string>
     <string name="receive_hint">Scannez le code avec votre téléphone : ducker → Abonnements → « Ajouter » → « Scanner un QR ». Vous pouvez aussi saisir le lien ici.</string>
     <string name="receive_code">Code QR pour envoyer un abonnement depuis votre téléphone</string>

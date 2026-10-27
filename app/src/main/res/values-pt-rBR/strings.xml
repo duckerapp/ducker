@@ -58,7 +58,7 @@
     <string name="scan_torch">Lanterna</string>
     <string name="scan_no_camera">Sem acesso à câmera. Conceda a permissão nas configurações do aplicativo.</string>
     <string name="share_qr">Compartilhar código QR</string>
-    <string name="share_qr_hint">No outro celular: ducker → “Adicionar” → “Ler QR”. Uma captura desta tela também funciona: use “Da galeria”.</string>
+    <string name="share_qr_hint">No outro celular: ducker → Assinaturas → “Adicionar” → “Ler QR”. Uma captura desta tela também funciona: use “Da galeria”.</string>
     <string name="share_qr_warning">Qualquer pessoa que ler este código poderá usar sua assinatura. Mostre-o apenas aos seus próprios dispositivos.</string>
     <string name="receive_hint">Leia o código com o celular: ducker → Assinaturas → “Adicionar” → “Ler QR”. Ou digite o link aqui.</string>
     <string name="receive_code">Código QR para enviar uma assinatura pelo celular</string>

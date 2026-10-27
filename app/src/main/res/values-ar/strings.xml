@@ -58,7 +58,7 @@
     <string name="scan_torch">المصباح</string>
     <string name="scan_no_camera">لا يوجد إذن للوصول إلى الكاميرا. امنحه من إعدادات التطبيق.</string>
     <string name="share_qr">مشاركة رمز QR</string>
-    <string name="share_qr_hint">على الهاتف الآخر: افتح ducker، ثم «إضافة»، ثم «مسح QR». يمكن أيضًا استخدام لقطة شاشة لهذه الصفحة عبر «من المعرض».</string>
+    <string name="share_qr_hint">على الهاتف الآخر: افتح ducker، ثم «الاشتراكات»، ثم «إضافة»، ثم «مسح QR». يمكن أيضًا استخدام لقطة شاشة لهذه الصفحة عبر «من المعرض».</string>
     <string name="share_qr_warning">يمكن لأي شخص يمسح هذا الرمز استخدام اشتراكك. اعرضه على أجهزتك فقط.</string>
     <string name="receive_hint">امسح الرمز بهاتفك: افتح ducker، ثم «الاشتراكات»، ثم «إضافة»، ثم «مسح QR». أو أدخل الرابط هنا.</string>
     <string name="receive_code">رمز QR لإرسال اشتراك من الهاتف</string>

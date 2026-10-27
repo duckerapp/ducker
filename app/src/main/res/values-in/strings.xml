@@ -58,7 +58,7 @@
     <string name="scan_torch">Senter</string>
     <string name="scan_no_camera">Tidak ada akses kamera. Berikan izin di pengaturan aplikasi.</string>
     <string name="share_qr">Bagikan kode QR</string>
-    <string name="share_qr_hint">Di ponsel lain: ducker → “Tambah” → “Pindai QR”. Tangkapan layar ini juga bisa digunakan melalui “Dari galeri”.</string>
+    <string name="share_qr_hint">Di ponsel lain: ducker → Langganan → “Tambah” → “Pindai QR”. Tangkapan layar ini juga bisa digunakan melalui “Dari galeri”.</string>
     <string name="share_qr_warning">Siapa pun yang memindai kode ini dapat menggunakan langganan Anda. Tampilkan hanya ke perangkat milik Anda sendiri.</string>
     <string name="receive_hint">Pindai kode dengan ponsel: ducker → Langganan → “Tambah” → “Pindai QR”. Atau masukkan tautannya di sini.</string>
     <string name="receive_code">Kode QR untuk mengirim langganan dari ponsel</string>

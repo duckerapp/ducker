@@ -58,7 +58,7 @@
     <string name="scan_torch">Linterna</string>
     <string name="scan_no_camera">No hay acceso a la cámara. Permítelo en los ajustes de la aplicación.</string>
     <string name="share_qr">Compartir código QR</string>
-    <string name="share_qr_hint">En el otro teléfono: ducker → “Añadir” → “Escanear QR”. También sirve una captura de esta pantalla: usa “Desde la galería”.</string>
+    <string name="share_qr_hint">En el otro teléfono: ducker → Suscripciones → “Añadir” → “Escanear QR”. También sirve una captura de esta pantalla: usa “Desde la galería”.</string>
     <string name="share_qr_warning">Cualquiera que escanee este código podrá usar tu suscripción. Muéstralo solo a tus propios dispositivos.</string>
     <string name="receive_hint">Escanea el código con tu teléfono: ducker → Suscripciones → “Añadir” → “Escanear QR”. O introduce el enlace aquí.</string>
     <string name="receive_code">Código QR para enviar una suscripción desde tu teléfono</string>
