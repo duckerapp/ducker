@@ -23,6 +23,8 @@ import com.github.kr328.clash.ui.proxy.ProxyState
 import com.github.kr328.clash.core.model.ProxySort
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.foundation.focusGroup
 import com.github.kr328.clash.ui.components.tabEntry
 import com.github.kr328.clash.ui.components.keepFocus
 import androidx.activity.compose.BackHandler
@@ -1856,7 +1858,17 @@ private fun SubscriptionCard(
         else -> null
     }
 
-    Card(Modifier.fillMaxWidth()) {
+    // The remote comes into the card on «Обновить»: from the node row above, both buttons stand equally far from
+    // its middle, and a fraction of a pixel picked one or the other.
+    val update = remember { FocusRequester() }
+
+    Card(
+        Modifier.fillMaxWidth()
+            .then(
+                if (LocalTv.current) Modifier.focusProperties { onEnter = { update.requestFocus() } }.focusGroup()
+                else Modifier,
+            ),
+    ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -1913,7 +1925,7 @@ private fun SubscriptionCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     maxItemsInEachRow = if (stacked) 1 else 2,
                 ) {
-                    UpdatePill(updating, updateFailed, onRefresh, Modifier.weight(1f))
+                    UpdatePill(updating, updateFailed, onRefresh, Modifier.weight(1f).focusRequester(update))
 
                     if (link != null) {
                         val (_, icon, url) = link
