@@ -174,9 +174,7 @@ internal fun DuckerSheet(
     val closed by rememberUpdatedState(onClosed)
     val ask by rememberUpdatedState(onAsk)
     val tv = LocalTv.current
-    // On a TV the panel floats inside the safe area, rounded all round: a TV may cut the frame's edges, and
-    // glued to the bottom edge the panel's last button stood outside that area.
-    val sheetShape = remember(tv) { if (tv) RoundedCornerShape(28.dp) else RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp) }
+    val sheetShape = remember { RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp) }
 
     /** Жест закрытия: занята — нельзя, есть что бросить — спросить, иначе закрыть. Закрылась ли. */
     fun close(): Boolean {
@@ -323,7 +321,6 @@ internal fun DuckerSheet(
         // Пульт (этап 6): пальца нет, а к полю в фокусе Compose прокручивает тем же путём, что и
         // жест (F-190). Панель принимала это за свайп, бросала выезд и оставалась за нижним краем.
         val keys by rememberUpdatedState(tvKeys())
-        val margin = with(density) { if (tv) TV_TOP.toPx() else 0f }
         // Панель встала на место: пока она выезжает или уезжает, рамки пульта нет — иначе рамка
         // оставалась висеть на месте поля, а панель с ним уже уехала (D-161).
         val settled by remember { derivedStateOf { offset <= 0f } }
@@ -375,7 +372,7 @@ internal fun DuckerSheet(
             Modifier.fillMaxSize()
                 .then(if (tv) Modifier.okOnce().focusRing().ringHold(!open || !settled) else Modifier)
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .then(if (tv) Modifier.padding(vertical = TV_TOP) else Modifier)
+                .then(if (tv) Modifier.padding(top = TV_TOP) else Modifier)
                 .onSizeChanged { room = it.height.toFloat() },
             contentAlignment = Alignment.BottomCenter,
         ) {
@@ -397,13 +394,7 @@ internal fun DuckerSheet(
                         val now = with(density) { keyboard(ime) }
                         if (now == 0f || height < room) natural = height - now
                     }
-                    // Down by its height and, on a TV, its margin too: it leaves and enters from under the edge.
-                    .offset {
-                        val shift = offset.coerceAtMost(height)
-                        val below = if (height > 0f) margin * shift / height else 0f
-
-                        IntOffset(0, (shift + below + lag() - lift.value).roundToInt())
-                    }
+                    .offset { IntOffset(0, (offset.coerceAtMost(height) + lag() - lift.value).roundToInt()) }
                     // Уезжающая панель не нажимается ни пальцем, ни пультом (аудит 9в.11): за время
                     // отъезда кнопка успевала сработать второй раз.
                     .pointerInput(open) {
@@ -422,7 +413,10 @@ internal fun DuckerSheet(
                     // a full-sheet blur mask for each new height.
                     .shadow(8.dp, sheetShape, clip = false)
                     .clip(sheetShape)
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(MaterialTheme.colorScheme.background)
+                    // On a TV the sheet stands on the bottom edge as on the phone, and its content keeps above the
+                    // safe area a TV may cut from the frame (D-380).
+                    .then(if (tv) Modifier.padding(bottom = TV_TOP) else Modifier),
             ) {
                 // Ручка — знак, что панель тянется. Пульту тянуть нечем: на телевизоре на её месте поле.
                 if (tv) {
