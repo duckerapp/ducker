@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.github.kr328.clash.ui.components.BackLayer
 import com.github.kr328.clash.ui.components.ScreenFrame
 import com.github.kr328.clash.ui.components.TvFocus
+import com.github.kr328.clash.ui.components.TvSplash
 import androidx.compose.ui.focus.focusRequester
 import com.github.kr328.clash.ui.home.ThemeButton
 import com.github.kr328.clash.ui.home.BrandTitle
@@ -54,6 +55,7 @@ import android.app.UiModeManager
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.DocumentsContract
 import android.provider.Settings
 import android.view.View
@@ -211,6 +213,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
     /** Returns of the app to the foreground: «Прокси» reads the core again by them (D-299). */
     private val starts = mutableIntStateOf(0)
 
+    /** ducker's own splash on a TV is up (D-379): until Home's data is there, see [holdSplash]. */
+    private val splashing = mutableStateOf(false)
+
     private val qrScanner = registerForActivityResult(QrScanActivity.Scan) { text ->
         subscriptionsViewModel.scanned(text)
     }
@@ -309,6 +314,15 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         // Android's backup and the subscriptions do not (`backup_rules.xml`), so on a restored
         // phone the flag would say there are some.
         val hadSubscriptions = !importedDir.list().isNullOrEmpty()
+
+        // Not when the data is already there, as after a change of language: the splash would only blink.
+        splashing.value = tv && !(viewModel.state.value.loaded && subscriptionsViewModel.state.value.loaded)
+        // ponytail: the two looks of D-379 by turns, a launch each, until the owner picks one; the other goes then.
+        val splashDuck = splashing.value && getSharedPreferences("splash", MODE_PRIVATE).run {
+            val launches = getInt("launches", 0)
+            edit().putInt("launches", launches + 1).apply()
+            launches % 2 == 0
+        }
 
         setContent {
             val settingsState by settingsViewModel.state.collectAsState()
@@ -1586,6 +1600,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     )
                 }
 
+                if (tv) TvSplash(visible = splashing.value, duck = splashDuck)
             }
         }
 
@@ -1594,7 +1609,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         // После setContent: AppCompat, собирая свой декор, ставит фон из темы заново.
         window.setBackgroundDrawable(null)
 
-        holdSplash()
+        holdSplash(tv)
 
         // Главную обновляет onStart, в том же кадре. Отсюда нельзя: состояние туннеля
         // приложение узнаёт у службы только в onStart, и после выгрузки интерфейса здесь
@@ -1713,13 +1728,16 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
      * Держим не дольше [SPLASH_HOLD]: если служба не отвечает, заглушки честнее, чем
      * бесконечная заставка. `setKeepOnScreenCondition` здесь не годится — он есть
      * только в androidx-совместимости, а платформенный `SplashScreen` такого не умеет.
+     *
+     * On a TV the first frame is drawn at once: it is ducker's own splash, Home is built under it, and the same wait
+     * lifts it, not before [TV_SPLASH_MIN] (D-379).
      */
-    private fun holdSplash() {
+    private fun holdSplash(tv: Boolean) {
         val content: View = findViewById(android.R.id.content)
 
         var ready = false
 
-        content.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+        if (!tv) content.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
                 if (!ready) return false
 
@@ -1734,6 +1752,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         // панель успевала мелькнуть перед приветствием.
         subscriptionsViewModel.refresh(this)
 
+        val started = SystemClock.uptimeMillis()
+
         lifecycleScope.launch {
             withTimeoutOrNull(SPLASH_HOLD) {
                 viewModel.state.first { it.loaded }
@@ -1745,6 +1765,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
             // Отменённая отрисовка сама не повторится, если композиция к этому моменту
             // успокоилась: просим кадр явно.
             content.invalidate()
+
+            // The data is often there by the first frame, and the splash faded out while the system was still fading
+            // the window in, never seen whole on an Android TV emulator: it stays up a moment at least.
+            if (tv) delay(TV_SPLASH_MIN - (SystemClock.uptimeMillis() - started))
+            splashing.value = false
         }
     }
 
@@ -2006,6 +2031,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
     private companion object {
         /** Дольше этого сплэш не держим: служба может и не ответить. */
         const val SPLASH_HOLD = 500L
+
+        /** The least time ducker's splash on a TV stays up, from the window's creation (D-379). */
+        const val TV_SPLASH_MIN = 1000L
 
         /** Волна на кнопке идёт 520 мс — соседние вкладки обновляем после неё. */
         const val TABS_REFRESH_DELAY = 700L

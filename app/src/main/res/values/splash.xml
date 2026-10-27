@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The system splash's icon (Android 12+, `themes.xml`): the duck, as D-95 and D-342 set. -->
+    <drawable name="splash_icon">@drawable/splash_duck</drawable>
+</resources>

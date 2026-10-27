@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- On a TV the system splash is only the window colour: ducker draws its own over it (D-379, `TvSplash`).
+         Transparent rather than absent: without an icon the system would draw the launcher's. -->
+    <drawable name="splash_icon">#00000000</drawable>
+</resources>
