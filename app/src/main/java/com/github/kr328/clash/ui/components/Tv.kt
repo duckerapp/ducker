@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.components
 
+import kotlin.math.round
 import kotlin.math.roundToInt
 import android.content.Context
 import android.content.pm.PackageManager
@@ -1234,16 +1235,20 @@ internal class TvKeyScroll(private val state: ScrollableState, private val scope
 internal fun tvScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
     val end = offset + size
 
+    // In whole pixels: a scroll position is whole and carries the fraction over, so a fractional distance never came to
+    // zero — Compose's bring-into-view stepped a pixel back and forth for good, and a sheet's rows shook (F-367).
     // Элемент выше списка: закрывает его целиком — список стоит, иначе показывается ближний край.
-    if (size >= containerSize) return if (offset > 0f) offset else if (end < containerSize) end - containerSize else 0f
+    if (size >= containerSize) return round(if (offset > 0f) offset else if (end < containerSize) end - containerSize else 0f)
 
     val edge = min(containerSize * TV_SCROLL_EDGE, (containerSize - size) / 2)
 
-    return when {
-        offset < edge -> offset - edge
-        end > containerSize - edge -> end - (containerSize - edge)
-        else -> 0f
-    }
+    return round(
+        when {
+            offset < edge -> offset - edge
+            end > containerSize - edge -> end - (containerSize - edge)
+            else -> 0f
+        },
+    )
 }
 
 /**

@@ -42,6 +42,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LookaheadScope
+import androidx.compose.ui.UiComposable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -431,7 +434,7 @@ internal fun DuckerSheet(
                 // own size animation — the slider under “Свой” (D-311) — and the panel move together on
                 // the same spring. Chasing such a block frame by frame, the panel lagged behind it, and
                 // the rows under it jerked up and back.
-                LookaheadScope {
+                SheetBody(tv) {
                     Column(
                         // Прокрутка — на случай низкого экрана с открытой клавиатурой.
                         modifier = Modifier.fillMaxWidth()
@@ -515,6 +518,19 @@ internal fun DuckerSheet(
 private const val ENTER_MS = 280
 private const val EXIT_MS = 220
 private const val LIFT_MS = 240
+
+/**
+ * The sheet's body; on a TV it scrolls to the focus by the app's rule (D-161). A sheet stands at the window's root,
+ * outside the TV layout that provides that rule, and got Compose's own for a TV: the focus pinned at 30 % of the body —
+ * a fraction of a pixel the scroll never reached, so the rows stepped a pixel back and forth for good (F-367).
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SheetBody(tv: Boolean, content: @Composable @UiComposable LookaheadScope.() -> Unit) {
+    CompositionLocalProvider(LocalBringIntoViewSpec provides if (tv) TvBringIntoView else LocalBringIntoViewSpec.current) {
+        LookaheadScope(content)
+    }
+}
 
 /** Between the field being typed into and a TV keyboard's top. */
 private val LIFT_GAP = 16.dp

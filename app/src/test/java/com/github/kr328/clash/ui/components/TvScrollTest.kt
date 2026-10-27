@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.components
 
+import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -52,6 +53,25 @@ class TvScrollTest {
         // Список уже в начале, и когда нужно ехать вперёд, начало ни при чём.
         assertEquals(0f, tvScrollDistance(offset = 300f, size = 160f, containerSize = list, toStart = 0f))
         assertEquals(100f, tvScrollDistance(offset = 700f, size = 200f, containerSize = list, toStart = 80f), absoluteTolerance = 0.01f)
+    }
+
+    @Test
+    fun `a half-pixel middle settles in whole pixels instead of stepping back and forth`() {
+        // As Compose's bring-into-view drives a ScrollState: the position whole, the fraction carried over (F-367).
+        // A large element is centred, with no still zone around it; here the middle falls on a half pixel, 131.5 from
+        // the top, and the list went 29, 28, 29 for good.
+        val container = 963f
+        var position = 0
+        var carried = 0f
+        val positions = (1..12).map {
+            val consumed = tvScrollDistance(offset = 160f - position, size = 700f, containerSize = container) + carried
+            position += consumed.roundToInt()
+            carried = consumed - consumed.roundToInt()
+            position
+        }
+
+        assertEquals(1, positions.takeLast(8).toSet().size, "positions $positions")
+        assertEquals(0f, tvScrollDistance(offset = 160f - position, size = 700f, containerSize = container))
     }
 
     @Test
