@@ -806,11 +806,19 @@ private fun ActiveDetails(
 
             // The plan as one block (Q-83): how much on the left, until when on the right, the bar under them.
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // The date goes under the traffic when the two do not fit on one line: in a row it took its full
+                // width first, and under the largest font the traffic was left a column one word wide.
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    itemVerticalAlignment = Alignment.Bottom,
+                ) {
                     Text(
                         "${formatBytes(used)} ${stringResource(R.string.ducker_traffic_of,
                             if (profile.total > 0) formatBytes(profile.total) else UNLIMITED)}",
-                        modifier = Modifier.weight(1f),
+                        // The gap to the date on one line; at a line's end it shows nothing.
+                        modifier = Modifier.padding(end = 12.dp),
                         style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
                     )
                     if (profile.expire > 0) {
