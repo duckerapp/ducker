@@ -129,6 +129,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.LocalContentColor
@@ -692,12 +693,77 @@ internal fun RowScope.BrandTitle(profile: Profile?) {
     val style = if (LocalTv.current) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineSmall
 
     if (brand != null) {
-        Text(brand, modifier = Modifier.weight(1f), style = style,
-            fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        BrandName(brand, style.copy(fontWeight = FontWeight.Bold), Modifier.weight(1f))
     } else {
         Wordmark(style, Modifier.weight(1f))
     }
 }
+
+/** A provider's name in the header's room, sized and broken by [fitBrand]. */
+@Composable
+private fun BrandName(name: String, style: TextStyle, modifier: Modifier) {
+    val measurer = rememberTextMeasurer()
+
+    BoxWithConstraints(modifier) {
+        val room = constraints.maxWidth.toFloat()
+        val fit = remember(name, room, style) {
+            fitBrand(name, room, style.fontSize.value, BRAND_FLOOR.value) {
+                measurer.measure(it, style, softWrap = false, maxLines = 1).size.width.toFloat()
+            }
+        }
+        val scale = fit.size / style.fontSize.value
+
+        Text(
+            text = fit.text,
+            style = style.copy(fontSize = style.fontSize * scale, lineHeight = style.lineHeight * scale),
+            maxLines = if ('\n' in fit.text) 2 else 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** A brand name as shown: its text, with a line break when it takes two, and its size in sp. */
+internal data class BrandFit(val text: String, val size: Float)
+
+/**
+ * How a provider's name fits [room] (Q-95), from [width] — a text's width at the [base] size. One line, shrunk down to
+ * three quarters of [base]; else two lines broken at a space — the one that makes them most even — at the largest size
+ * both fit, down to [floor]; else one line at [floor] with «…». A word is never broken. Two lines are taken only when
+ * they are a quarter larger than one — «A / Supercalifragilistic» gained a tenth and read worse — or one line would
+ * fall below [floor].
+ */
+internal fun fitBrand(name: String, room: Float, base: Float, floor: Float, width: (String) -> Float): BrandFit {
+    val text = name.trim()
+    // A little under the room: the font's widths do not scale exactly with its size, and a pixel over wrapped the line.
+    fun sizeFor(w: Float) = minOf(base, base * room * FIT_SLACK / w.coerceAtLeast(1f))
+
+    val whole = sizeFor(width(text))
+
+    if (whole >= base * BRAND_ONE_LINE) return BrandFit(text, whole)
+
+    val split = text.indices.filter { text[it] == ' ' }
+        .map { text.substring(0, it).trimEnd() to text.substring(it + 1).trimStart() }
+        .filter { (first, second) -> first.isNotEmpty() && second.isNotEmpty() }
+        .maxByOrNull { (first, second) -> sizeFor(maxOf(width(first), width(second))) }
+
+    if (split != null) {
+        val size = sizeFor(maxOf(width(split.first), width(split.second)))
+
+        if (size >= floor && (whole < floor || size >= whole * BRAND_TWO_LINES)) {
+            return BrandFit("${split.first}\n${split.second}", size)
+        }
+    }
+
+    return BrandFit(text, maxOf(whole, floor))
+}
+
+/** One line down to this share of the header's size. */
+private const val BRAND_ONE_LINE = 0.75f
+private const val BRAND_TWO_LINES = 1.25f
+private const val FIT_SLACK = 0.98f
+
+/** The smallest a provider's name gets: a card's title, larger than its text. «Невидимка» beside a TV's logo needs 17.96. */
+private val BRAND_FLOOR = 16.sp
 
 /**
  * Марка приложения. Прописными с разрядкой: то же слово, но набрано, а не просто
