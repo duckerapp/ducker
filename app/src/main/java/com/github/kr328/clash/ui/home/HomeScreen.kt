@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.home
 
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.focusRoom
+import com.github.kr328.clash.ui.components.smoothResource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -113,7 +114,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -331,7 +331,7 @@ private fun Welcome(
             val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
             Image(
-                painter = painterResource(if (dark) R.drawable.ducker_mark_dark else R.drawable.ducker_mark_light),
+                bitmap = smoothResource(if (dark) R.drawable.ducker_mark_dark else R.drawable.ducker_mark_light, 112.dp),
                 contentDescription = null,
                 modifier = Modifier.size(112.dp).clip(RoundedCornerShape(28.dp)),
             )

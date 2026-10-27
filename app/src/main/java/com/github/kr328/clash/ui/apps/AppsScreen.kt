@@ -33,9 +33,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.github.kr328.clash.R
@@ -211,7 +213,7 @@ private fun AppItem(app: AppRow, checked: Boolean, onToggle: () -> Unit, modifie
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AppIcon(app.packageName, Modifier.size(36.dp).clip(MaterialTheme.shapes.small))
+            AppIcon(app.packageName, 36.dp, Modifier.clip(MaterialTheme.shapes.small))
 
             Column(Modifier.weight(1f)) {
                 Text(
@@ -269,14 +271,16 @@ private fun AppItem(app: AppRow, checked: Boolean, onToggle: () -> Unit, modifie
  * десяток, и держать все значки в памяти незачем.
  */
 @Composable
-internal fun AppIcon(packageName: String, modifier: Modifier) {
+internal fun AppIcon(packageName: String, size: Dp, modifier: Modifier) {
     val context = LocalContext.current
+    // As many pixels as it is drawn in: a fixed 96 px was stretched at 4K, where 36 dp take 144 (F-364).
+    val px = with(LocalDensity.current) { size.roundToPx() }
 
-    val icon by produceState<ImageBitmap?>(null, packageName) {
+    val icon by produceState<ImageBitmap?>(null, packageName, px) {
         value = withContext(Dispatchers.IO) {
             runCatching {
                 context.packageManager.getApplicationIcon(packageName)
-                    .toBitmap(width = 96, height = 96)
+                    .toBitmap(width = px, height = px)
                     .asImageBitmap()
             }.getOrNull()
         }
@@ -285,8 +289,8 @@ internal fun AppIcon(packageName: String, modifier: Modifier) {
     val bitmap = icon
 
     if (bitmap != null) {
-        Image(bitmap = bitmap, contentDescription = null, modifier = modifier)
+        Image(bitmap = bitmap, contentDescription = null, modifier = modifier.size(size))
     } else {
-        Box(modifier)
+        Box(modifier.size(size))
     }
 }

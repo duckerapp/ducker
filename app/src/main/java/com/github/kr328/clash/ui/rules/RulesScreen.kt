@@ -224,7 +224,7 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (rule.type == UserRule.Type.App) {
-            AppIcon(rule.value, Modifier.size(44.dp).clip(MaterialTheme.shapes.medium))
+            AppIcon(rule.value, 44.dp, Modifier.clip(MaterialTheme.shapes.medium))
         } else {
             IconBadge(typeIcon(rule.type))
         }
@@ -672,7 +672,8 @@ private fun AppPicker(
                     ) {
                         AppIcon(
                             app.packageName,
-                            Modifier.size(32.dp).clip(MaterialTheme.shapes.small).alpha(if (outside == null) 1f else DIMMED),
+                            32.dp,
+                            Modifier.clip(MaterialTheme.shapes.small).alpha(if (outside == null) 1f else DIMMED),
                         )
 
                         Column(Modifier.weight(1f)) {

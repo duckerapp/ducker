@@ -1,6 +1,9 @@
 package com.github.kr328.clash.ui.components
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.SystemClock
+import androidx.annotation.DrawableRes
 import java.net.URLDecoder
 import java.util.Base64
 import androidx.compose.animation.AnimatedContent
@@ -18,6 +21,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -58,7 +62,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.res.stringResource
@@ -111,7 +118,6 @@ import androidx.compose.ui.graphics.LayerOutsets
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -236,9 +242,10 @@ fun BrandAvatar(logo: String?, modifier: Modifier = Modifier) {
     // Если провайдер логотип не прислал или он не загрузился — свой (D-45), под тему
     // приложения (D-94): чёрная утка на светлом фоне, белая на тёмном. Тему приложение
     // держит само, поэтому ресурсы `-night` за ней не успевают — смотрим на палитру.
-    val own = painterResource(
+    val own = smoothResource(
         if (MaterialTheme.colorScheme.background.luminance() < 0.5f) R.drawable.ducker_mark_dark
-        else R.drawable.ducker_mark_light
+        else R.drawable.ducker_mark_light,
+        52.dp,
     )
 
     val model = remember(logo) { logoModel(logo) }
@@ -249,7 +256,7 @@ fun BrandAvatar(logo: String?, modifier: Modifier = Modifier) {
     // hairline at the clipped edge — across the duck where it peeks over the tile's bottom.
     if (model == null || failed) {
         Image(
-            painter = own,
+            bitmap = own,
             contentDescription = null,
             modifier = modifier.size(52.dp).clip(MaterialTheme.shapes.medium),
         )
@@ -258,13 +265,32 @@ fun BrandAvatar(logo: String?, modifier: Modifier = Modifier) {
 
     AsyncImage(
         model = model,
-        placeholder = own,
+        placeholder = remember(own) { BitmapPainter(own) },
         onError = { failed = true },
         contentDescription = null,
         modifier = modifier.size(52.dp)
             .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.surfaceVariant),
     )
+}
+
+/**
+ * A square raster drawn small without jagged edges, [size] across. Android draws a bitmap with bilinear filtering and no
+ * mipmaps (HWUI, `RecordingCanvas.cpp`: `SkMipmapMode::kNone`), so the 512 px duck in 52 dp — 104 px on a 1080p TV —
+ * took about one pixel in five and came out pixelated. Halved step by step, each pixel is the average of four, and the
+ * last step lands on the exact size at any density.
+ */
+@Composable
+internal fun smoothResource(@DrawableRes id: Int, size: Dp): ImageBitmap {
+    val resources = LocalContext.current.resources
+    val px = with(LocalDensity.current) { size.roundToPx() }
+
+    return remember(id, px) {
+        var bitmap = BitmapFactory.decodeResource(resources, id)
+        while (bitmap.width >= px * 2) bitmap = Bitmap.createScaledBitmap(bitmap, bitmap.width / 2, bitmap.height / 2, true)
+
+        Bitmap.createScaledBitmap(bitmap, px, px, true).asImageBitmap()
+    }
 }
 
 @Composable

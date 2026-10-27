@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.settings
 
 import com.github.kr328.clash.ui.components.tvEdge
+import com.github.kr328.clash.ui.components.smoothResource
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -50,7 +51,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -591,9 +591,10 @@ fun SettingsScreen(
                                     // The tile as on the launcher (D-291): the mark of the other theme, so that it
                                     // stands out from the card instead of blending into it.
                                     Image(
-                                        painter = painterResource(
+                                        bitmap = smoothResource(
                                             if (MaterialTheme.colorScheme.background.luminance() < 0.5f) R.drawable.ducker_mark_light
-                                            else R.drawable.ducker_mark_dark
+                                            else R.drawable.ducker_mark_dark,
+                                            44.dp,
                                         ),
                                         contentDescription = null,
                                         modifier = Modifier.size(44.dp).clip(RoundedCornerShape(percent = 22)),
