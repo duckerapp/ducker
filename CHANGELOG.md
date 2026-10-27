@@ -5,6 +5,17 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.44 — 2026-10-27
+
+- On a phone the round “+” no longer covers the subscription cards: a moment after you open “Profiles”, the tab
+  itself turns into “+ Add”, with a light tick and a shine; tap it to add a subscription. The TV keeps its “+”.
+- Under a large system font: the Home card keeps one height whether the VPN is on or off; the active subscription's
+  date and the values in the node test move under their neighbours when both do not fit; a group name on two lines
+  in “Proxies” sits closer together.
+- The node test's report for support is in the app's language.
+- In the add and edit sheets the core's own text of a failure is small and grey under the explanation.
+- The QR hints name the “Profiles” tab and “Add”.
+
 ## 0.4.42 — 2026-10-26
 
 - TV: the theme is dark by default even when the settings came back from a phone's backup with the light one; a
