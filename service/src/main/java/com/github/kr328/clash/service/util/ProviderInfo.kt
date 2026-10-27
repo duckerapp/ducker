@@ -87,11 +87,11 @@ data class ProviderInfo(
             val notSupported = h["x-hwid-not-supported"].isTrue()
 
             return ProviderInfo(
-                profileTitle = h["profile-title"].decode(),
+                profileTitle = h["profile-title"].decode().readable(),
                 announce = h["announce"].decode(),
                 supportUrl = h["support-url"].decode(),
                 profileWebPageUrl = h["profile-web-page-url"].decode(),
-                brandName = h["ducker-brand-name"].decode(),
+                brandName = h["ducker-brand-name"].decode().readable(),
                 brandLogo = h["ducker-brand-logo"].decode(),
                 buyUrl = h["ducker-buy-url"].decode(),
                 overrideUser = h["ducker-override-user"]?.trim()?.equals("on", true) == true,
@@ -173,5 +173,11 @@ data class ProviderInfo(
 
             return if (decoded.trim() == "-") "" else decoded
         }
+
+        /**
+         * A name in a broken encoding counts as not sent (Q-96): cp1251 bytes, raw or in `base64:`, came as «���». The
+         * core replaces invalid UTF-8 with U+FFFD, and so does the decoding above.
+         */
+        private fun String.readable(): String = if ('\uFFFD' in this) "" else this
     }
 }

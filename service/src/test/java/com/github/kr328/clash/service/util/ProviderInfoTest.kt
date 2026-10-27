@@ -48,6 +48,21 @@ class ProviderInfoTest {
     }
 
     @Test
+    fun `a name in a broken encoding counts as not sent (Q-96)`() {
+        val info = ProviderInfo.of(
+            mapOf(
+                "profile-title" to "\uFFFD\uFFFD\uFFFD",
+                "ducker-brand-name" to "Duck \uFFFD VPN",
+                "announce" to "\uFFFD stays",
+            )
+        )
+
+        assertEquals("", info.profileTitle)
+        assertEquals("", info.brandName)
+        assertEquals("\uFFFD stays", info.announce)
+    }
+
+    @Test
     fun `переключатель Global прячется только по off`() {
         assertTrue(ProviderInfo.of(mapOf("Ducker-Global" to " Off ")).globalHidden)
         assertFalse(ProviderInfo.of(mapOf("ducker-global" to "on")).globalHidden)
