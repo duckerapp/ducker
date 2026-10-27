@@ -1342,7 +1342,7 @@ internal fun TvScaffold(
                 val reserved = with(density) { dockWidth.toDp() }
 
                 content(
-                    PaddingValues(start = TV_EDGE + reserved + TV_GAP, top = TV_TOP, end = TV_EDGE, bottom = TV_TOP),
+                    PaddingValues(start = TV_EDGE + reserved + TV_GAP, top = TV_TOP, end = TV_GAP, bottom = TV_TOP),
                     PaddingValues(horizontal = TV_EDGE, vertical = TV_TOP),
                 )
 
@@ -1604,7 +1604,8 @@ internal fun tvEdge(): Dp = if (LocalTv.current) TV_TOP else 0.dp
 /** Поля от краёв кадра: 48 по бокам и 27 сверху и снизу — безопасная зона Android TV. */
 private val TV_EDGE = 48.dp
 internal val TV_TOP = 27.dp
-private val TV_GAP = 24.dp
+/** The tabs' sides: with each screen's own 16 dp the cards stand as far from the dock as from the right edge. */
+private val TV_GAP = 64.dp
 private val TV_TAB_HEIGHT = 60.dp
 private val TV_TAB_CORNER = 20.dp
 /** Поле дока вокруг вкладок: в него встаёт рамка вокруг подсветки — зазор и контур. */
