@@ -9,6 +9,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.foundation.focusable
+import com.github.kr328.clash.ui.components.TvKeyScroll
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import com.github.kr328.clash.ui.components.ringCorner
@@ -1511,12 +1514,36 @@ private fun AnnouncementCard(text: String) {
     }
 
     if (mounted) {
+        // On a TV the text scrolls inside its card, which takes no more than the room left on screen, and the remote
+        // scrolls it by keys, as the log: the text takes no focus, so the sheet opened on «Готово», scrolled to it, and
+        // the start of a long announcement could not be brought back.
+        val scroll = rememberScrollState()
+        val scope = rememberCoroutineScope()
+        val keyScroll = remember(scroll, scope) { TvKeyScroll(scroll, scope) }
+
         DuckerSheet(
             open = open, title = stringResource(R.string.provider_announcement), busy = false,
-            onDismiss = { open = false }, onClosed = { mounted = false },
+            onDismiss = { open = false }, onClosed = { mounted = false }, scrollable = !tv,
         ) {
-            Card(Modifier.fillMaxWidth()) {
-                SelectionContainer {
+            Card(Modifier.fillMaxWidth().then(if (tv) Modifier.weight(1f, fill = false) else Modifier)) {
+                val keys = if (tv) {
+                    Modifier
+                        .onKeyEvent { event ->
+                            if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+
+                            val step = scroll.viewportSize / 3f
+
+                            when (event.key) {
+                                Key.DirectionUp -> scroll.canScrollBackward.also { if (it) keyScroll.by(-step) }
+                                Key.DirectionDown -> scroll.canScrollForward.also { if (it) keyScroll.by(step) }
+                                else -> false
+                            }
+                        }
+                        .focusable()
+                        .verticalScroll(scroll)
+                } else Modifier
+
+                SelectionContainer(keys) {
                     Text(text, modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge)
                 }
             }
