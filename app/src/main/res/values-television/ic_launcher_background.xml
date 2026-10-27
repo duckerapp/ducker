@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- On a TV the foreground carries the tile with its own rounded corners (`mipmap-television-*`, built by
+         notes/brand/build-splash.py), and the corners show what is under the icon. -->
+    <color name="ic_launcher_background">#00000000</color>
+</resources>
