@@ -143,6 +143,9 @@
     <string name="probe_jitter">تفاوت زمن الاستجابة بين الطلبات</string>
     <string name="probe_failures">أسباب الفشل</string>
     <string name="probe_copied">تم نسخ التقرير</string>
+    <string name="probe_report_line">%1$s: %2$s</string>
+    <string name="probe_report_node">الخادم</string>
+    <string name="probe_report_all">كل الطلبات، مللي ثانية</string>
     <string name="copy_failed">تعذّر نسخ التقرير</string>
     <string name="link_failed">الخادم لا يستجيب</string>
     <string name="link_failed_hint">VPN يعمل، لكن حركة البيانات لا تمر. غالبًا تحظر الشبكة هذا الخادم؛ جرّب خادمًا آخر أو شبكة أخرى</string>

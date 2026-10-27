@@ -1325,7 +1325,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onSelect = { probeViewModel.select(it) },
                             onStart = { probeViewModel.start() },
                             onStop = { probeViewModel.stop() },
-                            onCopy = { copyReport(probeViewModel.report()) },
+                            onCopy = { copyReport(probeViewModel.report(this@HomeActivity)) },
                             onBack = closeProbe,
                             modifier = Modifier.padding(listInsets).consumeWindowInsets(overlayInsets),
                         )

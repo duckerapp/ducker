@@ -143,6 +143,9 @@
     <string name="probe_jitter">نوسان بین درخواست‌ها</string>
     <string name="probe_failures">دلایل خطا</string>
     <string name="probe_copied">گزارش کپی شد</string>
+    <string name="probe_report_line">%1$s: %2$s</string>
+    <string name="probe_report_node">سرور</string>
+    <string name="probe_report_all">همه درخواست‌ها، میلی‌ثانیه</string>
     <string name="copy_failed">کپی گزارش ممکن نشد</string>
     <string name="link_failed">سرور پاسخ نمی‌دهد</string>
     <string name="link_failed_hint">VPN روشن است، اما ترافیکی عبور نمی‌کند. معمولاً شبکه این سرور را مسدود کرده است — سرور یا شبکه دیگری را امتحان کنید</string>

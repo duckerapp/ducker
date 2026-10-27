@@ -143,6 +143,9 @@
     <string name="probe_jitter">Variasi latensi antarpermintaan</string>
     <string name="probe_failures">Penyebab kegagalan</string>
     <string name="probe_copied">Laporan disalin</string>
+    <string name="probe_report_line">%1$s: %2$s</string>
+    <string name="probe_report_node">Server</string>
+    <string name="probe_report_all">Semua permintaan, ms</string>
     <string name="copy_failed">Laporan tidak dapat disalin</string>
     <string name="link_failed">Server tidak merespons</string>
     <string name="link_failed_hint">VPN aktif, tetapi lalu lintas tidak bisa lewat. Biasanya jaringan memblokir server tersebut. Coba server atau jaringan lain</string>

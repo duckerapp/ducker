@@ -143,6 +143,9 @@
     <string name="probe_jitter">Độ trễ dao động giữa các yêu cầu</string>
     <string name="probe_failures">Nguyên nhân thất bại</string>
     <string name="probe_copied">Đã sao chép báo cáo</string>
+    <string name="probe_report_line">%1$s: %2$s</string>
+    <string name="probe_report_node">Máy chủ</string>
+    <string name="probe_report_all">Tất cả yêu cầu, ms</string>
     <string name="copy_failed">Không thể sao chép báo cáo</string>
     <string name="link_failed">Máy chủ không phản hồi</string>
     <string name="link_failed_hint">VPN đang bật nhưng lưu lượng không truyền được. Thường là do mạng chặn máy chủ; hãy thử máy chủ hoặc mạng khác</string>

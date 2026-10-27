@@ -1,5 +1,7 @@
 package com.github.kr328.clash.ui.probe
 
+import android.content.Context
+import com.github.kr328.clash.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.kr328.clash.core.model.ProxySort
@@ -137,23 +139,33 @@ class ProbeViewModel : ViewModel() {
         _state.update { it.copy(probing = false) }
     }
 
-    /** Текст для отправки в поддержку: без адресов, только имя узла и цифры. */
-    fun report(): String {
+    /**
+     * Текст для отправки в поддержку: без адресов, только имя узла и цифры. In the app's language, with the screen's
+     * labels: [context] is the activity, whose resources follow the language chosen in the app.
+     */
+    fun report(context: Context): String {
         val state = _state.value
         val stats = state.stats
 
+        fun line(label: Int, value: String) =
+            context.getString(R.string.probe_report_line, context.getString(label), value).trimEnd()
+
+        val loss = context.getString(R.string.probe_loss_value, stats.lost, stats.total, stats.lossPercent)
+        val delay = context.getString(R.string.probe_delay_value, stats.min, stats.average, stats.max)
+
         return buildString {
-            appendLine("Узел: ${state.selected}")
-            appendLine("Замеров: ${stats.total}, без ответа: ${stats.lost} (${stats.lossPercent}%)")
+            appendLine(line(R.string.probe_report_node, state.selected))
+            appendLine(line(R.string.probe_loss, loss))
 
             if (stats.delays.isNotEmpty()) {
-                appendLine("Задержка: мин ${stats.min}, средняя ${stats.average}, макс ${stats.max} мс")
-                appendLine("Разброс между замерами: ${stats.jitter} мс")
-                appendLine("Все замеры: ${stats.delays.joinToString(", ")}")
+                appendLine(line(R.string.probe_delay, delay))
+                appendLine(line(R.string.probe_jitter, context.getString(R.string.delay_ms, stats.jitter)))
+                appendLine(line(R.string.probe_report_all, stats.delays.joinToString(", ")))
             }
 
+            // The core's own text, as before: support reads it (D-227).
             if (stats.failures.isNotEmpty()) {
-                appendLine("Причины неудач:")
+                appendLine(line(R.string.probe_failures, ""))
                 stats.failures.distinct().forEach { appendLine("  $it") }
             }
         }
