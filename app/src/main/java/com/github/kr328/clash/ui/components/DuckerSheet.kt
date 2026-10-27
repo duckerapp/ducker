@@ -413,10 +413,7 @@ internal fun DuckerSheet(
                     // a full-sheet blur mask for each new height.
                     .shadow(8.dp, sheetShape, clip = false)
                     .clip(sheetShape)
-                    .background(MaterialTheme.colorScheme.background)
-                    // On a TV the sheet stands on the bottom edge as on the phone, and its content keeps above the
-                    // safe area a TV may cut from the frame (D-380).
-                    .then(if (tv) Modifier.padding(bottom = TV_TOP) else Modifier),
+                    .background(MaterialTheme.colorScheme.background),
             ) {
                 // Ручка — знак, что панель тянется. Пульту тянуть нечем: на телевизоре на её месте поле.
                 if (tv) {
@@ -459,7 +456,14 @@ internal fun DuckerSheet(
                                     spring(stiffness = Spring.StiffnessMediumLow), alignment = Alignment.BottomStart,
                                 ) else Modifier,
                             )
-                            .padding(start = 20.dp, end = 20.dp, bottom = if (compact) 12.dp else 20.dp),
+                            // On a TV the sheet stands on the bottom edge as on the phone (D-380), and the safe area a TV
+                            // may cut from the frame is kept inside the scroll, as the phone keeps the navigation bar's:
+                            // scrolled, the rows run to the edge, and at the end the last one stands above the area.
+                            // Outside the scroll it cut the rows at an empty band.
+                            .padding(
+                                start = 20.dp, end = 20.dp,
+                                bottom = (if (compact) 12.dp else 20.dp) + if (tv) TV_TOP else 0.dp,
+                            ),
                         verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 16.dp),
                     ) {
                         // Цвет текста — под фон панели: окно диалога берёт чёрный по умолчанию, и в
