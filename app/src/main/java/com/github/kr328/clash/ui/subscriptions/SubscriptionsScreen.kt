@@ -12,6 +12,7 @@ import com.github.kr328.clash.ui.components.ringCorner
 import com.github.kr328.clash.ui.components.ownLeft
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.ui.semantics.semantics
@@ -987,8 +988,15 @@ private fun UpdateErrorCard(
     modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val button = remember { FocusRequester() }
+    // On a TV the remote comes into the card on its button, and Left from ✕ goes back to it: the button stands below
+    // ✕, so Up from the subscription found ✕ first, and the page's rule sent Left from ✕ to the dock.
+    val remote = LocalTv.current && action != null
 
-    Card(modifier.fillMaxWidth()) {
+    Card(
+        modifier.fillMaxWidth()
+            .then(if (remote) Modifier.focusProperties { onEnter = { button.requestFocus() } }.focusGroup() else Modifier),
+    ) {
         Row(
             modifier = Modifier.padding(start = 14.dp, top = 14.dp, bottom = 14.dp, end = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1028,11 +1036,14 @@ private fun UpdateErrorCard(
                 }
 
                 action?.let { (label, onClick) ->
-                    Pill(text = label, onClick = onClick, modifier = Modifier.padding(top = 4.dp), selected = true)
+                    Pill(
+                        text = label, onClick = onClick, modifier = Modifier.padding(top = 4.dp).focusRequester(button),
+                        selected = true,
+                    )
                 }
             }
 
-            IconButton(onClick = onDismiss) {
+            IconButton(onClick = onDismiss, modifier = if (remote) Modifier.ownLeft(button) else Modifier) {
                 Icon(Symbols.Close, contentDescription = stringResource(R.string.dismiss), tint = scheme.onSurfaceVariant)
             }
         }
