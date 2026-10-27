@@ -406,6 +406,9 @@ private fun HomeRegular(
     // Display-size changes alter the logical window height; text keeps the system's own scale. A TV is
     // 540 tall: there the full-size power button pushed the subscription card's buttons under the bottom edge.
     val compact = LocalConfiguration.current.screenHeightDp < if (tv) 640 else 840
+    // A provider's announcement on a TV: Home keeps only the safe area above and below, and the power card tightens,
+    // so the subscription card stays on screen under up to three lines of it.
+    val tight = tv && profile != null && profile.announce.isNotEmpty() && !profile.hwidBlocked
     val requestNodes by rememberUpdatedState(onOpenPicker)
     val nodesLoaded by rememberUpdatedState(pickerState.loaded)
     var viewport by remember { mutableStateOf<LayoutCoordinates?>(null) }
@@ -456,7 +459,7 @@ private fun HomeRegular(
                 // помещаться целиком: 12 между карточками вместо 16 — ровно та разница,
                 // из-за которой подписка уезжала под панель.
                 .verticalScroll(scroll, overscrollEffect = overscrollFor(scroll))
-                .padding(horizontal = 16.dp, vertical = 12.dp + tvEdge()),
+                .padding(horizontal = 16.dp, vertical = (if (tight) 0.dp else 12.dp) + tvEdge()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (header) BrandHeader(profile, onSettings)
@@ -559,6 +562,7 @@ private fun HomeRegular(
                     onPickNode = onPickNode,
                     onPreviewNode = onPreviewNode,
                     compact = compact,
+                    tight = tight,
                     modifier = Modifier.onGloballyPositioned { heroCard = it },
                 )
             }
@@ -759,6 +763,8 @@ private fun HeroCard(
     onPickNode: (group: String, name: String) -> Unit,
     onPreviewNode: (name: String) -> Unit,
     compact: Boolean,
+    /** A TV with an announcement above: tighter gaps and the small button. */
+    tight: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val active = state.running
@@ -905,6 +911,7 @@ private fun HeroCard(
                 onToggle = onToggle,
                 onNode = onNode,
                 compact = compact,
+                tight = tight,
                 onButtonPlaced = ::locate,
                 onNodePlaced = ::placeNodeRow,
                 nodeFocus = Modifier.focusRequester(rowFocus),
@@ -924,6 +931,7 @@ private fun HeroCard(
                     onToggle = onToggle,
                     onNode = onNode,
                     compact = compact,
+                    tight = tight,
                     onButtonPlaced = {},
                     onNodePlaced = {},
                     textAlpha = { fade(wave.value, TEXT_IN, 1f) },
@@ -1015,6 +1023,7 @@ private fun HeroFace(
     onToggle: () -> Unit,
     onNode: () -> Unit,
     compact: Boolean,
+    tight: Boolean,
     onButtonPlaced: (LayoutCoordinates) -> Unit,
     /** Где стоит плашка узла: из неё раскрывается быстрая смена (D-116). */
     onNodePlaced: (LayoutCoordinates) -> Unit,
@@ -1031,8 +1040,8 @@ private fun HeroFace(
         Column(
             modifier = modifier.fillMaxWidth()
                 .background(fill)
-                .padding(horizontal = 20.dp, vertical = if (compact) 16.dp else 22.dp),
-            verticalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 16.dp),
+                .padding(horizontal = 20.dp, vertical = if (tight) 12.dp else if (compact) 16.dp else 22.dp),
+            verticalArrangement = Arrangement.spacedBy(if (tight) 8.dp else if (compact) 12.dp else 16.dp),
         ) {
             FlowRow(
                 modifier = Modifier.graphicsLayer { alpha = textAlpha() },
@@ -1087,6 +1096,7 @@ private fun HeroFace(
                 scale = buttonScale,
                 onToggle = onToggle,
                 compact = compact,
+                tight = tight,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
                     .onGloballyPositioned(onButtonPlaced),
             )
@@ -1159,6 +1169,7 @@ private fun PowerButton(
     scale: () -> Float,
     onToggle: () -> Unit,
     compact: Boolean,
+    tight: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -1168,8 +1179,9 @@ private fun PowerButton(
     val face = LocalContentColor.current
     val fill = if (running) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
 
-    // A TV keeps the full-size button with the compact card around it: it is what the remote is there for.
-    val small = compact && !LocalTv.current
+    // A TV keeps the full-size button with the compact card around it: it is what the remote is there for. Under an
+    // announcement it takes the small one, so the subscription card stays on screen.
+    val small = compact && (!LocalTv.current || tight)
     val diameter = if (small) 96.dp else 112.dp
     Box(modifier.size(diameter + 20.dp), contentAlignment = Alignment.Center) {
         AnimatedVisibility(
@@ -1458,10 +1470,11 @@ private fun AnnouncementCard(text: String) {
     val style = MaterialTheme.typography.bodyMedium
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
+    val tv = LocalTv.current
 
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         // Measure before drawing so the disclosure never adds a late row and shifts the page.
-        val inset = 16.dp
+        val inset = if (tv) 12.dp else 16.dp
         val iconSize = 24.dp
         val gap = 12.dp
         val textWidth = with(density) { (maxWidth - inset * 2 - iconSize - gap).roundToPx().coerceAtLeast(1) }
@@ -1469,6 +1482,9 @@ private fun AnnouncementCard(text: String) {
             text = text, style = style, maxLines = 3, overflow = TextOverflow.Ellipsis,
             constraints = Constraints(maxWidth = textWidth),
         ).hasVisualOverflow
+        // On a TV the card is never taller than three lines: «Подробнее» takes the third, and the subscription card
+        // under Home's power card stays on screen.
+        val lines = if (tv && overflows) 2 else 3
 
         Card(Modifier.fillMaxWidth()) {
             Row(
@@ -1483,7 +1499,7 @@ private fun AnnouncementCard(text: String) {
             ) {
                 Icon(Symbols.Campaign, contentDescription = null, modifier = Modifier.size(iconSize))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(text, style = style, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                    Text(text, style = style, maxLines = lines, overflow = TextOverflow.Ellipsis)
                     if (overflows) {
                         Text(more, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
                     }
