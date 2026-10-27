@@ -16,6 +16,36 @@ for history. APK files are on the [Releases](https://github.com/duckerapp/ducker
 - In the add and edit sheets the core's own text of a failure is small and grey under the explanation.
 - The QR hints name the “Profiles” tab and “Add”.
 
+## 0.4.43 — 2026-10-27
+
+- TV: its own launch screen, the duck and “ducker”. The banner in the app grid is in the app's font and sharp up to
+  4K; the icon tile has rounded corners.
+- TV: sheets (“+”, editing a subscription, language and others) stand on the bottom edge of the screen, as on a
+  phone; their rows scroll to the edge and do not shake when the keyboard opens, and a sheet raised over the
+  keyboard leaves no gap under it.
+- TV: the on-screen keyboard lies over the app and the dock stays whole; “Done” closes it and moves on (“Add”,
+  “Save”, the first node found).
+- TV: the config editor is full width with long lines wrapped; OK on the code places the cursor, the arrows move it,
+  another OK opens the keyboard, and text goes in at the cursor; while the keyboard is open, the code shrinks above it.
+- TV: the log is full width with long lines wrapped, the remote scrolls it, and “Copy” is in place.
+- TV: the cards on “Home”, “Proxies” and “Profiles” stand equally far from the dock and from the right edge.
+- TV: “Home” with a provider's announcement fits whole, the subscription card no longer slides off the screen;
+  “Read more” opens the whole announcement, and a long text scrolls with the remote up and down.
+- TV: on “Profiles” the remote reaches “Update” in an error card, and Left from the cross goes back to it.
+- TV, the remote: the frame does not slip into the dock from a group on “Proxies”; the search on “Proxies” takes the
+  frame; the list in “Apps” no longer gets stuck on apps the config locks; the “Own” slider opens on OK and the frame
+  goes round it whole; Back from a screen opened from the settings returns to its row; OK on a node of a group that
+  picks its node itself says so.
+- TV: hints say “press” rather than “tap” and speak of the TV, not the phone; there is no quick settings tile, speed
+  in the notification, “Disguise as a calculator” or zashboard, which a TV has no use for.
+- TV: fixed a crash when an element left the screen while nothing had the focus.
+- A long provider name in the header gets smaller and, if it still does not fit, wraps to a second line at a space,
+  never inside a word.
+- A provider name in a broken encoding (boxes) is not shown: “DUCKER” stands in its place.
+- The duck on the subscription card and the app icons are sharp.
+- A subscription added from a link becomes the selected one even if the app was unloaded while it downloaded.
+- “Copy” in the log takes the newest lines, as many as the clipboard holds.
+
 ## 0.4.42 — 2026-10-26
 
 - TV: the theme is dark by default even when the settings came back from a phone's backup with the light one; a
