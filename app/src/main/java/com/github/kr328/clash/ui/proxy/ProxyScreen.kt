@@ -36,12 +36,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyListState
@@ -96,6 +98,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import coil3.compose.AsyncImage
 import com.github.kr328.clash.core.model.ProxySort
 import com.github.kr328.clash.core.model.TunnelState
@@ -582,7 +585,21 @@ private fun GroupHeader(
                     modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(group.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                val title = MaterialTheme.typography.titleMedium
+
+                // A name on two lines with the style's leading (1.5) read as two separate lines; tighter here,
+                // while one line keeps its old height and place. The old line is the font size times the style's
+                // ratio, as text lays it out: under a larger font `lineHeight.toDp()` scales 24 sp less than 16.
+                val line = with(LocalDensity.current) {
+                    (title.fontSize.toPx() * title.lineHeight.value / title.fontSize.value).toDp()
+                }
+
+                Text(
+                    group.name,
+                    modifier = Modifier.heightIn(min = line).wrapContentHeight(),
+                    style = title.copy(lineHeight = 1.25.em),
+                    fontWeight = FontWeight.Medium,
+                )
                 Text(group.now, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
