@@ -58,9 +58,9 @@
     <string name="scan_torch">El feneri</string>
     <string name="scan_no_camera">Kamera erişimi yok. Uygulama ayarlarından izin verin.</string>
     <string name="share_qr">QR koduyla paylaş</string>
-    <string name="share_qr_hint">Diğer telefonda: ducker → “+” → “QR tara”. Bu ekranın görüntüsü de kullanılabilir; “Galeriden” seçeneğini kullanın.</string>
+    <string name="share_qr_hint">Diğer telefonda: ducker → “Ekle” → “QR tara”. Bu ekranın görüntüsü de kullanılabilir; “Galeriden” seçeneğini kullanın.</string>
     <string name="share_qr_warning">Bu kodu tarayan herkes aboneliğinizi kullanabilir. Yalnızca kendi cihazlarınıza gösterin.</string>
-    <string name="receive_hint">Telefonunuzla kodu tarayın: ducker → Abonelikler → “+” → “QR tara”. Ya da bağlantıyı buraya girin.</string>
+    <string name="receive_hint">Telefonunuzla kodu tarayın: ducker → Abonelikler → “Ekle” → “QR tara”. Ya da bağlantıyı buraya girin.</string>
     <string name="receive_code">Telefondan abonelik göndermek için QR kodu</string>
     <string name="receive_received">Alındı. Abonelik yükleniyor…</string>
     <string name="receive_no_network">TV ev ağına bağlı değil</string>
@@ -75,6 +75,7 @@
     <string name="send_tv_rejected">TV aboneliği kabul etmedi: kodun süresi dolmuş. TV’de “+” düğmesini yeniden açıp yeni kodu tarayın.</string>
     <string name="send_tv_unreachable">TV’ye ulaşılamadı. Telefon ile TV’nin aynı Wi-Fi ağına bağlı olduğunu (misafir ağı olmamalı), kodun hâlâ TV’de gösterildiğini ve ducker ayarlarında “Ev ağına doğrudan bağlan” seçeneğinin açık olduğunu kontrol edin. Sorun sürerse bağlantıyı TV’ye elle girin.</string>
     <string name="add">Ekle</string>
+    <string name="tab_selected">Seçili</string>
     <string name="adding">Abonelik yükleniyor…</string>
     <string name="cancel">İptal</string>
     <string name="back">Geri</string>

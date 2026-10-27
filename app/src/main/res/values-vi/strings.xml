@@ -58,9 +58,9 @@
     <string name="scan_torch">Đèn pin</string>
     <string name="scan_no_camera">Không có quyền truy cập camera. Hãy cấp quyền trong cài đặt ứng dụng.</string>
     <string name="share_qr">Chia sẻ mã QR</string>
-    <string name="share_qr_hint">Trên điện thoại kia: ducker → “+” → “Quét QR”. Bạn cũng có thể dùng ảnh chụp màn hình này qua mục “Từ thư viện”.</string>
+    <string name="share_qr_hint">Trên điện thoại kia: ducker → “Thêm” → “Quét QR”. Bạn cũng có thể dùng ảnh chụp màn hình này qua mục “Từ thư viện”.</string>
     <string name="share_qr_warning">Bất kỳ ai quét mã này đều có thể dùng gói đăng ký của bạn. Chỉ cho các thiết bị của chính bạn quét mã.</string>
-    <string name="receive_hint">Dùng điện thoại quét mã: ducker → Gói đăng ký → “+” → “Quét QR”. Hoặc nhập liên kết tại đây.</string>
+    <string name="receive_hint">Dùng điện thoại quét mã: ducker → Gói đăng ký → “Thêm” → “Quét QR”. Hoặc nhập liên kết tại đây.</string>
     <string name="receive_code">Mã QR để gửi gói đăng ký từ điện thoại</string>
     <string name="receive_received">Đã nhận. Đang tải gói đăng ký…</string>
     <string name="receive_no_network">TV chưa kết nối với mạng gia đình</string>
@@ -75,6 +75,7 @@
     <string name="send_tv_rejected">TV không nhận gói đăng ký vì mã đã hết hạn. Mở lại “+” trên TV rồi quét mã mới.</string>
     <string name="send_tv_unreachable">Không thể kết nối với TV. Kiểm tra xem điện thoại và TV có cùng mạng Wi-Fi (không phải mạng khách), mã vẫn đang hiện trên TV và tùy chọn “Kết nối trực tiếp mạng gia đình” đã bật trong cài đặt ducker. Nếu vẫn không được, hãy nhập liên kết thủ công trên TV.</string>
     <string name="add">Thêm</string>
+    <string name="tab_selected">Đã chọn</string>
     <string name="adding">Đang tải gói đăng ký…</string>
     <string name="cancel">Hủy</string>
     <string name="back">Quay lại</string>

@@ -865,10 +865,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         if (pagerState.currentPage == tab && !fromOverlay && !tv && paging?.isActive != true) {
                             // Повторное нажатие по своей же вкладке обновляет данные:
                             // страница не меняется, и эффект по `settledPage` промолчит.
-                            when (tab) {
-                                1 -> proxyViewModel.refresh(this@HomeActivity)
-                                2 -> subscriptionsViewModel.refresh(this@HomeActivity)
-                            }
+                            // «Подписки» does not: a repeated tap there is the dock's «+ Добавить» or nothing
+                            // (D-390), and pulling the list down still updates the subscription.
+                            if (tab == 1) proxyViewModel.refresh(this@HomeActivity)
                         } else {
                             // Прежнее перелистывание отменяем сами: если лента ещё не тронулась,
                             // перелистывание на её же страницу считает себя сделанным и прежнее не
@@ -887,14 +886,14 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     // Подписок нет — вкладок будто и нет: панель становится одной кнопкой (D-98).
                     single = if (onboarding) stringResource(R.string.add_subscription) else null,
                     onSingle = { subscriptionsViewModel.showAdd(true) },
-                    // «Плюс» подписок раскрывается ровно по мере того, как вкладка подписок
-                    // въезжает на экран, и сжимается, когда уезжает (D-97).
+                    // The TV's «+» under its dock opens exactly as the subscriptions page slides in, and
+                    // shrinks as it slides out (D-97). A phone has no such button (D-390).
                     actionShown = {
                         (pagerState.currentPage + pagerState.currentPageOffsetFraction - 1f).coerceIn(0f, 1f)
                     },
                     action = { AddSubscriptionButton() },
-                    // Нажимается, только когда вкладка подписок осела перед глазами: пока
-                    // кружок сжат, касания проходят к списку.
+                    // Only once the subscriptions page has settled in view. On a phone it is what turns the
+                    // «Подписки» tab into «+ Добавить» (D-390).
                     onAction = if (overlay == null && pagerState.settledPage == 2) {
                         { subscriptionsViewModel.showAdd(true) }
                     } else null,

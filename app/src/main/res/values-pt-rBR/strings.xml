@@ -58,9 +58,9 @@
     <string name="scan_torch">Lanterna</string>
     <string name="scan_no_camera">Sem acesso à câmera. Conceda a permissão nas configurações do aplicativo.</string>
     <string name="share_qr">Compartilhar código QR</string>
-    <string name="share_qr_hint">No outro celular: ducker → “+” → “Ler QR”. Uma captura desta tela também funciona: use “Da galeria”.</string>
+    <string name="share_qr_hint">No outro celular: ducker → “Adicionar” → “Ler QR”. Uma captura desta tela também funciona: use “Da galeria”.</string>
     <string name="share_qr_warning">Qualquer pessoa que ler este código poderá usar sua assinatura. Mostre-o apenas aos seus próprios dispositivos.</string>
-    <string name="receive_hint">Leia o código com o celular: ducker → Assinaturas → “+” → “Ler QR”. Ou digite o link aqui.</string>
+    <string name="receive_hint">Leia o código com o celular: ducker → Assinaturas → “Adicionar” → “Ler QR”. Ou digite o link aqui.</string>
     <string name="receive_code">Código QR para enviar uma assinatura pelo celular</string>
     <string name="receive_received">Recebido. Carregando a assinatura…</string>
     <string name="receive_no_network">A TV não está conectada a uma rede doméstica</string>
@@ -75,6 +75,7 @@
     <string name="send_tv_rejected">A TV não aceitou a assinatura: o código expirou. Abra “+” novamente na TV e leia o novo código.</string>
     <string name="send_tv_unreachable">Não foi possível conectar à TV. Confira se o celular e a TV estão na mesma rede Wi-Fi, que não seja uma rede de convidados, se o código ainda aparece na TV e se “Acesso direto à rede doméstica” está ativado nas configurações do ducker. Se não resolver, digite o link manualmente na TV.</string>
     <string name="add">Adicionar</string>
+    <string name="tab_selected">Selecionado</string>
     <string name="adding">Carregando a assinatura…</string>
     <string name="cancel">Cancelar</string>
     <string name="back">Voltar</string>

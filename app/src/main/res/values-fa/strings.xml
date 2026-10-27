@@ -58,9 +58,9 @@
     <string name="scan_torch">چراغ‌قوه</string>
     <string name="scan_no_camera">دسترسی به دوربین وجود ندارد. در تنظیمات برنامه اجازه دهید.</string>
     <string name="share_qr">اشتراک‌گذاری با کد QR</string>
-    <string name="share_qr_hint">در دستگاه دیگر: ducker ← «+» ← «اسکن QR». اسکرین‌شات این صفحه هم کار می‌کند — از گزینه «از گالری» استفاده کنید.</string>
+    <string name="share_qr_hint">در دستگاه دیگر: ducker ← «افزودن» ← «اسکن QR». اسکرین‌شات این صفحه هم کار می‌کند — از گزینه «از گالری» استفاده کنید.</string>
     <string name="share_qr_warning">هر کسی که این کد را اسکن کند می‌تواند از اشتراک شما استفاده کند. آن را فقط به دستگاه‌های خودتان نشان دهید.</string>
-    <string name="receive_hint">کد را با گوشی اسکن کنید: ducker ← «اشتراک‌ها» ← «+» ← «اسکن QR». یا لینک را اینجا وارد کنید.</string>
+    <string name="receive_hint">کد را با گوشی اسکن کنید: ducker ← «اشتراک‌ها» ← «افزودن» ← «اسکن QR». یا لینک را اینجا وارد کنید.</string>
     <string name="receive_code">کد QR برای فرستادن اشتراک از گوشی</string>
     <string name="receive_received">دریافت شد. در حال بارگذاری اشتراک…</string>
     <string name="receive_no_network">تلویزیون به شبکه خانگی متصل نیست</string>
@@ -75,6 +75,7 @@
     <string name="send_tv_rejected">تلویزیون اشتراک را نپذیرفت: کد منقضی شده است. دوباره «+» را در تلویزیون باز کنید و کد جدید را اسکن کنید.</string>
     <string name="send_tv_unreachable">ارتباط با تلویزیون برقرار نشد. بررسی کنید که گوشی و تلویزیون به یک شبکه Wi-Fi (غیر از شبکه مهمان) وصل باشند، کد هنوز روی تلویزیون نمایش داده شود و گزینه «اتصال مستقیم به شبکه خانگی» در تنظیمات ducker روشن باشد. اگر کمکی نکرد، لینک را دستی در تلویزیون وارد کنید.</string>
     <string name="add">افزودن</string>
+    <string name="tab_selected">انتخاب شد</string>
     <string name="adding">در حال بارگذاری اشتراک…</string>
     <string name="cancel">انصراف</string>
     <string name="back">بازگشت</string>

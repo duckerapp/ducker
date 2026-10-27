@@ -58,9 +58,9 @@
     <string name="scan_torch">Lampe torche</string>
     <string name="scan_no_camera">L’accès à la caméra n’est pas autorisé. Accordez-le dans les paramètres de l’application.</string>
     <string name="share_qr">Partager par code QR</string>
-    <string name="share_qr_hint">Sur l’autre téléphone : ducker → « + » → « Scanner un QR ». Une capture de cet écran fonctionne aussi : choisissez « Depuis la galerie ».</string>
+    <string name="share_qr_hint">Sur l’autre téléphone : ducker → « Ajouter » → « Scanner un QR ». Une capture de cet écran fonctionne aussi : choisissez « Depuis la galerie ».</string>
     <string name="share_qr_warning">Toute personne qui scanne ce code peut utiliser votre abonnement. Réservez ce code à vos propres appareils.</string>
-    <string name="receive_hint">Scannez le code avec votre téléphone : ducker → Abonnements → « + » → « Scanner un QR ». Vous pouvez aussi saisir le lien ici.</string>
+    <string name="receive_hint">Scannez le code avec votre téléphone : ducker → Abonnements → « Ajouter » → « Scanner un QR ». Vous pouvez aussi saisir le lien ici.</string>
     <string name="receive_code">Code QR pour envoyer un abonnement depuis votre téléphone</string>
     <string name="receive_received">Reçu. Chargement de l’abonnement…</string>
     <string name="receive_no_network">Le téléviseur n’est pas connecté à un réseau domestique</string>
@@ -75,6 +75,7 @@
     <string name="send_tv_rejected">Le téléviseur a refusé l’abonnement : le code a expiré. Ouvrez à nouveau « + » sur le téléviseur et scannez le nouveau code.</string>
     <string name="send_tv_unreachable">Impossible de joindre le téléviseur. Vérifiez que le téléphone et le téléviseur sont sur le même réseau Wi-Fi, qui ne doit pas être un réseau invité, que le code est toujours affiché sur le téléviseur et que l’option « Accès direct au réseau domestique » est activée dans ducker. Si cela ne suffit pas, saisissez le lien à la main sur le téléviseur.</string>
     <string name="add">Ajouter</string>
+    <string name="tab_selected">Sélectionné</string>
     <string name="adding">Chargement de l’abonnement…</string>
     <string name="cancel">Annuler</string>
     <string name="back">Retour</string>

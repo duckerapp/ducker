@@ -52,8 +52,8 @@ means everything through the server. If unsure, leave Rules.
 First get a subscription link (it starts with `https://`), a QR code or a file from your provider.
 
 1. Open ducker. While there are no subscriptions, there is one button at the bottom — "Add
-   subscription". If you already have subscriptions — the Profiles tab, the "+" button at
-   the bottom centre, above the tabs.
+   subscription". If you already have subscriptions — the Profiles tab: a moment later the tab itself
+   turns into the "+ Add" button.
 2. The "Add subscription" sheet opens. Choose how:
    - **A link.** Copy the link from the email or chat, press "Paste" in the sheet, then "Add".
      Server links like `vless://…` work too.
@@ -79,7 +79,7 @@ config does not update itself: its card says "Own config · no updates". If your
 
 **Move a subscription to another phone** or set it up for a relative. On the phone that already
 has the subscription: the Profiles tab → the QR icon on the subscription card (for an
-inactive subscription — "⋯" → "Share as QR code"). On the other phone: "+" → "Scan QR". A
+inactive subscription — "⋯" → "Share as QR code"). On the other phone: Profiles → "Add" → "Scan QR". A
 screenshot of the code works too — through "From gallery". Show the code only to your own
 devices: anyone who has it can use your subscription.
 

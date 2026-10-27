@@ -4,11 +4,15 @@ import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Transition
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -35,7 +39,6 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -51,12 +54,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.material3.ripple
-import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
@@ -68,18 +72,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import com.github.kr328.clash.R
+import kotlin.math.abs
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Панель вкладок висит в воздухе поверх содержимого, а не занимает полосу внизу (D-74).
@@ -107,15 +118,18 @@ fun DuckerScaffold(
      */
     dockShown: Boolean,
     /**
-     * Круглая кнопка над панелью, по центру (D-97). Насколько она раскрыта — [actionShown]
-     * от 0 до 1: читается в отрисовке, так что кнопка растёт и сжимается ровно за пальцем.
+     * The TV's round button under its dock (D-97). How far it is open, 0 to 1, is read in drawing, so the
+     * button grows and shrinks right behind the page. A phone has no button (D-390).
      */
     actionShown: () -> Float = { 0f },
-    /** Как кнопка выглядит. Касаний сама не ловит: их ловит поле шире неё, [onAction]. */
+    /** How the TV's button looks. It takes no touches itself: [onAction] does. */
     action: @Composable () -> Unit = {},
-    /** Нажатие на кнопку; `null` — сейчас не нажимается и касания проходят к списку. */
+    /**
+     * The action of «Подписки»; `null` while it is not available. On a TV it is the round button's tap; on a
+     * phone the selected third tab turns into «+ Добавить» while it is set, and a tap on that tab calls it (D-390).
+     */
     onAction: (() -> Unit)? = null,
-    /** Подпись кнопки для TalkBack. */
+    /** What [onAction] does, for TalkBack. */
     actionLabel: String? = null,
     /**
      * Надпись единственной кнопки вместо вкладок, пока вкладкам нечего показывать (D-98):
@@ -180,7 +194,7 @@ fun DuckerScaffold(
                 insets,
             )
 
-            Column(
+            Box(
                 modifier = Modifier.align(Alignment.BottomCenter)
                     .windowInsetsPadding(
                         bars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
@@ -191,55 +205,13 @@ fun DuckerScaffold(
                         translationY = hidden * (size.height + below + 40.dp.toPx())
                     }
                     .then(if (dockShown) Modifier else Modifier.clearAndSetSemantics { }),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                // Место под кнопку есть всегда — иначе панель прыгала бы, когда та
-                // появляется. Пустое место касаний не ловит: они проходят к списку.
-                Box(Modifier.size(ACTION_SIZE), contentAlignment = Alignment.Center) {
-                    Box(
-                        modifier = Modifier.matchParentSize()
-                            .clearAndSetSemantics { }
-                            .graphicsLayer {
-                                val shown = actionShown()
-                                val scale = popOut(shown)
-
-                                scaleX = scale
-                                scaleY = scale
-                                // Раскрывается с доворотом: плюс приходит из четверти оборота.
-                                rotationZ = (1f - shown) * -90f
-                            },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        action()
-                    }
-
-                    // Касания ловит не сам кружок, а поле шире него и вне слоя с масштабом
-                    // (D-115). У кнопки Material поле равно кружку, и палец, попавший на пару
-                    // миллиметров мимо края, не срабатывал. А попадание через слой с масштабом
-                    // Compose считает с ошибками (F-124). Волна — по центру, ровно в кружок.
-                    if (onAction != null) {
-                        Box(
-                            Modifier.requiredSize(ACTION_TOUCH)
-                                .semantics { if (actionLabel != null) contentDescription = actionLabel }
-                                .clickable(
-                                    interactionSource = null,
-                                    indication = ripple(
-                                        bounded = false,
-                                        radius = ACTION_SIZE / 2,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    ),
-                                    role = Role.Button,
-                                    onClick = onAction,
-                                ),
-                        )
-                    }
-                }
-
                 FloatingDock(
                     selected = selected,
                     position = position,
                     onSelect = onSelect,
+                    onAction = onAction,
+                    actionLabel = actionLabel,
                     single = single,
                     onSingle = onSingle,
                     modifier = Modifier.onSizeChanged { dockHeight = it.height },
@@ -249,22 +221,8 @@ fun DuckerScaffold(
     }
 }
 
-/** Кнопка над панелью (D-97). */
+/** The TV's round button under its dock (D-97). */
 val ACTION_SIZE = 56.dp
-
-/** Поле нажатия кнопки над панелью — шире самого кружка (D-115). */
-private val ACTION_TOUCH = 72.dp
-
-/**
- * Рост с лёгким перелётом в конце: кнопка не просто вырастает, а раскрывается, чуть
- * пружиня. В 0 и 1 — ровно 0 и 1, поэтому в покое размер точный.
- */
-private fun popOut(t: Float): Float {
-    val c = 1.2f
-    val u = t - 1f
-
-    return (1f + (c + 1f) * u * u * u + c * u * u).coerceAtLeast(0f)
-}
 
 /**
  * Ряд вкладок рисуется дважды: снизу в тусклом цвете, сверху в цвете «на подсветке»,
@@ -281,6 +239,8 @@ private fun FloatingDock(
     selected: () -> Int,
     position: () -> Float,
     onSelect: (Int) -> Unit,
+    onAction: (() -> Unit)?,
+    actionLabel: String?,
     single: String?,
     onSingle: () -> Unit,
     modifier: Modifier = Modifier,
@@ -323,6 +283,57 @@ private fun FloatingDock(
         }
     }
 
+    // «Подписки» turns into «+ Добавить» once the pager has rested on it for a moment, so the person first reads
+    // where they came, and turns back as soon as the page moves (D-390). Until then a tap on it does nothing,
+    // so a quick double tap does not open adding.
+    var added by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(onAction != null, alone) {
+        // Merging into the one button keeps «+ Добавить» as it is: it grows into «+ Добавить подписку».
+        if (alone) return@LaunchedEffect
+
+        if (onAction == null) {
+            added = false
+
+            return@LaunchedEffect
+        }
+
+        // Within a hair of the page rather than exactly on it, in case the pager stops a pixel off.
+        snapshotFlow { abs(position() - ACTION_TAB) < 0.01f }.collectLatest { resting ->
+            if (!resting) {
+                added = false
+            } else if (!added) {
+                delay(ACTION_PAUSE_MS)
+                added = true
+                haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+            }
+        }
+    }
+
+    val turn = updateTransition(added, label = "action")
+
+    // Three shines over the highlight, then still: the call is made once, not repeated (D-91).
+    val tabShine = remember { Animatable(0f) }
+
+    LaunchedEffect(added, alone) {
+        tabShine.snapTo(0f)
+
+        if (!added || alone) return@LaunchedEffect
+
+        delay(ACTION_SHINE_DELAY_MS)
+
+        repeat(ACTION_SHINES) { pass ->
+            if (pass > 0) delay(ACTION_SHINE_GAP_MS)
+
+            tabShine.snapTo(0f)
+            tabShine.animateTo(1f, tween(SHINE_MS, easing = FastOutSlowInEasing))
+        }
+    }
+
+    // Brighter on the light theme's black highlight than on the dark theme's white one, as in the mockup.
+    val tabShineColor = onPill.copy(alpha = if (pill.luminance() < 0.5f) 0.38f else 0.2f)
+
     val current = selected()
 
     fun DrawScope.pillLeft() = lerp(
@@ -343,19 +354,49 @@ private fun FloatingDock(
             // а вкладки гаснут, и гасить её вместе с ними нельзя.
             Box(
                 Modifier.matchParentSize().drawBehind {
+                    val left = pillLeft()
+                    val width = pillWidth()
+                    val corner = CornerRadius(size.height / 2f)
+
                     drawRoundRect(
                         color = pill,
-                        topLeft = Offset(pillLeft(), 0f),
-                        size = Size(pillWidth(), size.height),
-                        cornerRadius = CornerRadius(size.height / 2f),
+                        topLeft = Offset(left, 0f),
+                        size = Size(width, size.height),
+                        cornerRadius = corner,
                     )
+
+                    val t = tabShine.value
+
+                    if (t > 0f && t < 1f) {
+                        // The band is transparent outside itself, so the highlight's own shape clips it.
+                        val band = width * 0.6f
+                        val x = left - band + (width + band * 2f) * t
+
+                        drawRoundRect(
+                            brush = Brush.linearGradient(
+                                colors = listOf(Color.Transparent, tabShineColor, Color.Transparent),
+                                start = Offset(x - band / 2f, 0f),
+                                // A 15° slant, as in the mockup.
+                                end = Offset(x + band / 2f, band * 0.27f),
+                            ),
+                            topLeft = Offset(left, 0f),
+                            size = Size(width, size.height),
+                            cornerRadius = corner,
+                        )
+                    }
                 },
             )
 
             DockTabs(
                 selected = current,
                 content = MaterialTheme.colorScheme.onSurfaceVariant,
-                onSelect = if (alone) null else onSelect,
+                onSelect = if (alone) null else { index ->
+                    val action = onAction
+
+                    if (index == ACTION_TAB && added && action != null) action() else onSelect(index)
+                },
+                turn = turn,
+                actionLabel = if (added) actionLabel else null,
                 modifier = Modifier
                     .then(if (alone) Modifier.clearAndSetSemantics { } else Modifier)
                     .graphicsLayer { alpha = 1f - (merge * 2f).coerceIn(0f, 1f) },
@@ -365,6 +406,8 @@ private fun FloatingDock(
                 selected = current,
                 content = onPill,
                 onSelect = null,
+                turn = turn,
+                actionLabel = null,
                 // Нажатия и озвучка живут в нижней копии: верхняя только перекрашивает,
                 // иначе TalkBack читал бы каждую вкладку дважды.
                 modifier = Modifier.clearAndSetSemantics { }
@@ -432,6 +475,21 @@ private const val MERGE_MS = 420
 private const val SHINE_MS = 900
 private const val SHINE_PAUSE_MS = 4000L
 
+/** The tab that turns into «+ Добавить»: «Подписки» (D-390). */
+private const val ACTION_TAB = 2
+
+/** How long the pager rests on it before it turns. */
+private const val ACTION_PAUSE_MS = 280L
+
+/** Its shines: from the start of the turn to the first, between passes, and how many. */
+private const val ACTION_SHINE_DELAY_MS = 140L
+private const val ACTION_SHINE_GAP_MS = 750L
+private const val ACTION_SHINES = 3
+
+/** The curves of the mockup: the standard deceleration and the «+»'s slight overshoot. */
+private val StandardEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+private val OvershootEasing = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1f)
+
 /** Вкладки дока — на телефоне и на телевизоре. */
 internal val DockTabItems = listOf(
     R.string.home_tab to Symbols.Home,
@@ -449,8 +507,14 @@ private fun DockTabs(
     selected: Int,
     content: Color,
     onSelect: ((Int) -> Unit)?,
+    turn: Transition<Boolean>,
+    /** What a tap on «Подписки» does once it reads «+ Добавить», for TalkBack. */
+    actionLabel: String?,
     modifier: Modifier = Modifier,
 ) {
+    val style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
+    val selectedWord = stringResource(R.string.tab_selected)
+
     Row(
         modifier = modifier.fillMaxWidth()
             .then(if (onSelect != null) Modifier.selectableGroup().focusGroup() else Modifier),
@@ -458,17 +522,31 @@ private fun DockTabs(
     ) {
         DockTabItems.forEachIndexed { index, (label, icon) ->
             val active = selected == index
+            val name = stringResource(label)
 
             Column(
                 modifier = Modifier.weight(1f)
                     .clip(RoundedCornerShape(percent = 50))
                     .then(
                         if (onSelect != null) {
-                            Modifier.selectable(
-                                selected = active,
-                                role = Role.Tab,
-                                onClick = { onSelect(index) },
-                            )
+                            // What `selectable` is, plus a click label: turned into «+ Добавить», the tab keeps
+                            // its name and role, and TalkBack says what a tap does (D-390).
+                            Modifier.semantics {
+                                if (index == ACTION_TAB) {
+                                    // Compose takes TalkBack's click away from a selected tab, so this one says
+                                    // its selection in words. Its name is its own: a label at zero alpha is
+                                    // hidden from TalkBack.
+                                    contentDescription = name
+                                    if (active) stateDescription = selectedWord
+                                } else {
+                                    this.selected = active
+                                }
+                            }
+                                .clickable(
+                                    onClickLabel = if (index == ACTION_TAB) actionLabel else null,
+                                    role = Role.Tab,
+                                    onClick = { onSelect(index) },
+                                )
                         } else {
                             Modifier
                         },
@@ -478,19 +556,99 @@ private fun DockTabs(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = content,
-                )
+                if (index == ACTION_TAB) {
+                    ActionFace(turn, icon, name, style, content)
+                } else {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = content,
+                    )
 
-                FitLabel(
-                    text = stringResource(label),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                    color = content,
-                )
+                    FitLabel(
+                        text = name,
+                        style = style,
+                        color = content,
+                    )
+                }
             }
         }
+    }
+}
+
+/**
+ * «Подписки» and the «+ Добавить» it turns into, one over the other (D-390). The icon leaves with a turn and the
+ * «+» comes from a quarter turn, as the round «+» did; the new label rises from below. Neither label is in
+ * semantics: the tab carries its name itself. Both copies of the tabs run this on one transition, so they stay
+ * in step to the pixel.
+ */
+@Composable
+private fun ActionFace(turn: Transition<Boolean>, icon: ImageVector, label: String, style: TextStyle, content: Color) {
+    // The mockup's timings: «Подписки» goes in 180 ms; «+ Добавить» comes 60 ms later and goes back in 160 ms.
+    val gone by turn.animateFloat({ tween(180, easing = StandardEasing) }, label = "gone") { if (it) 1f else 0f }
+    val faded by turn.animateFloat({ tween(140) }, label = "faded") { if (it) 1f else 0f }
+    val plus by turn.animateFloat(
+        transitionSpec = {
+            if (targetState) tween(340, delayMillis = 60, easing = OvershootEasing)
+            else tween(160, easing = FastOutLinearInEasing)
+        },
+        label = "plus",
+    ) { if (it) 1f else 0f }
+    val rise by turn.animateFloat(
+        transitionSpec = { if (targetState) tween(300, delayMillis = 60, easing = StandardEasing) else tween(160) },
+        label = "rise",
+    ) { if (it) 1f else 0f }
+    val shown by turn.animateFloat(
+        transitionSpec = { if (targetState) tween(160, delayMillis = 60) else tween(120) },
+        label = "shown",
+    ) { if (it) 1f else 0f }
+
+    Box(contentAlignment = Alignment.Center) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp).graphicsLayer {
+                alpha = 1f - faded
+                rotationZ = gone * 90f
+                scaleX = lerp(1f, 0.4f, gone)
+                scaleY = scaleX
+            },
+            tint = content,
+        )
+
+        Icon(
+            imageVector = Symbols.Add,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp).graphicsLayer {
+                alpha = shown
+                rotationZ = (1f - plus) * -90f
+                scaleX = lerp(0.4f, 1f, plus)
+                scaleY = scaleX
+            },
+            tint = content,
+        )
+    }
+
+    Box(contentAlignment = Alignment.Center) {
+        FitLabel(
+            text = label,
+            style = style,
+            modifier = Modifier.clearAndSetSemantics { }.graphicsLayer {
+                alpha = 1f - faded
+                translationY = gone * -7.dp.toPx()
+            },
+            color = content,
+        )
+
+        FitLabel(
+            text = stringResource(R.string.add),
+            style = style,
+            modifier = Modifier.clearAndSetSemantics { }.graphicsLayer {
+                alpha = shown
+                translationY = (1f - rise) * 7.dp.toPx()
+            },
+            color = content,
+        )
     }
 }

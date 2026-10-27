@@ -78,10 +78,10 @@
     <string name="scan_no_camera">No camera access. Allow it in app settings.</string>
     <!-- Поделиться подпиской QR-кодом (этап 10) -->
     <string name="share_qr">Share as QR code</string>
-    <string name="share_qr_hint">On the other device, open ducker:\n“+” → “Scan QR”</string>
+    <string name="share_qr_hint">On the other device, open ducker:\n“Add” → “Scan QR”</string>
     <string name="share_qr_warning">This code gives access to your subscription.\nShow it only to your own devices.</string>
     <!-- Передача подписки с телефона на телевизор (D-162) -->
-    <string name="receive_hint">Scan the code with your phone: ducker → Profiles → “+” → “Scan QR”. Or enter the link here.</string>
+    <string name="receive_hint">Scan the code with your phone: ducker → Profiles → “Add” → “Scan QR”. Or enter the link here.</string>
     <string name="receive_code">QR code for sending a subscription from your phone</string>
     <string name="receive_received">Received. Loading the subscription…</string>
     <string name="receive_no_network">The TV is not connected to a home network</string>
@@ -96,6 +96,7 @@
     <string name="send_tv_rejected">The TV did not accept the subscription: the code has expired. Open “+” on the TV again and scan the new code.</string>
     <string name="send_tv_unreachable">Could not reach the TV. Check that the phone and the TV are on the same Wi-Fi network (not a guest one), the code is still shown on the TV, and “Leave the home network alone” is on in ducker settings. If that does not help, enter the link on the TV by hand.</string>
     <string name="add">Add</string>
+    <string name="tab_selected">Selected</string>
     <string name="adding">Loading subscription…</string>
     <string name="cancel">Cancel</string>
     <string name="back">Back</string>

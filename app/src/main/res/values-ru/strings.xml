@@ -70,10 +70,10 @@
     <string name="scan_no_camera">Нет доступа к камере. Разрешите его в настройках приложения.</string>
     <!-- Поделиться подпиской QR-кодом (этап 10) -->
     <string name="share_qr">Поделиться QR-кодом</string>
-    <string name="share_qr_hint">На другом устройстве откройте ducker:\n«+» → «Сканировать QR»</string>
+    <string name="share_qr_hint">На другом устройстве откройте ducker:\n«Добавить» → «Сканировать QR»</string>
     <string name="share_qr_warning">Этот код даёт доступ к подписке.\nПоказывайте его только своим устройствам.</string>
     <!-- Передача подписки с телефона на телевизор (D-162) -->
-    <string name="receive_hint">Отсканируйте код телефоном: ducker → «Подписки» → «+» → «Сканировать QR». Или введите ссылку здесь.</string>
+    <string name="receive_hint">Отсканируйте код телефоном: ducker → «Подписки» → «Добавить» → «Сканировать QR». Или введите ссылку здесь.</string>
     <string name="receive_code">QR-код для передачи подписки с телефона</string>
     <string name="receive_received">Получено. Загружаю подписку…</string>
     <string name="receive_no_network">Телевизор не подключён к домашней сети</string>
@@ -88,6 +88,7 @@
     <string name="send_tv_rejected">Телевизор не принял подписку: код устарел. Откройте на телевизоре «+» ещё раз и отсканируйте новый код.</string>
     <string name="send_tv_unreachable">Не удалось связаться с телевизором. Проверьте, что телефон и телевизор в одной сети Wi-Fi (не в гостевой), на телевизоре всё ещё показан код, а в настройках ducker включено «Не трогать домашнюю сеть». Не помогло — введите ссылку на телевизоре вручную.</string>
     <string name="add">Добавить</string>
+    <string name="tab_selected">Выбрано</string>
     <string name="adding">Загружаю подписку…</string>
     <string name="cancel">Отмена</string>
     <string name="back">Назад</string>

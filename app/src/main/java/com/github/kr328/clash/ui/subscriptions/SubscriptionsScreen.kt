@@ -87,7 +87,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -292,9 +291,7 @@ fun SubscriptionsScreen(
                 start = start,
                 end = end,
                 top = 16.dp + contentPadding.calculateTopPadding(),
-                // Плюс над панелью (D-97): с этим запасом последнюю карточку можно
-                // докрутить выше кнопки.
-                bottom = 16.dp + contentPadding.calculateBottomPadding() + ACTION_SIZE + 12.dp,
+                bottom = 16.dp + contentPadding.calculateBottomPadding(),
             ),
         ) {
             item(key = HEADER_KEY) {
@@ -1083,21 +1080,16 @@ private fun ProfileSkeleton(modifier: Modifier = Modifier) {
 }
 
 /**
- * «Плюс» над панелью вкладок, по центру (D-97): он вернулся из шапки — там он был
- * неожиданным и далеко от пальца. Цвета подсветки панели: чёрный кружок в светлой теме,
- * белый в тёмной. Только вид: нажатие и подпись для TalkBack — у панели, полем шире
- * кружка (D-115).
+ * The TV's «+» under its dock (D-97); on a phone the «Подписки» tab turns into «+ Добавить» instead (D-390).
+ * The dock's highlight colours: a black circle on the light theme, a white one on the dark. Only the look: the
+ * tap and the TalkBack label belong to the dock.
  */
 @Composable
 fun AddSubscriptionButton() {
     Box(
         modifier = Modifier.size(ACTION_SIZE)
-            // Under the TV dock it wears the dock's soft shadow; the phone's dock floats over the list, and its
-            // button keeps the heavier one.
-            .then(
-                if (LocalTv.current) Modifier.airShadow(CircleShape, MaterialTheme.colorScheme.primaryContainer)
-                else Modifier.shadow(6.dp, CircleShape),
-            )
+            // Under the TV dock it wears the dock's soft shadow.
+            .airShadow(CircleShape, MaterialTheme.colorScheme.primaryContainer)
             .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
         contentAlignment = Alignment.Center,
     ) {

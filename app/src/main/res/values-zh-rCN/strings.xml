@@ -58,9 +58,9 @@
     <string name="scan_torch">手电筒</string>
     <string name="scan_no_camera">无相机权限，请在应用设置中允许访问相机。</string>
     <string name="share_qr">分享二维码</string>
-    <string name="share_qr_hint">在另一部设备上依次点击：ducker → “+” → “扫码”。也可以截屏后用“从相册选择”识别。</string>
+    <string name="share_qr_hint">在另一部设备上依次点击：ducker → “添加” → “扫码”。也可以截屏后用“从相册选择”识别。</string>
     <string name="share_qr_warning">任何人扫描此二维码都能使用你的订阅，请仅在自己的设备上使用。</string>
-    <string name="receive_hint">用手机扫码：ducker → “订阅” → “+” → “扫码”，也可以直接在此输入链接。</string>
+    <string name="receive_hint">用手机扫码：ducker → “订阅” → “添加” → “扫码”，也可以直接在此输入链接。</string>
     <string name="receive_code">用于从手机发送订阅的二维码</string>
     <string name="receive_received">已收到，正在加载订阅…</string>
     <string name="receive_no_network">电视未连接家庭网络</string>
@@ -75,6 +75,7 @@
     <string name="send_tv_rejected">电视未接收订阅：二维码已过期。请在电视上重新打开“+”并扫描新二维码。</string>
     <string name="send_tv_unreachable">无法连接到电视。请确认手机和电视连在同一个 Wi-Fi（非访客网络）、电视上仍显示二维码，且 ducker 设置中已开启“家庭网络直连”。若仍无法解决，请在电视上手动输入链接。</string>
     <string name="add">添加</string>
+    <string name="tab_selected">已选择</string>
     <string name="adding">正在加载订阅…</string>
     <string name="cancel">取消</string>
     <string name="back">返回</string>

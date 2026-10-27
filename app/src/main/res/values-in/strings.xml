@@ -58,9 +58,9 @@
     <string name="scan_torch">Senter</string>
     <string name="scan_no_camera">Tidak ada akses kamera. Berikan izin di pengaturan aplikasi.</string>
     <string name="share_qr">Bagikan kode QR</string>
-    <string name="share_qr_hint">Di ponsel lain: ducker → “+” → “Pindai QR”. Tangkapan layar ini juga bisa digunakan melalui “Dari galeri”.</string>
+    <string name="share_qr_hint">Di ponsel lain: ducker → “Tambah” → “Pindai QR”. Tangkapan layar ini juga bisa digunakan melalui “Dari galeri”.</string>
     <string name="share_qr_warning">Siapa pun yang memindai kode ini dapat menggunakan langganan Anda. Tampilkan hanya ke perangkat milik Anda sendiri.</string>
-    <string name="receive_hint">Pindai kode dengan ponsel: ducker → Langganan → “+” → “Pindai QR”. Atau masukkan tautannya di sini.</string>
+    <string name="receive_hint">Pindai kode dengan ponsel: ducker → Langganan → “Tambah” → “Pindai QR”. Atau masukkan tautannya di sini.</string>
     <string name="receive_code">Kode QR untuk mengirim langganan dari ponsel</string>
     <string name="receive_received">Diterima. Memuat langganan…</string>
     <string name="receive_no_network">TV tidak terhubung ke jaringan rumah</string>
@@ -75,6 +75,7 @@
     <string name="send_tv_rejected">TV tidak menerima langganan karena kode sudah kedaluwarsa. Buka kembali “+” di TV dan pindai kode baru.</string>
     <string name="send_tv_unreachable">Tidak dapat terhubung ke TV. Pastikan ponsel dan TV berada di jaringan Wi-Fi yang sama (bukan jaringan tamu), kode masih ditampilkan di TV, dan “Akses langsung ke jaringan rumah” aktif di pengaturan ducker. Jika masih gagal, masukkan tautan secara manual di TV.</string>
     <string name="add">Tambah</string>
+    <string name="tab_selected">Dipilih</string>
     <string name="adding">Memuat langganan…</string>
     <string name="cancel">Batal</string>
     <string name="back">Kembali</string>
