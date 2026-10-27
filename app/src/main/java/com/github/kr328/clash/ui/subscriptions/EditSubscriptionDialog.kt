@@ -162,12 +162,15 @@ fun EditSubscriptionDialog(
                 next = save,
             )
 
-            Text(
-                text = error.ifEmpty { stringResource(R.string.subscription_link_edit_hint) },
-                color = if (error.isNotEmpty()) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-            )
+            if (error.isNotEmpty()) {
+                FailureText(error)
+            } else {
+                Text(
+                    text = stringResource(R.string.subscription_link_edit_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
 
             ReachLines(reach)
         }

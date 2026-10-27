@@ -125,13 +125,7 @@ fun AddSubscriptionDialog(
                 )
             }
 
-            if (error.isNotEmpty()) {
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+            if (error.isNotEmpty()) FailureText(error)
 
             SubscriptionHttpWarning(value)
 
@@ -271,3 +265,29 @@ internal fun SourceTile(
 
 private val TILE_PADDING = 8.dp
 private val CODE_SIZE = 248.dp
+
+/**
+ * A download's failure under the link field: the explanation in the error colour, and the core's own text for an
+ * unknown error under it small and grey, as on the subscription's card (D-227) — support needs it, the person not.
+ * The explanation is always one line, so the first line break parts them.
+ */
+@Composable
+internal fun FailureText(error: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = error.substringBefore('\n'),
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        val detail = error.substringAfter('\n', "")
+
+        if (detail.isNotBlank()) {
+            Text(
+                text = detail,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+    }
+}
