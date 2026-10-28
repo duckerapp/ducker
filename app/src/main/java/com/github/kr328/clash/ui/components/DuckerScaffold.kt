@@ -16,6 +16,7 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,6 +30,12 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.tappableElement
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -85,6 +92,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import com.github.kr328.clash.R
@@ -194,6 +202,8 @@ fun DuckerScaffold(
                 insets,
             )
 
+            NavigationFade()
+
             Box(
                 modifier = Modifier.align(Alignment.BottomCenter)
                     .windowInsetsPadding(
@@ -220,6 +230,50 @@ fun DuckerScaffold(
         }
     }
 }
+
+/**
+ * The content fades out down to the three-button bar, which sits on no scrim since Theme.kt turned it off.
+ * Nothing with gestures: that bar has nothing tappable.
+ *
+ * Telegram's tab fade: the veil builds over 60 dp in even steps to 82 %, so the content still shows faintly
+ * under the buttons; ours ended opaque, and its ramp showed a hard line where it got dense. Telegram starts
+ * it at its tabs' top; ours starts at the dock's lower edge, 12 dp over the bar — the dock is taller, and
+ * the veil reached over its sides — and every screen starts it there, so they all look alike.
+ */
+@Composable
+internal fun BoxScope.NavigationFade() {
+    val density = LocalDensity.current
+
+    if (WindowInsets.tappableElement.getBottom(density) == 0) return
+
+    val background = MaterialTheme.colorScheme.background
+    val brush = remember(background, density) {
+        Brush.verticalGradient(
+            0f to background.copy(alpha = 0f),
+            1f / 3 to background.copy(alpha = 0.34f),
+            2f / 3 to background.copy(alpha = 0.62f),
+            1f to background.copy(alpha = 0.82f),
+            endY = with(density) { FADE_RAMP.toPx() },
+        )
+    }
+
+    Box(
+        Modifier.align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .height(with(density) { WindowInsets.navigationBars.getBottom(this).toDp() } + 12.dp)
+            .background(brush),
+    )
+}
+
+private val FADE_RAMP = 60.dp
+
+/**
+ * Room at the end of an overlay screen's list: those screens run under the three-button bar now and fade out
+ * there ([NavigationFade]). Nothing while the keyboard is up, which already lifts the screen.
+ */
+@Composable
+internal fun navigationRoom(): Dp =
+    WindowInsets.navigationBars.exclude(WindowInsets.ime).asPaddingValues().calculateBottomPadding()
 
 /** The TV's round button under its dock (D-97). */
 val ACTION_SIZE = 56.dp

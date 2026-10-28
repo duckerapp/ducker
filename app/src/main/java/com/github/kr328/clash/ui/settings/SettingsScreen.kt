@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.settings
 
+import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.smoothResource
 import com.github.kr328.clash.ui.components.Symbols
@@ -215,7 +216,7 @@ fun SettingsScreen(
                 modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp)
                     .then(if (LocalTv.current) Modifier.focusRestorer() else Modifier),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 16.dp + tvEdge()),
+                contentPadding = PaddingValues(top = 16.dp + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
             ) {
                 item(key = "header") {
                     ScreenHeader(stringResource(page.title), onBack = back)
@@ -632,6 +633,8 @@ fun SettingsScreen(
             visible = sectionOpen,
             enabled = active && !languageMounted,
             onBack = { sectionOpen = false },
+            // The Settings layer around it draws the fade.
+            fade = false,
         ) {
             pageContent(SettingsPage.valueOf(destination)) { sectionOpen = false }
         }

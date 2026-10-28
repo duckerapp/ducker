@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.logs
 
+import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.TvKeyScroll
@@ -205,7 +206,7 @@ fun LogsScreen(
                     state = listState,
                     overscrollEffect = overscrollFor(listState),
                     modifier = Modifier.fillMaxSize().then(keys),
-                    contentPadding = PaddingValues(12.dp),
+                    contentPadding = PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp + navigationRoom()),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     // A key per line: at the cap every batch shifts the indices, and without keys

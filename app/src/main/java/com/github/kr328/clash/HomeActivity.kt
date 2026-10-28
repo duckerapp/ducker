@@ -97,6 +97,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
 import androidx.lifecycle.lifecycleScope
 import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.common.util.intent
@@ -927,6 +928,17 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     val listInsets = if (tv) {
                         PaddingValues(start = overlayInsets.calculateStartPadding(direction), end = overlayInsets.calculateEndPadding(direction))
                     } else overlayInsets
+                    // A phone's overlay screens keep the bottom open: their lists run under the three-button bar and
+                    // fade out there (NavigationFade), and the keyboard lifts them. A TV keeps its insets as they were.
+                    val phoneLayer = PaddingValues(
+                        start = overlayInsets.calculateStartPadding(direction),
+                        top = overlayInsets.calculateTopPadding(),
+                        end = overlayInsets.calculateEndPadding(direction),
+                    )
+                    val layerModifier = { tvInsets: PaddingValues ->
+                        if (tv) Modifier.padding(tvInsets).consumeWindowInsets(overlayInsets)
+                        else Modifier.padding(phoneLayer).consumeWindowInsets(phoneLayer).imePadding()
+                    }
 
                     // Под экраном поверх вкладок лента не должна ни читаться TalkBack,
                     // ни ловить фокус: человек её не видит.
@@ -1210,7 +1222,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onLanguage = { settingsViewModel.setLanguage(it) },
                             active = showSettings && !showApps && !showLogs && !showProbe,
                             onBack = closeSettings,
-                            modifier = Modifier.padding(listInsets).consumeWindowInsets(overlayInsets),
+                            modifier = layerModifier(listInsets),
                         )
                     }
 
@@ -1227,7 +1239,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onSelectAll = { appsViewModel.selectAll() },
                             onSelectNone = { appsViewModel.selectNone() },
                             onBack = closeApps,
-                            modifier = Modifier.padding(listInsets).consumeWindowInsets(overlayInsets),
+                            modifier = layerModifier(listInsets),
                         )
                     }
 
@@ -1249,7 +1261,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onSave = { saveLog.launch("ducker-log.txt") },
                             onClear = { logsViewModel.clear() },
                             onBack = closeLogs,
-                            modifier = Modifier.padding(overlayInsets).consumeWindowInsets(overlayInsets),
+                            modifier = layerModifier(overlayInsets),
                         )
                     }
 
@@ -1276,6 +1288,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         // Телефон боком — редактору вся ширина (D-145). A TV gives it the whole width too, in both
                         // views: its lines wrap there.
                         wide = lowWindow() || tv,
+                        // Its own buttons stand right over the bar.
+                        fade = false,
                     ) {
                         ConfigScreen(
                             state = configState,
@@ -1311,7 +1325,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onAdd = { subscriptionsViewModel.addRules(this@HomeActivity, it) },
                             onRemove = { subscriptionsViewModel.removeRule(this@HomeActivity, it) },
                             onBack = { subscriptionsViewModel.closeRules() },
-                            modifier = Modifier.padding(listInsets).consumeWindowInsets(overlayInsets),
+                            modifier = layerModifier(listInsets),
                         )
                     }
 
@@ -1326,7 +1340,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onStop = { probeViewModel.stop() },
                             onCopy = { copyReport(probeViewModel.report(this@HomeActivity)) },
                             onBack = closeProbe,
-                            modifier = Modifier.padding(listInsets).consumeWindowInsets(overlayInsets),
+                            modifier = layerModifier(listInsets),
                         )
                     }
                 }

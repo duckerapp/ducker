@@ -57,6 +57,9 @@ import kotlinx.coroutines.launch
  * [frameContent] is false when content owns a separate [ScreenFrame] for each page.
  * A shared frame above nested layers would paint a stationary status-bar gradient
  * over the moving page during predictive Back.
+ *
+ * [fade] draws [NavigationFade] over the screen's bottom; false for a layer inside one that already draws it,
+ * and for a screen with its own controls over the bar.
  */
 @Composable
 fun BackLayer(
@@ -65,6 +68,7 @@ fun BackLayer(
     enabled: Boolean = true,
     wide: Boolean = false,
     frameContent: Boolean = true,
+    fade: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -192,6 +196,8 @@ fun BackLayer(
                 .then(if (tv) Modifier.onFocusChanged { room.focused = it.hasFocus }.focusRoom(focus) else Modifier),
         ) {
             if (frameContent) ScreenFrame(wide, content = content) else content()
+
+            if (fade) NavigationFade()
         }
     }
 }

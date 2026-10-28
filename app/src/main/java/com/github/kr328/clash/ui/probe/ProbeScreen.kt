@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.probe
 
+import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +54,10 @@ fun ProbeScreen(
         overscrollEffect = overscrollFor(list),
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp + tvEdge()),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            top = 16.dp + tvEdge(),
+            bottom = 16.dp + tvEdge() + navigationRoom(),
+        ),
     ) {
         item {
             ScreenHeader(stringResource(R.string.probe), onBack = onBack)

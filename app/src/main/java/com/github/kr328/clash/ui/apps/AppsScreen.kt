@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.apps
 
+import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.keepFocus
 import com.github.kr328.clash.ui.components.TvLazyColumn
@@ -81,7 +82,7 @@ fun AppsScreen(
         overscrollEffect = overscrollFor(list),
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 16.dp + tvEdge()),
+        contentPadding = PaddingValues(top = 16.dp + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
     ) {
         item {
             ScreenHeader(stringResource(R.string.access_control), onBack = onBack)

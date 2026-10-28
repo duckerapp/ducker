@@ -236,6 +236,9 @@ fun DuckerTheme(
             val window = (view.context as Activity).window
             window.statusBarColor = colors.background.toArgb()
             window.navigationBarColor = colors.background.toArgb()
+            // Android 15+ ignores the colour above and draws its own dark scrim behind the three-button
+            // bar; the list fades out there instead (DuckerScaffold).
+            window.isNavigationBarContrastEnforced = false
             WindowCompat.getInsetsController(window, view).apply {
                 isAppearanceLightStatusBars = !dark
                 isAppearanceLightNavigationBars = !dark
