@@ -115,8 +115,17 @@ class ProxyViewModel : ViewModel() {
     /** Отложенный или идущий автозамер: второй поверх него не запускаем. */
     private var autoJob: Job? = null
 
-    /** The subscription and text last written by [refresh]: an unchanged list is not written again. */
-    private var saved: Pair<UUID, String>? = null
+    /**
+     * The subscription and the hash of the text last written by [refresh]: an unchanged list is not
+     * written again. A hash, not the text: 1 000 nodes in 30 groups are 2.7 MB of it (F-391).
+     */
+    private var saved: Pair<UUID, Int>? = null
+
+    /**
+     * One at a time and in order: two refreshes close together would otherwise write their lists in
+     * either order. Off the main thread: those 2.7 MB took 70 ms to build on the emulator (F-391).
+     */
+    private val disk = Dispatchers.IO.limitedParallelism(1)
 
     /**
      * The list the tab showed last, at once after the process was killed (D-391); [refresh] replaces it
@@ -250,12 +259,17 @@ class ProxyViewModel : ViewModel() {
             // that did not answer gives too, nor one sorted by delay: the sort is not kept, and the live
             // list after a start would reorder the cards.
             if (profile != null && baseGroups.isNotEmpty() && _state.value.sort == ProxySort.Default) {
-                val text = encodeList(baseGroups, _state.value)
+                val groups = baseGroups
+                val shown = _state.value
 
-                if (saved != profile to text) {
-                    saved = profile to text
+                withContext(disk) {
+                    val text = encodeList(groups, shown)
 
-                    withContext(Dispatchers.IO) { ProxyListStore(context).save(profile, text) }
+                    if (saved != profile to text.hashCode()) {
+                        saved = profile to text.hashCode()
+
+                        ProxyListStore(context).save(profile, text)
+                    }
                 }
             }
         }
