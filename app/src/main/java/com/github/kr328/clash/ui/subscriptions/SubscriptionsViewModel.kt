@@ -13,6 +13,7 @@ import com.github.kr328.clash.ui.config.ConfigEdits
 import com.github.kr328.clash.ui.config.ConfigFileTooLargeException
 import com.github.kr328.clash.ui.config.fileName
 import com.github.kr328.clash.ui.config.readFile
+import com.github.kr328.clash.ui.proxy.ProxyListStore
 import com.github.kr328.clash.log.LogScrubber
 import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.service.util.ProviderInfo
@@ -916,6 +917,8 @@ class SubscriptionsViewModel : ViewModel() {
             }
 
             runCatching { withProfile { delete(uuid) } }
+
+            withContext(Dispatchers.IO) { ProxyListStore(context).forget(uuid) }
 
             _state.update { it.copy(deleting = null, deleteBusy = false) }
 

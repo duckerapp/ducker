@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 /**
  * Узел в списке. Свой тип, а не модель ядра: при выключенном туннеле мы знаем только
@@ -114,6 +115,42 @@ class ProxyViewModel : ViewModel() {
     /** Отложенный или идущий автозамер: второй поверх него не запускаем. */
     private var autoJob: Job? = null
 
+    /** The subscription and text last written by [refresh]: an unchanged list is not written again. */
+    private var saved: Pair<UUID, String>? = null
+
+    /**
+     * The list the tab showed last, at once after the process was killed (D-391); [refresh] replaces it
+     * with the live one. A node chosen from it goes the usual way: with the VPN up to the core, which
+     * refuses one the config no longer has; with it down into the stored choice, applied when the
+     * config is loaded.
+     */
+    fun restore(context: Context) {
+        if (_state.value.loaded) return
+
+        viewModelScope.launch {
+            val (stars, last) = withContext(Dispatchers.IO) {
+                SettingsStore(context).favorites to ServiceStore(context).activeProfile?.let { ProxyListStore(context).load(it) }
+            }
+
+            // The live list came first.
+            if (last == null || _state.value.loaded) return@launch
+
+            favorites = stars
+            baseGroups = last.groups
+
+            _state.update {
+                it.copy(
+                    groups = withFavorites(baseGroups),
+                    mode = last.mode,
+                    modeSwitch = last.modeSwitch,
+                    running = Remote.broadcasts.clashRunning,
+                    canCheck = last.canCheck,
+                    loaded = true,
+                )
+            }
+        }
+    }
+
     /**
      * The person came to the tab, or back to the app with it on screen: a new round of the tab's
      * own checks, so a "нет ответа" that has stood for a while is asked again once (D-318).
@@ -126,6 +163,9 @@ class ProxyViewModel : ViewModel() {
 
     fun refresh(context: Context) {
         viewModelScope.launch {
+            // Read before the list: a switch to another subscription meanwhile would file it under that one.
+            val profile = withContext(Dispatchers.IO) { ServiceStore(context).activeProfile }
+
             // Признак работы берём у службы: `queryTunnelState` при выключенном туннеле
             // отвечает режимом Direct, а не ошибкой, и по нему «работает» не отличить.
             favorites = withContext(Dispatchers.IO) { SettingsStore(context).favorites }
@@ -204,6 +244,19 @@ class ProxyViewModel : ViewModel() {
                     canCheck = running || preview,
                     loaded = true,
                 )
+            }
+
+            // For the next start after the process is gone (D-391). Not an empty list, which a service
+            // that did not answer gives too, nor one sorted by delay: the sort is not kept, and the live
+            // list after a start would reorder the cards.
+            if (profile != null && baseGroups.isNotEmpty() && _state.value.sort == ProxySort.Default) {
+                val text = encodeList(baseGroups, _state.value)
+
+                if (saved != profile to text) {
+                    saved = profile to text
+
+                    withContext(Dispatchers.IO) { ProxyListStore(context).save(profile, text) }
+                }
             }
         }
     }

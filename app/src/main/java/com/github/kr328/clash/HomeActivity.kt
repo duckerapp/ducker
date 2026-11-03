@@ -617,6 +617,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     }
                 }
 
+                // «Прокси» is composed beside home and loads only once it is opened: after the process
+                // was killed it shows the list it showed last instead of placeholders (D-391).
+                LaunchedEffect(Unit) { proxyViewModel.restore(this@HomeActivity) }
+
                 // The app came back with «Прокси» on screen: the page did not change, and the tab
                 // would go on showing what it read before the app was left — on the walk home,
                 // the delays of the mobile network (D-299). The first start is the effect above.
