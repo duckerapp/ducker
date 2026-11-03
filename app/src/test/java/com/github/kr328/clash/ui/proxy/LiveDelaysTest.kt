@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.proxy
 
 import com.github.kr328.clash.store.DelayStore
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Test
 
 /** The result of each node shown while the check of its group is still running (D-282). */
@@ -55,5 +56,22 @@ class LiveDelaysTest {
         val list = overlay(listOf(main, other), mapOf("Oslo" to 80))
 
         assertEquals(listOf(80, 80), list.map { group -> group.proxies.first { it.name == "Oslo" }.delay })
+    }
+
+    @Test
+    fun `a reading that changes nothing gives back the same list`() {
+        val list = listOf(main)
+
+        assertSame(list, overlay(list, mapOf("Paris" to 300, "Tokyo" to DelayStore.NO_ANSWER, "Oslo" to DelayStore.UNKNOWN)))
+    }
+
+    @Test
+    fun `a group none of whose nodes changed stays the same object`() {
+        val other = main.copy(name = "Video", proxies = main.proxies.take(2))
+
+        val list = overlay(listOf(main, other), mapOf("Oslo" to 80))
+
+        assertSame(other, list[1])
+        assertSame(main.proxies[0], list[0].proxies[0])
     }
 }

@@ -467,6 +467,9 @@ private fun ProxyRow(
     val cards = remember(proxies.size) { List(proxies.size) { FocusRequester() } }
     val stars = remember(proxies.size) { List(proxies.size) { FocusRequester() } }
     val more = proxies.last() !== group.proxies.last()
+    // The name, not the group: a group is a new object whenever one of its nodes changes, and every card
+    // on screen recomposed with a new tap handler during a check (F-393).
+    val name = group.name
 
     Row(
         modifier = modifier.fillMaxWidth()
@@ -489,7 +492,7 @@ private fun ProxyRow(
                 proxy = proxy,
                 selected = proxy.name == group.now,
                 enabled = group.selectable,
-                onSelect = { onSelect(group.name, proxy.name) },
+                onSelect = { onSelect(name, proxy.name) },
                 onFavorite = { onFavorite(proxy.name) },
                 card = cards[i],
                 star = stars[i],

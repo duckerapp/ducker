@@ -77,14 +77,18 @@ data class ProxyState(
  * ответа" the moment the core has tested it; one the core has not tested keeps what it showed. The
  * order stays as it is: sorted by delay, the cards would otherwise move every second.
  */
-internal fun overlay(groups: List<ProxyGroupState>, results: Map<String, Int>): List<ProxyGroupState> =
-    groups.map { group ->
-        group.copy(proxies = group.proxies.map { node ->
-            val result = results[node.name] ?: DelayStore.UNKNOWN
+internal fun overlay(groups: List<ProxyGroupState>, results: Map<String, Int>): List<ProxyGroupState> {
+    fun changed(node: NodeState) = results[node.name]?.takeIf { it != DelayStore.UNKNOWN && it != node.delay }
 
-            if (result == DelayStore.UNKNOWN) node else node.copy(delay = result)
-        })
+    // What did not change stays the same object, the list too: the check reads the core every second,
+    // and most readings change nothing in 30 groups of 1 000 nodes (F-393).
+    if (groups.none { group -> group.proxies.any { changed(it) != null } }) return groups
+
+    return groups.map { group ->
+        if (group.proxies.none { changed(it) != null }) group
+        else group.copy(proxies = group.proxies.map { node -> changed(node)?.let { node.copy(delay = it) } ?: node })
     }
+}
 
 class ProxyViewModel : ViewModel() {
     private val _state = MutableStateFlow(ProxyState())
@@ -238,17 +242,26 @@ class ProxyViewModel : ViewModel() {
 
             val known = withContext(Dispatchers.IO) { store.all() }
 
-            baseGroups = live.map { group ->
-                group.copy(proxies = group.proxies.map {
-                    it.copy(delay = DelayStore.shown(it.delay, known[it.name]))
-                })
+            // Off the main thread: 30 groups of 1 000 nodes are 30 000 of them to go through (F-393).
+            val (base, listed) = withContext(Dispatchers.Default) {
+                val base = live.map { group ->
+                    group.copy(proxies = group.proxies.map {
+                        val shown = DelayStore.shown(it.delay, known[it.name])
+
+                        if (shown == it.delay) it else it.copy(delay = shown)
+                    })
+                }
+
+                base to withFavorites(base)
             }
+
+            baseGroups = base
 
             autoCheck(context, live, known, canCheck = running || preview)
 
             _state.update {
                 it.copy(
-                    groups = withFavorites(baseGroups),
+                    groups = listed,
                     mode = mode,
                     modeSwitch = modeSwitch,
                     running = running,
@@ -293,23 +306,26 @@ class ProxyViewModel : ViewModel() {
             }.awaitAll()
         }
 
-        return names.zip(fetched).mapNotNull { (name, found) ->
-            val group = found ?: runCatching {
-                withClash { queryProxyGroup(name, sort) }
-            }.getOrNull() ?: return@mapNotNull null
+        // Off the main thread: 30 groups of 1 000 nodes are 30 000 entries (F-393).
+        return withContext(Dispatchers.Default) {
+            names.zip(fetched).mapNotNull { (name, found) ->
+                val group = found ?: runCatching {
+                    withClash { queryProxyGroup(name, sort) }
+                }.getOrNull() ?: return@mapNotNull null
 
-            ProxyGroupState(
-                name = name,
-                now = group.now,
-                icon = group.icon,
-                // В GLOBAL ядро кладёт первыми DIRECT и REJECT (F-153): новичок жмёт на них, и
-                // интернет пропадает, а замер их не меряет (D-143). Выбранный остаётся виден.
-                proxies = group.proxies
-                    .filterNot { name == "GLOBAL" && it.type in BUILTIN_PROXY_TYPES && it.name != group.now }
-                    .map { NodeState(it.name, it.type, DelayStore.ofCore(it.delay, it.tested), tested = it.tested) },
-                // Живое ядро зовёт тип группы «Selector», файл профиля — «select».
-                selectable = group.type.equals("selector", ignoreCase = true),
-            )
+                ProxyGroupState(
+                    name = name,
+                    now = group.now,
+                    icon = group.icon,
+                    // В GLOBAL ядро кладёт первыми DIRECT и REJECT (F-153): новичок жмёт на них, и
+                    // интернет пропадает, а замер их не меряет (D-143). Выбранный остаётся виден.
+                    proxies = group.proxies
+                        .filterNot { name == "GLOBAL" && it.type in BUILTIN_PROXY_TYPES && it.name != group.now }
+                        .map { NodeState(it.name, it.type, DelayStore.ofCore(it.delay, it.tested), tested = it.tested) },
+                    // Живое ядро зовёт тип группы «Selector», файл профиля — «select».
+                    selectable = group.type.equals("selector", ignoreCase = true),
+                )
+            }
         }
     }
 
@@ -350,7 +366,11 @@ class ProxyViewModel : ViewModel() {
                 updated
             }
 
-            _state.update { it.copy(groups = withFavorites(baseGroups)) }
+            val base = baseGroups
+            val listed = withContext(Dispatchers.Default) { withFavorites(base) }
+
+            // A refresh replaced the list meanwhile, with the new star already.
+            if (baseGroups === base) _state.update { it.copy(groups = listed) }
         }
     }
 
@@ -472,6 +492,9 @@ class ProxyViewModel : ViewModel() {
      */
     private fun withFavorites(groups: List<ProxyGroupState>): List<ProxyGroupState> =
         groups.map { group ->
+            // A group with nothing to star or lift stays the same object (F-393).
+            if (group.proxies.none { it.favorite || it.name in favorites }) return@map group
+
             group.copy(
                 proxies = group.proxies
                     .map { it.copy(favorite = it.name in favorites) }
@@ -568,12 +591,24 @@ class ProxyViewModel : ViewModel() {
             while (true) {
                 delay(WATCH)
 
-                val results = runCatching { withClash { queryProxyGroup(group, ProxySort.Default) } }
-                    .getOrNull()?.proxies.orEmpty().associate { it.name to DelayStore.ofCore(it.delay, it.tested) }
+                val results = runCatching {
+                    withClash {
+                        queryProxyGroup(group, ProxySort.Default).proxies.associate { it.name to DelayStore.ofCore(it.delay, it.tested) }
+                    }
+                }.getOrNull().orEmpty()
 
-                baseGroups = overlay(baseGroups, results)
+                // Off the main thread, and nothing more when nothing changed (F-393).
+                val base = baseGroups
+                val next = withContext(Dispatchers.Default) {
+                    overlay(base, results).takeIf { it !== base }?.let { it to withFavorites(it) }
+                }
 
-                _state.update { it.copy(groups = withFavorites(baseGroups)) }
+                // A refresh replaced the list meanwhile: the next reading lays itself over that one.
+                if (next == null || baseGroups !== base) continue
+
+                baseGroups = next.first
+
+                _state.update { it.copy(groups = next.second) }
             }
         }
 
