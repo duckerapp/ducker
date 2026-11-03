@@ -427,7 +427,13 @@ class ProxyViewModel : ViewModel() {
 
             _state.update { it.copy(checking = pending.first().name) }
 
-            pending.forEach { group -> checkLive(group.name) }
+            // Groups often list the same nodes, and a check of one tests them for all: 30 groups of
+            // the same 1 000 nodes were checked 30 times over, a quarter of an hour on the emulator (F-393).
+            val since = System.currentTimeMillis()
+
+            pending.forEachIndexed { i, group ->
+                if (i == 0 || !testedSince(group.name, since)) checkLive(group.name)
+            }
 
             val names = pending.map { it.name }.toSet()
 
@@ -449,6 +455,14 @@ class ProxyViewModel : ViewModel() {
 
             refresh(context)
         }
+    }
+
+    /** Whether the core has tested every node of [group] at or after [since], ms since the epoch. */
+    private suspend fun testedSince(group: String, since: Long): Boolean {
+        val nodes = runCatching { withClash { queryProxyGroup(group, ProxySort.Default) } }.getOrNull()?.proxies
+            ?: return false
+
+        return nodes.all { it.tested >= since }
     }
 
     /**
