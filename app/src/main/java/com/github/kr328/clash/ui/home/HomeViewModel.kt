@@ -17,7 +17,6 @@ import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.util.withProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,18 +28,11 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 
-/**
- * Одна видимая группа профиля.
- *
- * @param options имена участников. Ровно два — показываем переключатель, больше —
- * строку с переходом на выбор (D-24): группа в mihomo это выбор из списка,
- * а не «включено/выключено».
- */
+/** The profile's main group as home shows it: its node and that node's delay. */
 @Immutable
 data class GroupState(
     val name: String,
     val now: String,
-    val options: List<String>,
     val delay: Int,
 )
 
@@ -239,7 +231,7 @@ class HomeViewModel : ViewModel() {
                         store.switchTo(it.uuid.toString())
 
                         store.main?.let { (group, node) ->
-                            GroupState(group, node, emptyList(), store.answers()[node] ?: DelayStore.UNKNOWN)
+                            GroupState(group, node, store.answers()[node] ?: DelayStore.UNKNOWN)
                         }
                     }
                 }
@@ -585,29 +577,21 @@ class HomeViewModel : ViewModel() {
             withClash { queryProxyGroupNames(true) }
         }.getOrDefault(emptyList())
 
-        // Группы спрашиваем разом, а не по очереди: у профиля их бывает несколько,
-        // и каждая — отдельный заход в службу.
-        return coroutineScope {
-            names.map { name ->
-                async {
-                    val group = runCatching {
-                        withClash { queryProxyGroup(name, ProxySort.Default) }
-                    }.getOrNull() ?: return@async null
+        // Only the main group: home shows none of the others, and each comes with every node it
+        // lists — 30 groups of 1 000 nodes were 30 000 nodes on every refresh (F-393). A main group
+        // that did not answer is no group, not the next one in its place.
+        val name = names.firstOrNull() ?: return emptyList()
 
-                    val current = group.proxies.firstOrNull { it.name == group.now }
-                    val own = current?.delay ?: 0
+        val group = runCatching {
+            withClash { queryProxyGroup(name, ProxySort.Default) }
+        }.getOrNull() ?: return emptyList()
 
-                    val node = if (current?.isGroup == true) resolveNode(group.now) else null
+        val current = group.proxies.firstOrNull { it.name == group.now }
+        val own = current?.delay ?: 0
 
-                    GroupState(
-                        name = name,
-                        now = node?.first ?: group.now,
-                        options = group.proxies.map { it.name },
-                        delay = node?.second ?: own,
-                    )
-                }
-            }.awaitAll().filterNotNull()
-        }
+        val node = if (current?.isGroup == true) resolveNode(group.now) else null
+
+        return listOf(GroupState(name = name, now = node?.first ?: group.now, delay = node?.second ?: own))
     }
 
     /**
