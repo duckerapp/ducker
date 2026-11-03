@@ -1007,6 +1007,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onSort = { proxyViewModel.setSort(this@HomeActivity, it) },
                                         modifier = Modifier.consumeWindowInsets(insets),
                                         contentPadding = insets,
+                                        shown = overlay == null && (pagerState.currentPage == 1 || pagerState.isScrollInProgress),
                                         // Потянуть вниз — перемерить основную группу; если мерить нечем
                                         // (туннель выключен, профиль не загружен) — перечитать список.
                                         refreshing = proxyState.checking != null,
