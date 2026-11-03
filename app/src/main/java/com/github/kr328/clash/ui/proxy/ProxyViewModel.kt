@@ -15,6 +15,8 @@ import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.util.withProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -282,8 +284,17 @@ class ProxyViewModel : ViewModel() {
             withClash { queryProxyGroupNames(false) }
         }.getOrDefault(emptyList())
 
-        return names.mapNotNull { name ->
-            val group = runCatching {
+        // The groups in parallel, a few at a time (D-398): one after another, 1 000 nodes in 30 groups took
+        // 200–250 ms on the emulator, each call bound by its own nodes (F-391). Not all at once: the replies
+        // share the app's Binder buffer of about 1 MB, and one that did not fit is asked again alone below.
+        val fetched = coroutineScope {
+            names.map { name ->
+                async { runCatching { withClash(groupCalls) { queryProxyGroup(name, sort) } }.getOrNull() }
+            }.awaitAll()
+        }
+
+        return names.zip(fetched).mapNotNull { (name, found) ->
+            val group = found ?: runCatching {
                 withClash { queryProxyGroup(name, sort) }
             }.getOrNull() ?: return@mapNotNull null
 
@@ -575,6 +586,9 @@ class ProxyViewModel : ViewModel() {
     }
 
     private companion object {
+        /** How many group calls of [liveGroups] are in the service at once. */
+        val groupCalls = Dispatchers.IO.limitedParallelism(4)
+
         /** Больше трёх попыток подряд — значит узлы действительно не отвечают. */
         const val MAX_ATTEMPTS = 3
 
