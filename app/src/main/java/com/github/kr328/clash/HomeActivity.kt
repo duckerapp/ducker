@@ -633,10 +633,16 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // Выбор узла подтверждается службой не сразу, поэтому главную обновляем
                 // и при возврате на неё, и когда подтверждение доходит уже после перехода.
                 //
-                // Only on a change: the first pass repeated what `onStart` has just asked for.
+                // Only on a change: the first pass repeated what `onStart` has just asked for. And only of
+                // what home shows — a group's choice, its node's delay, the mode: a check changes the list
+                // every second, and home asked for its group again each time (F-393).
                 LaunchedEffect(Unit) {
                     snapshotFlow {
-                        Triple(pagerState.settledPage == 0 && !showSettings, proxyState.groups, proxyState.mode)
+                        val chosen = proxyState.groups.map { group ->
+                            Triple(group.name, group.now, group.proxies.firstOrNull { it.name == group.now }?.delay)
+                        }
+
+                        Triple(pagerState.settledPage == 0 && !showSettings, chosen, proxyState.mode)
                     }.drop(1).collect { (onHome) ->
                         if (onHome) viewModel.refresh(this@HomeActivity)
                     }
