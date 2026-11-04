@@ -53,6 +53,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import kotlin.math.floor
@@ -190,17 +191,18 @@ fun PillSegments(
 
         val placeables = measurables.mapIndexed { i, it -> it.measure(Constraints.fixed(widths[i], constraints.maxHeight)) }
         val next = FloatArray(widths.size * 2)
+        // The first segment at the layout's start: on the right in a right-to-left language.
+        val rtl = layoutDirection == LayoutDirection.Rtl
         var x = 0
         widths.forEachIndexed { i, width ->
-            next[i * 2] = x.toFloat()
+            next[i * 2] = (if (rtl) total - x - width else x).toFloat()
             next[i * 2 + 1] = width.toFloat()
             x += width
         }
         if (!next.contentEquals(spans)) spans = next
 
         layout(total, constraints.maxHeight) {
-            var at = 0
-            placeables.forEach { it.place(at, 0); at += it.width }
+            placeables.forEachIndexed { i, it -> it.place(next[i * 2].toInt(), 0) }
         }
     }
 }
