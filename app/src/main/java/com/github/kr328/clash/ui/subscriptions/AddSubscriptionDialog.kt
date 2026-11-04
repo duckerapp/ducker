@@ -115,6 +115,7 @@ fun AddSubscriptionDialog(
                 maxLines = 4,
                 readOnly = longText,
                 next = add,
+                machine = true,
             )
 
             if (longText) {

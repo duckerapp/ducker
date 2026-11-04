@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
@@ -124,6 +125,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.Density
@@ -825,6 +827,16 @@ fun FitLabel(text: String, style: TextStyle, modifier: Modifier = Modifier, colo
         autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = style.fontSize),
     )
 }
+
+/**
+ * A link, a domain, an address: machine text reads left to right in every language. In a right-to-left one its
+ * slashes, dots and stars moved to the wrong end («*.example.com/» showed as «/example.com.*»); it stays on the
+ * right there, where the layout puts text.
+ */
+@Composable
+fun TextStyle.machine(): TextStyle =
+    if (LocalLayoutDirection.current == LayoutDirection.Rtl) copy(textDirection = TextDirection.Ltr, textAlign = TextAlign.Right)
+    else this
 
 /** Что показывает кнопка «Обновить» подписки (D-119). */
 enum class UpdateShown { Idle, Busy, Done, Failed }

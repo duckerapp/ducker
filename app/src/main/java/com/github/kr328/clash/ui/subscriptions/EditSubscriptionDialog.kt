@@ -160,6 +160,7 @@ fun EditSubscriptionDialog(
                 error = error.isNotEmpty(),
                 maxLines = 4,
                 next = save,
+                machine = true,
             )
 
             if (error.isNotEmpty()) {

@@ -363,6 +363,7 @@ fun ConfigScreen(
                                             },
                                             placeholder = stringResource(R.string.config_search),
                                             enabled = true,
+                                            machine = true,
                                         )
                                     }
 
@@ -385,6 +386,7 @@ fun ConfigScreen(
                                             onValue = { replacement = it },
                                             placeholder = stringResource(R.string.config_replace_with),
                                             enabled = true,
+                                            machine = true,
                                         )
                                     }
 

@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.rules
 
+import com.github.kr328.clash.ui.components.machine
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.TvLazyColumn
@@ -231,7 +232,13 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
         }
 
         Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                text = label,
+                // An app's name is the person's language; a site or an address is machine text.
+                style = MaterialTheme.typography.bodyLarge.let { if (rule.type == UserRule.Type.App) it else it.machine() },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 text = stringResource(typeLabel(rule.type)) + " · " + stringResource(targetLabel(rule.target)),
                 style = MaterialTheme.typography.bodySmall,
@@ -457,6 +464,7 @@ private fun AddRuleSheet(
                     enabled = true,
                     error = invalid,
                     next = addFocus,
+                    machine = true,
                 )
 
                 val note = when {
