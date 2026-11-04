@@ -18,6 +18,8 @@ import java.util.Locale
 
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.LocalTv
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -848,7 +850,7 @@ private fun ExpandableCard(
                 SettingsIcon(icon)
 
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(title, style = MaterialTheme.typography.titleSmall)
+                    Text(title, style = MaterialTheme.typography.titleSmall.syllables())
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
@@ -915,7 +917,7 @@ private fun ChipsCard(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SettingsIcon(icon)
-                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(title, style = MaterialTheme.typography.titleSmall.syllables())
             }
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val density = LocalDensity.current
@@ -987,7 +989,7 @@ private fun SwitchRow(
         ) {
             SettingsIcon(icon)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(title, style = MaterialTheme.typography.titleSmall.syllables())
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -1008,7 +1010,7 @@ private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit, icon: 
             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SettingsIcon(icon)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(title, style = MaterialTheme.typography.titleSmall.syllables())
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -1111,11 +1113,11 @@ private fun SettingsNavigationRow(
         SettingsIcon(icon)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             if (value == null) {
-                Text(title, style = MaterialTheme.typography.bodyLarge)
+                Text(title, style = MaterialTheme.typography.bodyLarge.syllables())
             } else {
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val measurer = rememberTextMeasurer()
-                    val titleStyle = MaterialTheme.typography.bodyLarge
+                    val titleStyle = MaterialTheme.typography.bodyLarge.syllables()
                     val valueStyle = MaterialTheme.typography.bodyMedium
                     val density = LocalDensity.current
                     val fits = with(density) {
@@ -1160,7 +1162,7 @@ private fun SettingsSwitchRow(title: String, subtitle: String, icon: ImageVector
     ) {
         SettingsIcon(icon)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(title, style = MaterialTheme.typography.bodyLarge.syllables())
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(checked = checked, onCheckedChange = null)
@@ -1232,3 +1234,11 @@ private fun LanguageChoice(label: String, selected: Boolean, onSelect: () -> Uni
         else Spacer(Modifier.size(24.dp))
     }
 }
+
+/**
+ * A row's title under an enlarged font: a word too long for the row is hyphenated by its syllables instead of being
+ * broken anywhere — «Confidentialit / é» at 2.0 on a narrow phone in French (D-408). At the normal size the titles fit.
+ */
+@Composable
+private fun TextStyle.syllables(): TextStyle =
+    if (LocalDensity.current.fontScale > 1f) copy(hyphens = Hyphens.Auto) else this
