@@ -607,7 +607,7 @@ private fun ProfileRow(
                 .focusRequester(self)
                 .focusProperties {
                     if (tv) {
-                        right = menu
+                        end = menu
                         if (upTo != null) this.up = upTo
                     }
                 }

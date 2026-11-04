@@ -986,7 +986,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             Modifier.fillMaxSize().graphicsLayer()
                                 .then(
                                     tvFocus?.let {
-                                        Modifier.clipToBounds().pageBoundary().focusRoom(it.pages[page], it.entries[page], onLeft = { it.parked = true })
+                                        Modifier.clipToBounds().pageBoundary().focusRoom(
+                                            it.pages[page], it.entries[page], onLeft = { it.parked = true },
+                                            rtl = direction == LayoutDirection.Rtl,
+                                        )
                                     } ?: Modifier,
                                 ),
                         ) {

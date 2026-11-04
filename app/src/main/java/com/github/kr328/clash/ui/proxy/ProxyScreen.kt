@@ -20,6 +20,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
@@ -570,7 +571,7 @@ private fun GroupHeader(
                 // The card's 24 dp: by its size the frame took the usual 20 and stood off the card's corners.
                 .then(if (tv) Modifier.ringCorner(24.dp) else Modifier)
                 .focusRequester(head)
-                .focusProperties { if (tv && canCheck) right = ping }
+                .focusProperties { if (tv && canCheck) end = ping }
                 .clickable(
                     role = Role.Button,
                     onClickLabel = stringResource(if (open) R.string.ducker_collapse_group else R.string.ducker_expand_group),
@@ -700,6 +701,8 @@ private fun ProxyOption(
     val focusManager = LocalFocusManager.current
     val tv = LocalTv.current
     val context = LocalContext.current
+    // Along the row: to the left in a right-to-left language.
+    val onward = if (LocalLayoutDirection.current == LayoutDirection.Rtl) Key.DirectionLeft else Key.DirectionRight
 
     Card(
         modifier = modifier,
@@ -709,8 +712,9 @@ private fun ProxyOption(
             .focusProperties {
                 if (!tv) return@focusProperties
 
-                right = star
-                if (previous != null) left = previous
+                // Start and end: the star and the neighbours change sides in a right-to-left language.
+                end = star
+                if (previous != null) start = previous
             }
             // В группе, которая выбирает сама, узлы не нажимаются — но с пульта фокус берут, иначе
             // он проваливался сквозь них на звёздочки (D-158). OK on one says why nothing happens:
@@ -757,10 +761,10 @@ private fun ProxyOption(
                         .focusProperties {
                             if (!tv) return@focusProperties
 
-                            if (next != null) right = next
+                            if (next != null) end = next
                         }
                         .onPreviewKeyEvent {
-                            if (!tv || !wrap || it.key != Key.DirectionRight || it.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                            if (!tv || !wrap || it.key != onward || it.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
                             // Ряд ниже может быть ещё не собран — туда ведёт обычный поиск вниз,
                             // а вход в ряд ставит на его левую карточку.

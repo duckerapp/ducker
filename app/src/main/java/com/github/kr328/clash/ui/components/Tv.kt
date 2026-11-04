@@ -126,7 +126,9 @@ import androidx.compose.ui.node.TraversableNode.Companion.TraverseDescendantsAct
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.traverseDescendants
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.unit.Density
@@ -238,20 +240,21 @@ fun Modifier.tabEntry(): Modifier = composed {
  * настройки — на «Журнал».
  * Стрелками из комнаты не выйти: за краем страницы — соседние вкладки, под экраном поверх
  * вкладок — невидимая лента. Кроме [onLeft]: влево со страницы — её вкладка в доке, as soon as the element has
- * nothing to its left in its own row ([LeaveLeftNode]).
+ * nothing to its left in its own row ([LeaveLeftNode]). [rtl]: the dock stands on the right, and that key is Right.
  */
 internal fun Modifier.focusRoom(
     requester: FocusRequester,
     entry: FocusRequester? = null,
     onLeft: (() -> Unit)? = null,
+    rtl: Boolean = false,
 ): Modifier = this then FocusNudgeElement
-    .then(if (onLeft != null) LeaveLeftElement(onLeft) else Modifier)
+    .then(if (onLeft != null) LeaveLeftElement(onLeft, rtl) else Modifier)
     .focusProperties {
         onExit = {
             val direction = requestedFocusDirection
 
             if (direction in Arrows) cancelFocusChange()
-            if (direction == FocusDirection.Left) onLeft?.invoke()
+            if (direction == towardDock(rtl)) onLeft?.invoke()
         }
     }
     .focusGroup()
@@ -425,6 +428,12 @@ private data object PageBoundaryElement : ModifierNodeElement<PageBoundaryNode>(
 private class PageBoundaryNode : Modifier.Node(), BringIntoViewModifierNode {
     override suspend fun bringIntoView(childCoordinates: LayoutCoordinates, boundsProvider: () -> Rect?) = Unit
 }
+
+/** From a page to the dock: the dock stands at the layout's start, on the right in a right-to-left language. */
+private fun towardDock(rtl: Boolean) = if (rtl) FocusDirection.Right else FocusDirection.Left
+
+/** From the dock into the page. */
+private fun intoPage(rtl: Boolean) = if (rtl) FocusDirection.Left else FocusDirection.Right
 
 /** Направления, которыми фокус двигают клавиши. Программный перевод фокуса идёт как `Enter`. */
 private val Arrows = listOf(
@@ -872,10 +881,10 @@ private class RingHoldNode(private var hold: Boolean) : Modifier.Node() {
 /**
  * Left from this element goes to [target], inside the page: the page's room leaves the key to it, as to a nested
  * room ([LeaveLeftNode]). A subscription row's «⋯» goes back to its row, which holds it and starts to its left, so
- * the room saw nothing beside it and sent Left to the dock.
+ * the room saw nothing beside it and sent Left to the dock. Toward the row's start: Right in a right-to-left language.
  */
 internal fun Modifier.ownLeft(target: FocusRequester): Modifier =
-    this then FocusNudgeElement.focusProperties { left = target }
+    this then FocusNudgeElement.focusProperties { start = target }
 
 /** Фокус вошёл в группу или вышел из неё — пусть рамка сверится. */
 private data object FocusNudgeElement : ModifierNodeElement<FocusNudgeNode>() {
@@ -944,11 +953,12 @@ private class OkOnceNode : Modifier.Node(), KeyInputModifierNode {
 
 private const val REPEAT_GAP_MS = 40L
 
-private data class LeaveLeftElement(val onLeft: () -> Unit) : ModifierNodeElement<LeaveLeftNode>() {
-    override fun create() = LeaveLeftNode(onLeft)
+private data class LeaveLeftElement(val onLeft: () -> Unit, val rtl: Boolean) : ModifierNodeElement<LeaveLeftNode>() {
+    override fun create() = LeaveLeftNode(onLeft, rtl)
 
     override fun update(node: LeaveLeftNode) {
         node.onLeft = onLeft
+        node.rtl = rtl
     }
 }
 
@@ -957,12 +967,13 @@ private data class LeaveLeftElement(val onLeft: () -> Unit) : ModifierNodeElemen
  * search takes a candidate from another row when the row has none: the power button's Left landed on «Обновить»
  * below it, and so did the node row's, which starts a few pixels right of the card under it. Compose cannot be
  * asked what its search would pick, so the room reads the semantics tree, which lists the focusable elements with
- * their bounds; `RootForTest` is the public way to it. Without it Left goes as before.
+ * their bounds; `RootForTest` is the public way to it. Without it Left goes as before. Mirrored with [rtl]: the
+ * dock is on the right, the key is Right and «beside» is to the right.
  */
-private class LeaveLeftNode(var onLeft: () -> Unit) :
+private class LeaveLeftNode(var onLeft: () -> Unit, var rtl: Boolean) :
     Modifier.Node(), KeyInputModifierNode, CompositionLocalConsumerModifierNode {
     override fun onPreKeyEvent(event: KeyEvent): Boolean {
-        if (event.key != Key.DirectionLeft || event.type != KeyEventType.KeyDown) return false
+        if (event.key != (if (rtl) Key.DirectionRight else Key.DirectionLeft) || event.type != KeyEventType.KeyDown) return false
 
         var nested = false
         traverseDescendants(RoomKey) {
@@ -981,8 +992,8 @@ private class LeaveLeftNode(var onLeft: () -> Unit) :
         val beside = focusable.any {
             val r = it.boundsInRoot
 
-            !r.isEmpty && r.overlaps(room) && r.left < from.left && r.right < from.right &&
-                r.top < from.bottom && r.bottom > from.top
+            !r.isEmpty && r.overlaps(room) && r.top < from.bottom && r.bottom > from.top &&
+                if (rtl) r.right > from.right && r.left > from.left else r.left < from.left && r.right < from.right
         }
 
         if (beside) return false
@@ -1291,6 +1302,10 @@ internal fun TvScaffold(
 ) {
     var dockWidth by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
+    // The dock stands at the start: on the right in a right-to-left language, and the page is to its left.
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val inward = intoPage(rtl)
+    val inwardKey = if (rtl) Key.DirectionLeft else Key.DirectionRight
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     // Один вход на нажатие: `onExit` дока Compose зовёт по нескольку раз за один поиск (восемь в
@@ -1323,7 +1338,7 @@ internal fun TvScaffold(
                     if (it.type != KeyEventType.KeyDown) return@onPreviewKeyEvent true
 
                     when (it.key) {
-                        Key.DirectionRight, Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> focus.parked = false
+                        inwardKey, Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> focus.parked = false
 
                         // Выше первой вкладки идти некуда: остаёмся припаркованными.
                         Key.DirectionUp, Key.DirectionDown -> if (it.key == Key.DirectionDown || selected() > 0) {
@@ -1351,7 +1366,9 @@ internal fun TvScaffold(
                 Column(
                     modifier = Modifier.fillMaxHeight()
                         .padding(start = TV_EDGE, top = TV_TOP, bottom = TV_TOP)
-                        .graphicsLayer { translationX = -hidden * (size.width + TV_EDGE.toPx() + 40.dp.toPx()) }
+                        .graphicsLayer {
+                            translationX = (if (rtl) hidden else -hidden) * (size.width + TV_EDGE.toPx() + 40.dp.toPx())
+                        }
                         .then(if (dockShown) Modifier else Modifier.clearAndSetSemantics { })
                         .onPreviewKeyEvent {
                             if (it.type == KeyEventType.KeyDown) {
@@ -1366,7 +1383,7 @@ internal fun TvScaffold(
                         .focusProperties {
                             onExit = {
                                 if (requestedFocusDirection in Arrows) cancelFocusChange()
-                                if (requestedFocusDirection == FocusDirection.Right) enter(selected())
+                                if (requestedFocusDirection == inward) enter(selected())
                             }
                         }
                         .focusGroup(),
@@ -1424,7 +1441,7 @@ internal fun TvScaffold(
                         modifier = Modifier
                             .focusProperties {
                                 onExit = {
-                                    if (requestedFocusDirection == FocusDirection.Right) {
+                                    if (requestedFocusDirection == inward) {
                                         cancelFocusChange()
                                         enter(selected())
                                     }
