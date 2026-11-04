@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +48,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.core.model.LogMessage
@@ -216,16 +219,20 @@ fun LogsScreen(
                         val row = rememberScrollState()
 
                         // A remote cannot scroll a line sideways: on a TV long lines wrap instead.
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .then(if (tv) Modifier else Modifier.horizontalScroll(row, overscrollEffect = overscrollFor(row))),
-                        ) {
-                            Text(
-                                text = line.message,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace,
-                                color = colorOf(line.level),
-                            )
+                        // Left to right in every language: in a right-to-left one «[TCP] dial …» showed as
+                        // «… [TCP]», and the sideways scroll opened on the line's end.
+                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .then(if (tv) Modifier else Modifier.horizontalScroll(row, overscrollEffect = overscrollFor(row))),
+                            ) {
+                                Text(
+                                    text = line.message,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = colorOf(line.level),
+                                )
+                            }
                         }
                     }
                 }
