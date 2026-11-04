@@ -154,6 +154,7 @@ import com.github.kr328.clash.ui.components.UpdateShown
 import com.github.kr328.clash.ui.components.rememberUpdateShown
 import com.github.kr328.clash.ui.components.HeaderButton
 import com.github.kr328.clash.ui.components.overscrollFor
+import java.util.Locale
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 import androidx.compose.runtime.getValue
@@ -1255,17 +1256,18 @@ private fun UptimePill(running: Boolean, metrics: () -> HomeMetrics) {
 
         // Цифры одной ширины: пропорциональные каждую секунду чуть двигали строку.
         val style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
+        val locale = LocalConfiguration.current.locales[0]
 
         // One width in both states: the dashes are narrower than the digits, and the title beside the pill
         // got a different width to wrap in (D-389).
         Reserved(
-            { listOf(NO_UPTIME, formatUptime(0)).forEach { Text(it, style = style, maxLines = 1) } },
+            { listOf(NO_UPTIME, formatUptime(0, locale)).forEach { Text(it, style = style, maxLines = 1) } },
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 // Включённый туннель сразу показывает нули, а не прочерк: под волной и над ней
                 // иначе стояли бы разные строки, и первая секунда перещёлкивала бы плашку.
-                text = if (running) formatUptime(if (uptime > 0) uptime else last[0]) else NO_UPTIME,
+                text = if (running) formatUptime(if (uptime > 0) uptime else last[0], locale) else NO_UPTIME,
                 style = style,
                 color = LocalContentColor.current.copy(alpha = if (running) 1f else 0.7f),
                 maxLines = 1,
@@ -1528,10 +1530,13 @@ private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
 /** The uptime pill while the tunnel is off. */
 private const val NO_UPTIME = "--:--:--"
 
-/** Часы работы туннеля: `02:41:18`. */
-private fun formatUptime(ms: Long): String {
+/**
+ * Часы работы туннеля: `02:41:18`. In the app's language, not the process's default: after a change of language in
+ * the app the default kept the old one, and Russian showed Persian digits.
+ */
+private fun formatUptime(ms: Long, locale: Locale): String {
     val total = ms / 1000
-    return "%02d:%02d:%02d".format(total / 3600, (total % 3600) / 60, total % 60)
+    return "%02d:%02d:%02d".format(locale, total / 3600, (total % 3600) / 60, total % 60)
 }
 
 /** Карточка про работу в фоне на главной (D-109). */
