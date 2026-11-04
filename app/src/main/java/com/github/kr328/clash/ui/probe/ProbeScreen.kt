@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.probe
 
+import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.TvLazyColumn
@@ -82,7 +83,7 @@ fun ProbeScreen(
                     ) {
                         state.nodes.forEach { node ->
                             Pill(
-                                text = node,
+                                text = node.isolated(),
                                 onClick = { onSelect(node) },
                                 selected = state.selected == node,
                                 onCard = true,

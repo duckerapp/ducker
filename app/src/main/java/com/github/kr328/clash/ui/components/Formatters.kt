@@ -38,3 +38,10 @@ fun formatPercent(fraction: Float): String = NumberFormat.getPercentInstance(
 /** A count in the app's language: Persian and Arabic have their own digits. A bare `"$n"` is always Latin. */
 @Composable
 fun formatCount(value: Int): String = NumberFormat.getIntegerInstance(LocalConfiguration.current.locales[0]).format(value)
+
+/**
+ * A name from the provider or the person, kept in its own direction inside the line by invisible isolate marks. In a
+ * right-to-left language «[VLESS] Germany» showed as «Germany [VLESS]» and «US-1 (fast)!» as «!US-1 (fast)»; a
+ * Persian name in a left-to-right one ran from the wrong end. For display only: searches and choices use the bare name.
+ */
+fun String.isolated(): String = if (isEmpty()) this else "\u2068$this\u2069"

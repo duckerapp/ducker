@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.config
 
+import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvKeys
 import com.github.kr328.clash.ui.components.tvKeyboardTop
@@ -443,7 +444,7 @@ fun ConfigScreen(
                                 ) {
                                     HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack, Modifier.focusRequester(corner))
                                     Text(
-                                        text = state.name,
+                                        text = state.name.isolated(),
                                         modifier = Modifier.widthIn(max = 160.dp),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
@@ -768,7 +769,7 @@ private fun Header(kind: String, name: String, onBack: () -> Unit, onFull: () ->
                 maxLines = 1,
             )
             Text(
-                text = name,
+                text = name.isolated(),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,

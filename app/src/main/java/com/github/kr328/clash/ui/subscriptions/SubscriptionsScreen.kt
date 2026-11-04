@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.TvLazyColumn
@@ -672,7 +673,7 @@ private fun ProfileName(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            text = profile.shownName,
+            text = profile.shownName.isolated(),
             style = style,
             fontWeight = fontWeight,
             modifier = Modifier.weight(1f, fill = false),
@@ -894,7 +895,7 @@ private fun ProfileMenu(
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
 ) {
-    DuckerSheet(open = open, title = name, busy = false, onDismiss = onDismiss, onClosed = onClosed) {
+    DuckerSheet(open = open, title = name.isolated(), busy = false, onDismiss = onDismiss, onClosed = onClosed) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             for (action in actions) {
                 val icon = when (action) {
@@ -1021,7 +1022,7 @@ private fun UpdateErrorCard(
                     // (D-207): «не удалось обновить» тут неправда — VPN работает на прежнем.
                     text = when {
                         failure?.kind == Failure.Kind.Reload -> stringResource(R.string.config_reload_failed_title)
-                        name != null -> stringResource(R.string.update_failed_named, name)
+                        name != null -> stringResource(R.string.update_failed_named, name.isolated())
                         else -> stringResource(R.string.update_failed)
                     },
                     fontWeight = FontWeight.SemiBold,

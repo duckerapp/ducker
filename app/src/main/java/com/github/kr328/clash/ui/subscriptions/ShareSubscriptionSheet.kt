@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
@@ -43,7 +44,7 @@ fun ShareSubscriptionSheet(
     // Ссылку вписывал человек: слишком длинную для QR (больше ~2 КБ) не рисуем, а не падаем.
     val qr = remember(link) { runCatching { QrCode.encodeText(link, QrCode.Ecc.MEDIUM) }.getOrNull() }
 
-    DuckerSheet(open = open, title = name, busy = false, onDismiss = onDismiss, onClosed = onClosed) {
+    DuckerSheet(open = open, title = name.isolated(), busy = false, onDismiss = onDismiss, onClosed = onClosed) {
         if (qr != null) {
             Box(
                 Modifier.align(Alignment.CenterHorizontally)

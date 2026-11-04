@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.proxy
 
+import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvScrollToStart
 import com.github.kr328.clash.ui.components.TvLazyColumn
@@ -604,12 +605,12 @@ private fun GroupHeader(
                 }
 
                 Text(
-                    group.name,
+                    group.name.isolated(),
                     modifier = Modifier.heightIn(min = line).wrapContentHeight(),
                     style = title.copy(lineHeight = 1.25.em),
                     fontWeight = FontWeight.Medium,
                 )
-                Text(group.now, style = MaterialTheme.typography.bodySmall,
+                Text(group.now.isolated(), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     // У групп, которые выбирают сами, узлы не нажимаются — говорим об
@@ -733,7 +734,7 @@ private fun ProxyOption(
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = proxy.name,
+                    text = proxy.name.isolated(),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium,
                     // The filled surface carries selection; keep the name lighter than screen headings.

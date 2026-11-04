@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.rules
 
+import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.machine
 import com.github.kr328.clash.ui.components.navigationRoom
@@ -130,7 +131,7 @@ fun RulesScreen(
 
         item {
             Text(
-                text = stringResource(R.string.rules_hint, name),
+                text = stringResource(R.string.rules_hint, name.isolated()),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

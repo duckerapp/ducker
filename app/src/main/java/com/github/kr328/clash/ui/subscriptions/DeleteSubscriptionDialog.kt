@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.isolated
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,7 +39,7 @@ fun DeleteSubscriptionDialog(
 
     DuckerSheet(
         open = open,
-        title = stringResource(R.string.delete_subscription, name),
+        title = stringResource(R.string.delete_subscription, name.isolated()),
         busy = busy,
         start = cancel,
         onDismiss = onDismiss,
