@@ -28,7 +28,7 @@ import kotlinx.coroutines.*
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class ProfileWorker : BaseService() {
+class ProfileWorker : BaseService("ProfileWorker") {
     private val service: ProfileWorker
         get() = this
 

@@ -8,7 +8,7 @@ import com.github.kr328.clash.service.remote.IProfileManager
 import com.github.kr328.clash.service.remote.wrap
 import com.github.kr328.clash.service.util.cancelAndJoinBlocking
 
-class RemoteService : BaseService(), IRemoteService {
+class RemoteService : BaseService("RemoteService"), IRemoteService {
     private val binder = this.wrap()
 
     private var clash: ClashManager? = null
