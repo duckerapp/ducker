@@ -191,11 +191,11 @@ fun EditSubscriptionDialog(
 
         // Only where the provider gave mirrors (Q-82).
         if (!local && reach.backups > 0) {
-            SheetLink(Symbols.AltRoute, stringResource(R.string.subscription_backups_row) + " · ${reach.backups}", !busy, onAddresses)
+            SheetLink(Symbols.AltRoute, stringResource(R.string.subscription_backups_row) + stringResource(R.string.separator) + reach.backups, !busy, onAddresses)
         }
 
         // Свои правила поверх правил провайдера (D-123) и сам конфиг (D-124) — своими экранами.
-        SheetLink(Symbols.Tune, stringResource(R.string.rules_title) + if (rules > 0) " · $rules" else "", !busy, onRules)
+        SheetLink(Symbols.Tune, stringResource(R.string.rules_title) + if (rules > 0) stringResource(R.string.separator) + rules else "", !busy, onRules)
         SheetLink(Symbols.Code, stringResource(R.string.config_open), !busy, onConfig)
 
         // The line's gap is its own padding, not the sheet's spacing: it unfolds with the line.
@@ -302,15 +302,15 @@ private fun IntervalPicker(
     val lastOwn = remember { LongArray(1) { OWN_START } }
     if (selected == 1) lastOwn[0] = interval
 
-    val own = stringResource(R.string.interval_own)
+    val own = stringResource(R.string.interval_own) + stringResource(R.string.separator)
     // “Свой” always names its hours — its own, or the last ones after “Вручную” — and its place is sized
     // for the longest, so the segments do not shift while the slider moves.
     val labels = listOf(
         stringResource(R.string.interval_manual),
-        "$own · ${hoursLabel(if (interval > 0) interval else lastOwn[0])}",
-        "${stringResource(R.string.interval_provider)} · ${hoursLabel(providerInterval)}",
+        own + hoursLabel(if (interval > 0) interval else lastOwn[0]),
+        stringResource(R.string.interval_provider) + stringResource(R.string.separator) + hoursLabel(providerInterval),
     )
-    val widest = listOf(labels[0], "$own · ${hoursLabel(STOPS.last())}", labels[2])
+    val widest = listOf(labels[0], own + hoursLabel(STOPS.last()), labels[2])
 
     // On a TV the slider unfolds only while the hours are picked: OK on «Свой» opens it with the frame on it, OK or Back
     // folds it with the hours in «Свой», Up and Down leave it. The slider takes all four arrows, and the remote could

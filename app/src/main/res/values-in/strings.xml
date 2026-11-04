@@ -553,4 +553,5 @@
     <plurals name="subscription_rules_count">
         <item quantity="other">%d aturan</item>
     </plurals>
+    <string name="separator">" · "</string>
 </resources>

@@ -596,4 +596,6 @@
         <item quantity="one">%d rule</item>
         <item quantity="other">%d rules</item>
     </plurals>
+    <!-- Between parts of one line: “My rules · 2”. Persian and Arabic take their comma: their zero is a dot. -->
+    <string name="separator">" · "</string>
 </resources>

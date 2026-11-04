@@ -560,4 +560,5 @@
         <item quantity="one">%d قانون</item>
         <item quantity="other">%d قانون</item>
     </plurals>
+    <string name="separator">"، "</string>
 </resources>

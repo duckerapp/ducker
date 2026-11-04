@@ -757,7 +757,7 @@ private fun profileSummary(profile: Profile, updating: Boolean): String {
         },
     )
 
-    return parts.joinToString(" · ")
+    return parts.joinToString(stringResource(R.string.separator))
 }
 
 /** Подробности активной подписки: срок, трафик и действия. */

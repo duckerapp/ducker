@@ -588,4 +588,5 @@
         <item quantity="many">%d قاعدة</item>
         <item quantity="other">%d قاعدة</item>
     </plurals>
+    <string name="separator">"، "</string>
 </resources>

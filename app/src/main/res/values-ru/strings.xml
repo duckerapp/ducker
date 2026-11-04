@@ -596,4 +596,5 @@
         <item quantity="many">%d правил</item>
         <item quantity="other">%d правила</item>
     </plurals>
+    <string name="separator">" · "</string>
 </resources>

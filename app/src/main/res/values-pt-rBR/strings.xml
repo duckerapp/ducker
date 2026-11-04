@@ -567,4 +567,5 @@
         <item quantity="many">%d regras</item>
         <item quantity="other">%d regras</item>
     </plurals>
+    <string name="separator">" · "</string>
 </resources>

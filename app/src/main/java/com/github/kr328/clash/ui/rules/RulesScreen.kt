@@ -240,7 +240,7 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = stringResource(typeLabel(rule.type)) + " · " + stringResource(targetLabel(rule.target)),
+                text = stringResource(typeLabel(rule.type)) + stringResource(R.string.separator) + stringResource(targetLabel(rule.target)),
                 style = MaterialTheme.typography.bodySmall,
                 color = if (rule.target == UserRule.Target.Block) MaterialTheme.colorScheme.error
                 else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -527,7 +527,7 @@ private fun AddRuleSheet(
         val count = if (type == UserRule.Type.App) picked.size else 0
 
         SheetButton(
-            text = stringResource(R.string.add) + if (count > 1) " · $count" else "",
+            text = stringResource(R.string.add) + if (count > 1) stringResource(R.string.separator) + count else "",
             busyText = "",
             busy = false,
             enabled = value != null,

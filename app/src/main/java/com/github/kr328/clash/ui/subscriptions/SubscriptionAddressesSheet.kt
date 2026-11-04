@@ -120,11 +120,12 @@ private fun AddressRow(address: SubscriptionAddress) {
             )
 
             val role = stringResource(if (address.own) R.string.address_own else R.string.address_backup)
-            Detail("$role · ${outcome(address.outcome, address.code)}")
+            val separator = stringResource(R.string.separator)
+            Detail(role + separator + outcome(address.outcome, address.code))
 
             address.resorts.forEach { resort ->
                 val way = stringResource(if (resort.via == "direct") R.string.address_direct else R.string.address_proxy)
-                Detail("$way · ${outcome(resort.outcome, resort.code)}")
+                Detail(way + separator + outcome(resort.outcome, resort.code))
             }
 
             if (address.served) {

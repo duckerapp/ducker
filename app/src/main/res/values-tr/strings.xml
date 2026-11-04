@@ -560,4 +560,5 @@
         <item quantity="one">%d kural</item>
         <item quantity="other">%d kural</item>
     </plurals>
+    <string name="separator">" · "</string>
 </resources>
