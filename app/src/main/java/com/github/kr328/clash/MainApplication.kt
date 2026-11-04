@@ -24,6 +24,7 @@ import com.github.kr328.clash.util.clashDir
 import com.github.kr328.clash.util.disguised
 import com.github.kr328.clash.util.extractGeoAsset
 import java.io.File
+import java.io.IOException
 
 @Suppress("unused")
 class MainApplication : Application(), SingletonImageLoader.Factory {
@@ -88,7 +89,13 @@ class MainApplication : Application(), SingletonImageLoader.Factory {
 
         val updateDate = packageManager.getPackageInfo(packageName, 0).lastUpdateTime
         for (name in listOf("geoip.metadb", "geosite.dat")) {
-            extractGeoAsset(File(clashDir, name), updateDate) { assets.open(name) }
+            // A full disk took this process down at every start until space was freed. The old database
+            // stays in place, and the next start tries again.
+            try {
+                extractGeoAsset(File(clashDir, name), updateDate) { assets.open(name) }
+            } catch (e: IOException) {
+                Log.w("Extract $name: $e")
+            }
         }
     }
 
