@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Icon
@@ -191,11 +192,11 @@ fun EditSubscriptionDialog(
 
         // Only where the provider gave mirrors (Q-82).
         if (!local && reach.backups > 0) {
-            SheetLink(Symbols.AltRoute, stringResource(R.string.subscription_backups_row) + stringResource(R.string.separator) + reach.backups, !busy, onAddresses)
+            SheetLink(Symbols.AltRoute, stringResource(R.string.subscription_backups_row) + stringResource(R.string.separator) + formatCount(reach.backups), !busy, onAddresses)
         }
 
         // Свои правила поверх правил провайдера (D-123) и сам конфиг (D-124) — своими экранами.
-        SheetLink(Symbols.Tune, stringResource(R.string.rules_title) + if (rules > 0) stringResource(R.string.separator) + rules else "", !busy, onRules)
+        SheetLink(Symbols.Tune, stringResource(R.string.rules_title) + if (rules > 0) stringResource(R.string.separator) + formatCount(rules) else "", !busy, onRules)
         SheetLink(Symbols.Code, stringResource(R.string.config_open), !busy, onConfig)
 
         // The line's gap is its own padding, not the sheet's spacing: it unfolds with the line.

@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.rules
 
+import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.machine
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
@@ -527,7 +528,7 @@ private fun AddRuleSheet(
         val count = if (type == UserRule.Type.App) picked.size else 0
 
         SheetButton(
-            text = stringResource(R.string.add) + if (count > 1) stringResource(R.string.separator) + count else "",
+            text = stringResource(R.string.add) + if (count > 1) stringResource(R.string.separator) + formatCount(count) else "",
             busyText = "",
             busy = false,
             enabled = value != null,

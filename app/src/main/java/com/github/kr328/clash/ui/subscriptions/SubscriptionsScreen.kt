@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.LocalTv
@@ -734,7 +735,7 @@ private fun RulesBadge(count: Int) {
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Icon(Symbols.Tune, contentDescription = stringResource(R.string.rules_title), modifier = Modifier.size(12.dp))
-        Text(count.toString(), style = MaterialTheme.typography.labelSmall)
+        Text(formatCount(count), style = MaterialTheme.typography.labelSmall)
     }
 }
 

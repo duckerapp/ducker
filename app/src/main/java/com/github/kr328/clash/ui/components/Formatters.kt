@@ -34,3 +34,7 @@ fun formatDate(millis: Long): String {
 fun formatPercent(fraction: Float): String = NumberFormat.getPercentInstance(
     LocalConfiguration.current.locales[0],
 ).format(fraction.toDouble())
+
+/** A count in the app's language: Persian and Arabic have their own digits. A bare `"$n"` is always Latin. */
+@Composable
+fun formatCount(value: Int): String = NumberFormat.getIntegerInstance(LocalConfiguration.current.locales[0]).format(value)
