@@ -149,6 +149,8 @@ fun EditSubscriptionDialog(
                 placeholder = title.ifEmpty { stringResource(R.string.subscription_name) },
                 enabled = !busy,
                 next = save,
+                // «🦆 Утка в пруду — …» in a Persian sheet showed from its end, the start past the field's edge.
+                named = true,
             )
         }
 

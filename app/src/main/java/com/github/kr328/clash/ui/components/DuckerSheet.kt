@@ -625,6 +625,8 @@ internal fun SheetField(
     next: FocusRequester? = null,
     /** A link, a domain, a search in a config: left to right in every language ([machine]). */
     machine: Boolean = false,
+    /** A name: in its own direction, as a [named] name in a list. */
+    named: Boolean = false,
 ) {
     val shape = RoundedCornerShape(20.dp)
     val scheme = MaterialTheme.colorScheme
@@ -659,7 +661,7 @@ internal fun SheetField(
             keyboardOptions = if (done != null) KeyboardOptions(imeAction = ImeAction.Done) else KeyboardOptions.Default,
             keyboardActions = done ?: KeyboardActions.Default,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface)
-                .let { if (machine) it.machine() else it },
+                .let { if (machine) it.machine() else if (named) it.named() else it },
             cursorBrush = SolidColor(scheme.onSurface),
             decorationBox = { field ->
                 Box(contentAlignment = Alignment.CenterStart) {
