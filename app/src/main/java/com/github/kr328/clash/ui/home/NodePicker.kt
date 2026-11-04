@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.home
 
-import com.github.kr328.clash.ui.components.isolated
+import com.github.kr328.clash.ui.components.asName
+import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.ringCorner
 import com.github.kr328.clash.ui.components.LocalTv
@@ -208,9 +209,9 @@ private fun NodeLine(node: NodeState, selected: Boolean, onClick: () -> Unit, mo
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(
-            text = node.name.isolated(),
+            text = node.name.asName(),
             modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.named(),
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.home
 
-import com.github.kr328.clash.ui.components.isolated
+import com.github.kr328.clash.ui.components.asName
+import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -264,9 +265,9 @@ private fun PickerNode(node: NodeState, selected: Boolean, enabled: Boolean, onC
     ) {
         if (node.favorite) Icon(Symbols.Star, contentDescription = stringResource(R.string.favorite), tint = content, modifier = Modifier.size(18.dp))
         Text(
-            node.name.isolated(),
+            node.name.asName(),
             modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.named(),
             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             color = content,
             maxLines = 2,

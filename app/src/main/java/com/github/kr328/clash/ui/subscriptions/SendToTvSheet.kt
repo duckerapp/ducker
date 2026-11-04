@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.subscriptions
 
-import com.github.kr328.clash.ui.components.isolated
+import com.github.kr328.clash.ui.components.asName
+import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -83,9 +84,9 @@ fun SendToTvSheet(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = profile.shownName.isolated(),
+                        text = profile.shownName.asName(),
                         modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyLarge.named(),
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

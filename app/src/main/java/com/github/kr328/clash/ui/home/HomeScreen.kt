@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.home
 
-import com.github.kr328.clash.ui.components.isolated
+import com.github.kr328.clash.ui.components.asName
+import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.focusRoom
 import com.github.kr328.clash.ui.components.smoothResource
@@ -1500,9 +1501,9 @@ private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
                     // Имя узла приходит от провайдера уже с флагом страны — своего значка здесь
                     // не нужно, а название группы ничего не сообщает.
                     Text(
-                        text = name.isolated().ifEmpty { stringResource(R.string.proxies_tab) },
+                        text = name.asName().ifEmpty { stringResource(R.string.proxies_tab) },
                         modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyLarge.named(),
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

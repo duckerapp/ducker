@@ -878,6 +878,21 @@ fun TextStyle.machine(): TextStyle =
     if (LocalLayoutDirection.current == LayoutDirection.Rtl) copy(textDirection = TextDirection.Ltr, textAlign = TextAlign.Right)
     else this
 
+/**
+ * A provider's or the person's name standing alone in a right-to-left layout: its paragraph takes the name's own
+ * direction (with [asName], which leaves out the isolate marks that would hide it) and stays on the right. In a
+ * right-to-left paragraph Android 10 and 11 drew a Latin name cut with «…» shifted over its own start — «ery long node
+ * name tha…», the «V» under the delay beside it.
+ */
+@Composable
+fun TextStyle.named(): TextStyle =
+    if (LocalLayoutDirection.current == LayoutDirection.Rtl) copy(textDirection = TextDirection.Content, textAlign = TextAlign.Right)
+    else this
+
+/** The text for a [named] style: bare in a right-to-left layout, in isolate marks ([isolated]) in a left-to-right one. */
+@Composable
+fun String.asName(): String = if (LocalLayoutDirection.current == LayoutDirection.Rtl) this else isolated()
+
 /** Что показывает кнопка «Обновить» подписки (D-119). */
 enum class UpdateShown { Idle, Busy, Done, Failed }
 

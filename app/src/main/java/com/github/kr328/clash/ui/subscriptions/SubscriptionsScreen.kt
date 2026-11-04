@@ -1,5 +1,7 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.asName
+import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.Symbols
@@ -674,8 +676,8 @@ private fun ProfileName(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            text = profile.shownName.isolated(),
-            style = style,
+            text = profile.shownName.asName(),
+            style = style.named(),
             fontWeight = fontWeight,
             modifier = Modifier.weight(1f, fill = false),
             // Under an enlarged font up to three lines (D-408): at 1.78 «🦆 Утка в и…» was all of it, and two lines still

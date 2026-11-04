@@ -1,5 +1,7 @@
 package com.github.kr328.clash.ui.proxy
 
+import com.github.kr328.clash.ui.components.asName
+import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvScrollToStart
@@ -734,9 +736,9 @@ private fun ProxyOption(
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = proxy.name.isolated(),
+                    text = proxy.name.asName(),
                     modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.named(),
                     // The filled surface carries selection; keep the name lighter than screen headings.
                     fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                     // Ровно две строки всегда: у провайдеров имена разной длины, и без
