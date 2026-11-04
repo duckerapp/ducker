@@ -4,12 +4,16 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.net.VpnService
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.os.SystemClock
 import com.github.kr328.clash.common.compat.startForegroundServiceCompat
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.Failure
+import com.github.kr328.clash.service.util.sendClashStopped
 
 /**
  * Поднимает туннель обратно, если процесс службы умер, а человек туннель не выключал (F-110).
@@ -34,6 +38,9 @@ class TunGuard : Service() {
     companion object {
         /** Упал сразу после подъёма — второй раз не поднимаем, иначе цикл «поднял — упал». */
         private const val RESTORE_COOLDOWN = 2 * 60 * 1000L
+
+        /** Long enough for a guard that Android still holds back to run first: it starts with the process (F-397). */
+        private const val SETTLE = 5_000L
 
         /**
          * Поднять туннель, если он умер на ходу: служба успевает обнулить отметку
@@ -85,18 +92,49 @@ class TunGuard : Service() {
         }
 
         /**
+         * After a second crash in a row Android holds this guard back for half an hour, and with ducker in the
+         * background drops it a minute later (F-397): nothing of ours runs, the VPN is off with no word, and its
+         * marks stay. Whatever starts this process next — the app, a widget, the tile, an update alarm — tells
+         * the person, without reconnecting: that start may come hours later (Q-105).
+         */
+        fun Context.noticeTunnelLeftDown() {
+            Handler(Looper.getMainLooper()).postDelayed({
+                val now = System.currentTimeMillis()
+                val updatedAt = packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+                val startedAt = ServiceStore(this).tunnelStartedAt
+
+                if (leftDownUnnoticed(startedAt, now - SystemClock.elapsedRealtime(), updatedAt, StatusProvider.serviceRunning)) {
+                    Log.w("Tunnel found down with no word after its process died")
+
+                    leftDown()
+                }
+            }, SETTLE)
+        }
+
+        /**
+         * The tunnel went down unnoticed: it is not running, though it was up after the last boot and the last
+         * update. A tunnel killed by either is the business of `ProfileReceiver` and `RestartReceiver`.
+         */
+        internal fun leftDownUnnoticed(startedAt: Long, bootedAt: Long, updatedAt: Long, running: Boolean): Boolean =
+            !running && startedAt > maxOf(bootedAt, updatedAt)
+
+        /**
          * The tunnel stays down after its process died. Android keeps the dead [TunService] started and in
          * the foreground with its ongoing notification, and never restarts it (F-113): the shade would say
          * the VPN is up while nothing is protected. Stopping drops both; the notice says why it is off.
-         * The dead service could not remove its marker either, and `RestartReceiver` would bring the tunnel
-         * up at the next update or boot.
+         * The dead service could not remove its marks either: `RestartReceiver` would bring the tunnel up at
+         * the next boot, and `ProfileReceiver` at the next update.
          */
         private fun Context.leftDown() {
             stopService(TunService::class.intent)
 
+            ServiceStore(this).tunnelStartedAt = 0
             StatusProvider.shouldStartClashOnBoot = false
 
             StopNotice.show(this, Failure.CRASHED)
+
+            // Home on screen reads the reason at a stop, as do the tile and the widget.
+            sendClashStopped(Failure.CRASHED)
         }
     }
 }

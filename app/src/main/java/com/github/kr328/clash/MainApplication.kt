@@ -17,6 +17,7 @@ import com.github.kr328.clash.common.util.mainActivityAlias
 import com.github.kr328.clash.remote.Remote
 import com.github.kr328.clash.service.FlightRecorder
 import com.github.kr328.clash.service.CrashRecorder
+import com.github.kr328.clash.service.TunGuard.Companion.noticeTunnelLeftDown
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.recoverReplaced
 import com.github.kr328.clash.service.util.sendServiceRecreated
@@ -66,6 +67,8 @@ class MainApplication : Application(), SingletonImageLoader.Factory {
             extractGeoFiles()
 
             sendServiceRecreated()
+
+            noticeTunnelLeftDown()
         }
     }
 
