@@ -28,6 +28,8 @@
     <string name="add_subscription">Thêm gói đăng ký</string>
     <string name="welcome_title">Chào mừng đến với ducker</string>
     <string name="welcome_text">Để kết nối, hãy thêm gói đăng ký của nhà cung cấp bằng liên kết hoặc mã QR.</string>
+    <string name="no_space_title">Điện thoại đã hết dung lượng</string>
+    <string name="no_space_hint">Hãy giải phóng dung lượng — các gói đăng ký và cài đặt vẫn còn nguyên</string>
     <string name="updating">Đang cập nhật…</string>
     <string name="delete">Xóa</string>
     <string name="delete_subscription_action">Xóa gói đăng ký</string>

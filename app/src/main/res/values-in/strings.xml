@@ -28,6 +28,8 @@
     <string name="add_subscription">Tambah langganan</string>
     <string name="welcome_title">Selamat datang di ducker</string>
     <string name="welcome_text">Untuk terhubung, tambahkan langganan dari penyedia melalui tautan atau kode QR.</string>
+    <string name="no_space_title">Penyimpanan ponsel penuh</string>
+    <string name="no_space_hint">Kosongkan sebagian ruang — langganan dan pengaturan Anda aman</string>
     <string name="updating">Memperbarui…</string>
     <string name="delete">Hapus</string>
     <string name="delete_subscription_action">Hapus langganan</string>

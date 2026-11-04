@@ -16,6 +16,7 @@ import com.github.kr328.clash.ui.config.readFile
 import com.github.kr328.clash.ui.proxy.ProxyListStore
 import com.github.kr328.clash.log.LogScrubber
 import com.github.kr328.clash.service.util.Failure
+import com.github.kr328.clash.service.util.outOfSpace
 import com.github.kr328.clash.service.util.ProviderInfo
 import com.github.kr328.clash.service.util.SubscriptionMirrors
 import com.github.kr328.clash.service.util.pendingDir
@@ -66,6 +67,11 @@ data class SubscriptionsState(
     val updateFailure: Failure? = null,
     val hwid: String = "",
     val loaded: Boolean = false,
+    /**
+     * The list could not be read, and the phone is out of space: the subscriptions are there, but their database
+     * does not open. Home says so instead of the welcome (Q-104).
+     */
+    val outOfSpace: Boolean = false,
     /** Открыт ли диалог добавления и что в нём происходит. */
     val adding: Boolean = false,
     val input: String = "",
@@ -194,8 +200,9 @@ class SubscriptionsViewModel : ViewModel() {
             val order = withContext(Dispatchers.IO) { AppStore(context).profileOrder }
             val favorites = withContext(Dispatchers.IO) { SettingsStore(context).favoriteProfiles }
                 .mapNotNullTo(HashSet()) { runCatching { UUID.fromString(it) }.getOrNull() }
-            manual = runCatching { withProfile { queryAll() } }.getOrDefault(emptyList())
-                .inOrder(order.split(',')) { it.uuid.toString() }
+            val all = runCatching { withProfile { queryAll() } }
+            manual = all.getOrDefault(emptyList()).inOrder(order.split(',')) { it.uuid.toString() }
+            val outOfSpace = all.isFailure && withContext(Dispatchers.IO) { context.outOfSpace }
             val profiles = manual.shown(favorites)
 
             val sendHwid = withContext(Dispatchers.IO) { ServiceStore(context).sendHwid }
@@ -213,6 +220,7 @@ class SubscriptionsViewModel : ViewModel() {
                     sendHwid = sendHwid,
                     hwid = SubscriptionHeaders.hwidOf(context),
                     loaded = true,
+                    outOfSpace = outOfSpace,
                 )
             }
         }
@@ -689,7 +697,7 @@ class SubscriptionsViewModel : ViewModel() {
      */
     fun reportUpdateFailed(context: Context, uuid: UUID?, reason: String?) {
         // Причина приходит сырым текстом ядра или службы — словами её говорит `Failure` (D-227).
-        val failure = reason?.takeIf { it.isNotBlank() }?.let { Failure.of(it, Failure.Kind.BadConfig) }
+        val failure = reason?.takeIf { it.isNotBlank() }?.let { Failure.of(it, Failure.Kind.BadConfig, context.outOfSpace) }
 
         _state.update {
             it.copy(
@@ -1022,7 +1030,8 @@ private class Told(text: String) : Exception(text)
 private fun Throwable.shown(context: Context): String {
     if (this is Told) return message.orEmpty()
 
-    val failure = message?.takeIf { it.isNotBlank() }?.let { Failure.of(it, Failure.Kind.BadConfig) } ?: return ""
+    val failure = message?.takeIf { it.isNotBlank() }?.let { Failure.of(it, Failure.Kind.BadConfig, context.outOfSpace) }
+        ?: return ""
 
     return listOf(failure.text(context), LogScrubber.scrub(failure.detail)).filter { it.isNotBlank() }.joinToString("\n")
 }

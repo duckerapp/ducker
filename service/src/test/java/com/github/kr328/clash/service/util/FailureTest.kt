@@ -59,6 +59,20 @@ class FailureTest {
         )
     }
 
+    /** Seen on a full disk (Android 13 and 15): the update blamed the provider over a raw ENOENT. */
+    @Test
+    fun `a failure nothing explains is put down to a full disk`() {
+        val raw = "/data/user/0/app.ducker.android/files/processing/config.yaml: open failed: ENOENT (No such file or directory)"
+
+        assertEquals(Failure(Kind.NoSpace), Failure.of(raw, Kind.BadConfig, outOfSpace = true))
+        assertEquals(Kind.BadConfig, Failure.of(raw, Kind.BadConfig).kind)
+        assertEquals(
+            Kind.Network,
+            Failure.of("DOWNLOAD_FAILED: profile: dial tcp: i/o timeout", Kind.BadConfig, outOfSpace = true).kind,
+        )
+        assertEquals(Kind.NoServers, Failure.of("profile does not contain `proxies`", outOfSpace = true).kind)
+    }
+
     @Test
     fun `parsing errors still permit protocol list conversion`() {
         for (raw in listOf(null, "", "yaml: line 1: cannot unmarshal", "profile does not contain `proxies` or `proxy-providers`")) {

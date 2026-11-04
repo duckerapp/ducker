@@ -28,6 +28,8 @@
     <string name="add_subscription">إضافة اشتراك</string>
     <string name="welcome_title">مرحبًا بك في ducker</string>
     <string name="welcome_text">للاتصال، أضف اشتراك مزوّد الخدمة عبر رابط أو رمز QR.</string>
+    <string name="no_space_title">نفدت مساحة التخزين في الهاتف</string>
+    <string name="no_space_hint">أفرغ بعض المساحة — اشتراكاتك وإعداداتك سليمة</string>
     <string name="updating">جارٍ التحديث…</string>
     <string name="delete">حذف</string>
     <string name="delete_subscription_action">حذف الاشتراك</string>

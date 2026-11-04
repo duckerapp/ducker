@@ -402,8 +402,8 @@ fun SubscriptionsScreen(
                 item {
                     EmptyState(
                         icon = Symbols.Article,
-                        title = stringResource(R.string.ducker_no_subscription),
-                        message = stringResource(R.string.subscriptions_empty),
+                        title = stringResource(if (state.outOfSpace) R.string.no_space_title else R.string.ducker_no_subscription),
+                        message = stringResource(if (state.outOfSpace) R.string.no_space_hint else R.string.subscriptions_empty),
                     )
                 }
             }

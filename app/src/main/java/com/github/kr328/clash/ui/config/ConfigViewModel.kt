@@ -9,6 +9,7 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.remote.Remote
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.service.util.importedDir
+import com.github.kr328.clash.service.util.outOfSpace
 import com.github.kr328.clash.service.util.pendingDir
 import com.github.kr328.clash.service.util.sendOverrideChanged
 import com.github.kr328.clash.ui.subscriptions.shownName
@@ -34,6 +35,8 @@ sealed interface ConfigResult {
     data class Invalid(val message: String, val line: Int?) : ConfigResult
     data object Saved : ConfigResult
     data object SaveFailed : ConfigResult
+    /** Nothing could be written, the phone is out of space (Q-104); the edit stays in the editor. */
+    data object NoSpace : ConfigResult
     data class Copied(val name: String) : ConfigResult
     /** Файл с телефона добавлен как свой профиль. */
     data class Added(val name: String) : ConfigResult
@@ -326,7 +329,7 @@ class ConfigViewModel : ViewModel() {
                 if (snapshot.fromSubscription) ConfigEdits.mark(context, uuid)
             }
         } catch (_: IOException) {
-            return ConfigResult.SaveFailed
+            return if (context.outOfSpace) ConfigResult.NoSpace else ConfigResult.SaveFailed
         }
 
         if (snapshot.active && Remote.broadcasts.clashRunning) context.sendOverrideChanged()
@@ -390,12 +393,18 @@ class ConfigViewModel : ViewModel() {
     }
 
     /** Ошибка ядра или `null`, если конфиг разбирается. */
-    private suspend fun validate(context: Context, text: String): ConfigResult.Invalid? {
-        val dir = withContext(Dispatchers.IO) {
-            context.cacheDir.resolve("config-check").also {
-                it.mkdirs()
-                it.resolve("config.yaml").writeText(text)
+    private suspend fun validate(context: Context, text: String): ConfigResult? {
+        val dir = try {
+            withContext(Dispatchers.IO) {
+                context.cacheDir.resolve("config-check").also {
+                    it.mkdirs()
+                    it.resolve("config.yaml").writeText(text)
+                }
             }
+        } catch (e: IOException) {
+            if (context.outOfSpace) return ConfigResult.NoSpace
+
+            throw e
         }
 
         val error = try {

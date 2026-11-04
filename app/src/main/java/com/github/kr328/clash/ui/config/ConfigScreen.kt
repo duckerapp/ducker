@@ -947,7 +947,8 @@ private fun TextPill(text: String, enabled: Boolean, onClick: () -> Unit) {
 }
 
 private val ConfigResult.ok: Boolean
-    get() = this !is ConfigResult.Invalid && this !is ConfigResult.ReadOnly && this != ConfigResult.SaveFailed
+    get() = this !is ConfigResult.Invalid && this !is ConfigResult.ReadOnly && this != ConfigResult.SaveFailed &&
+        this != ConfigResult.NoSpace
 
 /**
  * Итог проверки или записи — плашкой поверх кода снизу. Удачный сам гаснет через несколько
@@ -984,6 +985,7 @@ private fun ResultContent(result: ConfigResult, onLine: (Int) -> Unit, onDismiss
         ConfigResult.Valid -> stringResource(R.string.config_valid)
         ConfigResult.Saved -> stringResource(R.string.config_saved)
         ConfigResult.SaveFailed -> stringResource(R.string.config_save_failed)
+        ConfigResult.NoSpace -> stringResource(com.github.kr328.clash.service.R.string.no_space)
         is ConfigResult.Copied -> stringResource(R.string.config_copied, result.name)
         is ConfigResult.Added -> stringResource(R.string.config_added, result.name)
         ConfigResult.ReadOnly -> stringResource(R.string.config_file_readonly)

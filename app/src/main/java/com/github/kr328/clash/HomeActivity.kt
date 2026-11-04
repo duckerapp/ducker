@@ -1121,6 +1121,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                             }
                                         },
                                         onboarding = onboarding,
+                                        outOfSpace = subscriptionsState.outOfSpace,
                                         backgroundNotice = backgroundNotice,
                                         picker = picker,
                                         pickerState = proxyState,
@@ -1697,6 +1698,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         viewModel.startTrafficPolling(this@HomeActivity)
 
         viewModel.refresh(this@HomeActivity)
+
+        // Back from freeing space, perhaps: the list is read again, or home would stay on «кончилось место» (Q-104).
+        if (subscriptionsViewModel.state.value.outOfSpace) subscriptionsViewModel.refresh(this@HomeActivity)
 
         starts.intValue++
 

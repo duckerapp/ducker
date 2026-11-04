@@ -18,6 +18,17 @@ val File.directoryLastModified: Long?
         return walk().map { it.lastModified() }.maxOrNull()
     }
 
+/** About what a subscription with its rule lists, or the geo databases (12.7 MB), may need at once. */
+private const val LOW_SPACE = 32L * 1024 * 1024
+
+/**
+ * The phone is out of space, or close to it: the cause of a failure nothing else explains (Q-104). The failure
+ * itself seldom says so: a directory that could not be created surfaces as ENOENT of the file inside it, and
+ * Room's database as a disk I/O error (F-398).
+ */
+val Context.outOfSpace: Boolean
+    get() = filesDir.usableSpace < LOW_SPACE
+
 private const val STAGED = ".new"
 private const val OLD = ".old"
 

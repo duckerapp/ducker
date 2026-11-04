@@ -222,6 +222,8 @@ fun HomeScreen(
     onFastest: (() -> Unit)? = null,
     /** Подписок нет вовсе — вместо главной приветствие (D-98). */
     onboarding: Boolean = false,
+    /** The subscriptions could not be read for want of space: the welcome says that instead (Q-104). */
+    outOfSpace: Boolean = false,
     /** Карточка про работу в фоне; `null` — не показывать (D-109). */
     backgroundNotice: BackgroundNotice? = null,
     /** Узлы для быстрой смены в карточке (D-116); `null` — ещё не загружены. */
@@ -268,7 +270,7 @@ fun HomeScreen(
     // мягкая: после первой подписки главная проявляется на месте приветствия.
     Crossfade(targetState = onboarding, animationSpec = tween(ONBOARDING_MS), label = "onboarding") { first ->
         if (first) {
-            Welcome(onSettings, header, appCards, modifier)
+            Welcome(onSettings, header, appCards, outOfSpace, modifier)
         } else {
             HomeRegular(
                 state = state,
@@ -313,6 +315,7 @@ private fun Welcome(
     onSettings: () -> Unit,
     header: Boolean,
     appCards: (@Composable () -> Unit)?,
+    outOfSpace: Boolean,
     modifier: Modifier,
 ) {
     Column(
@@ -350,7 +353,7 @@ private fun Welcome(
             Spacer(Modifier.height(28.dp))
 
             Text(
-                text = stringResource(R.string.welcome_title),
+                text = stringResource(if (outOfSpace) R.string.no_space_title else R.string.welcome_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -359,7 +362,7 @@ private fun Welcome(
             Spacer(Modifier.height(10.dp))
 
             Text(
-                text = stringResource(R.string.welcome_text),
+                text = stringResource(if (outOfSpace) R.string.no_space_hint else R.string.welcome_text),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

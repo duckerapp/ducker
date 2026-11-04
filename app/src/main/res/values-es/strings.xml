@@ -28,6 +28,8 @@
     <string name="add_subscription">Añadir suscripción</string>
     <string name="welcome_title">Te damos la bienvenida a ducker</string>
     <string name="welcome_text">Para conectarte, añade la suscripción de tu proveedor mediante un enlace o código QR.</string>
+    <string name="no_space_title">El teléfono se quedó sin espacio</string>
+    <string name="no_space_hint">Libera espacio: tus suscripciones y ajustes están a salvo</string>
     <string name="updating">Actualizando…</string>
     <string name="delete">Eliminar</string>
     <string name="delete_subscription_action">Eliminar suscripción</string>

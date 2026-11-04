@@ -28,6 +28,8 @@
     <string name="add_subscription">添加订阅</string>
     <string name="welcome_title">欢迎使用 ducker</string>
     <string name="welcome_text">请通过链接或二维码添加服务商的订阅以进行连接。</string>
+    <string name="no_space_title">手机存储空间已满</string>
+    <string name="no_space_hint">请释放一些空间，订阅和设置都完好无损</string>
     <string name="updating">正在更新…</string>
     <string name="delete">删除</string>
     <string name="delete_subscription_action">删除订阅</string>

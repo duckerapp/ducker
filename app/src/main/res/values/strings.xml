@@ -46,6 +46,8 @@
     <string name="add_subscription">Add subscription</string>
     <string name="welcome_title">Welcome to ducker</string>
     <string name="welcome_text">To connect, add your provider\'s subscription by link or QR code.</string>
+    <string name="no_space_title">Your phone is out of storage</string>
+    <string name="no_space_hint">Free up some space — your subscriptions and settings are safe</string>
     <string name="updating">Updating…</string>
     <string name="delete">Delete</string>
     <string name="delete_subscription_action">Delete subscription</string>

@@ -22,6 +22,7 @@ import com.github.kr328.clash.service.data.ImportedDao
 import com.github.kr328.clash.service.util.ProviderInfo
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.Failure
+import com.github.kr328.clash.service.util.outOfSpace
 import com.github.kr328.clash.service.util.sendProfileUpdateCompleted
 import com.github.kr328.clash.service.util.sendProfileUpdateFailed
 import kotlinx.coroutines.*
@@ -208,7 +209,7 @@ class ProfileWorker : BaseService("ProfileWorker") {
     private fun failed(uuid: UUID, name: String, reason: String) {
         // В шторке — объяснение словами (D-227); экрану уходит сырой текст, он переведёт сам.
         val content = getString(
-            R.string.format_update_failure, name, Failure.of(reason, Failure.Kind.BadConfig).text(this),
+            R.string.format_update_failure, name, Failure.of(reason, Failure.Kind.BadConfig, outOfSpace).text(this),
         )
 
         val notification = resultBuilder(uuid)

@@ -46,6 +46,7 @@
     <string name="vpn_crashed_title">A VPN foi desligada</string>
     <string name="vpn_crashed">Um erro no ducker desligou a VPN. Conecte de novo</string>
     <string name="vpn_crashed_connect">Conectar</string>
+    <string name="no_space">O celular está sem espaço. Libere espaço — suas assinaturas e configurações estão seguras</string>
     <string name="subscription_web_page">Chegou uma página da web em vez da assinatura: o site pode estar bloqueado ou o link leva a outro lugar. Tente mais tarde ou verifique o link</string>
     <string name="subscription_backups_failed">%1$s. Os endereços reserva do provedor (%2$d) também não responderam</string>
 </resources>

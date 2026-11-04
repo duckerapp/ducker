@@ -38,6 +38,8 @@
     <string name="add_subscription">Добавить подписку</string>
     <string name="welcome_title">Добро пожаловать</string>
     <string name="welcome_text">Чтобы подключиться, добавьте подписку провайдера — ссылкой или QR-кодом.</string>
+    <string name="no_space_title">На телефоне кончилось место</string>
+    <string name="no_space_hint">Освободите место — подписки и настройки целы</string>
     <string name="updating">Обновляю…</string>
     <string name="delete">Удалить</string>
     <string name="delete_subscription_action">Удалить подписку</string>

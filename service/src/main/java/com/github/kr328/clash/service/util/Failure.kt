@@ -57,6 +57,9 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", v
         VpnRejected(R.string.vpn_rejected, Fix.VpnSettings),
         TunnelFailed(R.string.failure_try_again),
         Crashed(R.string.vpn_crashed),
+
+        /** Nothing else explains the failure, and the phone is out of space (Q-104). */
+        NoSpace(R.string.no_space),
         Unknown(R.string.failure_try_again),
     }
 
@@ -93,16 +96,18 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", v
         /**
          * @param unknown чем считать незнакомый текст. При загрузке подписки это ошибка разбора
          * конфига: всё, что случилось до него, ядро и служба помечают сами.
+         * @param outOfSpace the phone is out of space (`Context.outOfSpace`): a text no other kind explains is
+         * put down to it rather than to [unknown], which would send the person to their provider for nothing.
          */
-        fun of(raw: String?, unknown: Kind = Kind.Unknown): Failure {
+        fun of(raw: String?, unknown: Kind = Kind.Unknown, outOfSpace: Boolean = false): Failure {
             val text = raw.orEmpty()
             val backups = BACKUPS.find(text)?.takeIf { text.startsWith(DOWNLOAD) }
-            val failure = parse(if (backups != null) text.removeRange(backups.range) else text, unknown)
+            val failure = parse(if (backups != null) text.removeRange(backups.range) else text, unknown, outOfSpace)
 
             return if (backups != null) failure.copy(backups = backups.groupValues[1].toInt()) else failure
         }
 
-        private fun parse(text: String, unknown: Kind): Failure {
+        private fun parse(text: String, unknown: Kind, outOfSpace: Boolean): Failure {
             HTTP.find(text.removePrefix("${DOWNLOAD}profile: "))?.let {
                 val code = it.groupValues[1].toInt()
 
@@ -149,6 +154,7 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", v
                 "convert v2ray subscribe error" in text || "не похоже на список ссылок" in text ->
                     Failure(Kind.NotLinks)
                 "does not contain `proxies`" in text -> Failure(Kind.NoServers)
+                outOfSpace -> Failure(Kind.NoSpace)
                 else -> Failure(unknown, detail = text)
             }
         }
