@@ -28,7 +28,7 @@
     <string name="subscription_provider_too_large">فهرست قوانین یا سرورها در اشتراک بیش از حد بزرگ است (بیشتر از 64 مگابایت). به ارائه‌دهنده خود اطلاع دهید</string>
     <string name="subscription_download_failed">دانلود اشتراک ممکن نشد. اتصال اینترنت را بررسی و دوباره تلاش کنید</string>
     <string name="subscription_redirects">لینک اشتراک مدام به آدرس‌های دیگر تغییر مسیر می‌دهد. به ارائه‌دهنده خود اطلاع دهید</string>
-    <string name="subscription_bad_link">لینک باید با https:// شروع شود</string>
+    <string name="subscription_bad_link">لینک باید با https://\u200E شروع شود</string>
     <string name="subscription_not_links">این نه لینک اشتراک است و نه فهرست سرورها. لینک دریافتی از ارائه‌دهنده را جای‌گذاری کنید</string>
     <string name="subscription_no_servers">این اشتراک هیچ سروری ندارد. به ارائه‌دهنده خود اطلاع دهید</string>
     <string name="subscription_bad_config">لینک چیزی غیر از اشتراک برگرداند، یا کانفیگ آن خطا دارد. لینک را بررسی کنید یا به ارائه‌دهنده خود اطلاع دهید</string>

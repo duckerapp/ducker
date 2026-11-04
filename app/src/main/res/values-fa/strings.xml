@@ -39,8 +39,8 @@
     <string name="hwid_show">نمایش شناسه</string>
     <string name="hwid_hide">پنهان کردن شناسه</string>
     <string name="subscription_link">لینک</string>
-    <string name="subscription_link_hint">لینک اشتراک، یا لینکی مانند vless://</string>
-    <string name="subscription_link_placeholder">https://… یا vless://…</string>
+    <string name="subscription_link_hint">لینک اشتراک، یا لینکی مانند vless://\u200E</string>
+    <string name="subscription_link_placeholder">https://…\u200E یا vless://…\u200E</string>
     <string name="adding_hint">ممکن است تا یک دقیقه طول بکشد.</string>
     <string name="clear">پاک کردن</string>
     <string name="subscription_default_name">اشتراک</string>
@@ -227,7 +227,7 @@
     <string name="external_started">ducker شروع به کار کرد</string>
     <string name="external_stopped">ducker متوقف شد</string>
     <string name="external_vpn_denied">راه‌اندازی VPN ممکن نشد: مجوز داده نشده است</string>
-    <string name="subscription_http_warning">این لینک http:// رمزگذاری نشده است: اشتراک ممکن است در مسیر خوانده یا دستکاری شود. شناسه دستگاه شما از طریق آن فرستاده نمی‌شود. از ارائه‌دهنده خود لینکی بخواهید که با https:// شروع شود</string>
+    <string name="subscription_http_warning">این لینک http://\u200E رمزگذاری نشده است: اشتراک ممکن است در مسیر خوانده یا دستکاری شود. شناسه دستگاه شما از طریق آن فرستاده نمی‌شود. از ارائه‌دهنده خود لینکی بخواهید که با https://\u200E شروع شود</string>
     <string name="apk_broken_title">فایل نصب آسیب دیده است</string>
     <string name="apk_broken_hint">برخی از فایل‌های برنامه موجود نیستند. این مشکل در فایل‌های APK که توسط دیگران دستکاری و بسته‌بندی شده‌اند رخ می‌دهد. ducker را دوباره از صفحه انتشار دانلود کنید</string>
     <string name="apk_broken_open">باز کردن صفحه انتشار</string>

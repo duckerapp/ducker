@@ -32,7 +32,7 @@
     <string name="subscription_provider_too_large">إحدى قوائم القواعد أو الخوادم في الاشتراك كبيرة جدًا (أكثر من 64 MB). أبلغ مزوّد الخدمة</string>
     <string name="subscription_download_failed">تعذّر تنزيل الاشتراك. تحقق من الاتصال وحاول مجددًا</string>
     <string name="subscription_redirects">رابط الاشتراك يعيد التوجيه باستمرار إلى عناوين أخرى. أبلغ مزوّد الخدمة</string>
-    <string name="subscription_bad_link">يجب أن يبدأ الرابط بـ https://</string>
+    <string name="subscription_bad_link">يجب أن يبدأ الرابط بـ https://\u200E</string>
     <string name="subscription_not_links">هذا ليس رابط اشتراك ولا قائمة خوادم. الصق الرابط من مزوّد الخدمة</string>
     <string name="subscription_no_servers">لا يحتوي الاشتراك على خوادم. أبلغ مزوّد الخدمة</string>
     <string name="subscription_bad_config">أعاد الرابط محتوى غير الاشتراك، أو يوجد خطأ في ملف إعداداته. تحقق من الرابط أو أبلغ مزوّد الخدمة</string>

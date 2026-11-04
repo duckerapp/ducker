@@ -39,8 +39,8 @@
     <string name="hwid_show">إظهار المعرّف</string>
     <string name="hwid_hide">إخفاء المعرّف</string>
     <string name="subscription_link">الرابط</string>
-    <string name="subscription_link_hint">رابط اشتراك أو رابط خادم مثل vless://</string>
-    <string name="subscription_link_placeholder">https://… أو vless://…</string>
+    <string name="subscription_link_hint">رابط اشتراك أو رابط خادم مثل vless://\u200E</string>
+    <string name="subscription_link_placeholder">https://…\u200E أو vless://…\u200E</string>
     <string name="adding_hint">قد يستغرق ذلك ما يصل إلى دقيقة.</string>
     <string name="clear">مسح</string>
     <string name="subscription_default_name">اشتراك</string>
@@ -231,7 +231,7 @@
     <string name="external_started">تم تشغيل ducker</string>
     <string name="external_stopped">تم إيقاف ducker</string>
     <string name="external_vpn_denied">تعذّر تشغيل VPN: لم يُمنح الإذن</string>
-    <string name="subscription_http_warning">رابط http:// غير مشفّر: يمكن قراءة الاشتراك أو تغييره أثناء النقل. لا يُرسل معرّف الجهاز عبره. اطلب من مزوّد الخدمة رابطًا يبدأ بـ https://</string>
+    <string name="subscription_http_warning">رابط http://\u200E غير مشفّر: يمكن قراءة الاشتراك أو تغييره أثناء النقل. لا يُرسل معرّف الجهاز عبره. اطلب من مزوّد الخدمة رابطًا يبدأ بـ https://\u200E</string>
     <string name="apk_broken_title">ملف التثبيت تالف</string>
     <string name="apk_broken_hint">بعض ملفات التطبيق مفقودة. قد يحدث ذلك مع ملفات APK التي أعاد شخص آخر تجميعها. نزّل ducker مجددًا من صفحة الإصدارات</string>
     <string name="apk_broken_open">فتح صفحة الإصدارات</string>
