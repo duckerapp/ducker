@@ -10,6 +10,8 @@ import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import java.util.Locale
@@ -237,7 +239,8 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
                 text = label,
                 // An app's name is the person's language; a site or an address is machine text.
                 style = MaterialTheme.typography.bodyLarge.let { if (rule.type == UserRule.Type.App) it else it.machine() },
-                maxLines = 1,
+                // Under an enlarged font a narrow phone left room for «example…» only; a second line shows it whole.
+                maxLines = if (LocalDensity.current.fontScale > 1f) 2 else 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
@@ -568,22 +571,35 @@ private fun KindPills(selected: UserRule.Type, onSelect: (UserRule.Type) -> Unit
         ),
     )
 
-    Column(Modifier.selectableGroup()) {
-        rows.forEach { row ->
-            val labels = row.map { stringResource(it.second) }
-            val weights = labelWeights(labels, MaterialTheme.typography.labelLarge, KIND_PILL_ROOM)
+    val kinds = rows.flatten()
+    val labels = kinds.map { stringResource(it.second) }
+    val weights = labelWeights(labels, MaterialTheme.typography.labelLarge, KIND_PILL_ROOM)
+    val enlarged = LocalDensity.current.fontScale > 1f
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                row.forEachIndexed { i, (kind, _) ->
-                    Pill(
-                        text = labels[i],
-                        onClick = { onSelect(kind) },
-                        modifier = Modifier.weight(weights[i]),
-                        selected = kind == selected,
-                        icon = typeIcon(kind),
-                        role = Role.RadioButton,
-                        fit = true,
-                    )
+    BoxWithConstraints(Modifier.selectableGroup()) {
+        val gap = with(LocalDensity.current) { KIND_PILL_GAP.toPx() }
+        // Under an enlarged system font the pills keep their size and take more rows: three in a row on a narrow
+        // phone shrank their labels to a few pixels. At the normal size the two rows stay as they were.
+        val perRow = if (!enlarged) 3 else (3 downTo 1).firstOrNull { n ->
+            weights.chunked(n).all { it.sum() + gap * (it.size - 1) <= constraints.maxWidth }
+        } ?: 1
+
+        Column {
+            kinds.indices.chunked(perRow).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(KIND_PILL_GAP)) {
+                    row.forEach { i ->
+                        val kind = kinds[i].first
+
+                        Pill(
+                            text = labels[i],
+                            onClick = { onSelect(kind) },
+                            modifier = Modifier.weight(weights[i]),
+                            selected = kind == selected,
+                            icon = typeIcon(kind),
+                            role = Role.RadioButton,
+                            fit = true,
+                        )
+                    }
                 }
             }
         }
@@ -740,3 +756,4 @@ private const val SUGGESTIONS = 8
 
 /** Half of [Pill]'s room around a label with an icon: 10 + 18 + 6 + 14 = 48 in all. */
 private val KIND_PILL_ROOM = 24.dp
+private val KIND_PILL_GAP = 6.dp
