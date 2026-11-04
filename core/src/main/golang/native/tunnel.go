@@ -98,6 +98,21 @@ func healthCheck(completable unsafe.Pointer, name C.c_string) {
 	handedOff = true
 }
 
+//export healthCheckChosen
+func healthCheckChosen(completable unsafe.Pointer, name C.c_string) {
+	handedOff := false
+	defer func() {
+		if !handedOff {
+			C.release_object(completable)
+		}
+	}()
+
+	defer panicguard.Recover("healthCheckChosen", failCompletable(completable))
+	n := C.GoString(name)
+	completeAsync(completable, "healthCheckChosen.worker", func() error { return tunnel.HealthCheckChosen(n) })
+	handedOff = true
+}
+
 //export closeAllConnections
 func closeAllConnections() {
 	defer panicguard.Recover("closeAllConnections", failExport)

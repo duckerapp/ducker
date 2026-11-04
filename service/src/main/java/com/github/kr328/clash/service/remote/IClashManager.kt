@@ -68,6 +68,9 @@ interface IClashManager {
     fun probeProxy(name: String): ProbeResult
 
     suspend fun healthCheck(group: String)
+
+    /** Checks only the node [group] uses now: Home's own number after a start (Q-102). */
+    suspend fun healthCheckChosen(group: String)
     suspend fun updateProvider(type: Provider.Type, name: String)
 
     /**

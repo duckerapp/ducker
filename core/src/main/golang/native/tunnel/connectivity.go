@@ -39,6 +39,73 @@ func HealthCheck(name string) error {
 	return checkBatch("healthCheck.provider", checks)
 }
 
+// HealthCheckChosen checks only the node a group is using now — Home's own check after a start (Q-102).
+//
+// A group's check asks its nodes in the order of the list, ten at a time, so the node in use gets its
+// number when its turn comes: near the end of a long list (F-394).
+func HealthCheckChosen(name string) error {
+	p := tunnel.Proxies()[name]
+	if p == nil {
+		return nil
+	}
+
+	g, ok := p.Adapter().(outboundgroup.ProxyGroup)
+	if !ok {
+		return nil
+	}
+
+	node, url := chosenNode(g, 0)
+	if node == nil {
+		log.Warnln("Request health check of the node `%s` uses: not found", name)
+
+		return nil
+	}
+
+	// ponytail: the default timeout and any answer, as for GLOBAL; a group with its own `timeout` or
+	// `expected-status` is judged by them only in its full check. Upgrade: read them from the fork's HealthCheck.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// A network timeout is an ordinary measurement failure.
+	_, _ = node.URLTest(ctx, url, nil)
+	return nil
+}
+
+// chosenNode follows a group's choice through groups that choose a group, as Home shows it, to a node,
+// and gives the address its provider checks it at: the screen reads a node's delay at the first address
+// it has a history for (`testURLOf`), and a check at another one would mix the numbers.
+func chosenNode(g outboundgroup.ProxyGroup, depth int) (C.Proxy, string) {
+	if depth >= maxChosenDepth {
+		return nil, ""
+	}
+
+	now := g.Now()
+	for _, pr := range g.Providers() {
+		for _, px := range pr.Proxies() {
+			if px.Name() != now {
+				continue
+			}
+
+			if inner, ok := px.Adapter().(outboundgroup.ProxyGroup); ok {
+				return chosenNode(inner, depth+1)
+			}
+
+			// The provider of GLOBAL, which the core builds itself, has no address (see below).
+			url := pr.HealthCheckURL()
+			if url == "" {
+				url = testURLOf(px)
+			}
+
+			return px, url
+		}
+	}
+
+	return nil, ""
+}
+
+// Deeper than this a group choosing a group is a mistake of the config, as on Home.
+const maxChosenDepth = 4
+
 // healthCheckGlobal меряет участников GLOBAL по одному, без встроенных выходов (D-143).
 //
 // Проверкой провайдера GLOBAL не померить: у группы, которую ядро собирает само, пустой

@@ -158,6 +158,13 @@ object Clash {
         }
     }
 
+    /** Only the node the group [name] uses now, through groups that choose a group. */
+    fun healthCheckChosen(name: String): CompletableDeferred<Unit> {
+        return CompletableDeferred<Unit>().apply {
+            Bridge.nativeHealthCheckChosen(this, name)
+        }
+    }
+
     /**
      * Один замер конкретного узла. Блокирующий — ждать всё равно приходится.
      * Серию собирает вызывающая сторона (D-57).

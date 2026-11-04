@@ -237,6 +237,10 @@ class ClashManager(private val context: Context) : IClashManager,
         return Clash.healthCheck(group).await()
     }
 
+    override suspend fun healthCheckChosen(group: String) {
+        return Clash.healthCheckChosen(group).await()
+    }
+
     override suspend fun updateProvider(type: Provider.Type, name: String) {
         return Clash.updateProvider(type, name).await()
     }
