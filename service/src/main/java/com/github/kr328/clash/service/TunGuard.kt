@@ -9,6 +9,7 @@ import com.github.kr328.clash.common.compat.startForegroundServiceCompat
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.service.store.ServiceStore
+import com.github.kr328.clash.service.util.Failure
 
 /**
  * Поднимает туннель обратно, если процесс службы умер, а человек туннель не выключал (F-110).
@@ -65,16 +66,37 @@ class TunGuard : Service() {
             if (!allowed) {
                 store.tunnelStartedAt = 0
 
+                if (afterCrash) leftDown()
+
                 return false
             }
 
             Log.i("Tunnel died unexpectedly, restoring")
 
-            if (!startForegroundServiceCompat(TunService::class.intent)) return false
+            if (!startForegroundServiceCompat(TunService::class.intent)) {
+                if (afterCrash) leftDown()
+
+                return false
+            }
 
             if (afterCrash) store.tunnelRestoredAt = now
 
             return true
+        }
+
+        /**
+         * The tunnel stays down after its process died. Android keeps the dead [TunService] started and in
+         * the foreground with its ongoing notification, and never restarts it (F-113): the shade would say
+         * the VPN is up while nothing is protected. Stopping drops both; the notice says why it is off.
+         * The dead service could not remove its marker either, and `RestartReceiver` would bring the tunnel
+         * up at the next update or boot.
+         */
+        private fun Context.leftDown() {
+            stopService(TunService::class.intent)
+
+            StatusProvider.shouldStartClashOnBoot = false
+
+            StopNotice.show(this, Failure.CRASHED)
         }
     }
 }
