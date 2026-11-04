@@ -126,7 +126,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
@@ -407,13 +406,12 @@ fun SearchField(
                     // Keep the hint inside the input's semantics, including when the query is empty.
                     Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                         if (value.isEmpty()) {
-                            Text(
+                            // Smaller rather than cut, as a button's label: «Узел или про…» under the largest font.
+                            FitLabel(
                                 text = hint,
-                                modifier = Modifier.clearAndSetSemantics {},
                                 style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.clearAndSetSemantics {},
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
                             )
                         }
 

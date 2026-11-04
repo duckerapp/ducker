@@ -664,12 +664,8 @@ internal fun SheetField(
             decorationBox = { field ->
                 Box(contentAlignment = Alignment.CenterStart) {
                     if (value.isEmpty()) {
-                        Text(
-                            text = placeholder,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = scheme.onSurfaceVariant,
-                            maxLines = 1,
-                        )
+                        // Smaller rather than cut, as a button's label: «sberbank.ru или» under the largest font.
+                        FitLabel(placeholder, MaterialTheme.typography.bodyLarge, color = scheme.onSurfaceVariant)
                     }
 
                     field()
