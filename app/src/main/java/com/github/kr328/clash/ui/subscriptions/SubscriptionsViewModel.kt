@@ -1036,6 +1036,22 @@ private fun Throwable.shown(context: Context): String {
     return listOf(failure.text(context), LogScrubber.scrub(failure.detail)).filter { it.isNotBlank() }.joinToString("\n")
 }
 
+/**
+ * What the add sheet opens with (stage 15): the clipboard's text when it is a subscription link or the node links the
+ * core converts (`common/convert/converter.go`), a list of them included, and not the link of a subscription already
+ * there — copied to add it, it would come back with every next «+».
+ */
+internal fun clipboardLink(text: String, sources: Collection<String>): String? {
+    val link = text.trim()
+
+    return link.takeIf { CLIP_LINK.containsMatchIn(it) && it !in sources }
+}
+
+private val CLIP_LINK = Regex(
+    "^(https?|vless|vmess|trojan|ss|ssr|hysteria|hysteria2|hy2|tuic|anytls|socks5?)://\\S",
+    RegexOption.IGNORE_CASE,
+)
+
 /** Имя подписки, добавленной по ссылке, пока человек не назвал её сам: домен ссылки. */
 internal fun defaultName(link: String): String = runCatching { Uri.parse(link).host }.getOrNull().orEmpty()
 

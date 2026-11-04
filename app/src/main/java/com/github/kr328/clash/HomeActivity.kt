@@ -2,6 +2,7 @@ package com.github.kr328.clash
 
 import com.github.kr328.clash.ui.components.Symbols
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.app.ActivityManager
 import android.content.Context
@@ -131,6 +132,7 @@ import com.github.kr328.clash.ui.subscriptions.SendToTvSheet
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.ui.subscriptions.SubscriptionAddressesSheet
 import com.github.kr328.clash.ui.subscriptions.sendable
+import com.github.kr328.clash.ui.subscriptions.clipboardLink
 import com.github.kr328.clash.ui.subscriptions.DeleteSubscriptionDialog
 import com.github.kr328.clash.ui.subscriptions.EditSubscriptionDialog
 import com.github.kr328.clash.ui.components.DuckerScaffold
@@ -1495,7 +1497,15 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 var addShown by remember { mutableStateOf(false) }
 
                 LaunchedEffect(subscriptionsState.adding) {
-                    if (subscriptionsState.adding) addShown = true
+                    if (!subscriptionsState.adding) return@LaunchedEffect
+
+                    addShown = true
+                    // An empty field takes a link from the clipboard at once (stage 15): a person most often copies it
+                    // from the chat with the provider, and «Добавить» is then the only tap.
+                    if (subscriptionsState.input.isEmpty()) {
+                        clipText()?.let { clipboardLink(it, subscriptionsState.profiles.map(Profile::source)) }
+                            ?.let(subscriptionsViewModel::setInput)
+                    }
                 }
 
                 if (addShown) {
@@ -1913,6 +1923,20 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         }
 
         subscriptionsViewModel.setInput(clip)
+    }
+
+    /**
+     * The clipboard's text for the add sheet to open with, read only when it is text: Android 12+ tells about every
+     * read with a toast. A password manager's copy (marked sensitive, Android 13+) is left alone.
+     */
+    private fun clipText(): String? {
+        val clipboard = getSystemService(ClipboardManager::class.java) ?: return null
+        val description = runCatching { clipboard.primaryClipDescription }.getOrNull() ?: return null
+
+        if (!description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN) && !description.hasMimeType(ClipDescription.MIMETYPE_TEXT_URILIST)) return null
+        if (description.extras?.getBoolean(ClipDescription.EXTRA_IS_SENSITIVE) == true) return null
+
+        return runCatching { clipboard.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString() }.getOrNull()
     }
 
     private fun refreshAll() {
