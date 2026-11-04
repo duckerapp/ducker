@@ -7,6 +7,7 @@
     <string name="update_successfully">Đã cập nhật gói đăng ký</string>
     <string name="update_failure">Chưa cập nhật được gói đăng ký</string>
     <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="update_retry">Cập nhật</string>
     <string name="subscription_http_status">Lỗi máy chủ gói đăng ký %1$d</string>
     <string name="subscription_http_not_found">Không có gói đăng ký tại liên kết này (lỗi %1$d). Kiểm tra liên kết hoặc liên hệ nhà cung cấp</string>
     <string name="subscription_http_denied">Truy cập bị từ chối (lỗi %1$d). Gói đăng ký có thể đã bị vô hiệu hóa; hãy liên hệ nhà cung cấp</string>

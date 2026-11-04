@@ -7,6 +7,7 @@
     <string name="update_successfully">Langganan diperbarui</string>
     <string name="update_failure">Langganan tidak diperbarui</string>
     <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="update_retry">Perbarui</string>
     <string name="subscription_http_status">Kesalahan server langganan %1$d</string>
     <string name="subscription_http_not_found">Tidak ada langganan di tautan ini (error %1$d). Periksa tautan atau hubungi penyedia</string>
     <string name="subscription_http_denied">Akses ditolak (error %1$d). Langganan mungkin dinonaktifkan. Hubungi penyedia</string>

@@ -7,6 +7,7 @@
     <string name="update_successfully">اشتراک به‌روز شد</string>
     <string name="update_failure">اشتراک به‌روز نشد</string>
     <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="update_retry">به‌روزرسانی</string>
     <string name="subscription_http_status">خطای سرور اشتراک %1$d</string>
     <string name="subscription_http_not_found">اشتراکی در این لینک وجود ندارد (خطای %1$d). لینک را بررسی کنید یا از ارائه‌دهنده خود بپرسید</string>
     <string name="subscription_http_denied">دسترسی رد شد (خطای %1$d). ممکن است اشتراک غیرفعال شده باشد — از ارائه‌دهنده خود بپرسید</string>

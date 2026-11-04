@@ -9,6 +9,7 @@
     <string name="update_successfully">Subscription updated</string>
     <string name="update_failure">Subscription not updated</string>
     <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="update_retry">Update</string>
     <string name="subscription_http_status">Subscription server error %1$d</string>
     <string name="subscription_http_not_found">No subscription at this link (error %1$d). Check the link or ask your provider</string>
     <string name="subscription_http_denied">Access denied (error %1$d). The subscription may be disabled — ask your provider</string>

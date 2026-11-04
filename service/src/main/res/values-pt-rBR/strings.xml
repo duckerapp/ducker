@@ -7,6 +7,7 @@
     <string name="update_successfully">Assinatura atualizada</string>
     <string name="update_failure">A assinatura não foi atualizada</string>
     <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="update_retry">Atualizar</string>
     <string name="subscription_http_status">Erro do servidor de assinatura: %1$d</string>
     <string name="subscription_http_not_found">Não há uma assinatura neste link (erro %1$d). Confira o link ou consulte o provedor</string>
     <string name="subscription_http_denied">Acesso negado (erro %1$d). A assinatura pode estar desativada; consulte o provedor</string>

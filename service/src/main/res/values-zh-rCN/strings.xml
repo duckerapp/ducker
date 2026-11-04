@@ -7,6 +7,7 @@
     <string name="update_successfully">订阅已更新</string>
     <string name="update_failure">订阅未更新</string>
     <string name="format_update_failure">%1$s：%2$s</string>
+    <string name="update_retry">更新</string>
     <string name="subscription_http_status">订阅服务器错误 %1$d</string>
     <string name="subscription_http_not_found">此链接下没有订阅（错误 %1$d）。请检查链接或联系服务商</string>
     <string name="subscription_http_denied">访问被拒绝（错误 %1$d）。订阅可能已停用，请联系服务商</string>

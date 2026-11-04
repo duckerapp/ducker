@@ -7,6 +7,7 @@
     <string name="update_successfully">Abonnement mis à jour</string>
     <string name="update_failure">L’abonnement n’a pas été mis à jour</string>
     <string name="format_update_failure">%1$s : %2$s</string>
+    <string name="update_retry">Mettre à jour</string>
     <string name="subscription_http_status">Erreur du serveur d’abonnement : %1$d</string>
     <string name="subscription_http_not_found">Aucun abonnement à ce lien (erreur %1$d). Vérifiez le lien ou contactez votre fournisseur</string>
     <string name="subscription_http_denied">Accès refusé (erreur %1$d). L’abonnement est peut-être désactivé : contactez votre fournisseur</string>

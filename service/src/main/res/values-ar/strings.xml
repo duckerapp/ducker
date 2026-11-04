@@ -7,6 +7,7 @@
     <string name="update_successfully">تم تحديث الاشتراك</string>
     <string name="update_failure">لم يتم تحديث الاشتراك</string>
     <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="update_retry">تحديث</string>
     <string name="subscription_http_status">خطأ في خادم الاشتراك: %1$d</string>
     <string name="subscription_http_not_found">لا يوجد اشتراك على هذا الرابط (خطأ %1$d). تحقق من الرابط أو اسأل مزوّد الخدمة</string>
     <string name="subscription_http_denied">تم رفض الوصول (خطأ %1$d). قد يكون الاشتراك معطّلًا؛ اسأل مزوّد الخدمة</string>

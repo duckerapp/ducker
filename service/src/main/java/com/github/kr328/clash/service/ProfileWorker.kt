@@ -15,6 +15,7 @@ import com.github.kr328.clash.common.compat.startForegroundCompat
 import com.github.kr328.clash.common.constants.Components
 import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.common.id.UndefinedIds
+import com.github.kr328.clash.common.util.componentName
 import com.github.kr328.clash.common.util.setUUID
 import com.github.kr328.clash.common.util.uuid
 import com.github.kr328.clash.service.data.Imported
@@ -68,8 +69,9 @@ class ProfileWorker : BaseService("ProfileWorker") {
         when (intent?.action) {
             Intents.ACTION_PROFILE_REQUEST_UPDATE -> {
                 intent.uuid?.also {
+                    val retry = intent.getBooleanExtra(EXTRA_RETRY, false)
                     val job = launch {
-                        run(it)
+                        run(it, retry)
                     }
 
                     synchronized(jobs) { jobs.add(job) }
@@ -89,12 +91,16 @@ class ProfileWorker : BaseService("ProfileWorker") {
         return START_NOT_STICKY
     }
 
-    private suspend fun run(uuid: UUID) {
+    /** @param retry pressed «Обновить» on a failure's card: the card itself says the update is under way. */
+    private suspend fun run(uuid: UUID, retry: Boolean = false) {
         val imported = ImportedDao().queryByUUID(uuid) ?: return
         var updated = false
 
         try {
-            processing(shownName(imported)) {
+            if (retry) {
+                updating(imported.uuid, shownName(imported))
+                ProfileProcessor.update(this, imported.uuid, null)
+            } else processing(shownName(imported)) {
                 ProfileProcessor.update(this, imported.uuid, null)
             }
             updated = true
@@ -206,16 +212,40 @@ class ProfileWorker : BaseService("ProfileWorker") {
         sendProfileUpdateCompleted(uuid)
     }
 
+    private fun updating(uuid: UUID, name: String) {
+        val notification = resultBuilder(uuid)
+            .setContentTitle(getString(R.string.profile_updating))
+            .setContentText(name)
+            .setProgress(0, 0, true)
+            .build()
+
+        NotificationManagerCompat.from(this)
+            .notify(uuid.toString(), RESULT_ID, notification)
+    }
+
     private fun failed(uuid: UUID, name: String, reason: String) {
         // В шторке — объяснение словами (D-227); экрану уходит сырой текст, он переведёт сам.
         val content = getString(
             R.string.format_update_failure, name, Failure.of(reason, Failure.Kind.BadConfig, outOfSpace).text(this),
         )
 
+        // «Обновить» updates from the shade without opening the app. Its own request code: with the alarm's 0 it
+        // would be the alarm's PendingIntent, as extras do not tell two apart.
+        val retry = PendingIntent.getBroadcast(
+            this,
+            RETRY_REQUEST,
+            Intent(Intents.ACTION_PROFILE_REQUEST_UPDATE)
+                .setComponent(ProfileReceiver::class.componentName)
+                .setUUID(uuid)
+                .putExtra(EXTRA_RETRY, true),
+            pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT),
+        )
+
         val notification = resultBuilder(uuid)
             .setContentTitle(getString(R.string.update_failure))
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText(content))
+            .addAction(0, getString(R.string.update_retry), retry)
             .build()
 
         NotificationManagerCompat.from(this)
@@ -229,6 +259,8 @@ class ProfileWorker : BaseService("ProfileWorker") {
         private const val STATUS_CHANNEL = "profile_status_channel"
         private const val RESULT_CHANNEL = "profile_result_channel"
         private const val RESULT_ID = 1
+        private const val RETRY_REQUEST = 1
+        private const val EXTRA_RETRY = "retry"
     }
 
     override fun onBind(intent: Intent?): IBinder {

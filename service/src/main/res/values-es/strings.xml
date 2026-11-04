@@ -7,6 +7,7 @@
     <string name="update_successfully">Suscripción actualizada</string>
     <string name="update_failure">La suscripción no se actualizó</string>
     <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="update_retry">Actualizar</string>
     <string name="subscription_http_status">Error del servidor de suscripción: %1$d</string>
     <string name="subscription_http_not_found">No hay ninguna suscripción en este enlace (error %1$d). Revisa el enlace o consulta al proveedor</string>
     <string name="subscription_http_denied">Acceso denegado (error %1$d). La suscripción puede estar desactivada; consulta al proveedor</string>

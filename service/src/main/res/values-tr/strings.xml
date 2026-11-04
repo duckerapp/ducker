@@ -7,6 +7,7 @@
     <string name="update_successfully">Abonelik güncellendi</string>
     <string name="update_failure">Abonelik güncellenemedi</string>
     <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="update_retry">Güncelle</string>
     <string name="subscription_http_status">Abonelik sunucusu hatası %1$d</string>
     <string name="subscription_http_not_found">Bu bağlantıda abonelik yok (hata %1$d). Bağlantıyı kontrol edin veya sağlayıcınıza danışın</string>
     <string name="subscription_http_denied">Erişim reddedildi (hata %1$d). Abonelik devre dışı bırakılmış olabilir; sağlayıcınıza danışın</string>

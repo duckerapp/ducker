@@ -9,6 +9,7 @@
     <string name="update_successfully">Подписка обновлена</string>
     <string name="update_failure">Подписка не обновилась</string>
     <string name="format_update_failure">%1$s: %2$s</string>
+    <string name="update_retry">Обновить</string>
     <string name="subscription_http_status">Сервер подписки: ошибка %1$d</string>
     <string name="subscription_http_not_found">По этой ссылке подписки нет (ошибка %1$d). Проверьте ссылку или спросите провайдера</string>
     <string name="subscription_http_denied">Доступ закрыт (ошибка %1$d). Возможно, подписка отключена — спросите провайдера</string>
