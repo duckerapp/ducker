@@ -68,9 +68,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.layout.Layout
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -125,6 +126,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
@@ -524,7 +526,36 @@ fun ScreenHeader(
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    Row(
+    val enlarged = LocalDensity.current.fontScale > 1f
+
+    // The actions go under the title when an enlarged system font leaves the title no room for its full size:
+    // on a narrow phone «Прокси» shrank to a few pixels beside «Rules» and «По порядку». At the normal size the
+    // title shrinks beside them, as before.
+    Layout(
+        contents = listOf(
+            {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(HEADER_GAP)) {
+                    if (onBack != null) {
+                        HeaderButton(
+                            icon = Symbols.ArrowBack,
+                            description = stringResource(R.string.back),
+                            onClick = onBack,
+                        )
+                    }
+
+                    FitLabel(
+                        text = title,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.weight(1f).padding(start = if (onBack != null) 4.dp else 0.dp),
+                    )
+                }
+            },
+            {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(HEADER_GAP)) {
+                    actions()
+                }
+            },
+        ),
         modifier = modifier.fillMaxWidth().then(
             if (onBack != null) Modifier.layout { measurable, constraints ->
                 // Let the 48dp touch target enter the gutter; the arrow aligns with section labels.
@@ -535,26 +566,33 @@ fun ScreenHeader(
                 }
             } else Modifier,
         ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        if (onBack != null) {
-            HeaderButton(
-                icon = Symbols.ArrowBack,
-                description = stringResource(R.string.back),
-                onClick = onBack,
-            )
+    ) { (leads, rows), constraints ->
+        val width = constraints.maxWidth
+        val row = rows.first().measure(Constraints(maxWidth = width))
+        val gap = if (row.width > 0) HEADER_GAP.roundToPx() else 0
+        val lead = leads.first()
+        val stacked = enlarged && row.width > 0 && lead.maxIntrinsicWidth(Constraints.Infinity) + gap + row.width > width
+
+        if (stacked) {
+            val line = lead.measure(Constraints.fixedWidth(width))
+
+            layout(width, line.height + row.height) {
+                line.placeRelative(0, 0)
+                row.placeRelative(width - row.width, line.height)
+            }
+        } else {
+            val line = lead.measure(Constraints.fixedWidth((width - gap - row.width).coerceAtLeast(0)))
+            val height = maxOf(line.height, row.height)
+
+            layout(width, height) {
+                line.placeRelative(0, (height - line.height) / 2)
+                row.placeRelative(width - row.width, (height - row.height) / 2)
+            }
         }
-
-        FitLabel(
-            text = title,
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.weight(1f).padding(start = if (onBack != null) 4.dp else 0.dp),
-        )
-
-        actions()
     }
 }
+
+private val HEADER_GAP = 8.dp
 
 /** Шире этого карточки и строки читать тяжело: планшет, складной, альбомный режим (D-92). */
 val ReadableWidth = 640.dp
