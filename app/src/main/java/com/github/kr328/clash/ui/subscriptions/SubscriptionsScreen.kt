@@ -52,6 +52,7 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -677,7 +678,9 @@ private fun ProfileName(
             style = style,
             fontWeight = fontWeight,
             modifier = Modifier.weight(1f, fill = false),
-            maxLines = 1,
+            // Under an enlarged font up to three lines (D-408): at 1.78 «🦆 Утка в и…» was all of it, and two lines still
+            // cut «🦆 Утка в пруду — семейная подписка» at 2.0 on a narrow phone.
+            maxLines = if (LocalDensity.current.fontScale > 1f) 3 else 1,
             overflow = TextOverflow.Ellipsis,
         )
 
