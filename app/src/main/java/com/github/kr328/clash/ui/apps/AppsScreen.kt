@@ -7,6 +7,8 @@ import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.layout.Layout
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -153,29 +155,31 @@ fun AppsScreen(
             item {
                 val marked = state.apps.any { !it.locked && it.packageName in state.selected }
 
-                Row(
+                CountBesidePills(
                     modifier = Modifier.padding(start = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.apps_selected, state.selected.size, state.apps.size),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Pill(
-                        text = stringResource(R.string.apps_system_short),
-                        onClick = { onShowSystem(!state.showSystem) },
-                        selected = state.showSystem,
-                        role = Role.Switch,
-                    )
-                    Pill(
-                        text = stringResource(if (marked) R.string.apps_select_none else R.string.apps_select_all),
-                        onClick = if (marked) onSelectNone else onSelectAll,
-                        enabled = state.apps.isNotEmpty(),
-                    )
-                }
+                    count = {
+                        Text(
+                            text = stringResource(R.string.apps_selected, state.selected.size, state.apps.size),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    pills = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(PILLS_GAP)) {
+                            Pill(
+                                text = stringResource(R.string.apps_system_short),
+                                onClick = { onShowSystem(!state.showSystem) },
+                                selected = state.showSystem,
+                                role = Role.Switch,
+                            )
+                            Pill(
+                                text = stringResource(if (marked) R.string.apps_select_none else R.string.apps_select_all),
+                                onClick = if (marked) onSelectNone else onSelectAll,
+                                enabled = state.apps.isNotEmpty(),
+                            )
+                        }
+                    },
+                )
             }
 
             if (state.loading) {
@@ -293,5 +297,40 @@ internal fun AppIcon(packageName: String, size: Dp, modifier: Modifier) {
         Image(bitmap = bitmap, contentDescription = null, modifier = modifier.size(size))
     } else {
         Box(modifier.size(size))
+    }
+}
+
+private val PILLS_GAP = 8.dp
+
+/**
+ * The count beside the pills, taking the room they leave, as long as that room holds the count's longest word. Under
+ * the largest font on a narrow phone it did not, and the count stood one letter per line: then it goes over the
+ * pills. Wherever the row fits nothing changes.
+ */
+@Composable
+private fun CountBesidePills(count: @Composable () -> Unit, pills: @Composable () -> Unit, modifier: Modifier = Modifier) {
+    Layout(contents = listOf(count, pills), modifier = modifier) { (counts, pillRows), constraints ->
+        val gap = PILLS_GAP.roundToPx()
+        val width = constraints.maxWidth
+        val row = pillRows.first().measure(constraints.copy(minWidth = 0, minHeight = 0))
+        val room = width - row.width - gap
+        val text = counts.first()
+
+        if (room >= text.minIntrinsicWidth(Constraints.Infinity)) {
+            val line = text.measure(Constraints(minWidth = room, maxWidth = room))
+            val height = maxOf(line.height, row.height)
+
+            layout(width, height) {
+                line.placeRelative(0, (height - line.height) / 2)
+                row.placeRelative(width - row.width, (height - row.height) / 2)
+            }
+        } else {
+            val line = text.measure(Constraints(maxWidth = width))
+
+            layout(width, line.height + gap + row.height) {
+                line.placeRelative(0, 0)
+                row.placeRelative(0, line.height + gap)
+            }
+        }
     }
 }
