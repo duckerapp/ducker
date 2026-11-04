@@ -17,6 +17,8 @@ import com.github.kr328.clash.common.util.mainActivityAlias
 import com.github.kr328.clash.remote.Remote
 import com.github.kr328.clash.service.FlightRecorder
 import com.github.kr328.clash.service.CrashRecorder
+import com.github.kr328.clash.service.util.importedDir
+import com.github.kr328.clash.service.util.recoverReplaced
 import com.github.kr328.clash.service.util.sendServiceRecreated
 import com.github.kr328.clash.util.clashDir
 import com.github.kr328.clash.util.disguised
@@ -50,6 +52,10 @@ class MainApplication : Application(), SingletonImageLoader.Factory {
             // Самописец службы (D-111): пишет всегда, чтобы сбой было видно в выгрузке
             // журнала и после того, как он случился.
             FlightRecorder.start(this)
+
+            // A subscription's directory cut off mid-replacement by a death is put back before anything
+            // of this process reads it.
+            importedDir.recoverReplaced()
 
             // Базы распаковывает только тот процесс, которому они нужны, — здесь живёт
             // ядро (D-77). Интерфейсу они не нужны вовсе, а стоили ему первого кадра

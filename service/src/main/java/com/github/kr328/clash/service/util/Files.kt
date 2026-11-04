@@ -2,6 +2,7 @@ package com.github.kr328.clash.service.util
 
 import android.content.Context
 import java.io.File
+import java.io.IOException
 
 val Context.importedDir: File
     get() = filesDir.resolve("imported")
@@ -16,3 +17,50 @@ val File.directoryLastModified: Long?
     get() {
         return walk().map { it.lastModified() }.maxOrNull()
     }
+
+private const val STAGED = ".new"
+private const val OLD = ".old"
+
+/**
+ * Puts a copy of [source] in place of this directory so that a process killed at any moment, or a full
+ * disk, leaves the old copy or the new one whole. Deleting first and copying after left a subscription
+ * without its config, and no update could repair it: the update starts from that directory. A death
+ * between the two renames leaves only `<name>.old`; [recoverReplaced] puts it back at the next start.
+ */
+fun File.replaceWithCopyOf(source: File) {
+    val staged = resolveSibling(name + STAGED)
+    val old = resolveSibling(name + OLD)
+
+    staged.deleteRecursively()
+    try {
+        source.copyRecursively(staged)
+    } catch (e: Exception) {
+        staged.deleteRecursively()
+        throw e
+    }
+
+    old.deleteRecursively()
+    if (exists() && !renameTo(old)) {
+        staged.deleteRecursively()
+        throw IOException("Cannot move $name aside")
+    }
+    if (!staged.renameTo(this)) {
+        old.renameTo(this)
+        staged.deleteRecursively()
+        throw IOException("Cannot move the new $name in")
+    }
+    old.deleteRecursively()
+}
+
+/** Finishes what [replaceWithCopyOf] cut off by a death left in this parent directory. */
+fun File.recoverReplaced() {
+    listFiles().orEmpty().forEach {
+        when {
+            it.name.endsWith(OLD) -> {
+                val target = resolve(it.name.removeSuffix(OLD))
+                if (target.exists()) it.deleteRecursively() else it.renameTo(target)
+            }
+            it.name.endsWith(STAGED) -> it.deleteRecursively()
+        }
+    }
+}

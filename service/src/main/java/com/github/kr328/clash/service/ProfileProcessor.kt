@@ -19,6 +19,7 @@ import com.github.kr328.clash.service.util.SubscriptionMirrors
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.pendingDir
 import com.github.kr328.clash.service.util.processingDir
+import com.github.kr328.clash.service.util.replaceWithCopyOf
 import com.github.kr328.clash.service.util.sendProfileChanged
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
@@ -72,8 +73,7 @@ object ProfileProcessor {
 
                 profileLock.withLock {
                     if (PendingDao().queryByUUID(snapshot.uuid) == snapshot) {
-                        context.importedDir.resolve(snapshot.uuid.toString()).deleteRecursively()
-                        context.processingDir.copyRecursively(context.importedDir.resolve(snapshot.uuid.toString()))
+                        context.importedDir.resolve(snapshot.uuid.toString()).replaceWithCopyOf(context.processingDir)
 
                         val old = ImportedDao().queryByUUID(snapshot.uuid)
                         val new = Imported(
@@ -158,8 +158,7 @@ object ProfileProcessor {
                 profileLock.withLock {
                     val imported = ImportedDao().queryByUUID(snapshot.uuid)
                     if (imported != null) {
-                        context.importedDir.resolve(snapshot.uuid.toString()).deleteRecursively()
-                        context.processingDir.copyRecursively(context.importedDir.resolve(snapshot.uuid.toString()))
+                        context.importedDir.resolve(snapshot.uuid.toString()).replaceWithCopyOf(context.processingDir)
 
                         val upload = subscriptionInfo?.subUpload
                         if (upload != null) {
@@ -223,8 +222,7 @@ object ProfileProcessor {
                 ProviderInfo.read(context.processingDir).copy(movedFrom = from.source, movedAt = System.currentTimeMillis()),
             )
 
-            dir.deleteRecursively()
-            context.processingDir.copyRecursively(dir)
+            dir.replaceWithCopyOf(context.processingDir)
 
             // A name that is the old link's domain was given at adding, not by the person (D-117): it follows the
             // link, or it would read as the person's own and hide the provider's title.
