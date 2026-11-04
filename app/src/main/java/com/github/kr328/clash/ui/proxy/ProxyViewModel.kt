@@ -445,14 +445,17 @@ class ProxyViewModel : ViewModel() {
 
             val startedWith = Remote.broadcasts.clashRunning
 
-            _state.update { it.copy(checking = pending.first().name) }
-
             // Groups often list the same nodes, and a check of one tests them for all: 30 groups of
             // the same 1 000 nodes were checked 30 times over, a quarter of an hour on the emulator (F-393).
             val since = System.currentTimeMillis()
 
             pending.forEachIndexed { i, group ->
-                if (i == 0 || !testedSince(group.name, since)) checkLive(group.name)
+                if (i == 0 || !testedSince(group.name, since)) {
+                    // The circle spins on the group whose delays are changing, not on the first one.
+                    _state.update { it.copy(checking = group.name) }
+
+                    checkLive(group.name)
+                }
             }
 
             val names = pending.map { it.name }.toSet()
