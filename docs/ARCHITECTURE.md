@@ -100,7 +100,8 @@ published by `.github/workflows/pages.yaml`.
 
 - **Services and helpers:** `TunService` (`VpnService`, `establish()`), `RemoteService` (Binder),
   `ProfileWorker` (scheduled updates), `TunGuard`, `FlightRecorder` (the always-on log),
-  `ExpiryNotice` (subscription expiry notifications), `VerboseLog` (the one-day limit of the
+  `ExpiryNotice` (subscription expiry notifications), `TrafficNotice` (the warning at 80% and 95% of the
+  traffic), `VerboseLog` (the one-day limit of the
   detailed log), `LogTail` (the last lines of the core log, held in memory for the log screen),
   `StopNotice` (why the VPN stopped when nobody asked it to; `CrashRecorder` posts it when the
   tunnel's process crashes, with a Connect button).
@@ -110,7 +111,8 @@ published by `.github/workflows/pages.yaml`.
   `NetworkObserve`, `AppListCache`, `StaticNotification`, `DynamicNotification`, `Lockdown`,
   `Suspend`, `TimeZone`, `Close`.
 - **`data/`** — Room: `Imported`, `Pending`, `Selection` with DAOs and `migrations/`.
-- **`store/`** — `ServiceStore`, `UserRulesStore` (`files/user-rules/<uuid>.json`).
+- **`store/`** — `ServiceStore`, `UserRulesStore` (`files/user-rules/<uuid>.json`), `AnnouncementStore` (the
+  providers' announcements of the last ten days, `files/announcements.json`).
   **`model/`** — `Profile`, `UserRule`, `AccessControlMode`.
 - **`util/`** — `SubscriptionHeaders.kt` (the `User-Agent` and device headers),
   `ProviderInfo.kt` (subscription and `ducker-*` headers), `SubscriptionMirrors.kt` (a

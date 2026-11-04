@@ -38,7 +38,9 @@ faster it answers. "no answer" means the server cannot be reached from this netw
 **A subscription** is your access to the servers. It comes from a provider — the service where
 you bought or received it — as a link, a QR code or a file. Using the link, ducker downloads the
 list of servers and the settings itself and later updates them itself. The subscription term and
-the traffic left are shown on Home.
+the traffic left are shown on Home; a week before the end, and when 80% of the traffic is used, ducker
+reminds you with a notification that has a "Renew" button. What the provider has said in the last ten
+days is under the bell on the Profiles tab; "New" on it means there is something you have not read.
 
 ducker is only a program for connecting. It does not sell access: without a subscription from a
 provider there is nowhere to connect to.
@@ -55,8 +57,8 @@ First get a subscription link (it starts with `https://`), a QR code or a file f
    subscription". If you already have subscriptions — the Profiles tab: a moment later the tab itself
    turns into the "+ Add" button.
 2. The "Add subscription" sheet opens. Choose how:
-   - **A link.** Copy the link from the email or chat, press "Paste" in the sheet, then "Add".
-     Server links like `vless://…` work too.
+   - **A link.** Copy the link from the email or chat: the sheet opens with it already in the field —
+     press "Add". If the field is empty, press "Paste". Server links like `vless://…` work too.
    - **A QR code.** "Scan QR" — and point the camera at the code. If the code came as a picture
      or a screenshot, press "From gallery" in the camera window and pick it. Dark around —
      "Flashlight".
