@@ -232,6 +232,8 @@ fun HomeScreen(
     onCheckNodes: (String) -> Unit = {},
     /** Быстрая смена открылась — пора освежить задержки. */
     onOpenPicker: () -> Unit = {},
+    /** The node sheet opened or closed: «Прокси» checks its nodes only while they are on screen (Q-102). */
+    onPickerShown: (Boolean) -> Unit = {},
     onPickNode: (group: String, name: String) -> Unit = { _, _ -> },
     /** Узел выбран — показать его в плашке сразу, до [onPickNode]. */
     onPreviewNode: (name: String) -> Unit = {},
@@ -287,6 +289,7 @@ fun HomeScreen(
                 onSortNodes = onSortNodes,
                 onCheckNodes = onCheckNodes,
                 onOpenPicker = onOpenPicker,
+                onPickerShown = onPickerShown,
                 onPickNode = onPickNode,
                 onPreviewNode = onPreviewNode,
                 shown = shown,
@@ -391,6 +394,7 @@ private fun HomeRegular(
     onSortNodes: (ProxySort) -> Unit,
     onCheckNodes: (String) -> Unit,
     onOpenPicker: () -> Unit,
+    onPickerShown: (Boolean) -> Unit,
     onPickNode: (group: String, name: String) -> Unit,
     onPreviewNode: (name: String) -> Unit,
     shown: Boolean,
@@ -425,6 +429,9 @@ private fun HomeRegular(
     LaunchedEffect(shown) {
         if (!shown) picking = false
     }
+
+    // Before the effect below asks for the nodes: it is launched after this one.
+    LaunchedEffect(picking) { onPickerShown(picking) }
 
     LaunchedEffect(picking, tv) {
         if (!tv && picking) {

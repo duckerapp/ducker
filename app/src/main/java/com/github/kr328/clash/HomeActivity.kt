@@ -90,6 +90,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -700,6 +701,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     else -> null
                 }
 
+                // «Прокси» checks its nodes by itself only while they are on screen (Q-102). Side effects
+                // run before the effects of the same frame, so the tab knows it is open when it loads.
+                val proxiesShown = pagerState.settledPage == 1 && overlay == null
+                SideEffect { proxyViewModel.tabShown = proxiesShown }
+
                 // Пульт (этап 6). Старт — на вкладке в доке. «Назад» со страницы — в её вкладку,
                 // из дока — на «Главную», с неё — выход. Экран поверх закрылся — фокус обратно
                 // на страницу, на её начало, как при входе с дока (D-158).
@@ -1122,6 +1128,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onCheckNodes = { proxyViewModel.healthCheck(this@HomeActivity, it) },
                                         shown = pagerState.settledPage == 0 && overlay == null,
                                         onOpenPicker = { proxyViewModel.refresh(this@HomeActivity) },
+                                        onPickerShown = { proxyViewModel.sheetShown = it },
                                         onPickNode = { group, name ->
                                             proxyViewModel.select(this@HomeActivity, group, name)
                                         },

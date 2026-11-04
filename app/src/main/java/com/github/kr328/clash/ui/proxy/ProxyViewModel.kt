@@ -122,6 +122,14 @@ class ProxyViewModel : ViewModel() {
     private var autoJob: Job? = null
 
     /**
+     * The tab, or Home's node sheet, is on screen: only then does the tab check its groups by itself.
+     * Before, every start checked the whole list for a tab nobody opened; the node under Home's button
+     * is checked by Home alone (Q-102).
+     */
+    var tabShown = false
+    var sheetShown = false
+
+    /**
      * The subscription and the hash of the text last written by [refresh]: an unchanged list is not
      * written again. A hash, not the text: 1 000 nodes in 30 groups are 2.7 MB of it (F-391).
      */
@@ -390,6 +398,9 @@ class ProxyViewModel : ViewModel() {
         known: Map<String, Int>,
         canCheck: Boolean,
     ) {
+        // A check already running goes on to its end when the person leaves.
+        if (!tabShown && !sheetShown) return
+
         val now = System.currentTimeMillis()
 
         val pending = groups.filter { group ->
