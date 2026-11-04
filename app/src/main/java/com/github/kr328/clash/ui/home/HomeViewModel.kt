@@ -126,6 +126,12 @@ class HomeViewModel : ViewModel() {
      */
     private val checkAttempts = mutableMapOf<String, Int>()
 
+    /**
+     * Home's own check of its node, while it runs: the refreshes of a start came before its answer and
+     * each began another, and the number under the button changed three times in eight seconds.
+     */
+    private var nodeCheck: Job? = null
+
     /** Состояние туннеля на прошлом обновлении: по его смене замеры устаревают. */
     private var lastRunning: Boolean? = null
 
@@ -276,6 +282,12 @@ class HomeViewModel : ViewModel() {
 
             val groups = live.map { it.copy(delay = DelayStore.shown(it.delay, known[it.now])) }
 
+            // A number that came from Home's own check is kept, as the tab keeps its own: it is what
+            // the button shows at the next start, before the core has checked anything (D-72).
+            live.firstOrNull()?.takeIf { DelayStore.ofCore(it.delay) > 0 && known[it.now] != it.delay }?.let {
+                withContext(Dispatchers.IO) { DelayStore(context).merge(mapOf(it.now to it.delay)) }
+            }
+
             // Запоминаем, что показали, — для первого показа в следующий запуск (см. выше).
             groups.firstOrNull()?.let { it.name to it.now }?.takeIf { it != lastMain }?.let {
                 lastMain = it
@@ -298,26 +310,28 @@ class HomeViewModel : ViewModel() {
 
             if (nodeChanged) lastCheck = 0
 
-            // Задержка на главной не должна висеть прочерком: ядро отдаёт «неизвестно»,
-            // пока по группе не было ни одного замера (F-93). Меряем сами, до трёх раз
-            // на группу за сеанс туннеля.
-            groups.firstOrNull()
-                ?.takeIf { it.delay <= DelayStore.UNKNOWN }
+            // The node under the button is checked by Home itself, alone, whenever the core has no
+            // number for it — after every start: «Прокси» checks its whole list only while it is on
+            // screen, and in a group's check the node in use waits its turn (Q-102, F-394). Up to three
+            // tries per node for a state of the tunnel; meanwhile the remembered number stands (D-72).
+            live.firstOrNull()
+                ?.takeIf { DelayStore.ofCore(it.delay) == DelayStore.UNKNOWN }
                 ?.takeIf { System.currentTimeMillis() - switchedAt > SETTLE }
-                ?.takeIf { (checkAttempts[it.name] ?: 0) < MAX_CHECK_ATTEMPTS }
+                ?.takeIf { (checkAttempts[it.now] ?: 0) < MAX_CHECK_ATTEMPTS }
+                ?.takeIf { nodeCheck?.isActive != true }
                 ?.let { group ->
-                    val attempt = (checkAttempts[group.name] ?: 0) + 1
+                    val attempt = (checkAttempts[group.now] ?: 0) + 1
 
-                    checkAttempts[group.name] = attempt
+                    checkAttempts[group.now] = attempt
 
-                    viewModelScope.launch {
+                    nodeCheck = viewModelScope.launch {
                         // Повторную попытку не гоним следом за неудачной: узел мог
                         // не ответить потому, что туннель в этот момент вставал.
                         // Три попытки подряд сгорали за секунду, и дальше оставалось
                         // только «нет ответа».
                         if (attempt > 1) delay(RETRY)
 
-                        runCatching { withClash { healthCheck(group.name) } }
+                        runCatching { withClash { healthCheckChosen(group.name) } }
 
                         refresh(context)
                     }
