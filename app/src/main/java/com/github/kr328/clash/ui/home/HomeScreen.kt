@@ -1487,35 +1487,41 @@ private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
             contentKey = { it.first },
             label = "node",
         ) { (name, shownDelay) ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                // Имя узла приходит от провайдера уже с флагом страны — своего значка здесь
-                // не нужно, а название группы ничего не сообщает.
-                Text(
-                    text = name.ifEmpty { stringResource(R.string.proxies_tab) },
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+            // The delay is measured first in a row: under the largest font on a narrow phone «нет ответа» took the
+            // row and left the node «G…». It gets at most this share and shrinks within it; the name keeps the rest.
+            BoxWithConstraints {
+                val delayRoom = maxWidth * DELAY_SHARE
 
-                // Значение приходит из общего хранилища замеров (D-72): «нет ответа» тут
-                // означает, что замер был и не удался, а не что его ещё не делали.
-                Text(
-                    text = when {
-                        shownDelay >= DelayStore.SLOW -> stringResource(R.string.delay_slow, shownDelay / 1000)
-                        shownDelay > 0 -> stringResource(R.string.delay_ms, shownDelay)
-                        shownDelay == DelayStore.NO_ANSWER -> stringResource(R.string.delay_failed)
-                        else -> stringResource(R.string.value_unknown)
-                    },
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (shownDelay == DelayStore.NO_ANSWER) MaterialTheme.colorScheme.error
-                    else LocalContentColor.current.copy(alpha = 0.7f),
-                    maxLines = 1,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    // Имя узла приходит от провайдера уже с флагом страны — своего значка здесь
+                    // не нужно, а название группы ничего не сообщает.
+                    Text(
+                        text = name.ifEmpty { stringResource(R.string.proxies_tab) },
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+
+                    // Значение приходит из общего хранилища замеров (D-72): «нет ответа» тут
+                    // означает, что замер был и не удался, а не что его ещё не делали.
+                    FitLabel(
+                        text = when {
+                            shownDelay >= DelayStore.SLOW -> stringResource(R.string.delay_slow, shownDelay / 1000)
+                            shownDelay > 0 -> stringResource(R.string.delay_ms, shownDelay)
+                            shownDelay == DelayStore.NO_ANSWER -> stringResource(R.string.delay_failed)
+                            else -> stringResource(R.string.value_unknown)
+                        },
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.widthIn(max = delayRoom),
+                        color = if (shownDelay == DelayStore.NO_ANSWER) MaterialTheme.colorScheme.error
+                        else LocalContentColor.current.copy(alpha = 0.7f),
+                    )
+                }
             }
         }
 
@@ -1526,6 +1532,9 @@ private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
         )
     }
 }
+
+/** The node row's most for its delay: the name keeps the rest. */
+private const val DELAY_SHARE = 0.45f
 
 /** The uptime pill while the tunnel is off. */
 private const val NO_UPTIME = "--:--:--"
