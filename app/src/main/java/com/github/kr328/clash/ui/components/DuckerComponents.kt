@@ -817,6 +817,10 @@ fun labelWeights(labels: List<String>, style: TextStyle, padding: Dp): List<Floa
 /** Подпись такой кнопки: одной строкой, а не влезла — шрифт мельче, но слово целиком. */
 @Composable
 fun FitLabel(text: String, style: TextStyle, modifier: Modifier = Modifier, color: Color = Color.Unspecified) {
+    // The floor is 8 sp at the normal text size. The system's largest font draws 8 sp twice as big, and a label
+    // that did not fit even so was cut in the middle of a word on a narrow phone; the floor keeps its 100 % size.
+    val floor = 8.sp / LocalDensity.current.fontScale.coerceAtLeast(1f)
+
     Text(
         text,
         modifier = modifier,
@@ -824,7 +828,7 @@ fun FitLabel(text: String, style: TextStyle, modifier: Modifier = Modifier, colo
         style = style,
         maxLines = 1,
         softWrap = false,
-        autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = style.fontSize),
+        autoSize = TextAutoSize.StepBased(minFontSize = floor, maxFontSize = style.fontSize),
     )
 }
 
