@@ -130,6 +130,9 @@
     <string name="ducker_active">Etkin</string>
     <string name="provider_announcement">Sağlayıcı duyurusu</string>
     <string name="announcement_read_more">Devamını oku</string>
+    <string name="announcements">Duyurular</string>
+    <string name="announcements_bell">Sağlayıcı duyuruları</string>
+    <string name="announcement_new">Yeni</string>
     <string name="sort_default">Varsayılan sıra</string>
     <string name="sort_delay">Gecikmeye göre</string>
     <string name="probe">Gecikme testi</string>

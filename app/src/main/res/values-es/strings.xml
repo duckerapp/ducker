@@ -130,6 +130,9 @@
     <string name="ducker_active">En uso</string>
     <string name="provider_announcement">Anuncio del proveedor</string>
     <string name="announcement_read_more">Leer más</string>
+    <string name="announcements">Anuncios</string>
+    <string name="announcements_bell">Anuncios de los proveedores</string>
+    <string name="announcement_new">Nuevo</string>
     <string name="sort_default">Orden predeterminado</string>
     <string name="sort_delay">Por latencia</string>
     <string name="probe">Prueba de latencia</string>

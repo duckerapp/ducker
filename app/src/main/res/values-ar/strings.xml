@@ -130,6 +130,9 @@
     <string name="ducker_active">نشط</string>
     <string name="provider_announcement">إعلان مزوّد الخدمة</string>
     <string name="announcement_read_more">اقرأ المزيد</string>
+    <string name="announcements">الإعلانات</string>
+    <string name="announcements_bell">إعلانات مزوّدي الخدمة</string>
+    <string name="announcement_new">جديد</string>
     <string name="sort_default">الترتيب الافتراضي</string>
     <string name="sort_delay">حسب زمن الاستجابة</string>
     <string name="probe">فحص زمن الاستجابة</string>

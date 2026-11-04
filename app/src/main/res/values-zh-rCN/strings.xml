@@ -130,6 +130,9 @@
     <string name="ducker_active">当前使用</string>
     <string name="provider_announcement">服务商公告</string>
     <string name="announcement_read_more">查看全文</string>
+    <string name="announcements">公告</string>
+    <string name="announcements_bell">服务商公告</string>
+    <string name="announcement_new">新</string>
     <string name="sort_default">默认排序</string>
     <string name="sort_delay">按延迟排序</string>
     <string name="probe">节点延迟测试</string>

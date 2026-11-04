@@ -154,6 +154,9 @@
     <string name="ducker_active">Active</string>
     <string name="provider_announcement">Provider announcement</string>
     <string name="announcement_read_more">Read more</string>
+    <string name="announcements">Announcements</string>
+    <string name="announcements_bell">Provider announcements</string>
+    <string name="announcement_new">New</string>
     <string name="sort_default">Default order</string>
     <string name="sort_delay">By delay</string>
     <string name="probe">Node test</string>

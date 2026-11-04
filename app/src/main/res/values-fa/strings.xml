@@ -130,6 +130,9 @@
     <string name="ducker_active">فعال</string>
     <string name="provider_announcement">اطلاعیهٔ ارائه‌دهنده</string>
     <string name="announcement_read_more">بیشتر بخوانید</string>
+    <string name="announcements">اطلاعیه‌ها</string>
+    <string name="announcements_bell">اطلاعیه‌های ارائه‌دهندگان</string>
+    <string name="announcement_new">جدید</string>
     <string name="sort_default">ترتیب پیش‌فرض</string>
     <string name="sort_delay">بر اساس تأخیر</string>
     <string name="probe">آزمایش سرور</string>

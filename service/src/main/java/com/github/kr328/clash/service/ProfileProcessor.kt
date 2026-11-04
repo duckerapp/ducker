@@ -13,6 +13,7 @@ import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.service.remote.IFetchObserver
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.Failure
+import com.github.kr328.clash.service.store.AnnouncementStore
 import com.github.kr328.clash.service.util.ProviderInfo
 import com.github.kr328.clash.service.util.SubscriptionHeaders
 import com.github.kr328.clash.service.util.SubscriptionMirrors
@@ -73,7 +74,10 @@ object ProfileProcessor {
 
                 profileLock.withLock {
                     if (PendingDao().queryByUUID(snapshot.uuid) == snapshot) {
+                        val shown = announcements(context, snapshot.uuid)
+
                         context.importedDir.resolve(snapshot.uuid.toString()).replaceWithCopyOf(context.processingDir)
+                        AnnouncementStore.record(context, snapshot.uuid, shown.second, shown.first)
 
                         val old = ImportedDao().queryByUUID(snapshot.uuid)
                         val new = Imported(
@@ -158,7 +162,10 @@ object ProfileProcessor {
                 profileLock.withLock {
                     val imported = ImportedDao().queryByUUID(snapshot.uuid)
                     if (imported != null) {
+                        val shown = announcements(context, snapshot.uuid)
+
                         context.importedDir.resolve(snapshot.uuid.toString()).replaceWithCopyOf(context.processingDir)
+                        AnnouncementStore.record(context, snapshot.uuid, shown.second, shown.first)
 
                         val upload = subscriptionInfo?.subUpload
                         if (upload != null) {
@@ -297,9 +304,16 @@ object ProfileProcessor {
                 supportUrl = failure.supportUrl.ifEmpty { current.supportUrl },
             ),
         )
+        // The panel's refusal is the provider's word too: «удалите старое устройство в боте».
+        AnnouncementStore.record(context, uuid, failure.announce, current.announce)
 
         context.sendProfileChanged(uuid)
     }
+
+    /** The announcement shown before this update and the one it brought, read before the commit replaces the first. */
+    private fun announcements(context: Context, uuid: UUID): Pair<String, String> =
+        ProviderInfo.read(context.importedDir.resolve(uuid.toString())).announce to
+            ProviderInfo.read(context.processingDir).announce
 
     private suspend fun fetchProfile(
         context: Context,
@@ -482,6 +496,7 @@ object ProfileProcessor {
 
                 pending.deleteRecursively()
                 imported.deleteRecursively()
+                AnnouncementStore.forget(context, uuid)
 
                 context.sendProfileChanged(uuid)
             }

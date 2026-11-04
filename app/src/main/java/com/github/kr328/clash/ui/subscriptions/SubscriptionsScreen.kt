@@ -158,6 +158,8 @@ fun SubscriptionsScreen(
     onRules: (Profile) -> Unit = {},
     /** «Отправить на телевизор» in the menu: the scanner for the TV's code (D-162). */
     onSendToTv: (Profile) -> Unit = {},
+    /** The announcements' sheet opened: this subscription's, or all of them (`null`) — they are seen now. */
+    onSeeAnnouncements: (UUID?) -> Unit = {},
 ) {
     val list = rememberLazyListState()
     val bounce = overscrollFor(list)
@@ -204,6 +206,25 @@ fun SubscriptionsScreen(
         shareOpen = true
     }
 
+    // The providers' announcements (stage 15): what the sheet shows is taken at its opening, see [announcementGroups].
+    var announcementGroups by remember { mutableStateOf<List<AnnouncementGroup>?>(null) }
+    var announcementsOpen by remember { mutableStateOf(false) }
+    val showAnnouncements = { profile: UUID? ->
+        announcementGroups = state.announcementGroups(profile)
+        announcementsOpen = true
+        onSeeAnnouncements(profile)
+    }
+
+    announcementGroups?.let { groups ->
+        AnnouncementsSheet(
+            open = announcementsOpen,
+            groups = groups,
+            onOpenLink = onOpenLink,
+            onDismiss = { announcementsOpen = false },
+            onClosed = { announcementGroups = null },
+        )
+    }
+
     shareFor?.let { profile ->
         ShareSubscriptionSheet(
             open = shareOpen,
@@ -229,6 +250,8 @@ fun SubscriptionsScreen(
                 MenuAction.Favorite,
                 MenuAction.Support.takeIf { support != null },
                 MenuAction.Renew.takeIf { renew != null },
+                // No announcements — no item, as no link — no «Продлить».
+                MenuAction.Announcements.takeIf { state.announcements.any { it.profile == profile.uuid.toString() } },
                 MenuAction.Share.takeIf { !profile.local },
                 // A link the TV can load itself; a TV has no camera to scan another TV with.
                 MenuAction.SendTv.takeIf { !tv && subscriptionLink(profile.source) != null },
@@ -241,6 +264,7 @@ fun SubscriptionsScreen(
                     MenuAction.Edit -> ({ onEdit(profile) })
                     MenuAction.Renew -> ({ renew?.let(onOpenLink) })
                     MenuAction.Support -> ({ support?.let(onOpenLink) })
+                    MenuAction.Announcements -> ({ showAnnouncements(profile.uuid) })
                     MenuAction.Share -> ({ share(profile) })
                     MenuAction.SendTv -> ({ onSendToTv(profile) })
                     // After the sheet has gone, so the row is seen moving to its group.
@@ -302,7 +326,11 @@ fun SubscriptionsScreen(
             item(key = HEADER_KEY) {
                 // От заголовка до первой карточки — как на «Прокси», где под заголовком ещё
                 // стоит строка режимов (без VPN — пустая): два шага списка, а не один (D-104).
-                ScreenHeader(stringResource(R.string.subscriptions_tab), Modifier.padding(bottom = GAP * 2))
+                ScreenHeader(stringResource(R.string.subscriptions_tab), Modifier.padding(bottom = GAP * 2)) {
+                    if (state.announcements.isNotEmpty()) {
+                        AnnouncementsBell(fresh = state.announcements.any(state::fresh), onClick = { showAnnouncements(null) })
+                    }
+                }
             }
 
             // Заглушки, а не бесконечная полоска (D-92): так же, как на главной.
@@ -887,7 +915,7 @@ private fun ActiveDetails(
     }
 }
 
-private enum class MenuAction { Update, Edit, Renew, Support, Share, SendTv, Favorite, Delete }
+private enum class MenuAction { Update, Edit, Renew, Support, Announcements, Share, SendTv, Favorite, Delete }
 
 /** The same actions apply to active and inactive subscriptions. */
 @Composable
@@ -911,6 +939,7 @@ private fun ProfileMenu(
                     MenuAction.Favorite -> if (favorite) Symbols.Star else Symbols.StarOutline
                     MenuAction.Renew -> Symbols.CreditCard
                     MenuAction.Support -> Symbols.SupportAgent
+                    MenuAction.Announcements -> Symbols.Notifications
                     MenuAction.Delete -> Symbols.DeleteOutline
                 }
                 val label = when (action) {
@@ -921,6 +950,7 @@ private fun ProfileMenu(
                     MenuAction.Favorite -> if (favorite) R.string.unfavorite else R.string.favorite
                     MenuAction.Renew -> R.string.renew
                     MenuAction.Support -> R.string.support
+                    MenuAction.Announcements -> R.string.announcements
                     MenuAction.Delete -> R.string.delete_subscription_action
                 }
 

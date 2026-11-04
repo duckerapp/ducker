@@ -1051,6 +1051,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                             subscriptionsViewModel.scanForTv(it.uuid)
                                             qrScanner.launch(true)
                                         },
+                                        onSeeAnnouncements = { subscriptionsViewModel.seeAnnouncements(this@HomeActivity, it) },
                                         modifier = Modifier.consumeWindowInsets(insets),
                                         contentPadding = insets,
                                         // Потянуть вниз — обновить подписку, которая сейчас в работе.

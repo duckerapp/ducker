@@ -144,6 +144,9 @@
     <string name="ducker_active">Активна</string>
     <string name="provider_announcement">Анонс провайдера</string>
     <string name="announcement_read_more">Подробнее</string>
+    <string name="announcements">Уведомления</string>
+    <string name="announcements_bell">Уведомления провайдеров</string>
+    <string name="announcement_new">Новое</string>
     <string name="sort_default">По порядку</string>
     <string name="sort_delay">По задержке</string>
     <string name="probe">Замер узла</string>

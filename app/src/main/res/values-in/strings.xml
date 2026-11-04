@@ -130,6 +130,9 @@
     <string name="ducker_active">Aktif</string>
     <string name="provider_announcement">Pengumuman penyedia</string>
     <string name="announcement_read_more">Baca selengkapnya</string>
+    <string name="announcements">Pengumuman</string>
+    <string name="announcements_bell">Pengumuman penyedia</string>
+    <string name="announcement_new">Baru</string>
     <string name="sort_default">Urutan bawaan</string>
     <string name="sort_delay">Menurut latensi</string>
     <string name="probe">Uji latensi</string>

@@ -25,6 +25,15 @@ class AppStore(context: Context) {
         defaultValue = "",
     )
 
+    /**
+     * Up to when each subscription's announcements have been seen (stage 15): «number:millis» through commas. Here, as
+     * the order: only «Подписки» needs it. A deleted subscription's pair stays harmlessly.
+     */
+    var announcementsSeen: String by store.string(
+        key = "announcements_seen",
+        defaultValue = "",
+    )
+
     companion object {
         private const val FILE_NAME = "app"
     }

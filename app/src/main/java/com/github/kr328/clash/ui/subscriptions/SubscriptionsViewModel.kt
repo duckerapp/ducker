@@ -24,6 +24,8 @@ import com.github.kr328.clash.service.util.sendOverrideChanged
 import com.github.kr328.clash.service.store.UserRulesStore
 import com.github.kr328.clash.service.model.UserRule
 import com.github.kr328.clash.service.store.ServiceStore
+import com.github.kr328.clash.service.store.Announcement
+import com.github.kr328.clash.service.store.AnnouncementStore
 import com.github.kr328.clash.service.util.SubscriptionHeaders
 import com.github.kr328.clash.remote.Remote
 import com.github.kr328.clash.store.AppStore
@@ -132,7 +134,15 @@ data class SubscriptionsState(
     val sendBusy: Boolean = false,
     /** Телевизор подписку принял: панель говорит об этом, пока её не закроют. */
     val sent: Boolean = false,
+    /** The providers' announcements of the last ten days, of the subscriptions in the list (stage 15). */
+    val announcements: List<Announcement> = emptyList(),
+    /** Up to when each subscription's announcements have been seen, by its number. */
+    val announcementsSeen: Map<String, Long> = emptyMap(),
 ) {
+    /** Not seen yet: it came after its sheet was last opened, and not before the history began. */
+    fun fresh(announcement: Announcement): Boolean =
+        !announcement.known && announcement.at > (announcementsSeen[announcement.profile] ?: 0)
+
     /** The field shows a long [input] only by its beginning and is then read-only (F-268). */
     val inputLong: Boolean
         get() = input.length > FIELD_LIMIT
@@ -206,6 +216,9 @@ class SubscriptionsViewModel : ViewModel() {
             val profiles = manual.shown(favorites)
 
             val sendHwid = withContext(Dispatchers.IO) { ServiceStore(context).sendHwid }
+            val listed = profiles.mapTo(HashSet()) { it.uuid.toString() }
+            val announcements = withContext(Dispatchers.IO) { AnnouncementStore.read(context) }.filter { it.profile in listed }
+            val seen = withContext(Dispatchers.IO) { seenOf(AppStore(context).announcementsSeen) }
             val counts = withContext(Dispatchers.IO) {
                 val rules = UserRulesStore(context)
 
@@ -218,12 +231,28 @@ class SubscriptionsViewModel : ViewModel() {
                     favorites = favorites,
                     ruleCounts = counts,
                     sendHwid = sendHwid,
+                    announcements = announcements,
+                    announcementsSeen = seen,
                     hwid = SubscriptionHeaders.hwidOf(context),
                     loaded = true,
                     outOfSpace = outOfSpace,
                 )
             }
         }
+    }
+
+    /** Its announcements' sheet opened: [profile]'s, or every subscription's for the bell. */
+    fun seeAnnouncements(context: Context, profile: UUID?) {
+        val now = System.currentTimeMillis()
+        val seen = _state.value.announcementsSeen.toMutableMap()
+
+        _state.value.announcements.map { it.profile }.distinct()
+            .filter { profile == null || it == profile.toString() }
+            .forEach { seen[it] = now }
+
+        _state.update { it.copy(announcementsSeen = seen) }
+
+        viewModelScope.launch(Dispatchers.IO) { AppStore(context).announcementsSeen = seenText(seen) }
     }
 
     fun showAdd(show: Boolean) {
@@ -1051,6 +1080,15 @@ private val CLIP_LINK = Regex(
     "^(https?|vless|vmess|trojan|ss|ssr|hysteria|hysteria2|hy2|tuic|anytls|socks5?)://\\S",
     RegexOption.IGNORE_CASE,
 )
+
+/** «number:millis,number:millis» — `AppStore.announcementsSeen`. */
+internal fun seenOf(text: String): Map<String, Long> = text.split(',').mapNotNull { pair ->
+    val (profile, at) = pair.split(':').takeIf { it.size == 2 } ?: return@mapNotNull null
+
+    at.toLongOrNull()?.let { profile to it }
+}.toMap()
+
+internal fun seenText(seen: Map<String, Long>): String = seen.entries.joinToString(",") { "${it.key}:${it.value}" }
 
 /** Имя подписки, добавленной по ссылке, пока человек не назвал её сам: домен ссылки. */
 internal fun defaultName(link: String): String = runCatching { Uri.parse(link).host }.getOrNull().orEmpty()
