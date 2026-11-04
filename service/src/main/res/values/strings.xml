@@ -31,6 +31,10 @@
     </plurals>
     <string name="expiry_text">“%1$s” is valid until %2$s. Renew it to keep the VPN working.</string>
     <string name="expiry_renew">Renew</string>
+    <!-- Traffic allowance (stage 15) -->
+    <string name="traffic_channel">Subscription traffic</string>
+    <string name="traffic_title">%1$s of your traffic used</string>
+    <string name="traffic_text">“%1$s”: %2$s of %3$s left. Renew or top up to keep the VPN working.</string>
     <string name="subscription_profile_too_large">The subscription is too large (over 16 MB). Tell your provider</string>
     <string name="subscription_provider_too_large">A rule or node list in the subscription is too large (over 64 MB). Tell your provider</string>
     <string name="subscription_download_failed">Couldn’t download the subscription. Check your connection and try again</string>

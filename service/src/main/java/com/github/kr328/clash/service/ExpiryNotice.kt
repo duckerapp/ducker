@@ -184,9 +184,9 @@ private const val DAY_MS = 24 * 60 * 60 * 1000L
 /** Обновление моложе этого — сведения свежие, перед уведомлением не скачиваем заново. */
 private val FRESH_MS = TimeUnit.MINUTES.toMillis(15)
 
-/** Днём, чтобы не звенеть ночью. */
-private val DAY_START: LocalTime = LocalTime.of(10, 0)
-private val DAY_END: LocalTime = LocalTime.of(21, 0)
+/** Днём, чтобы не звенеть ночью. The traffic warning keeps the same day ([TrafficNotice]). */
+internal val DAY_START: LocalTime = LocalTime.of(10, 0)
+internal val DAY_END: LocalTime = LocalTime.of(21, 0)
 
 /** Что помним: подписка, её срок и самый близкий к концу порог, о котором уже сказали. */
 internal data class Seen(val uuid: String, val expire: Long, val step: Int) {

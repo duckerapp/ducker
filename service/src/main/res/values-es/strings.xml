@@ -26,6 +26,9 @@
     </plurals>
     <string name="expiry_text">“%1$s” es válida hasta el %2$s. Renuévala para seguir usando la VPN.</string>
     <string name="expiry_renew">Renovar</string>
+    <string name="traffic_channel">Tráfico de la suscripción</string>
+    <string name="traffic_title">Has usado el %1$s del tráfico</string>
+    <string name="traffic_text">“%1$s”: quedan %2$s de %3$s. Renueva o compra más tráfico para seguir usando la VPN.</string>
     <string name="subscription_profile_too_large">La suscripción es demasiado grande (más de 16 MB). Avisa al proveedor</string>
     <string name="subscription_provider_too_large">Una lista de reglas o servidores de la suscripción es demasiado grande (más de 64 MB). Avisa al proveedor</string>
     <string name="subscription_download_failed">No se pudo descargar la suscripción. Revisa la conexión e inténtalo de nuevo</string>

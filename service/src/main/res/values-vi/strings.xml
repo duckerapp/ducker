@@ -24,6 +24,9 @@
     </plurals>
     <string name="expiry_text">“%1$s” có hiệu lực đến %2$s. Hãy gia hạn để tiếp tục dùng VPN.</string>
     <string name="expiry_renew">Gia hạn</string>
+    <string name="traffic_channel">Lưu lượng gói đăng ký</string>
+    <string name="traffic_title">Đã dùng %1$s lưu lượng</string>
+    <string name="traffic_text">“%1$s”: còn %2$s trên %3$s. Hãy gia hạn hoặc mua thêm lưu lượng để tiếp tục dùng VPN.</string>
     <string name="subscription_profile_too_large">Gói đăng ký quá lớn (trên 16 MB). Hãy báo cho nhà cung cấp</string>
     <string name="subscription_provider_too_large">Danh sách quy tắc hoặc máy chủ trong gói đăng ký quá lớn (trên 64 MB). Hãy báo cho nhà cung cấp</string>
     <string name="subscription_download_failed">Không thể tải gói đăng ký. Kiểm tra kết nối rồi thử lại</string>

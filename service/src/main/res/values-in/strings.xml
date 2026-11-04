@@ -24,6 +24,9 @@
     </plurals>
     <string name="expiry_text">“%1$s” berlaku hingga %2$s. Perpanjang agar VPN tetap berfungsi.</string>
     <string name="expiry_renew">Perpanjang</string>
+    <string name="traffic_channel">Kuota langganan</string>
+    <string name="traffic_title">%1$s kuota sudah terpakai</string>
+    <string name="traffic_text">“%1$s”: sisa %2$s dari %3$s. Perpanjang atau tambah kuota agar VPN tetap berfungsi.</string>
     <string name="subscription_profile_too_large">Langganan terlalu besar (lebih dari 16 MB). Beri tahu penyedia</string>
     <string name="subscription_provider_too_large">Daftar aturan atau server dalam langganan terlalu besar (lebih dari 64 MB). Beri tahu penyedia</string>
     <string name="subscription_download_failed">Tidak dapat mengunduh langganan. Periksa koneksi dan coba lagi</string>

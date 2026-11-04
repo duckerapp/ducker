@@ -59,6 +59,7 @@ class ProfileReceiver : BroadcastReceiver() {
 
                 // Перезагрузка и обновление стирают будильники, смена времени сдвигает пороги.
                 Global.launch { ExpiryNotice.check(context) }
+                Global.launch { TrafficNotice.check(context) }
                 Global.launch { VerboseLog.checkIfOn(context) }
             }
             VerboseLog.ACTION -> {
@@ -67,6 +68,8 @@ class ProfileReceiver : BroadcastReceiver() {
             // Срок мог прийти новый с обновлением подписки, активной могла стать другая (D-149).
             ExpiryNotice.ACTION, Intents.ACTION_PROFILE_CHANGED -> {
                 Global.launch { ExpiryNotice.check(context) }
+                // Traffic comes only with an update, and an update ends in a change (stage 15).
+                if (intent.action == Intents.ACTION_PROFILE_CHANGED) Global.launch { TrafficNotice.check(context) }
             }
             Intents.ACTION_PROFILE_REQUEST_UPDATE -> {
                 val redirect = intent.setComponent(ProfileWorker::class.componentName)

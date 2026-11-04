@@ -25,6 +25,9 @@
     </plurals>
     <string name="expiry_text">«%1$s» تا %2$s معتبر است. برای ادامه کار VPN، آن را تمدید کنید.</string>
     <string name="expiry_renew">تمدید</string>
+    <string name="traffic_channel">ترافیک اشتراک</string>
+    <string name="traffic_title">%1$s از ترافیک مصرف شده است</string>
+    <string name="traffic_text">«%1$s»: %2$s از %3$s باقی مانده است. برای ادامه کار VPN، اشتراک را تمدید کنید یا ترافیک بیشتری بخرید.</string>
     <string name="subscription_profile_too_large">حجم اشتراک بیش از حد بزرگ است (بیشتر از 16 مگابایت). به ارائه‌دهنده خود اطلاع دهید</string>
     <string name="subscription_provider_too_large">فهرست قوانین یا سرورها در اشتراک بیش از حد بزرگ است (بیشتر از 64 مگابایت). به ارائه‌دهنده خود اطلاع دهید</string>
     <string name="subscription_download_failed">دانلود اشتراک ممکن نشد. اتصال اینترنت را بررسی و دوباره تلاش کنید</string>

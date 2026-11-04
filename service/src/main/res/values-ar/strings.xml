@@ -29,6 +29,9 @@
     </plurals>
     <string name="expiry_text">«%1$s» صالح حتى %2$s. جدّده ليواصل VPN العمل.</string>
     <string name="expiry_renew">تجديد</string>
+    <string name="traffic_channel">حركة بيانات الاشتراك</string>
+    <string name="traffic_title">تم استهلاك %1$s من حركة البيانات</string>
+    <string name="traffic_text">«%1$s»: المتبقي %2$s من %3$s. جدّد الاشتراك أو اشترِ بيانات إضافية ليواصل VPN العمل.</string>
     <string name="subscription_profile_too_large">الاشتراك كبير جدًا (أكثر من 16 MB). أبلغ مزوّد الخدمة</string>
     <string name="subscription_provider_too_large">إحدى قوائم القواعد أو الخوادم في الاشتراك كبيرة جدًا (أكثر من 64 MB). أبلغ مزوّد الخدمة</string>
     <string name="subscription_download_failed">تعذّر تنزيل الاشتراك. تحقق من الاتصال وحاول مجددًا</string>

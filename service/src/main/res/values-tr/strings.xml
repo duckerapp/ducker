@@ -25,6 +25,9 @@
     </plurals>
     <string name="expiry_text">“%1$s”, %2$s tarihine kadar geçerli. VPN kullanmaya devam etmek için aboneliği yenileyin.</string>
     <string name="expiry_renew">Yenile</string>
+    <string name="traffic_channel">Abonelik trafiği</string>
+    <string name="traffic_title">Kullanılan trafik: %1$s</string>
+    <string name="traffic_text">“%1$s”: kalan %2$s / %3$s. VPN kullanmaya devam etmek için aboneliği yenileyin veya ek trafik alın.</string>
     <string name="subscription_profile_too_large">Abonelik çok büyük (16 MB üzerinde). Sağlayıcınıza bildirin</string>
     <string name="subscription_provider_too_large">Abonelikteki bir kural veya sunucu listesi çok büyük (64 MB üzerinde). Sağlayıcınıza bildirin</string>
     <string name="subscription_download_failed">Abonelik indirilemedi. Bağlantınızı kontrol edip tekrar deneyin</string>

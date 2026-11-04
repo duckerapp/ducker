@@ -133,6 +133,12 @@ class ServiceStore(context: Context) {
         defaultValue = "",
     )
 
+    /** Which traffic threshold of which subscription has been told about — `TrafficNotice`. */
+    var trafficNotice by store.string(
+        key = "traffic_notice",
+        defaultValue = "",
+    )
+
     /** Когда включили «Подробный журнал», в миллисекундах; ноль — выключен (`VerboseLog`). */
     var verboseLogSince by store.long(
         key = "verbose_log_since",

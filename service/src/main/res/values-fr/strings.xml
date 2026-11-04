@@ -26,6 +26,9 @@
     </plurals>
     <string name="expiry_text">« %1$s » est valable jusqu’au %2$s. Renouvelez cet abonnement pour continuer à utiliser le VPN.</string>
     <string name="expiry_renew">Renouveler</string>
+    <string name="traffic_channel">Trafic de l’abonnement</string>
+    <string name="traffic_title">%1$s du trafic utilisé</string>
+    <string name="traffic_text">« %1$s » : il reste %2$s sur %3$s. Renouvelez l’abonnement ou achetez du trafic pour continuer à utiliser le VPN.</string>
     <string name="subscription_profile_too_large">L’abonnement est trop volumineux (plus de 16 Mo). Prévenez votre fournisseur</string>
     <string name="subscription_provider_too_large">Une liste de règles ou de serveurs de l’abonnement est trop volumineuse (plus de 64 Mo). Prévenez votre fournisseur</string>
     <string name="subscription_download_failed">Impossible de télécharger l’abonnement. Vérifiez votre connexion et réessayez</string>
