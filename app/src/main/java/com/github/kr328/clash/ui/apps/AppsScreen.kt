@@ -166,16 +166,19 @@ fun AppsScreen(
                     },
                     pills = {
                         Row(horizontalArrangement = Arrangement.spacedBy(PILLS_GAP)) {
+                            // Smaller rather than «Tout sé…» when the two do not fit a narrow phone's line.
                             Pill(
                                 text = stringResource(R.string.apps_system_short),
                                 onClick = { onShowSystem(!state.showSystem) },
                                 selected = state.showSystem,
                                 role = Role.Switch,
+                                fit = true,
                             )
                             Pill(
                                 text = stringResource(if (marked) R.string.apps_select_none else R.string.apps_select_all),
                                 onClick = if (marked) onSelectNone else onSelectAll,
                                 enabled = state.apps.isNotEmpty(),
+                                fit = true,
                             )
                         }
                     },
