@@ -10,7 +10,7 @@ class BirdGameTest {
     @Test
     fun `an autopilot clears 300 columns on every course`() {
         // A tall phone, a short one, a phone on its side.
-        for ((width, height) in listOf(144 to 316, 136 to 250, 600 to 200)) {
+        for ((width, height) in listOf(160 to 333, 150 to 260, 600 to 260)) {
             for (seed in 1..20) {
                 val game = BirdGame(width, height, top = 20, random = Random(seed))
 
@@ -31,7 +31,7 @@ class BirdGameTest {
 
     @Test
     fun `the water holds the duck`() {
-        val game = BirdGame(144, 316, top = 20, random = Random(1))
+        val game = BirdGame(160, 333, top = 20, random = Random(1))
 
         game.tap()
         repeat((1.5f / FRAME).toInt()) { game.advance(FRAME) }
@@ -44,7 +44,7 @@ class BirdGameTest {
 
     @Test
     fun `a tap right after a fall does not start the next game`() {
-        val game = BirdGame(144, 316, top = 20, random = Random(2))
+        val game = BirdGame(160, 333, top = 20, random = Random(2))
 
         game.tap()
 

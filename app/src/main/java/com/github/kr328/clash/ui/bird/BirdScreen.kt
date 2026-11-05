@@ -42,7 +42,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.bird.BirdGame.Companion.COLUMN_W
-import com.github.kr328.clash.ui.bird.BirdGame.Companion.DUCK_H
 import com.github.kr328.clash.ui.bird.BirdGame.Companion.DUCK_X
 import com.github.kr328.clash.ui.bird.BirdGame.Companion.GAP
 import com.github.kr328.clash.ui.bird.BirdGame.Companion.REED_SLACK
@@ -181,10 +180,12 @@ private class Pixels(
     private val paper: Color,
 ) {
     fun draw(game: BirdGame) {
+        sky(game)
+
         for (column in game.columns) {
             val left = column.x.roundToInt()
 
-            wall(left, column.gap)
+            wall(left, column.gap, column.seed)
 
             if (column.gap + GAP < game.water) reeds(left, column.gap + GAP, column.seed, game.water)
         }
@@ -200,8 +201,27 @@ private class Pixels(
         }
     }
 
-    /** A brick wall from above the screen's top down to [bottom]: an outline and courses of bricks laid from below. */
-    private fun wall(left: Int, bottom: Int) {
+    /** Clouds and specks, drifting slower than the columns and the specks slowest: the sky has depth. */
+    private fun sky(game: BirdGame) {
+        val room = game.water - game.top
+
+        for (i in CLOUDS.indices step 2) {
+            val span = game.width + CLOUD_W
+            val left = Math.floorMod((CLOUDS[i] * span - game.travel * CLOUD_PACE).toInt(), span) - CLOUD_W
+
+            blit(CLOUD, left, game.top + (CLOUDS[i + 1] * room).toInt())
+        }
+
+        for (i in SPECKS.indices step 2) {
+            val left = Math.floorMod((SPECKS[i] * game.width - game.travel * SPECK_PACE).toInt(), game.width)
+
+            rect(left, game.top + (SPECKS[i + 1] * room).toInt(), 1, 1)
+        }
+    }
+
+    /** A brick wall from above the screen's top down to [bottom], over the sky: courses laid from below, a dark brick here and there. */
+    private fun wall(left: Int, bottom: Int, seed: Int) {
+        rect(left, -1, COLUMN_W, bottom + 1, paper)
         rect(left, -1, 1, bottom + 1)
         rect(left + COLUMN_W - 1, -1, 1, bottom + 1)
 
@@ -211,11 +231,21 @@ private class Pixels(
         while (line >= -1) {
             rect(left, line, COLUMN_W, 1)
 
-            var joint = left + (if (course % 2 == 0) BRICK / 2 else BRICK)
+            val even = course % 2 == 0
+            var joint = left + (if (even) BRICK / 2 else BRICK)
 
             while (joint < left + COLUMN_W - 1) {
                 rect(joint, line - COURSE + 1, 1, COURSE - 1)
                 joint += BRICK
+            }
+
+            // The same bricks stay dark while the wall passes: picked from its seed and the course, not at random.
+            val mix = (seed + course) * MIX
+
+            if ((mix ushr 24) % DARK == 0) {
+                val start = left + 1 + (if (even) BRICK / 2 else 0) + BRICK * ((mix ushr 8) and 1)
+
+                rect(start, line - COURSE + 1, minOf(BRICK - 1, left + COLUMN_W - 1 - start), COURSE - 1)
             }
 
             line -= COURSE
@@ -223,32 +253,38 @@ private class Pixels(
         }
     }
 
-    /** Reeds from the water up to [top]: every other stalk with a cattail. The tallest reach the hit line exactly. */
+    /** Reeds from the water up to [top]: thin stalks with square heads; the tallest reach the hit line exactly. */
     private fun reeds(left: Int, top: Int, seed: Int, water: Int) {
         for (i in 0 until STALKS) {
-            val stalk = left + 2 + 3 * i
-            val tip = top + REED_SLACK + REED_TIPS[(i + seed) and 7]
+            val stalk = left + 2 + 5 * i
+            val tip = top + REED_SLACK + REED_TIPS[Math.floorMod(i + seed, STALKS)]
 
-            if (i % 2 == 0) {
-                rect(stalk - 1, tip, 3, CATTAIL)
-                rect(stalk, tip + CATTAIL, 1, water - tip - CATTAIL)
-            } else {
-                rect(stalk, tip, 1, water - tip)
-            }
+            rect(stalk - 1, tip, 3, 3)
+            rect(stalk, tip + 3, 1, water - tip - 3)
         }
     }
 
-    /** The duck: wing up while it rises fast, belly up after a hit, bobbing while it floats. */
+    /**
+     * The duck: the wing up while it rises, tucked while it dives, spread otherwise; speed lines behind it in the air;
+     * belly up after a hit; bobbing while it floats.
+     */
     private fun duck(game: BirdGame) {
         val down = game.phase == BirdGame.Phase.Falling || game.phase == BirdGame.Phase.Over
-        val sprite = if (game.phase == BirdGame.Phase.Flying && game.vy < RISING) FLAP else REST
+        val flying = game.phase == BirdGame.Phase.Flying && !game.afloat
+        val sprite = when {
+            !flying -> GLIDE
+            game.vy < RISING -> FLAP
+            game.vy > DIVING -> TUCK
+            else -> GLIDE
+        }
         val bob = if (game.afloat) sin(game.clock * BOB).roundToInt() else 0
         val top = game.y.roundToInt() + bob
 
-        for (row in 0 until DUCK_H) {
-            val spans = sprite[if (down) DUCK_H - 1 - row else row]
+        blit(sprite, DUCK_X, top, flip = down)
 
-            for (i in spans.indices step 2) rect(DUCK_X + spans[i], top + row, spans[i + 1], 1)
+        if (flying) {
+            rect(DUCK_X - 7, top + 11, 4, 1)
+            rect(DUCK_X - 6, top + 13, 3, 1)
         }
     }
 
@@ -263,8 +299,8 @@ private class Pixels(
         val far = (game.travel * 0.6f).toInt() % RIPPLE
 
         for (step in -RIPPLE..game.width + RIPPLE step RIPPLE) {
-            rect(step - near + 3, game.water + 4, 4, 1)
-            rect(step - far + 9, game.water + 9, 4, 1)
+            rect(step - near + 3, game.water + 5, 5, 1)
+            rect(step - far + 9, game.water + 11, 5, 1)
         }
     }
 
@@ -283,69 +319,134 @@ private class Pixels(
         }
     }
 
-    private fun rect(left: Int, top: Int, width: Int, height: Int) {
+    /** A [sprite] with its top left at [left], [top]; [flip] — upside down. */
+    private fun blit(sprite: Array<IntArray>, left: Int, top: Int, flip: Boolean = false) {
+        for (row in sprite.indices) {
+            val runs = sprite[if (flip) sprite.size - 1 - row else row]
+
+            for (i in runs.indices step 3) rect(left + runs[i], top + row, runs[i + 1], 1, if (runs[i + 2] == INK) ink else paper)
+        }
+    }
+
+    private fun rect(left: Int, top: Int, width: Int, height: Int, color: Color = ink) {
         if (width <= 0 || height <= 0) return
 
-        scope.drawRect(ink, Offset(x + left * scale, y + top * scale), Size(width * scale, height * scale))
+        scope.drawRect(color, Offset(x + left * scale, y + top * scale), Size(width * scale, height * scale))
     }
 }
 
-/** A sprite's rows as runs of ink: start and length, pairs. */
+/**
+ * A sprite's rows as runs: start, length and [INK] or [PAPER], three numbers each. `#` is the outline, `o` the fill that
+ * hides what is behind, `.` lets it show.
+ */
 private fun sprite(vararg rows: String): Array<IntArray> = Array(rows.size) { r ->
     val row = rows[r]
     val runs = ArrayList<Int>()
-    var start = -1
+    var start = 0
 
-    for (i in 0..row.length) {
-        val inked = i < row.length && row[i] == '#'
+    while (start < row.length) {
+        var end = start
 
-        if (inked && start < 0) start = i
-        if (!inked && start >= 0) {
+        while (end < row.length && row[end] == row[start]) end++
+
+        if (row[start] != '.') {
             runs += start
-            runs += i - start
-            start = -1
+            runs += end - start
+            runs += if (row[start] == '#') INK else PAPER
         }
+
+        start = end
     }
 
     runs.toIntArray()
 }
 
-/** Our logo's duck in pixels: the tuft, the eye, the beak, the wing as a leaf parted from the body by a line. */
-private val REST = sprite(
-    ".......##........",
-    "........#.####...",
-    "........#######..",
-    ".......#########.",
-    ".......#####o###.",
-    ".......##########",
-    "........#######..",
-    "........#######..",
-    "#......#########.",
-    "#######o#########",
-    ".######o#########",
-    "..######o########",
-    "...######o######.",
-    "....######o####..",
-    "......####o###...",
+private const val INK = 1
+private const val PAPER = 0
+
+/** The duck in three states, drawn after a sketch of the owner's: gliding, flapping, diving. */
+private val GLIDE = sprite(
+    "..............####.....",
+    ".............#oooo#....",
+    "............#oooooo#...",
+    "............#ooo##o#...",
+    "............#ooo##o#...",
+    "............#ooooooo###",
+    "...#########oooooooooo#",
+    ".##ooooo##ooooooooo####",
+    "##oooooooo#ooooooo#....",
+    ".#####oooo#ooooooo#....",
+    "##oooooo##ooooooo#.....",
+    ".#######ooooooooo#.....",
+    "..#ooooooooooooo#......",
+    "...##ooooooooooo#......",
+    ".....##ooooooo##.......",
+    ".......#######.........",
+    "........#...#..........",
+    ".......##..##..........",
 )
 
 private val FLAP = sprite(
-    ".......##........",
-    "........#.####...",
-    "#.......#######..",
-    "##.....#########.",
-    "###....#####o###.",
-    "####...##########",
-    ".####..#######...",
-    ".#####o#######...",
-    "..#####o#######..",
-    "...#####o########",
-    "....####o########",
-    "......##o########",
-    ".......########..",
-    "........######...",
-    "..........###....",
+    ".###..........####.....",
+    ".#oo#........#oooo#....",
+    "..#oo##.....#oooooo#...",
+    ".#ooooo#....#ooo##o#...",
+    "..#ooooo#...#ooo##o#...",
+    "...#ooooo#..#ooooooo###",
+    "...#oooooo##oooooooooo#",
+    "...###oooo#oooooooo####",
+    "..#ooo#####ooooooo#....",
+    ".#oooooooooooooooo#....",
+    ".#ooooooooooooooo#.....",
+    ".#ooooooooooooooo#.....",
+    "..#ooooooooooooo#......",
+    "...##ooooooooooo#......",
+    ".....##ooooooo##.......",
+    ".......#######.........",
+    "........#...#..........",
+    ".......##..##..........",
 )
+
+private val TUCK = sprite(
+    "..............####.....",
+    ".............#oooo#....",
+    "............#oooooo#...",
+    "............#ooo##o#...",
+    "............#ooo##o#...",
+    "............#ooooooo###",
+    ".....#######oooooooooo#",
+    "...##o#ooooo##ooooo####",
+    "..#oo#ooooooo#oooo#....",
+    ".#oooo#######ooooo#....",
+    ".#ooooooooooooooo#.....",
+    ".#ooooooooooooooo#.....",
+    "..#ooooooooooooo#......",
+    "...##ooooooooooo#......",
+    ".....##ooooooo##.......",
+    ".......#######.........",
+    "........#...#..........",
+    ".......##..##..........",
+)
+
+private val CLOUD = sprite(
+    ".......####.........",
+    "......#oooo#........",
+    "...###oooooo####....",
+    "..#ooooooooooooo##..",
+    ".#oooooooooooooooo##",
+    "#oooooooooooooooooo#",
+    ".##################.",
+)
+
+private const val CLOUD_W = 20
+
+/** Where the clouds and the specks start: across the field's width and down the sky between the arrow and the water. */
+private val CLOUDS = floatArrayOf(0.08f, 0.06f, 0.70f, 0.40f, 0.36f, 0.62f)
+private val SPECKS = floatArrayOf(0.14f, 0.36f, 0.62f, 0.22f, 0.86f, 0.12f, 0.36f, 0.66f, 0.26f, 0.82f, 0.78f, 0.74f, 0.50f, 0.48f)
+
+/** The sky's share of the columns' speed. */
+private const val CLOUD_PACE = 0.25f
+private const val SPECK_PACE = 0.12f
 
 private val GLYPHS = mapOf(
     '0' to listOf("###", "#.#", "#.#", "#.#", "###"),
@@ -369,24 +470,29 @@ private val GLYPHS = mapOf(
 )
 
 /** The field's least width and height in game pixels: the scale is the largest whole one that leaves both. */
-private const val WIDE = 144
-private const val TALL = 250
+private const val WIDE = 150
+private const val TALL = 260
 
 /** The back arrow's row under the status bar: the walls start below it. */
 private val ARROW_ROW = 56.dp
 
 private const val BRICK = 8
 private const val COURSE = 4
-private const val STALKS = 8
-private const val CATTAIL = 6
 
-/** How far under the hit line each stalk ends; a zero in any eight in a row, so the tallest reach it. */
-private val REED_TIPS = intArrayOf(1, 0, 3, 2, 2, 0, 3, 1)
+/** About one course in ten has a dark brick; [MIX] spreads the seed over the courses (the golden ratio's hash). */
+private const val DARK = 10
+private const val MIX = -0x61c88647
+
+private const val STALKS = 5
+
+/** How far under the hit line each stalk ends: every five in a row have a zero, so the tallest reach it. */
+private val REED_TIPS = intArrayOf(1, 0, 2, 0, 1)
 
 private const val RIPPLE = 12
 
-/** Faster up than this, the wing is drawn up. */
+/** Faster up than this, the wing is up; faster down than [DIVING], tucked. */
 private const val RISING = -40f
+private const val DIVING = 150f
 
 /** The bobbing afloat, radians a second. */
 private const val BOB = 2.4f

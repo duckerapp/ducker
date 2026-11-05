@@ -163,7 +163,7 @@ internal class BirdGame(val width: Int, val height: Int, val top: Int, private v
     /**
      * The next window's top. A quarter of them reach the water, for ducking under a wall; the rest anywhere between
      * the arrow and the water. Never more than [MAX_RISE] above the last one or [MAX_DROP] below it: at the top speed
-     * the duck still makes the climb or the drop between two columns (72 below was too far — the test's autopilot fell).
+     * the duck still makes the climb or the drop between two columns; the test's autopilot checks it.
      */
     private fun nextGap(): Int {
         val high = water - GAP
@@ -175,35 +175,39 @@ internal class BirdGame(val width: Int, val height: Int, val top: Int, private v
 
     companion object {
         /** The duck sprite's size and where it flies. */
-        const val DUCK_W = 17
-        const val DUCK_H = 15
-        const val DUCK_X = 30
+        const val DUCK_W = 23
+        const val DUCK_H = 18
+        const val DUCK_X = 26
 
-        /** Rows of the duck under the waterline when it floats. */
-        const val SINK = 4
+        /** Rows of the duck under the waterline when it floats: the feet and the belly. */
+        const val SINK = 5
 
-        /** What counts as the duck for a hit: without the tuft and the wing's tip — the drawing forgives a graze. */
-        const val HIT_LEFT = 2
-        const val HIT_RIGHT = 16
+        /** What counts as the duck for a hit: without the wing's tip, the beak and the feet — a graze is forgiven. */
+        const val HIT_LEFT = 3
+        const val HIT_RIGHT = 20
         const val HIT_TOP = 2
-        const val HIT_BOTTOM = 15
+        const val HIT_BOTTOM = 16
 
-        /** The window, four duck heights as in the genre's classic, the column and the step between columns. */
-        const val GAP = 62
-        const val COLUMN_W = 26
-        const val SPACING = 112
+        /**
+         * The window — about four heights of the duck's body, as in the genre's classic — the column and the step between
+         * columns, about one a screen on a phone held upright.
+         */
+        const val GAP = 68
+        const val COLUMN_W = 24
+        const val SPACING = 136
 
         /** The water's band at the bottom, the shortest wall at the top, the reeds' tips that do not count. */
-        const val WATER = 16
-        const val MIN_WALL = 10
+        const val WATER = 18
+        const val MIN_WALL = 12
         const val REED_SLACK = 2
 
-        const val GRAVITY = 562f
-        const val FLAP = -172f
-        const val MAX_FALL = 300f
+        /** A flap lifts the duck 28 px, 1.75 heights of its body, in 0.3 s. */
+        const val GRAVITY = 598f
+        const val FLAP = -183f
+        const val MAX_FALL = 320f
 
         /** Pixels a second at the start, plus [BOOST] for each column passed, up to [MAX_BOOST] times. */
-        const val SPEED = 60f
+        const val SPEED = 64f
         const val BOOST = 0.02f
         const val MAX_BOOST = 1.8f
 
@@ -211,8 +215,8 @@ internal class BirdGame(val width: Int, val height: Int, val top: Int, private v
         const val DRIFT = 8f
 
         const val LOW_CHANCE = 0.25f
-        const val MAX_RISE = 40
-        const val MAX_DROP = 48
+        const val MAX_RISE = 48
+        const val MAX_DROP = 64
 
         /** After a fall, taps wait this long: one more frantic tap does not start the next game unseen. */
         const val LOCKOUT = 0.5f
