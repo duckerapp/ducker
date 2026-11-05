@@ -74,8 +74,6 @@ data class HomeState(
     val stopFailure: Failure? = null,
     /** «Мобильная сеть» (D-423): its choice is in effect, and the hint under the title says so. */
     val mobile: Boolean = false,
-    /** Its switch is on with a subscription chosen: the card keeps room for that longer hint. */
-    val mobileSet: Boolean = false,
 )
 
 /**
@@ -228,11 +226,7 @@ class HomeViewModel : ViewModel() {
             val lockdownAsync = async(Dispatchers.IO) { running && ServiceStore(context).lockdownOffline }
 
             val mobileAsync = async(Dispatchers.IO) {
-                ServiceStore(context).let { store ->
-                    val set = store.mobileOn && store.mobileProfile != null
-
-                    (set && running && store.mobileShownNow != MobileState.Shown.None) to set
-                }
+                running && ServiceStore(context).mobileShownNow != MobileState.Shown.None
             }
 
             val stopAsync = async(Dispatchers.IO) { if (running) "" else ServiceStore(context).stopReason }
@@ -374,8 +368,7 @@ class HomeViewModel : ViewModel() {
                     linkError = if (running && !nodeChanged) it.linkError else "",
                     noneAnswered = running && !nodeChanged && it.noneAnswered,
                     lockdownOffline = lockdownAsync.await(),
-                    mobile = mobileAsync.await().first,
-                    mobileSet = mobileAsync.await().second,
+                    mobile = mobileAsync.await(),
                     stopFailure = stopAsync.await().takeIf { reason -> reason.isNotEmpty() }?.let(Failure::of),
                 )
             }

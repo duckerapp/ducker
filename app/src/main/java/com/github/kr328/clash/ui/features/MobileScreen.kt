@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.features
 
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -11,17 +12,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -40,18 +43,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.github.kr328.clash.R
@@ -61,10 +65,10 @@ import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.TvLazyColumn
+import com.github.kr328.clash.ui.components.airShadow
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.navigationRoom
-import com.github.kr328.clash.ui.components.overscrollFor
 import com.github.kr328.clash.ui.components.screenInsets
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.subscriptions.ProfileReorder
@@ -72,8 +76,9 @@ import com.github.kr328.clash.ui.subscriptions.reorderable
 import com.github.kr328.clash.ui.components.DuckerCard as Card
 
 /**
- * «Мобильная сеть» (D-423, D-424): the switch, Wi-Fi as it is and the subscription for the mobile network, then its
- * nodes in the order they are tried — dragged by a long press as subscriptions are, moved by TalkBack's actions.
+ * «Мобильная сеть» (D-423, D-424), built from the settings' parts so it reads as part of the app: the switch as a
+ * settings switch card, the two networks as a settings group, the nodes as the cards «Подписки» drags — by a long
+ * press, or by TalkBack's actions.
  */
 @Composable
 fun MobileScreen(
@@ -108,10 +113,12 @@ fun MobileScreen(
     var profilesShown by remember { mutableStateOf(false) }
     var nodesOpen by remember { mutableStateOf(false) }
     var nodesShown by remember { mutableStateOf(false) }
+    val pickProfile = { profilesOpen = true; profilesShown = true }
 
+    // As the settings' pages: no rubber edge (D-137 keeps it for long lists).
     TvLazyColumn(
         state = list,
-        overscrollEffect = overscrollFor(list),
+        overscrollEffect = null,
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(top = 16.dp + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
@@ -119,15 +126,24 @@ fun MobileScreen(
         item { ScreenHeader(stringResource(R.string.mobile), onBack = onBack) }
 
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                // On with no subscription to switch to: the choice comes first, the switch follows it.
+                surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).toggleable(
+                    value = settings.on,
+                    enabled = state.loaded,
+                    role = Role.Switch,
+                    onValueChange = { on -> if (on && state.profileName == null) pickProfile() else onTurn(on) },
+                ),
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth()
-                        .toggleable(value = settings.on, enabled = state.loaded, role = Role.Switch, onValueChange = onTurn)
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Icon(Symbols.CellWifi, contentDescription = null, modifier = Modifier.size(24.dp))
+
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(stringResource(R.string.mobile_switch), style = MaterialTheme.typography.titleSmall)
                         Text(
                             stringResource(R.string.mobile_switch_hint),
@@ -142,10 +158,9 @@ fun MobileScreen(
         }
 
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(modifier = Modifier.fillMaxWidth(), surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)) {
                 NetworkRow(
                     icon = Symbols.Wifi,
-                    filled = false,
                     title = stringResource(R.string.mobile_wifi),
                     hint = state.wifiName?.let { stringResource(R.string.mobile_wifi_hint, it.asName()) }
                         ?: stringResource(R.string.mobile_wifi_none),
@@ -153,23 +168,30 @@ fun MobileScreen(
                     onClick = null,
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(start = 70.dp))
+                HorizontalDivider(
+                    Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                )
 
                 NetworkRow(
                     icon = Symbols.SignalCellularAlt,
-                    filled = true,
                     title = stringResource(R.string.mobile),
                     hint = state.profileName?.let { stringResource(R.string.mobile_profile, it.asName()) }
                         ?: stringResource(R.string.mobile_profile_none),
                     now = settings.now == NetworkKind.Mobile,
-                    onClick = if (state.loaded) ({ profilesOpen = true; profilesShown = true }) else null,
+                    onClick = if (state.loaded) pickProfile else null,
                 )
             }
         }
 
         item {
-            Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(stringResource(R.string.mobile_nodes), style = MaterialTheme.typography.titleSmall)
+            Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    stringResource(R.string.mobile_nodes),
+                    modifier = Modifier.semantics { heading() },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Text(
                     stringResource(if (settings.nodes.isEmpty()) R.string.mobile_nodes_none else R.string.mobile_nodes_hint),
                     style = MaterialTheme.typography.bodySmall,
@@ -203,6 +225,7 @@ fun MobileScreen(
                         CustomAccessibilityAction(down) { onMove(name, below); onMoved(); true }
                     },
                 ),
+                // No fade: a fading item is drawn cut to its bounds, and its Air shadow would come in with a jump.
                 modifier = Modifier.animateItem(
                     fadeInSpec = null,
                     fadeOutSpec = null,
@@ -214,21 +237,30 @@ fun MobileScreen(
         }
 
         item {
+            val enabled = state.profileName != null
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
-                    .clickable(enabled = state.profileName != null, role = Role.Button) { nodesOpen = true; nodesShown = true },
+                    .clickable(enabled = enabled, role = Role.Button) { nodesOpen = true; nodesShown = true },
             ) {
+                // The nodes' height above it, so the list and its button line up.
                 Row(
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    val color = if (state.profileName != null) MaterialTheme.colorScheme.onSurface
+                    val color = if (enabled) MaterialTheme.colorScheme.onSurface
                     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
 
-                    Icon(Symbols.Checklist, contentDescription = null, tint = color)
-                    Text(stringResource(R.string.mobile_nodes_pick), style = MaterialTheme.typography.bodyLarge, color = color)
+                    Icon(Symbols.Checklist, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
+                    Text(
+                        stringResource(R.string.mobile_nodes_pick),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = color,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Icon(Symbols.KeyboardArrowRight, contentDescription = null, tint = color)
                 }
             }
         }
@@ -275,55 +307,42 @@ fun MobileScreen(
     }
 }
 
+/** A row of the networks' group, measured as a settings group's row. «Сейчас» stands where a row's value does. */
 @Composable
-private fun NetworkRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    filled: Boolean,
-    title: String,
-    hint: String,
-    now: Boolean,
-    onClick: (() -> Unit)?,
-) {
+private fun NetworkRow(icon: ImageVector, title: String, hint: String, now: Boolean, onClick: (() -> Unit)?) {
     val scheme = MaterialTheme.colorScheme
 
     Row(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().heightIn(min = 61.dp)
             .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(
-            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
-                .background(if (filled) scheme.primaryContainer else scheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null, tint = if (filled) scheme.onPrimaryContainer else scheme.onSurface)
-        }
+        Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
 
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(title, style = MaterialTheme.typography.titleSmall)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
 
                 if (now) {
-                    Text(
-                        stringResource(R.string.mobile_now),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = scheme.onPrimary,
-                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(scheme.primary)
-                            .padding(horizontal = 8.dp, vertical = 1.dp),
-                    )
+                    Text(stringResource(R.string.mobile_now), style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
                 }
             }
 
             Text(hint, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
 
-        if (onClick != null) Icon(Symbols.KeyboardArrowRight, contentDescription = null, tint = scheme.onSurfaceVariant)
+        if (onClick != null) {
+            Icon(Symbols.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp))
+        } else {
+            // The row without an arrow keeps its text where the other row's is.
+            Spacer(Modifier.size(20.dp))
+        }
     }
 }
 
-/** A node of the list: its number, its name, and the handle a long press drags it by. */
+/** A node of the list: its place, its name, and the handle a long press drags it by — as a subscription's row. */
 @Composable
 private fun NodeRow(
     number: Int,
@@ -353,18 +372,18 @@ private fun NodeRow(
                 .reorderable(reorder, key, scale = { 1f + LIFT_SCALE * lift }, onLift = onLift, onStep = onStep),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 16.dp, end = 8.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 16.dp, end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Box(
-                    modifier = Modifier.size(24.dp).clip(CircleShape).background(scheme.primary),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(number.toString(), style = MaterialTheme.typography.labelMedium, color = scheme.onPrimary)
-                }
+                Text(
+                    number.toString(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = scheme.onSurfaceVariant,
+                    modifier = Modifier.widthIn(min = 16.dp),
+                )
 
-                Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
+                Column(Modifier.weight(1f).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
                         name.asName(),
                         style = MaterialTheme.typography.bodyLarge.named(),
@@ -379,18 +398,18 @@ private fun NodeRow(
                     }
                 }
 
-                Icon(
-                    Symbols.DragIndicator,
-                    contentDescription = null,
-                    tint = scheme.onSurfaceVariant,
-                    modifier = Modifier.padding(12.dp),
-                )
+                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    Icon(Symbols.DragIndicator, contentDescription = null, tint = scheme.onSurfaceVariant)
+                }
             }
         }
     }
 }
 
-/** The subscription for the mobile network: a tap picks it and closes the sheet. */
+/**
+ * The subscription for the mobile network, laid out as the language sheet: «Не выбрана» on a card of its own, the
+ * subscriptions on one card below, a check at the chosen one. A tap picks and closes.
+ */
 @Composable
 private fun ProfileSheet(
     open: Boolean,
@@ -399,28 +418,71 @@ private fun ProfileSheet(
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
 ) {
+    val chosen = state.profileName != null
+
     DuckerSheet(
         open = open,
         title = stringResource(R.string.mobile_pick_profile),
-        hint = if (state.profiles.isEmpty()) stringResource(R.string.mobile_no_profiles) else null,
         busy = false,
+        heightFraction = 0.78f,
         onDismiss = onDismiss,
         onClosed = onClosed,
     ) {
-        state.profiles.forEach { profile ->
-            val selected = profile.uuid == state.settings.profile
+        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Card(Modifier.fillMaxWidth()) {
+                ChoiceRow(
+                    label = stringResource(R.string.mobile_profile_off),
+                    hint = stringResource(R.string.mobile_profile_off_hint),
+                    selected = !chosen,
+                    onSelect = { onPick("") },
+                )
+            }
 
-            ChoiceRow(
-                name = profile.name,
-                checked = selected,
-                modifier = Modifier.selectable(selected = selected, role = Role.RadioButton) { onPick(profile.uuid) },
-            )
+            if (state.profiles.isEmpty()) {
+                Text(
+                    stringResource(R.string.mobile_no_profiles),
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Card(Modifier.fillMaxWidth()) {
+                    state.profiles.forEach { profile ->
+                        ChoiceRow(
+                            label = profile.name.asName(),
+                            selected = profile.uuid == state.settings.profile,
+                            onSelect = { onPick(profile.uuid) },
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
+/** A choice of a single-choice sheet, as the language sheet's. */
+@Composable
+private fun ChoiceRow(label: String, selected: Boolean, onSelect: () -> Unit, hint: String? = null) {
+    Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge.named(), maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+
+        if (selected) Icon(Symbols.Check, contentDescription = null, modifier = Modifier.size(24.dp))
+        else Spacer(Modifier.size(24.dp))
+    }
+}
+
 /**
- * The subscription's nodes to tick. A tick puts the node at the end of the list, an untick takes it off; the order is
+ * The subscription's nodes to tick, as Home's node sheet lays them out: a card each, 10 dp apart, a ticked one filled
+ * as the chosen node is there. A tick puts the node at the end of the list, an untick takes it off; the order is
  * changed on the page. Closed any way — «Готово», back or a swipe — the ticks are kept: nothing is lost by a gesture.
  */
 @Composable
@@ -450,20 +512,18 @@ private fun NodesSheet(
         compact = true,
         heightFraction = if (shortWindow) 1f else 0.80f,
     ) {
-        // A list entry the subscription no longer has stays tickable, so it can be taken off here too.
+        // A list entry the subscription no longer has stays here, so it can be unticked too.
         val shown = members.orEmpty() + picked.filter { it !in members.orEmpty() }
 
-        LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             items(shown, key = { it }) { name ->
                 val checked = name in picked
 
-                ChoiceRow(
-                    name = name,
-                    checked = checked,
-                    modifier = Modifier.toggleable(value = checked, role = Role.Checkbox) { on ->
-                        if (on) picked.add(name) else picked.remove(name)
-                    },
-                )
+                NodeChoice(name = name, checked = checked) { on -> if (on) picked.add(name) else picked.remove(name) }
             }
         }
 
@@ -477,27 +537,34 @@ private fun NodesSheet(
     }
 }
 
+/** A node card of the sheet, as Home's node sheet draws one; filled while ticked. */
 @Composable
-private fun ChoiceRow(name: String, checked: Boolean, modifier: Modifier) {
+private fun NodeChoice(name: String, checked: Boolean, onCheck: (Boolean) -> Unit) {
     val scheme = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(20.dp)
+    val content = if (checked) scheme.onPrimary else scheme.onSurface
+    val fill = if (checked) scheme.primary else scheme.surface
 
     Row(
-        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 8.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            .airShadow(shape, fill).clip(shape)
+            .background(fill)
+            .toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheck)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Icon(
-            if (checked) Symbols.CheckCircle else Symbols.RadioButtonUnchecked,
-            contentDescription = null,
-            tint = if (checked) scheme.primary else scheme.onSurfaceVariant,
-        )
         Text(
             name.asName(),
+            modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyLarge.named(),
+            fontWeight = if (checked) FontWeight.Medium else FontWeight.Normal,
+            color = content,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
         )
+
+        if (checked) Icon(Symbols.Check, contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
     }
 }
 

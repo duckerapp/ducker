@@ -1228,16 +1228,13 @@ private fun HeroFace(
                     val hint = when {
                         state.busy && running -> R.string.hero_disconnecting
                         state.busy -> R.string.hero_connecting
-                        running && state.mobile -> R.string.hero_protected_mobile
+                        // Short as the others: «VPN работает · мобильная сеть» took a second line, and the card grew.
+                        running && state.mobile -> R.string.mobile
                         running -> R.string.hero_protected_hint
                         else -> R.string.hero_off_hint
                     }
 
-                    // The longer «· мобильная сеть» takes room only for whom it can appear: Home's height stays as it
-                    // was for everyone else (D-389).
-                    val hints = if (state.mobileSet) HERO_HINTS + R.string.hero_protected_mobile else HERO_HINTS
-
-                    Reserved({ hints.forEach { Text(stringResource(it), style = hintStyle) } }) {
+                    Reserved({ HERO_HINTS.forEach { Text(stringResource(it), style = hintStyle) } }) {
                         // Копия сменила состояние, когда волна закончилась, — подпись встаёт сразу:
                         // иначе она доигрывала бы свой переход и на миг пропадала.
                         key(running) {
@@ -1284,6 +1281,7 @@ private fun HeroFace(
 private val HERO_TITLES = listOf(R.string.hero_protected, R.string.hero_off)
 private val HERO_HINTS = listOf(
     R.string.hero_protected_hint, R.string.hero_off_hint, R.string.hero_connecting, R.string.hero_disconnecting,
+    R.string.mobile,
 )
 
 /** [content] in the room of the biggest of [variants], which are measured but neither drawn nor read out (D-389). */

@@ -622,6 +622,8 @@
     <string name="mobile_wifi_none">مثل همیشه</string>
     <string name="mobile_now">اکنون</string>
     <string name="mobile_profile">اشتراک: %1$s</string>
+    <string name="mobile_profile_off">هیچ‌کدام</string>
+    <string name="mobile_profile_off_hint">چیزی تغییر نمی‌کند</string>
     <string name="mobile_profile_none">اشتراکی انتخاب نشده</string>
     <string name="mobile_nodes">سرورها به ترتیب</string>
     <string name="mobile_nodes_hint">نخستین سروری که پاسخ دهد به کار می‌رود. برای تغییر ترتیب بکشید</string>
@@ -635,7 +637,6 @@
     <string name="mobile_pick_nodes_hint">%1$s · موارد علامت‌خورده به انتهای فهرست می‌روند</string>
     <string name="mobile_pick_nodes_empty">در این اشتراک سروری پیدا نشد</string>
     <string name="mobile_no_profiles">اول یک اشتراک اضافه کنید</string>
-    <string name="hero_protected_mobile">VPN فعال است · شبکه همراه</string>
     <plurals name="mobile_card_nodes">
         <item quantity="one">%1$s · %2$d سرور</item>
         <item quantity="other">%1$s · %2$d سرور</item>

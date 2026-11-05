@@ -622,6 +622,8 @@
     <string name="mobile_wifi_none">Her zamanki gibi</string>
     <string name="mobile_now">şimdi</string>
     <string name="mobile_profile">Abonelik: %1$s</string>
+    <string name="mobile_profile_off">Seçilmedi</string>
+    <string name="mobile_profile_off_hint">Hiçbir şey değişmez</string>
     <string name="mobile_profile_none">Abonelik seçilmedi</string>
     <string name="mobile_nodes">Sırayla sunucular</string>
     <string name="mobile_nodes_hint">Yanıt veren ilk sunucu kullanılır. Sırayı değiştirmek için sürükleyin</string>
@@ -635,7 +637,6 @@
     <string name="mobile_pick_nodes_hint">%1$s · işaretlenenler listenin sonuna eklenir</string>
     <string name="mobile_pick_nodes_empty">Bu abonelikte sunucu bulunamadı</string>
     <string name="mobile_no_profiles">Önce bir abonelik ekleyin</string>
-    <string name="hero_protected_mobile">VPN etkin · mobil ağ</string>
     <plurals name="mobile_card_nodes">
         <item quantity="one">%1$s · %2$d sunucu</item>
         <item quantity="other">%1$s · %2$d sunucu</item>

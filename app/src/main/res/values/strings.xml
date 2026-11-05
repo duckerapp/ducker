@@ -659,6 +659,8 @@
     <string name="mobile_wifi_none">As usual</string>
     <string name="mobile_now">now</string>
     <string name="mobile_profile">Subscription: %1$s</string>
+    <string name="mobile_profile_off">None</string>
+    <string name="mobile_profile_off_hint">Nothing switches</string>
     <string name="mobile_profile_none">No subscription chosen</string>
     <string name="mobile_nodes">Servers in order</string>
     <string name="mobile_nodes_hint">The first one that answers is used. Drag to change the order</string>
@@ -672,7 +674,6 @@
     <string name="mobile_pick_nodes_hint">%1$s · ticked ones go to the end of the list</string>
     <string name="mobile_pick_nodes_empty">No servers found in this subscription</string>
     <string name="mobile_no_profiles">Add a subscription first</string>
-    <string name="hero_protected_mobile">VPN is active · mobile network</string>
     <plurals name="mobile_card_nodes">
         <item quantity="one">%1$s · %2$d server</item>
         <item quantity="other">%1$s · %2$d servers</item>

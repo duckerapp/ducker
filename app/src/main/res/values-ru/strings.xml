@@ -660,6 +660,8 @@
     <string name="mobile_wifi_none">Как обычно</string>
     <string name="mobile_now">сейчас</string>
     <string name="mobile_profile">Подписка: %1$s</string>
+    <string name="mobile_profile_off">Не выбрана</string>
+    <string name="mobile_profile_off_hint">Ничего не переключается</string>
     <string name="mobile_profile_none">Подписка не выбрана</string>
     <string name="mobile_nodes">Узлы по порядку</string>
     <string name="mobile_nodes_hint">Включится первый, который отвечает. Порядок — перетаскиванием</string>
@@ -673,7 +675,6 @@
     <string name="mobile_pick_nodes_hint">%1$s · отмеченные встанут в конец списка</string>
     <string name="mobile_pick_nodes_empty">В этой подписке не нашлось узлов</string>
     <string name="mobile_no_profiles">Сначала добавьте подписку</string>
-    <string name="hero_protected_mobile">VPN работает · мобильная сеть</string>
     <plurals name="mobile_card_nodes">
         <item quantity="one">%1$s · %2$d узел</item>
         <item quantity="few">%1$s · %2$d узла</item>

@@ -614,6 +614,8 @@
     <string name="mobile_wifi_none">Seperti biasa</string>
     <string name="mobile_now">sekarang</string>
     <string name="mobile_profile">Langganan: %1$s</string>
+    <string name="mobile_profile_off">Tidak ada</string>
+    <string name="mobile_profile_off_hint">Tidak ada yang beralih</string>
     <string name="mobile_profile_none">Belum ada langganan dipilih</string>
     <string name="mobile_nodes">Server berurutan</string>
     <string name="mobile_nodes_hint">Server pertama yang merespons dipakai. Seret untuk mengubah urutan</string>
@@ -627,7 +629,6 @@
     <string name="mobile_pick_nodes_hint">%1$s · yang dicentang masuk ke akhir daftar</string>
     <string name="mobile_pick_nodes_empty">Tidak ada server di langganan ini</string>
     <string name="mobile_no_profiles">Tambahkan langganan dulu</string>
-    <string name="hero_protected_mobile">VPN aktif · jaringan seluler</string>
     <plurals name="mobile_card_nodes">
         <item quantity="other">%1$s · %2$d server</item>
     </plurals>

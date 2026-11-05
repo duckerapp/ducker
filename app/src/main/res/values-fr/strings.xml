@@ -630,6 +630,8 @@
     <string name="mobile_wifi_none">Comme d’habitude</string>
     <string name="mobile_now">maintenant</string>
     <string name="mobile_profile">Abonnement : %1$s</string>
+    <string name="mobile_profile_off">Aucun</string>
+    <string name="mobile_profile_off_hint">Rien ne change</string>
     <string name="mobile_profile_none">Aucun abonnement choisi</string>
     <string name="mobile_nodes">Serveurs par ordre</string>
     <string name="mobile_nodes_hint">Le premier qui répond est utilisé. Faites glisser pour changer l’ordre</string>
@@ -643,7 +645,6 @@
     <string name="mobile_pick_nodes_hint">%1$s · les cochés vont en fin de liste</string>
     <string name="mobile_pick_nodes_empty">Aucun serveur trouvé dans cet abonnement</string>
     <string name="mobile_no_profiles">Ajoutez d’abord un abonnement</string>
-    <string name="hero_protected_mobile">Le VPN est actif · réseau mobile</string>
     <plurals name="mobile_card_nodes">
         <item quantity="one">%1$s · %2$d serveur</item>
         <item quantity="many">%1$s · %2$d serveurs</item>

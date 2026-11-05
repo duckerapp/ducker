@@ -99,13 +99,16 @@ class MobileViewModel : ViewModel() {
 
     fun turn(on: Boolean) = save { it.copy(on = on) }
 
-    /** Another subscription: the list was of its nodes, it starts empty. The first choice turns the switch on. */
+    /**
+     * Another subscription: the list was of its nodes, it starts empty. The first choice turns the switch on; «Не
+     * выбрана» ([uuid] empty) turns it off — with nothing to switch to it would do nothing anyway.
+     */
     fun pickProfile(uuid: String) {
         val current = _state.value.settings
 
         if (uuid == current.profile) return
 
-        save { it.copy(on = it.on || it.profile.isEmpty(), profile = uuid, nodes = emptyList()) }
+        save { it.copy(on = uuid.isNotEmpty() && (it.on || it.profile.isEmpty()), profile = uuid, nodes = emptyList()) }
 
         _state.update { it.copy(members = null) }
 

@@ -614,6 +614,8 @@
     <string name="mobile_wifi_none">照常</string>
     <string name="mobile_now">当前</string>
     <string name="mobile_profile">订阅：%1$s</string>
+    <string name="mobile_profile_off">不选择</string>
+    <string name="mobile_profile_off_hint">不进行切换</string>
     <string name="mobile_profile_none">未选择订阅</string>
     <string name="mobile_nodes">节点顺序</string>
     <string name="mobile_nodes_hint">使用第一个有响应的节点。拖动以调整顺序</string>
@@ -627,7 +629,6 @@
     <string name="mobile_pick_nodes_hint">%1$s · 勾选的节点会加到列表末尾</string>
     <string name="mobile_pick_nodes_empty">此订阅中未找到节点</string>
     <string name="mobile_no_profiles">请先添加订阅</string>
-    <string name="hero_protected_mobile">VPN 运行中 · 移动网络</string>
     <plurals name="mobile_card_nodes">
         <item quantity="other">%1$s · %2$d 个节点</item>
     </plurals>

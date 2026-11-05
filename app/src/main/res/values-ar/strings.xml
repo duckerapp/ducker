@@ -654,6 +654,8 @@
     <string name="mobile_wifi_none">كالمعتاد</string>
     <string name="mobile_now">الآن</string>
     <string name="mobile_profile">الاشتراك: %1$s</string>
+    <string name="mobile_profile_off">لا شيء</string>
+    <string name="mobile_profile_off_hint">لا يتغيّر شيء</string>
     <string name="mobile_profile_none">لم يُختر اشتراك</string>
     <string name="mobile_nodes">الخوادم بالترتيب</string>
     <string name="mobile_nodes_hint">يُستخدم أول خادم يستجيب. اسحب لتغيير الترتيب</string>
@@ -667,7 +669,6 @@
     <string name="mobile_pick_nodes_hint">%1$s · ما تحدده يُضاف إلى نهاية القائمة</string>
     <string name="mobile_pick_nodes_empty">لم يُعثر على خوادم في هذا الاشتراك</string>
     <string name="mobile_no_profiles">أضف اشتراكًا أولًا</string>
-    <string name="hero_protected_mobile">VPN نشط · شبكة الجوال</string>
     <plurals name="mobile_card_nodes">
         <item quantity="zero">%1$s · %2$d خادم</item>
         <item quantity="one">%1$s · خادم واحد</item>
