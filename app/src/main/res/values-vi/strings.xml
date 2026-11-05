@@ -133,6 +133,7 @@
     <string name="announcements">Thông báo</string>
     <string name="announcements_bell">Thông báo của nhà cung cấp</string>
     <string name="announcement_new">Mới</string>
+    <string name="announcements_more">Thêm %1$s</string>
     <string name="sort_default">Thứ tự mặc định</string>
     <string name="sort_delay">Theo độ trễ</string>
     <string name="probe">Kiểm tra độ trễ</string>

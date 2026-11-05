@@ -133,6 +133,7 @@
     <string name="announcements">Duyurular</string>
     <string name="announcements_bell">Sağlayıcı duyuruları</string>
     <string name="announcement_new">Yeni</string>
+    <string name="announcements_more">%1$s tane daha</string>
     <string name="sort_default">Varsayılan sıra</string>
     <string name="sort_delay">Gecikmeye göre</string>
     <string name="probe">Gecikme testi</string>

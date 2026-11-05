@@ -133,6 +133,7 @@
     <string name="announcements">Avisos</string>
     <string name="announcements_bell">Avisos dos provedores</string>
     <string name="announcement_new">Novo</string>
+    <string name="announcements_more">Mais %1$s</string>
     <string name="sort_default">Ordem padrão</string>
     <string name="sort_delay">Por latência</string>
     <string name="probe">Teste de latência</string>

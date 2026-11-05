@@ -133,6 +133,7 @@
     <string name="announcements">Pengumuman</string>
     <string name="announcements_bell">Pengumuman penyedia</string>
     <string name="announcement_new">Baru</string>
+    <string name="announcements_more">%1$s lagi</string>
     <string name="sort_default">Urutan bawaan</string>
     <string name="sort_delay">Menurut latensi</string>
     <string name="probe">Uji latensi</string>

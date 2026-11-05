@@ -21,6 +21,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +54,7 @@ import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.airShadow
 import com.github.kr328.clash.ui.components.asName
+import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.named
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -85,27 +91,40 @@ internal fun AnnouncementsBell(fresh: Boolean, onClick: () -> Unit) {
 }
 
 /** One subscription's part of the sheet: whose announcements they are, the newest first. */
-internal data class AnnouncementGroup(val profile: Profile, val items: List<AnnouncementItem>)
+internal data class AnnouncementGroup(val profile: Profile, val favorite: Boolean, val items: List<AnnouncementItem>)
 
 internal data class AnnouncementItem(val text: String, val at: Long, val known: Boolean, val fresh: Boolean)
 
 /**
- * The sheet's groups — [profile]'s alone, or every subscription's for the bell — the group with the newest first. Taken
- * when the sheet opens: opening marks them seen, and «Новое» stays on them while it is open.
+ * The sheet's groups — [profile]'s alone, or every subscription's for the bell — in the order «Подписки» lists them: the
+ * active one, the favourites, the rest. A fixed order, not the newest first: the owner, 05.11.2026, found the groups
+ * «в разнобой». Taken when the sheet opens: opening marks them seen, and «Новое» stays on them while it is open.
  */
 internal fun SubscriptionsState.announcementGroups(profile: UUID?): List<AnnouncementGroup> {
-    val byNumber = profiles.associateBy { it.uuid.toString() }
+    val byNumber = announcements.groupBy { it.profile }
 
-    return announcements
-        .filter { profile == null || it.profile == profile.toString() }
-        .groupBy { it.profile }
-        .mapNotNull { (number, list) ->
-            val owner = byNumber[number] ?: return@mapNotNull null
+    return profiles
+        .filter { profile == null || it.uuid == profile }
+        .mapNotNull { owner ->
+            val list = byNumber[owner.uuid.toString()] ?: return@mapNotNull null
 
-            AnnouncementGroup(owner, list.sortedByDescending { it.at }.map { AnnouncementItem(it.text, it.at, it.known, fresh(it)) })
+            AnnouncementGroup(
+                profile = owner,
+                favorite = owner.uuid in favorites,
+                items = list.sortedByDescending { it.at }.map { AnnouncementItem(it.text, it.at, it.known, fresh(it)) },
+            )
         }
-        .sortedByDescending { group -> group.items.first().at }
 }
+
+/**
+ * What a group shows before «Ещё»: with several subscriptions in the sheet, the newest [SHOWN] and every one not seen
+ * yet, so a long history of the active subscription does not push the others' news off the screen. One subscription's
+ * own history is shown whole.
+ */
+internal fun AnnouncementGroup.shown(collapse: Boolean): List<AnnouncementItem> =
+    if (!collapse) items else items.filterIndexed { index, item -> index < SHOWN || item.fresh }
+
+private const val SHOWN = 3
 
 /**
  * The providers' announcements of the last ten days (stage 15): from a subscription's “⋯” its own, from the bell on
@@ -127,27 +146,35 @@ internal fun AnnouncementsSheet(
         onDismiss = onDismiss,
         onClosed = onClosed,
     ) {
-        groups.forEach { group ->
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                GroupHeader(group.profile)
+        val collapse = groups.size > 1
 
-                // One backing with inset lines, as the subscription's addresses (D-326).
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                        .airShadow(RoundedCornerShape(20.dp))
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(vertical = 4.dp),
-                ) {
-                    group.items.forEachIndexed { index, item ->
-                        if (index > 0) {
-                            HorizontalDivider(
-                                Modifier.padding(horizontal = 16.dp),
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-                            )
+        groups.forEach { group ->
+            key(group.profile.uuid) {
+                var expanded by remember { mutableStateOf(false) }
+                val shown = if (expanded) group.items else group.shown(collapse)
+                val hidden = group.items.size - shown.size
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GroupHeader(group.profile, group.favorite)
+
+                    // One backing with inset lines, as the subscription's addresses (D-326).
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                            .airShadow(RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(vertical = 4.dp),
+                    ) {
+                        shown.forEachIndexed { index, item ->
+                            if (index > 0) Divider()
+
+                            AnnouncementRow(item, onOpenLink)
                         }
 
-                        AnnouncementRow(item, onOpenLink)
+                        if (hidden > 0) {
+                            Divider()
+                            MoreRow(hidden) { expanded = true }
+                        }
                     }
                 }
             }
@@ -156,7 +183,38 @@ internal fun AnnouncementsSheet(
 }
 
 @Composable
-private fun GroupHeader(profile: Profile) {
+private fun Divider() {
+    HorizontalDivider(
+        Modifier.padding(horizontal = 16.dp),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+    )
+}
+
+/** «Ещё 4» under a collapsed group: the older announcements of that subscription, in place. */
+@Composable
+private fun MoreRow(count: Int, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.announcements_more, formatCount(count)),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Icon(Symbols.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+    }
+}
+
+/**
+ * Whose announcements: the logo and the shown name with a star for a favourite, as on «Подписки»; under it «Активна»
+ * for the active subscription and the provider's brand when the person named the subscription themselves.
+ */
+@Composable
+private fun GroupHeader(profile: Profile, favorite: Boolean) {
     Row(
         modifier = Modifier.padding(horizontal = 4.dp).semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
@@ -165,21 +223,31 @@ private fun GroupHeader(profile: Profile) {
         BrandAvatar(profile.brandLogo, Modifier.size(32.dp))
 
         Column(Modifier.weight(1f)) {
-            Text(
-                text = profile.shownName.asName(),
-                style = MaterialTheme.typography.titleSmall.named(),
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = profile.shownName.asName(),
+                    style = MaterialTheme.typography.titleSmall.named(),
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+
+                if (favorite) {
+                    Icon(Symbols.Star, contentDescription = stringResource(R.string.favorite_marked), modifier = Modifier.size(14.dp))
+                }
+            }
 
             // The person's own name for the subscription says nothing of the provider: its brand under it.
-            val brand = profile.brandName.ifEmpty { profile.profileTitle }
-            if (brand.isNotEmpty() && !brand.equals(profile.shownName, ignoreCase = true)) {
+            val brand = (profile.brandName.ifEmpty { profile.profileTitle })
+                .takeIf { it.isNotEmpty() && !it.equals(profile.shownName, ignoreCase = true) }
+            val line = listOfNotNull(stringResource(R.string.ducker_active).takeIf { profile.active }, brand?.asName())
+
+            if (line.isNotEmpty()) {
                 Text(
-                    text = brand.asName(),
+                    text = line.joinToString(stringResource(R.string.separator)),
                     style = MaterialTheme.typography.bodySmall.named(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (profile.active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

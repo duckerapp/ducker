@@ -157,6 +157,7 @@
     <string name="announcements">Announcements</string>
     <string name="announcements_bell">Provider announcements</string>
     <string name="announcement_new">New</string>
+    <string name="announcements_more">%1$s more</string>
     <string name="sort_default">Default order</string>
     <string name="sort_delay">By delay</string>
     <string name="probe">Node test</string>
