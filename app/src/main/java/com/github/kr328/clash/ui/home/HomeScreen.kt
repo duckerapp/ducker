@@ -738,9 +738,10 @@ internal fun RowScope.BrandTitle(profile: Profile?, onBird: (() -> Unit)? = null
 }
 
 /**
- * Six quick taps open Ducker Bird ([onBird]), each one felt harder than the last: the system's touch feedback, no
- * permission to vibrate — so nothing with touch feedback turned off. A longer pause than [TAP_PAUSE_MS] starts over.
- * No ripple and nothing for TalkBack: the title does not look like a button.
+ * Six quick taps open Ducker Bird ([onBird]). The first is felt as nothing — a single tap on the title stays a plain tap —
+ * and each after it harder than the last: the system's touch feedback, no permission to vibrate, so nothing with touch
+ * feedback turned off. A longer pause than [TAP_PAUSE_MS] starts over. No ripple and nothing for TalkBack: the title
+ * does not look like a button.
  */
 @Composable
 private fun birdTaps(onBird: (() -> Unit)?): Modifier {
@@ -759,7 +760,7 @@ private fun birdTaps(onBird: (() -> Unit)?): Modifier {
             count = if (now - last <= TAP_PAUSE_MS) count + 1 else 1
             last = now
 
-            view.performHapticFeedback(TAP_FEEDBACK[count - 1])
+            TAP_FEEDBACK[count - 1]?.let(view::performHapticFeedback)
 
             if (count == TAP_FEEDBACK.size) {
                 count = 0
@@ -769,11 +770,11 @@ private fun birdTaps(onBird: (() -> Unit)?): Modifier {
     }
 }
 
-/** From the faintest tick to the double knock, by AOSP's mapping; a maker's own mapping may order the middle ones differently. */
-private val TAP_FEEDBACK = intArrayOf(
+/** Silence, then AOSP's five steps from the faintest tick to the double knock; a maker's own mapping may differ. */
+private val TAP_FEEDBACK = listOf(
+    null,
     HapticFeedbackConstants.CLOCK_TICK,
     HapticFeedbackConstants.CONTEXT_CLICK,
-    HapticFeedbackConstants.KEYBOARD_TAP,
     HapticFeedbackConstants.VIRTUAL_KEY,
     HapticFeedbackConstants.LONG_PRESS,
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS,
