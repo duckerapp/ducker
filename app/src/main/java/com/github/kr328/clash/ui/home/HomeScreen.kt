@@ -598,7 +598,7 @@ private fun HomeRegular(
                 SubscriptionCard(profile, updating, updateFailed, onRefresh, onSupport)
             }
 
-            // Under «Действует до», or under the power card when a config of one's own has no subscription card.
+            // Under the subscription card («До …»), or under the power card when a config of one's own has no subscription card.
             if (profile != null) {
                 FeaturesPill(onFeatures, Modifier.align(Alignment.CenterHorizontally))
             }
