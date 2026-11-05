@@ -175,7 +175,7 @@ internal class BirdGame(val width: Int, val height: Int, val top: Int, private v
 
     companion object {
         /** The duck sprite's size and where it flies. */
-        const val DUCK_W = 21
+        const val DUCK_W = 20
         const val DUCK_H = 17
         const val DUCK_X = 26
 
@@ -184,7 +184,7 @@ internal class BirdGame(val width: Int, val height: Int, val top: Int, private v
 
         /** What counts as the duck for a hit: without the wing's tip, the beak and the feet — a graze is forgiven. */
         const val HIT_LEFT = 2
-        const val HIT_RIGHT = 17
+        const val HIT_RIGHT = 16
         const val HIT_TOP = 1
         const val HIT_BOTTOM = 15
 
