@@ -443,7 +443,12 @@ private fun ProfileSheet(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(state.profiles, key = { it.uuid }) { profile ->
-                NodeChoice(name = profile.name, checked = profile.uuid == picked) { on ->
+                NodeChoice(
+                    name = profile.name,
+                    checked = profile.uuid == picked,
+                    favorite = profile.favorite,
+                    note = if (profile.active) stringResource(R.string.ducker_active) else null,
+                ) { on ->
                     picked = if (on) profile.uuid else ""
                 }
             }
@@ -516,9 +521,12 @@ private fun NodesSheet(
     }
 }
 
-/** A node card of the sheet, as Home's node sheet draws one; filled while ticked. */
+/**
+ * A node card of the sheet, as Home's node sheet draws one; filled while ticked. A subscription carries the marks
+ * «Подписки» gives it: the star of a favourite, «Активна» under the active one's name.
+ */
 @Composable
-private fun NodeChoice(name: String, checked: Boolean, onCheck: (Boolean) -> Unit) {
+private fun NodeChoice(name: String, checked: Boolean, favorite: Boolean = false, note: String? = null, onCheck: (Boolean) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(20.dp)
     val content = if (checked) scheme.onPrimary else scheme.onSurface
@@ -533,15 +541,25 @@ private fun NodeChoice(name: String, checked: Boolean, onCheck: (Boolean) -> Uni
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            name.asName(),
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge.named(),
-            fontWeight = if (checked) FontWeight.Medium else FontWeight.Normal,
-            color = content,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    name.asName(),
+                    modifier = Modifier.weight(1f, fill = false),
+                    style = MaterialTheme.typography.bodyLarge.named(),
+                    fontWeight = if (checked) FontWeight.Medium else FontWeight.Normal,
+                    color = content,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                if (favorite) {
+                    Icon(Symbols.Star, contentDescription = stringResource(R.string.favorite_marked), tint = content, modifier = Modifier.size(14.dp))
+                }
+            }
+
+            if (note != null) Text(note, style = MaterialTheme.typography.bodySmall, color = content.copy(alpha = 0.7f))
+        }
 
         if (checked) Icon(Symbols.Check, contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
     }

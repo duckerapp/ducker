@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.github.kr328.clash.service.model.MobileState
 import com.github.kr328.clash.service.remote.IClashManager
 import com.github.kr328.clash.store.AppStore
+import com.github.kr328.clash.ui.settings.SettingsStore
+import com.github.kr328.clash.ui.subscriptions.grouped
 import com.github.kr328.clash.ui.subscriptions.inOrder
 import com.github.kr328.clash.ui.subscriptions.shownName
 import com.github.kr328.clash.util.withClash
@@ -24,9 +26,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-/** A subscription to choose from: its id and the name «Подписки» shows. */
+/** A subscription to choose from: its id, the name «Подписки» shows, and the marks it has there. */
 @Immutable
-data class MobileProfile(val uuid: String, val name: String)
+data class MobileProfile(val uuid: String, val name: String, val active: Boolean = false, val favorite: Boolean = false)
 
 /**
  * «Мобильная сеть» (D-423, D-424) for its card and page. [members] — the chosen subscription's main group, to pick
@@ -63,12 +65,14 @@ class MobileViewModel : ViewModel() {
 
         viewModelScope.launch {
             val settings = ask { queryMobile() } ?: return@launch
-            // In the order «Подписки» has them, as the person dragged them.
+            // In the order «Подписки» shows them: the active one, the favourites, the rest, each as the person dragged.
             val order = withContext(Dispatchers.IO) { AppStore(app).profileOrder }
+            val favorites = withContext(Dispatchers.IO) { SettingsStore(app).favoriteProfiles }
             val profiles = runCatching { withProfile { queryAll() } }.getOrDefault(emptyList())
                 .filter { it.imported }
                 .inOrder(order.split(',')) { it.uuid.toString() }
-                .map { MobileProfile(it.uuid.toString(), it.shownName) }
+                .map { MobileProfile(it.uuid.toString(), it.shownName, it.active, it.uuid.toString() in favorites) }
+                .grouped({ it.active }, { it.favorite })
             val members = members(settings.profile, profiles)
 
             if (began == epoch) _state.value = MobilePage(true, settings, profiles, members)
