@@ -51,7 +51,7 @@ import com.github.kr328.clash.ui.components.formatCount
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
+import kotlin.math.round
 import kotlin.math.sin
 
 /**
@@ -73,7 +73,7 @@ internal fun BirdScreen(best: Int, onBest: (Int) -> Unit, onBack: () -> Unit) {
         // The water stays above the three-button bar, the walls start under the arrow.
         val field = constraints.maxHeight - WindowInsets.systemBars.getBottom(density)
         val scale = max(1, min(width / WIDE, field / TALL))
-        val shiftX = (width - width / scale * scale) / 2f
+        val shiftX = ((width - width / scale * scale) / 2).toFloat()
         val shiftY = (field - field / scale * scale).toFloat()
         val status = WindowInsets.statusBars.getTop(density)
         val arrow = status + with(density) { ARROW_ROW.toPx() }
@@ -170,7 +170,10 @@ internal fun BirdScreen(best: Int, onBest: (Int) -> Unit, onBack: () -> Unit) {
     }
 }
 
-/** Draws the game in game pixels of [scale] screen pixels, the field shifted by [x] and [y]. */
+/**
+ * Draws the game in game pixels of [scale] screen pixels, the field shifted by [x] and [y]. What moves is placed to the
+ * screen's pixel, not the game's: in whole game pixels a slow cloud jumped seven to ten screen pixels at a time.
+ */
 private class Pixels(
     private val scope: DrawScope,
     private val scale: Float,
@@ -183,7 +186,7 @@ private class Pixels(
         sky(game)
 
         for (column in game.columns) {
-            val left = column.x.roundToInt()
+            val left = snap(column.x)
 
             wall(left, column.gap, column.seed)
 
@@ -206,36 +209,36 @@ private class Pixels(
         val room = game.water - game.top
 
         for (i in CLOUDS.indices step 2) {
-            val span = game.width + CLOUD_W
-            val left = Math.floorMod((CLOUDS[i] * span - game.travel * CLOUD_PACE).toInt(), span) - CLOUD_W
+            val span = (game.width + CLOUD_W).toFloat()
+            val left = wrap(CLOUDS[i] * span - game.travel * CLOUD_PACE, span) - CLOUD_W
 
-            blit(CLOUD, left, game.top + (CLOUDS[i + 1] * room).toInt())
+            blit(CLOUD, snap(left), (game.top + (CLOUDS[i + 1] * room).toInt()).toFloat())
         }
 
         for (i in SPECKS.indices step 2) {
-            val left = Math.floorMod((SPECKS[i] * game.width - game.travel * SPECK_PACE).toInt(), game.width)
+            val left = wrap(SPECKS[i] * game.width - game.travel * SPECK_PACE, game.width.toFloat())
 
-            rect(left, game.top + (SPECKS[i + 1] * room).toInt(), 1, 1)
+            rect(left, (game.top + (SPECKS[i + 1] * room).toInt()).toFloat(), 1, 1)
         }
     }
 
     /** A brick wall from above the screen's top down to [bottom], over the sky: courses laid from below, a dark brick here and there. */
-    private fun wall(left: Int, bottom: Int, seed: Int) {
-        rect(left, -1, COLUMN_W, bottom + 1, paper)
-        rect(left, -1, 1, bottom + 1)
-        rect(left + COLUMN_W - 1, -1, 1, bottom + 1)
+    private fun wall(left: Float, bottom: Int, seed: Int) {
+        rect(left, -1f, COLUMN_W, bottom + 1, paper)
+        rect(left, -1f, 1, bottom + 1)
+        rect(left + COLUMN_W - 1, -1f, 1, bottom + 1)
 
         var line = bottom - 1
         var course = 0
 
         while (line >= -1) {
-            rect(left, line, COLUMN_W, 1)
+            rect(left, line.toFloat(), COLUMN_W, 1)
 
             val even = course % 2 == 0
-            var joint = left + (if (even) BRICK / 2 else BRICK)
+            var joint = if (even) BRICK / 2 else BRICK
 
-            while (joint < left + COLUMN_W - 1) {
-                rect(joint, line - COURSE + 1, 1, COURSE - 1)
+            while (joint < COLUMN_W - 1) {
+                rect(left + joint, (line - COURSE + 1).toFloat(), 1, COURSE - 1)
                 joint += BRICK
             }
 
@@ -243,9 +246,9 @@ private class Pixels(
             val mix = (seed + course) * MIX
 
             if ((mix ushr 24) % DARK == 0) {
-                val start = left + 1 + (if (even) BRICK / 2 else 0) + BRICK * ((mix ushr 8) and 1)
+                val start = 1 + (if (even) BRICK / 2 else 0) + BRICK * ((mix ushr 8) and 1)
 
-                rect(start, line - COURSE + 1, minOf(BRICK - 1, left + COLUMN_W - 1 - start), COURSE - 1)
+                rect(left + start, (line - COURSE + 1).toFloat(), minOf(BRICK - 1, COLUMN_W - 1 - start), COURSE - 1)
             }
 
             line -= COURSE
@@ -254,13 +257,13 @@ private class Pixels(
     }
 
     /** Reeds from the water up to [top]: thin stalks with square heads; the tallest reach the hit line exactly. */
-    private fun reeds(left: Int, top: Int, seed: Int, water: Int) {
+    private fun reeds(left: Float, top: Int, seed: Int, water: Int) {
         for (i in 0 until STALKS) {
             val stalk = left + 2 + 5 * i
             val tip = top + REED_SLACK + REED_TIPS[Math.floorMod(i + seed, STALKS)]
 
-            rect(stalk - 1, tip, 3, 3)
-            rect(stalk, tip + 3, 1, water - tip - 3)
+            rect(stalk - 1, tip.toFloat(), 3, 3)
+            rect(stalk, (tip + 3).toFloat(), 1, water - tip - 3)
         }
     }
 
@@ -274,10 +277,9 @@ private class Pixels(
             game.vy > DIVING -> TUCK
             else -> GLIDE
         }
-        val bob = if (game.afloat) sin(game.clock * BOB).roundToInt() else 0
-        val top = game.y.roundToInt() + bob
+        val bob = if (game.afloat) sin(game.clock * BOB) else 0f
 
-        blit(sprite, DUCK_X, top, flip = down)
+        blit(sprite, DUCK_X.toFloat(), snap(game.y + bob), flip = down)
     }
 
     /** The water over the duck's lower rows: a line and two rows of ripples drifting at two speeds. */
@@ -287,12 +289,12 @@ private class Pixels(
         scope.drawRect(paper, Offset(0f, surface), Size(scope.size.width, scope.size.height - surface))
         scope.drawRect(ink, Offset(0f, surface), Size(scope.size.width, scale))
 
-        val near = game.travel.toInt() % RIPPLE
-        val far = (game.travel * 0.6f).toInt() % RIPPLE
+        val near = game.travel % RIPPLE
+        val far = game.travel * 0.6f % RIPPLE
 
         for (step in -RIPPLE..game.width + RIPPLE step RIPPLE) {
-            rect(step - near + 3, game.water + 5, 5, 1)
-            rect(step - far + 9, game.water + 11, 5, 1)
+            rect(step - near + 3, (game.water + 5).toFloat(), 5, 1)
+            rect(step - far + 9, (game.water + 11).toFloat(), 5, 1)
         }
     }
 
@@ -304,7 +306,7 @@ private class Pixels(
             val glyph = GLYPHS.getValue(char)
 
             for (row in 0 until 5) for (col in 0 until 3) {
-                if (glyph[row][col] == '#') rect(left + col * size, top + row * size, size, size)
+                if (glyph[row][col] == '#') rect((left + col * size).toFloat(), (top + row * size).toFloat(), size, size)
             }
 
             left += 4 * size
@@ -312,7 +314,7 @@ private class Pixels(
     }
 
     /** A [sprite] with its top left at [left], [top]; [flip] — upside down. */
-    private fun blit(sprite: Array<IntArray>, left: Int, top: Int, flip: Boolean = false) {
+    private fun blit(sprite: Array<IntArray>, left: Float, top: Float, flip: Boolean = false) {
         for (row in sprite.indices) {
             val runs = sprite[if (flip) sprite.size - 1 - row else row]
 
@@ -320,11 +322,18 @@ private class Pixels(
         }
     }
 
-    private fun rect(left: Int, top: Int, width: Int, height: Int, color: Color = ink) {
+    /** Game pixels from [left], [top] — fractional for what moves — placed to the screen's whole pixel, so edges stay sharp. */
+    private fun rect(left: Float, top: Float, width: Int, height: Int, color: Color = ink) {
         if (width <= 0 || height <= 0) return
 
-        scope.drawRect(color, Offset(x + left * scale, y + top * scale), Size(width * scale, height * scale))
+        scope.drawRect(color, Offset(round(x + left * scale), round(y + top * scale)), Size(width * scale, height * scale))
     }
+
+    /** An object's position to the screen's pixel first: each of its parts then rounds alike, without a seam between them. */
+    private fun snap(value: Float) = round(value * scale) / scale
+
+    /** [value] brought into 0 until [span]. */
+    private fun wrap(value: Float, span: Float) = (value % span + span) % span
 }
 
 /**
