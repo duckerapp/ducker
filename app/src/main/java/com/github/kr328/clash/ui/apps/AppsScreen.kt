@@ -5,6 +5,7 @@ import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.keepFocus
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.Symbols
+import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.unit.Constraints
@@ -283,15 +284,18 @@ internal fun AppIcon(packageName: String, size: Dp, modifier: Modifier) {
     val context = LocalContext.current
     // As many pixels as it is drawn in: a fixed 96 px was stretched at 4K, where 36 dp take 144 (F-364).
     val px = with(LocalDensity.current) { size.roundToPx() }
+    val key = "$packageName@$px"
 
-    val icon by produceState<ImageBitmap?>(null, packageName, px) {
-        value = withContext(Dispatchers.IO) {
+    // From the cache at once: a row scrolled back into view, or the same app on many rows of «Подключения», drew an
+    // empty square for a frame before its icon.
+    val icon by produceState(icons[key], key) {
+        value = icons[key] ?: withContext(Dispatchers.IO) {
             runCatching {
                 context.packageManager.getApplicationIcon(packageName)
                     .toBitmap(width = px, height = px)
                     .asImageBitmap()
             }.getOrNull()
-        }
+        }?.also { icons.put(key, it) }
     }
 
     val bitmap = icon
@@ -301,6 +305,11 @@ internal fun AppIcon(packageName: String, size: Dp, modifier: Modifier) {
     } else {
         Box(modifier.size(size))
     }
+}
+
+/** The icons drawn lately, by package and size; a few megabytes, about a hundred phone-sized icons. */
+private val icons = object : LruCache<String, ImageBitmap>(4 * 1024 * 1024) {
+    override fun sizeOf(key: String, value: ImageBitmap) = value.width * value.height * 4
 }
 
 private val PILLS_GAP = 8.dp
