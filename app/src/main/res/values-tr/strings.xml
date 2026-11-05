@@ -622,8 +622,6 @@
     <string name="mobile_wifi_none">Her zamanki gibi</string>
     <string name="mobile_now">şimdi</string>
     <string name="mobile_profile">Abonelik: %1$s</string>
-    <string name="mobile_profile_off">Seçilmedi</string>
-    <string name="mobile_profile_off_hint">Hiçbir şey değişmez</string>
     <string name="mobile_profile_none">Abonelik seçilmedi</string>
     <string name="mobile_nodes">Sırayla sunucular</string>
     <string name="mobile_nodes_hint">Yanıt veren ilk sunucu kullanılır. Sırayı değiştirmek için sürükleyin</string>

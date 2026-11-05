@@ -22,8 +22,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -322,11 +320,19 @@ private fun NetworkRow(icon: ImageVector, title: String, hint: String, now: Bool
         Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
 
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            // «Сейчас» as a filled bubble right beside the network's name: at the row's end it read as nobody's.
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f, fill = false))
 
                 if (now) {
-                    Text(stringResource(R.string.mobile_now), style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
+                    Text(
+                        stringResource(R.string.mobile_now),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = scheme.onPrimary,
+                        maxLines = 1,
+                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(scheme.primary)
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
                 }
             }
 
@@ -407,8 +413,8 @@ private fun NodeRow(
 }
 
 /**
- * The subscription for the mobile network, laid out as the language sheet: «Не выбрана» on a card of its own, the
- * subscriptions on one card below, a check at the chosen one. A tap picks and closes.
+ * The subscription for the mobile network, laid out as the node sheet: a card each, the chosen one filled. A tap picks
+ * and closes; a tap on the chosen one leaves none chosen.
  */
 @Composable
 private fun ProfileSheet(
@@ -418,65 +424,30 @@ private fun ProfileSheet(
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
 ) {
-    val chosen = state.profileName != null
+    val shortWindow = LocalConfiguration.current.screenHeightDp < 480
 
     DuckerSheet(
         open = open,
         title = stringResource(R.string.mobile_pick_profile),
+        hint = if (state.profiles.isEmpty()) stringResource(R.string.mobile_no_profiles) else null,
         busy = false,
-        heightFraction = 0.78f,
         onDismiss = onDismiss,
         onClosed = onClosed,
+        scrollable = false,
+        compact = true,
+        heightFraction = if (shortWindow) 1f else 0.80f,
     ) {
-        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Card(Modifier.fillMaxWidth()) {
-                ChoiceRow(
-                    label = stringResource(R.string.mobile_profile_off),
-                    hint = stringResource(R.string.mobile_profile_off_hint),
-                    selected = !chosen,
-                    onSelect = { onPick("") },
-                )
-            }
-
-            if (state.profiles.isEmpty()) {
-                Text(
-                    stringResource(R.string.mobile_no_profiles),
-                    modifier = Modifier.padding(horizontal = 4.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Card(Modifier.fillMaxWidth()) {
-                    state.profiles.forEach { profile ->
-                        ChoiceRow(
-                            label = profile.name.asName(),
-                            selected = profile.uuid == state.settings.profile,
-                            onSelect = { onPick(profile.uuid) },
-                        )
-                    }
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            items(state.profiles, key = { it.uuid }) { profile ->
+                NodeChoice(name = profile.name, checked = profile.uuid == state.settings.profile) { on ->
+                    onPick(if (on) profile.uuid else "")
                 }
             }
         }
-    }
-}
-
-/** A choice of a single-choice sheet, as the language sheet's. */
-@Composable
-private fun ChoiceRow(label: String, selected: Boolean, onSelect: () -> Unit, hint: String? = null) {
-    Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(label, style = MaterialTheme.typography.bodyLarge.named(), maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-
-        if (selected) Icon(Symbols.Check, contentDescription = null, modifier = Modifier.size(24.dp))
-        else Spacer(Modifier.size(24.dp))
     }
 }
 

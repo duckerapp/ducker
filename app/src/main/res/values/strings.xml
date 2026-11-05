@@ -659,8 +659,6 @@
     <string name="mobile_wifi_none">As usual</string>
     <string name="mobile_now">now</string>
     <string name="mobile_profile">Subscription: %1$s</string>
-    <string name="mobile_profile_off">None</string>
-    <string name="mobile_profile_off_hint">Nothing switches</string>
     <string name="mobile_profile_none">No subscription chosen</string>
     <string name="mobile_nodes">Servers in order</string>
     <string name="mobile_nodes_hint">The first one that answers is used. Drag to change the order</string>

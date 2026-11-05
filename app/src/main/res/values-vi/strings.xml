@@ -614,8 +614,6 @@
     <string name="mobile_wifi_none">Như thường lệ</string>
     <string name="mobile_now">hiện tại</string>
     <string name="mobile_profile">Gói đăng ký: %1$s</string>
-    <string name="mobile_profile_off">Không chọn</string>
-    <string name="mobile_profile_off_hint">Không chuyển gì cả</string>
     <string name="mobile_profile_none">Chưa chọn gói đăng ký</string>
     <string name="mobile_nodes">Máy chủ theo thứ tự</string>
     <string name="mobile_nodes_hint">Dùng máy chủ đầu tiên phản hồi. Kéo để đổi thứ tự</string>

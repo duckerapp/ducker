@@ -654,8 +654,6 @@
     <string name="mobile_wifi_none">كالمعتاد</string>
     <string name="mobile_now">الآن</string>
     <string name="mobile_profile">الاشتراك: %1$s</string>
-    <string name="mobile_profile_off">لا شيء</string>
-    <string name="mobile_profile_off_hint">لا يتغيّر شيء</string>
     <string name="mobile_profile_none">لم يُختر اشتراك</string>
     <string name="mobile_nodes">الخوادم بالترتيب</string>
     <string name="mobile_nodes_hint">يُستخدم أول خادم يستجيب. اسحب لتغيير الترتيب</string>

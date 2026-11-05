@@ -630,8 +630,6 @@
     <string name="mobile_wifi_none">Comme d’habitude</string>
     <string name="mobile_now">maintenant</string>
     <string name="mobile_profile">Abonnement : %1$s</string>
-    <string name="mobile_profile_off">Aucun</string>
-    <string name="mobile_profile_off_hint">Rien ne change</string>
     <string name="mobile_profile_none">Aucun abonnement choisi</string>
     <string name="mobile_nodes">Serveurs par ordre</string>
     <string name="mobile_nodes_hint">Le premier qui répond est utilisé. Faites glisser pour changer l’ordre</string>

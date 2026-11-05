@@ -614,8 +614,6 @@
     <string name="mobile_wifi_none">Seperti biasa</string>
     <string name="mobile_now">sekarang</string>
     <string name="mobile_profile">Langganan: %1$s</string>
-    <string name="mobile_profile_off">Tidak ada</string>
-    <string name="mobile_profile_off_hint">Tidak ada yang beralih</string>
     <string name="mobile_profile_none">Belum ada langganan dipilih</string>
     <string name="mobile_nodes">Server berurutan</string>
     <string name="mobile_nodes_hint">Server pertama yang merespons dipakai. Seret untuk mengubah urutan</string>

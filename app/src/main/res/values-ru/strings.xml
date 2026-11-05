@@ -660,8 +660,6 @@
     <string name="mobile_wifi_none">Как обычно</string>
     <string name="mobile_now">сейчас</string>
     <string name="mobile_profile">Подписка: %1$s</string>
-    <string name="mobile_profile_off">Не выбрана</string>
-    <string name="mobile_profile_off_hint">Ничего не переключается</string>
     <string name="mobile_profile_none">Подписка не выбрана</string>
     <string name="mobile_nodes">Узлы по порядку</string>
     <string name="mobile_nodes_hint">Включится первый, который отвечает. Порядок — перетаскиванием</string>

@@ -630,8 +630,6 @@
     <string name="mobile_wifi_none">Como siempre</string>
     <string name="mobile_now">ahora</string>
     <string name="mobile_profile">Suscripción: %1$s</string>
-    <string name="mobile_profile_off">Ninguna</string>
-    <string name="mobile_profile_off_hint">No cambia nada</string>
     <string name="mobile_profile_none">Ninguna suscripción elegida</string>
     <string name="mobile_nodes">Servidores en orden</string>
     <string name="mobile_nodes_hint">Se usa el primero que responde. Arrastra para cambiar el orden</string>
