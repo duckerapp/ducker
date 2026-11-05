@@ -160,6 +160,10 @@ fun SubscriptionsScreen(
     onSendToTv: (Profile) -> Unit = {},
     /** The announcements' sheet opened: this subscription's, or all of them (`null`) — they are seen now. */
     onSeeAnnouncements: (UUID?) -> Unit = {},
+    /** Stage 15's lock is on: the QR sheet allows no screenshots. */
+    secure: Boolean = false,
+    /** Runs an action behind the lock (the reason names it in the system dialog). */
+    guard: (reason: Int, action: () -> Unit) -> Unit = { _, action -> action() },
 ) {
     val list = rememberLazyListState()
     val bounce = overscrollFor(list)
@@ -202,8 +206,10 @@ fun SubscriptionsScreen(
     var shareFor by remember { mutableStateOf<Profile?>(null) }
     var shareOpen by remember { mutableStateOf(false) }
     val share = { profile: Profile ->
-        shareFor = profile
-        shareOpen = true
+        guard(R.string.share_qr) {
+            shareFor = profile
+            shareOpen = true
+        }
     }
 
     // The providers' announcements (stage 15): what the sheet shows is taken at its opening, see [announcementGroups].
@@ -230,6 +236,7 @@ fun SubscriptionsScreen(
             open = shareOpen,
             name = profile.shownName,
             link = InstallLink.of(profile.source, profile.mirrors).toString(),
+            secure = secure,
             onDismiss = { shareOpen = false },
             onClosed = { shareFor = null },
         )

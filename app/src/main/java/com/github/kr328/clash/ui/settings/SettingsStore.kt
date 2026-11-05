@@ -47,6 +47,14 @@ class SettingsStore(context: Context) {
         get() = prefs.getBoolean(KEY_BETA, false)
         set(value) = prefs.edit().putBoolean(KEY_BETA, value).apply()
 
+    /**
+     * Fingerprint, face or the screen lock before the subscription link, the QR code and the config, and no screenshots
+     * of them (stage 15). Off by default until the owner answers Q-108.
+     */
+    var lockSensitive: Boolean
+        get() = prefs.getBoolean(KEY_LOCK_SENSITIVE, false)
+        set(value) = prefs.edit().putBoolean(KEY_LOCK_SENSITIVE, value).apply()
+
     /** Не показывать приложение в списке недавних. */
     var hideFromRecents: Boolean
         get() = prefs.getBoolean(KEY_HIDE_RECENTS, false)
@@ -85,6 +93,7 @@ class SettingsStore(context: Context) {
         private const val KEY_OLED = "oled"
         private const val KEY_DYNAMIC = "dynamic_color"
         private const val KEY_HIDE_RECENTS = "hide_from_recents"
+        private const val KEY_LOCK_SENSITIVE = "lock_sensitive"
         private const val KEY_EXTERNAL_CONTROL = "allow_external_control"
         private const val KEY_FAVORITES = "favorite_nodes"
         private const val KEY_FAVORITE_PROFILES = "favorite_profiles"

@@ -16,6 +16,7 @@ import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.LogMessage
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.SubscriptionHeaders
+import com.github.kr328.clash.ui.components.SensitiveLock
 import com.github.kr328.clash.update.Updater
 import com.github.kr328.clash.util.backgroundAllowed
 import com.github.kr328.clash.util.disguised
@@ -44,6 +45,11 @@ class SettingsViewModel : ViewModel() {
         _state.update { it.copy(backgroundAllowed = context.backgroundAllowed()) }
     }
 
+    /** A screen lock is set in Android's settings: read again when the person comes back from there. */
+    fun refreshLock(context: Context) {
+        _state.update { it.copy(deviceSecure = SensitiveLock.available(context)) }
+    }
+
     /** «Постоянный VPN» включают в настройках Android — перечитываем, когда человек вернулся оттуда. */
     fun refreshAlwaysOn() {
         _state.update { it.copy(alwaysOn = alwaysOnVpn()) }
@@ -58,7 +64,10 @@ class SettingsViewModel : ViewModel() {
             seeded = true
 
             SettingsStore(context).let { ours ->
-                _state.update { it.copy(theme = ours.theme, oled = ours.oled, dynamicColor = ours.dynamicColor) }
+                // The lock too: the screens it covers must not open unguarded while the rest loads.
+                _state.update {
+                    it.copy(theme = ours.theme, oled = ours.oled, dynamicColor = ours.dynamicColor, lockSensitive = ours.lockSensitive)
+                }
             }
         }
 
@@ -90,6 +99,8 @@ class SettingsViewModel : ViewModel() {
                     stack = service.tunStackMode,
                     trafficNotification = service.dynamicNotification,
                     hideRecents = ours.hideFromRecents,
+                    lockSensitive = ours.lockSensitive,
+                    deviceSecure = SensitiveLock.available(context),
                     betaUpdates = ours.betaUpdates,
                     disguise = context.disguised,
                     // Автозапуск — это состояние компонента, отдельного хранилища у него
@@ -170,6 +181,11 @@ class SettingsViewModel : ViewModel() {
         service(context) { it.dynamicNotification = value }
 
     fun setHideRecents(context: Context, value: Boolean) = edit(context) { it.hideFromRecents = value }
+
+    fun setLockSensitive(context: Context, value: Boolean) {
+        _state.update { it.copy(lockSensitive = value) }
+        edit(context) { it.lockSensitive = value }
+    }
 
     /** Канал сменился — что предлагать, решается заново, а следом идёт свежая проверка. */
     fun setBetaUpdates(context: Context, value: Boolean) {

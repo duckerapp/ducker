@@ -199,6 +199,10 @@
     <string name="disguise_hint">Aparece como “Calculadora” en la pantalla de inicio. En los ajustes de Android y la notificación de VPN sigue figurando ducker. La aplicación puede cerrarse al cambiar esta opción</string>
     <string name="disguise_name">Calculadora</string>
     <string name="hide_recents_hint">ducker no aparecerá en la lista de aplicaciones recientes</string>
+    <string name="lock_sensitive">Bloquear enlace y configuración</string>
+    <string name="lock_sensitive_hint">Huella, rostro o PIN antes del código QR, la edición de la suscripción y la configuración. Sin capturas de estas pantallas</string>
+    <string name="lock_sensitive_no_screen_lock">Primero configura un bloqueo de pantalla en los ajustes de Android</string>
+    <string name="lock_prompt_title">Confirma que eres tú</string>
     <string name="background_vendor_steps">Pasos para %1$s</string>
     <string name="advanced_risky">Estos ajustes cambian la ruta del tráfico</string>
     <string name="system_proxy">Proxy del sistema</string>

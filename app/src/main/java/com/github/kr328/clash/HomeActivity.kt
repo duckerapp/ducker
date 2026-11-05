@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.github.kr328.clash.ui.components.BackLayer
+import com.github.kr328.clash.ui.components.SensitiveLock
+import androidx.annotation.StringRes
 import com.github.kr328.clash.ui.components.ScreenFrame
 import com.github.kr328.clash.ui.components.TvFocus
 import com.github.kr328.clash.ui.components.TvSplash
@@ -204,6 +206,13 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
     private val needSubscription = mutableStateOf(false)
 
     /** Открыли уведомлением о новой версии — показать панель обновления. */
+    /** Stage 15's lock before the subscription link and the config. */
+    private val lock = SensitiveLock(this)
+
+    /** [action] behind the lock when it is on; read from the store, so a tap right after the start is guarded too. */
+    private fun guard(@StringRes reason: Int, action: () -> Unit) =
+        lock.guard(SettingsStore(this).lockSensitive, reason, action)
+
     private val updateRequest = mutableStateOf(false)
 
     /** Запрос разрешения VPN ждёт, пока панель перед ним не отпустят (`askVpn`). */
@@ -1037,7 +1046,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         state = subscriptionsState,
                                         onSelect = { subscriptionsViewModel.setActive(this@HomeActivity, it) },
                                         onUpdate = { subscriptionsViewModel.update(this@HomeActivity, it) },
-                                        onEdit = { subscriptionsViewModel.showEdit(it) },
+                                        onEdit = { guard(R.string.edit_subscription) { subscriptionsViewModel.showEdit(it) } },
                                         onDelete = { subscriptionsViewModel.askDelete(it) },
                                         onAdd = { subscriptionsViewModel.showAdd(true) },
                                         onDismissError = { subscriptionsViewModel.dismissUpdateError() },
@@ -1048,8 +1057,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onAddresses = { subscriptionsViewModel.showAddresses(it.uuid) },
                                         onRules = { subscriptionsViewModel.openRules(this@HomeActivity, it.uuid) },
                                         onSendToTv = {
-                                            subscriptionsViewModel.scanForTv(it.uuid)
-                                            qrScanner.launch(true)
+                                            guard(R.string.send_tv_title) {
+                                                subscriptionsViewModel.scanForTv(it.uuid)
+                                                qrScanner.launch(true)
+                                            }
                                         },
                                         onSeeAnnouncements = { subscriptionsViewModel.seeAnnouncements(this@HomeActivity, it) },
                                         modifier = Modifier.consumeWindowInsets(insets),
@@ -1071,6 +1082,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         state = state,
                                         header = !tv,
                                         metrics = { if (homeVisible) metrics.value else Snapshot.withoutReadObservation { metrics.value } },
+                                        secure = settingsState.lockSensitive,
+                                        guard = ::guard,
                                         onToggle = { toggle() },
                                         onSettings = { showSettings = true },
                                         onSupport = { open(it) },
@@ -1239,6 +1252,16 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                 if (on) withInstallPermission { Updater.setAuto(true) } else Updater.setAuto(false)
                             },
                             onBetaUpdates = { settingsViewModel.setBetaUpdates(this@HomeActivity, it) },
+                            onLockSensitive = { on ->
+                                when {
+                                    // Nothing to check against: the screen lock is set up in Android first.
+                                    !SensitiveLock.available(this@HomeActivity) ->
+                                        runCatching { startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS)) }
+                                    on -> settingsViewModel.setLockSensitive(this@HomeActivity, true)
+                                    // Turning it off is behind the lock itself, or anyone could.
+                                    else -> guard(R.string.lock_sensitive) { settingsViewModel.setLockSensitive(this@HomeActivity, false) }
+                                }
+                            },
                             onAllowBackground = { requestBackgroundWork() },
                             onVendor = { openVendor(it) },
                             hwid = subscriptionsState.hwid,
@@ -1356,6 +1379,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     BackLayer(
                         visible = showProbe,
+                            secure = settingsState.lockSensitive,
                         onBack = closeProbe,
                     ) {
                         ProbeScreen(
@@ -1417,8 +1441,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         },
                         onConfig = {
                             subscriptionsState.profiles.firstOrNull { it.uuid == subscriptionsState.editing }?.let { profile ->
-                                configViewModel.open(this@HomeActivity, profile)
-                                subscriptionsViewModel.showEdit(null)
+                                guard(R.string.config_open) {
+                                    configViewModel.open(this@HomeActivity, profile)
+                                    subscriptionsViewModel.showEdit(null)
+                                }
                             }
                         },
                         onAddresses = {
@@ -1489,6 +1515,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                 subscriptionsViewModel.update(this@HomeActivity, uuid, force = true)
                             }
                         },
+                        secure = settingsState.lockSensitive,
                         onDismiss = { subscriptionsViewModel.dismissConfirmUpdate() },
                         onClosed = { confirmShown = false },
                     )
@@ -1782,6 +1809,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
         if (!tv) content.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
+        settingsViewModel.refreshLock(this)
                 if (!ready) return false
 
                 content.viewTreeObserver.removeOnPreDrawListener(this)
@@ -1794,6 +1822,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         // Иначе он приходил бы с опозданием вместе с соседними вкладками (D-91), и обычная
         // панель успевала мелькнуть перед приветствием.
         subscriptionsViewModel.refresh(this)
+
+        // Gone from the screen: the next look at the link or the config asks again.
+        lock.relock()
 
         val started = SystemClock.uptimeMillis()
 

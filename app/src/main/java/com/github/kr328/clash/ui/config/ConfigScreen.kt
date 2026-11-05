@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.config
 
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
+import com.github.kr328.clash.ui.components.SecureWindow
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvKeys
 import com.github.kr328.clash.ui.components.tvKeyboardTop
@@ -142,7 +143,11 @@ fun ConfigScreen(
     onAskLeave: (Boolean) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Stage 15's lock is on: no screenshots of the config while it is open. */
+    secure: Boolean = false,
 ) {
+    SecureWindow(secure && state.open)
+
     val context = LocalContext.current
     val store = remember { SettingsStore(context) }
 

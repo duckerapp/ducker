@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.DuckerCardShadow
+import com.github.kr328.clash.ui.components.SecureWindow
 import com.github.kr328.clash.ui.components.SheetButton
 import io.nayuki.qrcodegen.QrCode
 
@@ -40,11 +41,15 @@ fun ShareSubscriptionSheet(
     link: String,
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
+    /** Stage 15's lock is on: no screenshots of the code. */
+    secure: Boolean = false,
 ) {
     // Ссылку вписывал человек: слишком длинную для QR (больше ~2 КБ) не рисуем, а не падаем.
     val qr = remember(link) { runCatching { QrCode.encodeText(link, QrCode.Ecc.MEDIUM) }.getOrNull() }
 
     DuckerSheet(open = open, title = name.isolated(), busy = false, onDismiss = onDismiss, onClosed = onClosed) {
+        SecureWindow(secure)
+
         if (qr != null) {
             Box(
                 Modifier.align(Alignment.CenterHorizontally)

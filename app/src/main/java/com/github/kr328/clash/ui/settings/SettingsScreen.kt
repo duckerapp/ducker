@@ -120,6 +120,10 @@ data class SettingsState(
     /** Android has a screen to turn «Постоянный VPN» on: Google TV does not (F-346). */
     val alwaysOnSettings: Boolean = true,
     val hideRecents: Boolean = false,
+    /** The lock on the subscription link and the config (stage 15). */
+    val lockSensitive: Boolean = false,
+    /** The phone has a screen lock for that lock to check; without it the row leads to Android's settings. */
+    val deviceSecure: Boolean = true,
     /** На рабочем столе — «Калькулятор» (D-147). */
     val disguise: Boolean = false,
     /** Показывать скорость в уведомлении — будит процесс раз в секунду. */
@@ -166,6 +170,8 @@ fun SettingsScreen(
     onAlwaysOn: () -> Unit,
     onTrafficNotification: (Boolean) -> Unit,
     onHideRecents: (Boolean) -> Unit,
+    /** The lock switched; off asks the lock itself first. Without a screen lock — Android's security settings. */
+    onLockSensitive: (Boolean) -> Unit,
     onDisguise: (Boolean) -> Unit,
     onLogs: () -> Unit,
     onProbe: () -> Unit,
@@ -499,6 +505,19 @@ fun SettingsScreen(
                         }
                     }
                     SettingsPage.Privacy -> {
+                        // Not on a TV unless it is on: a TV has no screen lock to check against.
+                        if (!tv || state.lockSensitive) item {
+                            SwitchRow(
+                                title = stringResource(R.string.lock_sensitive),
+                                subtitle = stringResource(
+                                    if (state.deviceSecure) R.string.lock_sensitive_hint else R.string.lock_sensitive_no_screen_lock,
+                                ),
+                                checked = state.lockSensitive && state.deviceSecure,
+                                onChange = onLockSensitive,
+                                icon = Symbols.Fingerprint,
+                            )
+                        }
+
                         item {
                             SwitchRow(
                                 title = stringResource(R.string.hide_recents),

@@ -199,6 +199,10 @@
     <string name="disguise_hint">در صفحه اصلی با نام «ماشین‌حساب» نمایش داده می‌شود. در تنظیمات Android و اعلان VPN همچنان نام ducker دیده می‌شود. هنگام تغییر این گزینه ممکن است برنامه بسته شود</string>
     <string name="disguise_name">ماشین‌حساب</string>
     <string name="hide_recents_hint">ducker در فهرست برنامه‌های اخیر دیده نخواهد شد</string>
+    <string name="lock_sensitive">قفل لینک و کانفیگ</string>
+    <string name="lock_sensitive_hint">اثر انگشت، چهره یا PIN پیش از کد QR، ویرایش اشتراک و کانفیگ. از این صفحه‌ها نمی‌توان اسکرین‌شات گرفت</string>
+    <string name="lock_sensitive_no_screen_lock">ابتدا در تنظیمات Android قفل صفحه تعیین کنید</string>
+    <string name="lock_prompt_title">تأیید کنید که خودتان هستید</string>
     <string name="background_vendor_steps">مراحل برای %1$s</string>
     <string name="advanced_risky">این گزینه‌ها مسیر ترافیک را تغییر می‌دهند</string>
     <string name="system_proxy">پروکسی سیستم</string>

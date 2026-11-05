@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.subscriptions
 
 import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.Symbols
+import com.github.kr328.clash.ui.components.SecureWindow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -124,6 +125,8 @@ fun EditSubscriptionDialog(
     busy: Boolean,
     /** The core asks a backup address of the subscription (stage 21): a line under the button says so. */
     backup: Boolean = false,
+    /** Stage 15's lock is on: no screenshots of the link. */
+    secure: Boolean = false,
     onName: (String) -> Unit,
     onLink: (String) -> Unit,
     onInterval: (Long) -> Unit,
@@ -142,6 +145,8 @@ fun EditSubscriptionDialog(
         onDismiss = onDismiss,
         onClosed = onClosed,
     ) {
+        SecureWindow(secure)
+
         Labeled(stringResource(R.string.subscription_name)) {
             SheetField(
                 value = name,

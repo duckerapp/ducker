@@ -215,6 +215,10 @@
     <string name="disguise_hint">На рабочем столе — «Калькулятор». В настройках Android и в уведомлении VPN остаётся ducker. При переключении приложение может закрыться</string>
     <string name="disguise_name">Калькулятор</string>
     <string name="hide_recents_hint">Приложения не будет видно в списке недавних</string>
+    <string name="lock_sensitive">Замок на ссылку и конфиг</string>
+    <string name="lock_sensitive_hint">Отпечаток, лицо или PIN перед QR-кодом, правкой подписки и конфигом. Снимки этих экранов запрещены</string>
+    <string name="lock_sensitive_no_screen_lock">Сначала задайте блокировку экрана в настройках Android</string>
+    <string name="lock_prompt_title">Подтвердите, что это вы</string>
     <string name="background_vendor_steps">Шаги для %1$s</string>
     <string name="advanced_risky">Меняют путь трафика</string>
     <string name="system_proxy">Системный прокси</string>
