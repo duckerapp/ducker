@@ -80,7 +80,11 @@ published by `.github/workflows/pages.yaml`.
     transfer (`TvTransfer`: the QR payload, encryption, receiving and sending); `InstallLink` — a
     link with its mirrors, as the install link, the shared QR and the TV transfer carry it;
   - `settings`; `config` — the YAML editor; `rules` — My rules; `apps` — per-app access;
-    `logs`; `probe` — the node test; `update` — the app update sheet.
+    `logs`; `probe` — the node test; `update` — the app update sheet;
+  - `features` — the Features page behind the pill on Home and its Connections page (the core's open
+    connections, read once a second while the page is open).
+- **`ui/components/SensitiveLock.kt`** — the fingerprint, face or screen-lock check before the
+  subscription link and the config, and `SecureWindow` (no screenshots of those screens).
 - **`ui/components/`** — `DuckerScaffold` (the tab dock), `Tv` (the TV layout, the focus frame and
   D-pad navigation helpers), `DuckerSheet` (bottom sheets), `DuckerIcons`, `BounceOverscroll`.
   `ui/theme/` — `Theme` and `ThemeReveal` (the wave on theme change).
