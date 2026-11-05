@@ -58,7 +58,8 @@ class BirdGameTest {
         game.tap()
         assertEquals(BirdGame.Phase.Over, game.phase)
 
-        repeat((BirdGame.LOCKOUT / FRAME).toInt() + 1) { game.advance(FRAME) }
+        // A tenth over the lockout: the game's clock is a float summed in small steps, and a frame's margin was eaten.
+        repeat(((BirdGame.LOCKOUT + 0.1f) / FRAME).toInt()) { game.advance(FRAME) }
         game.tap()
 
         assertEquals(BirdGame.Phase.Flying, game.phase)

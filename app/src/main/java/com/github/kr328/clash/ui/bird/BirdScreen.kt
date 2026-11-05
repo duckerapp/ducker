@@ -264,10 +264,7 @@ private class Pixels(
         }
     }
 
-    /**
-     * The duck: the wing up while it rises, tucked while it dives, spread otherwise; speed lines behind it in the air;
-     * belly up after a hit; bobbing while it floats.
-     */
+    /** The duck: the wing up while it rises, tucked while it dives, spread otherwise; belly up after a hit; bobbing afloat. */
     private fun duck(game: BirdGame) {
         val down = game.phase == BirdGame.Phase.Falling || game.phase == BirdGame.Phase.Over
         val flying = game.phase == BirdGame.Phase.Flying && !game.afloat
@@ -281,11 +278,6 @@ private class Pixels(
         val top = game.y.roundToInt() + bob
 
         blit(sprite, DUCK_X, top, flip = down)
-
-        if (flying) {
-            rect(DUCK_X - 7, top + 11, 4, 1)
-            rect(DUCK_X - 6, top + 13, 3, 1)
-        }
     }
 
     /** The water over the duck's lower rows: a line and two rows of ripples drifting at two speeds. */
@@ -364,68 +356,65 @@ private fun sprite(vararg rows: String): Array<IntArray> = Array(rows.size) { r 
 private const val INK = 1
 private const val PAPER = 0
 
-/** The duck in three states, drawn after a sketch of the owner's: gliding, flapping, diving. */
+/** The duck in three states, round and small after a sketch of the owner's: gliding, flapping, diving. */
 private val GLIDE = sprite(
-    "..............####.....",
-    ".............#oooo#....",
-    "............#oooooo#...",
-    "............#ooo##o#...",
-    "............#ooo##o#...",
-    "............#ooooooo###",
-    "...#########oooooooooo#",
-    ".##ooooo##ooooooooo####",
-    "##oooooooo#ooooooo#....",
-    ".#####oooo#ooooooo#....",
-    "##oooooo##ooooooo#.....",
-    ".#######ooooooooo#.....",
-    "..#ooooooooooooo#......",
-    "...##ooooooooooo#......",
-    ".....##ooooooo##.......",
-    ".......#######.........",
-    "........#...#..........",
-    ".......##..##..........",
+    "...........####......",
+    ".........##oooo##....",
+    "........#oooooooo#...",
+    "........#ooooo##o#...",
+    "........#ooooo##oo###",
+    "........#ooooooooooo#",
+    "....####ooooooooo####",
+    "..####oooooooooo#....",
+    ".#oooo##oooooooo#....",
+    "#ooooooo#ooooooo#....",
+    ".#ooooo##ooooooo#....",
+    ".######oooooooo#.....",
+    "..#oooooooooooo#.....",
+    "...##oooooooo##......",
+    ".....########........",
+    ".......#..#..........",
+    "......##.##..........",
 )
 
 private val FLAP = sprite(
-    ".###..........####.....",
-    ".#oo#........#oooo#....",
-    "..#oo##.....#oooooo#...",
-    ".#ooooo#....#ooo##o#...",
-    "..#ooooo#...#ooo##o#...",
-    "...#ooooo#..#ooooooo###",
-    "...#oooooo##oooooooooo#",
-    "...###oooo#oooooooo####",
-    "..#ooo#####ooooooo#....",
-    ".#oooooooooooooooo#....",
-    ".#ooooooooooooooo#.....",
-    ".#ooooooooooooooo#.....",
-    "..#ooooooooooooo#......",
-    "...##ooooooooooo#......",
-    ".....##ooooooo##.......",
-    ".......#######.........",
-    "........#...#..........",
-    ".......##..##..........",
+    "...........####......",
+    ".##......##oooo##....",
+    ".#o##...#oooooooo#...",
+    ".#ooo#..#ooooo##o#...",
+    "..#ooo#.#ooooo##oo###",
+    "..#oooo##ooooooooooo#",
+    "...#oooo#oooooooo####",
+    "..#######ooooooo#....",
+    ".#oooooooooooooo#....",
+    ".#oooooooooooooo#....",
+    ".#oooooooooooooo#....",
+    ".#ooooooooooooo#.....",
+    "..#oooooooooooo#.....",
+    "...##oooooooo##......",
+    ".....########........",
+    ".......#..#..........",
+    "......##.##..........",
 )
 
 private val TUCK = sprite(
-    "..............####.....",
-    ".............#oooo#....",
-    "............#oooooo#...",
-    "............#ooo##o#...",
-    "............#ooo##o#...",
-    "............#ooooooo###",
-    ".....#######oooooooooo#",
-    "...##o#ooooo##ooooo####",
-    "..#oo#ooooooo#oooo#....",
-    ".#oooo#######ooooo#....",
-    ".#ooooooooooooooo#.....",
-    ".#ooooooooooooooo#.....",
-    "..#ooooooooooooo#......",
-    "...##ooooooooooo#......",
-    ".....##ooooooo##.......",
-    ".......#######.........",
-    "........#...#..........",
-    ".......##..##..........",
+    "...........####......",
+    ".........##oooo##....",
+    "........#oooooooo#...",
+    "........#ooooo##o#...",
+    "........#ooooo##oo###",
+    "........#ooooooooooo#",
+    "....####ooooooooo####",
+    "..##oooooooooooo#....",
+    ".#oo######oooooo#....",
+    ".###oooooo#ooooo#....",
+    ".#o#######oooooo#....",
+    ".#ooooooooooooo#.....",
+    "..#oooooooooooo#.....",
+    "...##oooooooo##......",
+    ".....########........",
+    ".......#..#..........",
+    "......##.##..........",
 )
 
 private val CLOUD = sprite(

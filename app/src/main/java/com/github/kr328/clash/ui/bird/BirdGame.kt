@@ -175,24 +175,24 @@ internal class BirdGame(val width: Int, val height: Int, val top: Int, private v
 
     companion object {
         /** The duck sprite's size and where it flies. */
-        const val DUCK_W = 23
-        const val DUCK_H = 18
+        const val DUCK_W = 21
+        const val DUCK_H = 17
         const val DUCK_X = 26
 
         /** Rows of the duck under the waterline when it floats: the feet and the belly. */
         const val SINK = 5
 
         /** What counts as the duck for a hit: without the wing's tip, the beak and the feet — a graze is forgiven. */
-        const val HIT_LEFT = 3
-        const val HIT_RIGHT = 20
-        const val HIT_TOP = 2
-        const val HIT_BOTTOM = 16
+        const val HIT_LEFT = 2
+        const val HIT_RIGHT = 17
+        const val HIT_TOP = 1
+        const val HIT_BOTTOM = 15
 
         /**
          * The window — about four heights of the duck's body, as in the genre's classic — the column and the step between
          * columns, about one a screen on a phone held upright.
          */
-        const val GAP = 68
+        const val GAP = 64
         const val COLUMN_W = 24
         const val SPACING = 136
 
@@ -201,7 +201,7 @@ internal class BirdGame(val width: Int, val height: Int, val top: Int, private v
         const val MIN_WALL = 12
         const val REED_SLACK = 2
 
-        /** A flap lifts the duck 28 px, 1.75 heights of its body, in 0.3 s. */
+        /** A flap lifts the duck 28 px, nearly two heights of its body, in 0.3 s. */
         const val GRAVITY = 598f
         const val FLAP = -183f
         const val MAX_FALL = 320f
