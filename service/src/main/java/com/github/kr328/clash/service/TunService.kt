@@ -68,6 +68,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         install(AppListCacheModule(self))
         install(TimeZoneModule(self))
         install(SuspendModule(self))
+        install(ShareModule(self))
 
         try {
             tun.open()

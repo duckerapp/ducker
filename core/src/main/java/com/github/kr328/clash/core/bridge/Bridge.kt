@@ -24,6 +24,8 @@ object Bridge {
     external fun nativeStopTun()
     external fun nativeStartHttp(listenAt: String): String?
     external fun nativeStopHttp()
+    external fun nativeStartShare(network: String, port: Int, user: String, pass: String): Int
+    external fun nativeStopShare()
     external fun nativeQueryConnections(): String
     external fun nativeCloseAllConnections()
     external fun nativeHealthCheckAuto()

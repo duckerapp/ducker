@@ -94,6 +94,9 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 // конфиге — в подписках не встречались; понадобятся — такими же полями оверрайда.
                 val port = if (provider.localProxyOff) 0 else null
 
+                // The same header keeps «Раздача по Wi-Fi» closed, and closes it when such a subscription comes (D-421).
+                ShareModule.providerClosed = provider.localProxyOff
+
                 configLoadLock.withLock {
                     // Замер узлов при выключенном туннеле глушит порты и DNS сессионным
                     // оверрайдом (D-63). Туннелю они нужны, поэтому снимаем — и только эти

@@ -13,6 +13,8 @@ import com.github.kr328.clash.service.data.ImportedDao
 import com.github.kr328.clash.service.data.Selection
 import com.github.kr328.clash.service.data.SelectionDao
 import com.github.kr328.clash.service.model.LogSlice
+import com.github.kr328.clash.service.model.ShareState
+import com.github.kr328.clash.service.clash.module.ShareModule
 import com.github.kr328.clash.service.remote.IClashManager
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.importedDir
@@ -257,6 +259,19 @@ class ClashManager(private val context: Context) : IClashManager,
 
     override fun closeAllConnections() {
         Clash.closeAllConnections()
+    }
+
+    override fun queryShare(): ShareState =
+        ShareModule.active?.state ?: ShareState(closed = ShareModule.providerClosed, password = store.sharePassword)
+
+    override suspend fun setShare(on: Boolean): ShareState = ShareModule.active?.turn(on) ?: queryShare()
+
+    override suspend fun setSharePassword(on: Boolean): ShareState {
+        ShareModule.active?.let { return it.password(on) }
+
+        store.sharePassword = on
+
+        return queryShare()
     }
 }
 

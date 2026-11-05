@@ -244,7 +244,12 @@ private fun AppMark(app: ConnectionApp) {
             modifier = Modifier.size(size).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Symbols.Lan, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                if (app.kind == ConnectionApp.Kind.Shared) Symbols.WifiTethering else Symbols.Lan,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -253,5 +258,6 @@ private fun AppMark(app: ConnectionApp) {
 private fun appLabel(app: ConnectionApp): String = when (app.kind) {
     ConnectionApp.Kind.App -> app.label
     ConnectionApp.Kind.Core -> stringResource(R.string.connections_core)
+    ConnectionApp.Kind.Shared -> stringResource(R.string.connections_shared, app.label.isolated())
     ConnectionApp.Kind.Unknown -> stringResource(R.string.connections_unknown_app)
 }

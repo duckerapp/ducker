@@ -107,6 +107,7 @@ ICONS = [
     ("VpnLock", "vpn_lock", False, False),
     ("WarningAmber", "warning", False, False),
     ("Widgets", "widgets", False, False),
+    ("WifiTethering", "wifi_tethering", False, False),
 ]
 
 PATH_DATA = re.compile(r"[MmLlHhVvCcSsQqTtAaZz0-9.,\- ]+")

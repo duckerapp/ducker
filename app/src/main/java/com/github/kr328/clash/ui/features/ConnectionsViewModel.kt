@@ -20,7 +20,8 @@ import kotlinx.coroutines.withContext
 
 /** Who opened a connection: an app with its package for the icon, the core itself, or nobody Android could name. */
 data class ConnectionApp(val key: String, val kind: Kind, val label: String = "", val packageName: String? = null) {
-    enum class Kind { App, Core, Unknown }
+    /** [Shared] — a device on «Раздача по Wi-Fi», [label] its address. */
+    enum class Kind { App, Core, Shared, Unknown }
 }
 
 data class ConnectionRow(
@@ -163,6 +164,7 @@ class ConnectionsViewModel : ViewModel() {
 /** Which app a connection belongs to, as the filter compares them. */
 internal fun connectionKey(connection: Connection): String = when {
     connection.inner -> "core"
+    connection.shared.isNotEmpty() -> "shared:${connection.shared}"
     connection.process.isNotEmpty() -> "package:${connection.process}"
     connection.uid > 0 -> "uid:${connection.uid}"
     else -> "unknown"
@@ -170,6 +172,7 @@ internal fun connectionKey(connection: Connection): String = when {
 
 private fun resolve(pm: PackageManager, key: String, connection: Connection): ConnectionApp {
     if (connection.inner) return ConnectionApp(key, ConnectionApp.Kind.Core)
+    if (connection.shared.isNotEmpty()) return ConnectionApp(key, ConnectionApp.Kind.Shared, connection.shared)
 
     // One uid can be several packages (a shared uid): the first names it, as Android's own data usage does.
     val packageName = connection.process.ifEmpty { pm.getPackagesForUid(connection.uid)?.firstOrNull().orEmpty() }

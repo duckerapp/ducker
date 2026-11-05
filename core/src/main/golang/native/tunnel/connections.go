@@ -6,6 +6,7 @@ import (
 
 	"cfa/native/app"
 	"cfa/native/panicguard"
+	"cfa/native/proxy"
 
 	C "github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/tunnel/statistic"
@@ -28,6 +29,7 @@ type Connection struct {
 	Download    int64    `json:"download"`
 	Start       int64    `json:"start"`
 	Closed      bool     `json:"closed"`
+	Shared      string   `json:"shared,omitempty"`
 }
 
 // The owner of a connection the core did not look up: asked of Android once per connection, the answer kept while the
@@ -106,8 +108,14 @@ func look() []Connection {
 		meta := info.Metadata
 		id := c.ID()
 
+		// A device on «Раздача по Wi-Fi»: no app of the phone opened it, so Android is not asked.
+		shared := ""
+		if meta.InName == proxy.ShareInName && meta.SrcIP.IsValid() {
+			shared = meta.SrcIP.String()
+		}
+
 		uid := int(meta.Uid)
-		if uid == 0 && meta.Process == "" && meta.Type != C.INNER {
+		if uid == 0 && meta.Process == "" && meta.Type != C.INNER && shared == "" {
 			known, ok := owners[id]
 			if !ok && meta.RawSrcAddr != nil && meta.RawDstAddr != nil {
 				known = app.QuerySocketUid(meta.RawSrcAddr, meta.RawDstAddr)
@@ -141,6 +149,7 @@ func look() []Connection {
 			Upload:      info.UploadTotal.Load(),
 			Download:    info.DownloadTotal.Load(),
 			Start:       info.Start.UnixMilli(),
+			Shared:      shared,
 		})
 		now[id] = list[len(list)-1]
 

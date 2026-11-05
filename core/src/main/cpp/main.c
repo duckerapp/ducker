@@ -159,6 +159,26 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeStopHttp(JNIEnv *env, jobje
     stopHttp();
 }
 
+JNIEXPORT jint JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeStartShare(JNIEnv *env, jobject thiz,
+                                                                jstring network, jint port,
+                                                                jstring user, jstring pass) {
+    TRACE_METHOD();
+
+    scoped_string _network = get_string(network);
+    scoped_string _user = get_string(user);
+    scoped_string _pass = get_string(pass);
+
+    return startShare(_network, port, _user, _pass);
+}
+
+JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeStopShare(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    stopShare();
+}
+
 JNIEXPORT jstring JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryConnections(JNIEnv *env, jobject thiz) {
     TRACE_METHOD();

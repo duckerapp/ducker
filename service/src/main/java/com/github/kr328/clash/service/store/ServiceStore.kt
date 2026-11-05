@@ -165,4 +165,22 @@ class ServiceStore(context: Context) {
         key = "send_hwid",
         defaultValue = true
     )
+
+    /** «Раздача по Wi-Fi»: its port, kept so the second device is set up once; zero — not chosen yet (D-421). */
+    var sharePort by store.int(
+        key = "share_port",
+        defaultValue = 0
+    )
+
+    /** Its password on a Wi-Fi that is not the phone's own, made once (D-421). */
+    var shareSecret by store.string(
+        key = "share_secret",
+        defaultValue = ""
+    )
+
+    /** The «Пароль» switch on that Wi-Fi; off — the port is open to everyone there (D-421). */
+    var sharePassword by store.boolean(
+        key = "share_password",
+        defaultValue = true
+    )
 }

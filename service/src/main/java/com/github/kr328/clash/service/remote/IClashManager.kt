@@ -3,6 +3,7 @@ package com.github.kr328.clash.service.remote
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.*
 import com.github.kr328.clash.service.model.LogSlice
+import com.github.kr328.clash.service.model.ShareState
 import com.github.kr328.kaidl.BinderInterface
 import java.util.UUID
 
@@ -105,4 +106,13 @@ interface IClashManager {
 
     /** «Сбросить все» on «Подключения»: every connection is closed, apps open new ones by the current rules. */
     fun closeAllConnections()
+
+    /** «Раздача по Wi-Fi» (D-419–D-421) for its card on «Возможности». */
+    fun queryShare(): ShareState
+
+    /** Its switch: works only while the VPN runs; returns what came of it. */
+    suspend fun setShare(on: Boolean): ShareState
+
+    /** The «Пароль» switch for a Wi-Fi that is not the phone's own, remembered (D-421). */
+    suspend fun setSharePassword(on: Boolean): ShareState
 }

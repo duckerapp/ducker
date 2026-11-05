@@ -104,6 +104,19 @@ object Clash {
     }
 
     /**
+     * «Раздача по Wi-Fi» (D-419–D-421): HTTP and SOCKS5, UDP too, on the phone's address in [network]
+     * («192.168.1.5/24») at [port], 0 for any free one; only for that network's devices, not the phone itself.
+     * An empty [user] asks no password. Returns the port, 0 when it could not open.
+     */
+    fun startShare(network: String, port: Int, user: String, pass: String): Int {
+        return Bridge.nativeStartShare(network, port, user, pass)
+    }
+
+    fun stopShare() {
+        Bridge.nativeStopShare()
+    }
+
+    /**
      * Сетевые настройки из файла профиля, которые применяет уже Kotlin-сторона:
      * списки пакетов для `VpnService` и признак отключённого DNS.
      */

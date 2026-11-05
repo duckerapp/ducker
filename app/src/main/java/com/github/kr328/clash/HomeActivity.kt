@@ -128,6 +128,7 @@ import com.github.kr328.clash.ui.apps.AppsViewModel
 import com.github.kr328.clash.ui.probe.ProbeScreen
 import com.github.kr328.clash.ui.features.ConnectionsScreen
 import com.github.kr328.clash.ui.features.ConnectionsViewModel
+import com.github.kr328.clash.ui.features.ShareViewModel
 import com.github.kr328.clash.ui.features.FeaturesScreen
 import com.github.kr328.clash.ui.probe.ProbeViewModel
 import com.github.kr328.clash.ui.proxy.ProxyViewModel
@@ -202,6 +203,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
     private val settingsViewModel: SettingsViewModel by viewModels()
     private val probeViewModel: ProbeViewModel by viewModels()
     private val connectionsViewModel: ConnectionsViewModel by viewModels()
+    private val shareViewModel: ShareViewModel by viewModels()
     private val appsViewModel: AppsViewModel by viewModels()
     private val logsViewModel: LogsViewModel by viewModels()
     private val configViewModel: ConfigViewModel by viewModels()
@@ -492,6 +494,12 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 val proxyState by proxyViewModel.state.collectAsState()
                 val probeState by probeViewModel.state.collectAsState()
                 val connectionsState by connectionsViewModel.state.collectAsState()
+                val shareState by shareViewModel.state.collectAsState()
+
+                // «Раздача по Wi-Fi» goes off by itself when the network changes: its card asks while the page is open.
+                LaunchedEffect(showFeatures) {
+                    if (showFeatures) shareViewModel.start() else shareViewModel.stop()
+                }
                 val appsState by appsViewModel.state.collectAsState()
                 val logsState by logsViewModel.state.collectAsState()
 
@@ -1420,11 +1428,14 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         enabled = !showConnections,
                     ) {
                         FeaturesScreen(
+                            share = shareState,
                             onConnections = {
                                 showConnections = true
 
                                 connectionsViewModel.start(this@HomeActivity)
                             },
+                            onShare = { shareViewModel.turn(it) },
+                            onSharePassword = { shareViewModel.password(it) },
                             onBack = closeFeatures,
                             modifier = layerModifier(listInsets),
                         )

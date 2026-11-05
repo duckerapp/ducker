@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
  * One connection of the core for «Подключения» (stage 15): open, or [closed] since the page last asked. [uid] is the app's — from the core when a rule looked it
  * up, else asked of Android; -1 or 0 — not known. [process] is the package the core found, when it did. [inner] — the
  * core's own (node checks, provider downloads). [chain] names the node first, then the groups it was reached through.
+ * [shared] — the address of the device that came through «Раздача по Wi-Fi», empty for the phone's own.
  */
 @Serializable
 data class Connection(
@@ -27,6 +28,7 @@ data class Connection(
     val download: Long = 0,
     val start: Long = 0,
     val closed: Boolean = false,
+    val shared: String = "",
 ) : Parcelable {
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         Parcelizer.encodeToParcel(serializer(), parcel, this)
