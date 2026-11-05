@@ -199,8 +199,8 @@
     <string name="disguise_hint">Ana ekranda “Hesap Makinesi” olarak görünür. Android ayarlarında ve VPN bildiriminde ducker adı kalır. Bu ayarı değiştirirken uygulama kapanabilir</string>
     <string name="disguise_name">Hesap Makinesi</string>
     <string name="hide_recents_hint">ducker son uygulamalar listesinde görünmez</string>
-    <string name="lock_sensitive">Bağlantıyı ve yapılandırmayı kilitle</string>
-    <string name="lock_sensitive_hint">QR kodu, abonelik düzenleme ve yapılandırmadan önce parmak izi, yüz veya PIN. Bu ekranların görüntüsü alınamaz</string>
+    <string name="lock_sensitive">Aboneliği koru</string>
+    <string name="lock_sensitive_hint">Bağlantıyı veya yapılandırmayı göstermeden önce parmak izi ya da PIN ister, ekran görüntüsünü engeller</string>
     <string name="lock_sensitive_no_screen_lock">Önce Android ayarlarından bir ekran kilidi belirleyin</string>
     <string name="lock_prompt_title">Siz olduğunuzu doğrulayın</string>
     <string name="features">Özellikler</string>

@@ -514,7 +514,7 @@ fun SettingsScreen(
                                 ),
                                 checked = state.lockSensitive && state.deviceSecure,
                                 onChange = onLockSensitive,
-                                icon = Symbols.Fingerprint,
+                                icon = Symbols.Lock,
                             )
                         }
 

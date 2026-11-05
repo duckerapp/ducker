@@ -199,8 +199,8 @@
     <string name="disguise_hint">Tampil sebagai “Kalkulator” di layar utama. Di pengaturan Android dan notifikasi VPN, namanya tetap ducker. Aplikasi mungkin tertutup saat pengaturan ini diubah</string>
     <string name="disguise_name">Kalkulator</string>
     <string name="hide_recents_hint">ducker tidak akan muncul di daftar aplikasi terbaru</string>
-    <string name="lock_sensitive">Kunci tautan dan konfigurasi</string>
-    <string name="lock_sensitive_hint">Sidik jari, wajah, atau PIN sebelum kode QR, edit langganan, dan konfigurasi. Layar ini tidak bisa di-screenshot</string>
+    <string name="lock_sensitive">Lindungi langganan</string>
+    <string name="lock_sensitive_hint">Minta sidik jari atau PIN sebelum menampilkan tautan atau konfigurasi, dan blokir screenshot</string>
     <string name="lock_sensitive_no_screen_lock">Atur kunci layar di setelan Android terlebih dahulu</string>
     <string name="lock_prompt_title">Konfirmasi bahwa ini Anda</string>
     <string name="features">Fitur</string>

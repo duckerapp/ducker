@@ -226,8 +226,8 @@
     <string name="disguise_hint">Shows as “Calculator” on the home screen. Android settings and the VPN notification still say ducker. The app may close when you switch this</string>
     <string name="disguise_name">Calculator</string>
     <string name="hide_recents_hint">ducker won\'t appear in the recent apps list</string>
-    <string name="lock_sensitive">Lock the link and config</string>
-    <string name="lock_sensitive_hint">Fingerprint, face or PIN before the QR code, subscription editing and the config. No screenshots of these screens</string>
+    <string name="lock_sensitive">Protect subscription</string>
+    <string name="lock_sensitive_hint">Asks for a fingerprint or PIN before showing the link or config, and blocks screenshots</string>
     <string name="lock_sensitive_no_screen_lock">Set a screen lock in Android settings first</string>
     <string name="lock_prompt_title">Confirm it\'s you</string>
     <string name="features">Features</string>

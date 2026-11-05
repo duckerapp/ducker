@@ -199,8 +199,8 @@
     <string name="disguise_hint">يظهر باسم «الآلة الحاسبة» على الشاشة الرئيسية. يظل اسم ducker ظاهرًا في إعدادات Android وإشعار VPN. قد يُغلق التطبيق عند تغيير هذا الخيار</string>
     <string name="disguise_name">الآلة الحاسبة</string>
     <string name="hide_recents_hint">لن يظهر ducker في قائمة التطبيقات الأخيرة</string>
-    <string name="lock_sensitive">قفل الرابط وملف الإعدادات</string>
-    <string name="lock_sensitive_hint">البصمة أو الوجه أو رمز PIN قبل رمز QR وتعديل الاشتراك وملف الإعدادات. لا لقطات شاشة لهذه الشاشات</string>
+    <string name="lock_sensitive">حماية الاشتراك</string>
+    <string name="lock_sensitive_hint">يطلب البصمة أو رمز PIN قبل عرض الرابط أو ملف الإعدادات، ويمنع لقطات الشاشة</string>
     <string name="lock_sensitive_no_screen_lock">اضبط قفل الشاشة أولاً في إعدادات Android</string>
     <string name="lock_prompt_title">أكّد أنك أنت</string>
     <string name="features">المزايا</string>

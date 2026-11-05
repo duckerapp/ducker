@@ -199,8 +199,8 @@
     <string name="disguise_hint">Hiển thị là “Máy tính” trên màn hình chính. Trong cài đặt Android và thông báo VPN vẫn là ducker. Ứng dụng có thể đóng khi đổi tùy chọn này</string>
     <string name="disguise_name">Máy tính</string>
     <string name="hide_recents_hint">ducker sẽ không xuất hiện trong danh sách ứng dụng gần đây</string>
-    <string name="lock_sensitive">Khóa liên kết và cấu hình</string>
-    <string name="lock_sensitive_hint">Vân tay, khuôn mặt hoặc mã PIN trước mã QR, khi sửa gói đăng ký và cấu hình. Không thể chụp màn hình các trang này</string>
+    <string name="lock_sensitive">Bảo vệ gói đăng ký</string>
+    <string name="lock_sensitive_hint">Yêu cầu vân tay hoặc mã PIN trước khi hiện liên kết hay cấu hình, và chặn chụp màn hình</string>
     <string name="lock_sensitive_no_screen_lock">Hãy đặt khóa màn hình trong cài đặt Android trước</string>
     <string name="lock_prompt_title">Xác nhận đó là bạn</string>
     <string name="features">Tính năng</string>

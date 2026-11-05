@@ -199,8 +199,8 @@
     <string name="disguise_hint">S’affiche sous le nom « Calculatrice » sur l’écran d’accueil. Les paramètres Android et la notification VPN affichent toujours ducker. L’application peut se fermer lorsque vous changez cette option</string>
     <string name="disguise_name">Calculatrice</string>
     <string name="hide_recents_hint">ducker n’apparaîtra pas dans la liste des applications récentes</string>
-    <string name="lock_sensitive">Verrouiller le lien et la configuration</string>
-    <string name="lock_sensitive_hint">Empreinte, visage ou code PIN avant le code QR, la modification de l’abonnement et la configuration. Pas de captures de ces écrans</string>
+    <string name="lock_sensitive">Protéger l’abonnement</string>
+    <string name="lock_sensitive_hint">Demande l’empreinte ou le code PIN avant d’afficher le lien ou la configuration, et bloque les captures</string>
     <string name="lock_sensitive_no_screen_lock">Définissez d’abord un verrouillage de l’écran dans les paramètres d’Android</string>
     <string name="lock_prompt_title">Confirmez votre identité</string>
     <string name="features">Fonctions</string>

@@ -199,8 +199,8 @@
     <string name="disguise_hint">在桌面上显示为“计算器”，但 Android 设置和 VPN 通知中仍显示为 ducker。切换此选项时应用可能会关闭</string>
     <string name="disguise_name">计算器</string>
     <string name="hide_recents_hint">ducker 不会显示在最近任务列表中</string>
-    <string name="lock_sensitive">锁定链接和配置</string>
-    <string name="lock_sensitive_hint">显示二维码、编辑订阅和打开配置前需验证指纹、面容或 PIN 码。这些页面禁止截屏</string>
+    <string name="lock_sensitive">保护订阅</string>
+    <string name="lock_sensitive_hint">显示链接或配置前需验证指纹或 PIN 码，并禁止截屏</string>
     <string name="lock_sensitive_no_screen_lock">请先在 Android 设置中设置屏幕锁定</string>
     <string name="lock_prompt_title">请确认是您本人</string>
     <string name="features">更多功能</string>
