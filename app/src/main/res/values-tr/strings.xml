@@ -611,4 +611,33 @@
         <item quantity="other">%d kural</item>
     </plurals>
     <string name="separator">" · "</string>
+    <!-- «Мобильная сеть» (D-423, D-424) -->
+    <string name="mobile">Mobil ağ</string>
+    <string name="mobile_card_off">Wi-Fi dışında kendi aboneliğiniz ve sunucularınız</string>
+    <string name="mobile_card_no_profile">Bir abonelik seçin</string>
+    <string name="mobile_switch">Ağa göre geçiş</string>
+    <string name="mobile_switch_hint">Wi-Fi dışında aşağıdakiler kullanılır</string>
+    <string name="mobile_wifi">Wi-Fi</string>
+    <string name="mobile_wifi_hint">Her zamanki gibi: %1$s</string>
+    <string name="mobile_wifi_none">Her zamanki gibi</string>
+    <string name="mobile_now">şimdi</string>
+    <string name="mobile_profile">Abonelik: %1$s</string>
+    <string name="mobile_profile_none">Abonelik seçilmedi</string>
+    <string name="mobile_nodes">Sırayla sunucular</string>
+    <string name="mobile_nodes_hint">Yanıt veren ilk sunucu kullanılır. Sırayı değiştirmek için sürükleyin</string>
+    <string name="mobile_nodes_none">Seçilmedi: aboneliğin kendi sunucusu kalır</string>
+    <string name="mobile_nodes_pick">Sunucuları seç</string>
+    <string name="mobile_node_missing">Abonelikte yok</string>
+    <string name="mobile_rule_pick">Sunucuyu veya aboneliği kendiniz seçerseniz, bir sonraki ağ değişikliğine kadar öyle kalır</string>
+    <string name="mobile_rule_time">Acele yok: ağ yaklaşık bir dakika dayanmalı, ekran açıkken birkaç saniye</string>
+    <string name="mobile_pick_profile">Mobil ağ için abonelik</string>
+    <string name="mobile_pick_nodes">Mobil ağ için sunucular</string>
+    <string name="mobile_pick_nodes_hint">%1$s · işaretlenenler listenin sonuna eklenir</string>
+    <string name="mobile_pick_nodes_empty">Bu abonelikte sunucu bulunamadı</string>
+    <string name="mobile_no_profiles">Önce bir abonelik ekleyin</string>
+    <string name="hero_protected_mobile">VPN etkin · mobil ağ</string>
+    <plurals name="mobile_card_nodes">
+        <item quantity="one">%1$s · %2$d sunucu</item>
+        <item quantity="other">%1$s · %2$d sunucu</item>
+    </plurals>
 </resources>

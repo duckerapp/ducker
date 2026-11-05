@@ -51,4 +51,7 @@
     <string name="no_space">Penyimpanan ponsel penuh. Kosongkan sebagian ruang — langganan dan pengaturan Anda aman</string>
     <string name="subscription_web_page">Yang datang halaman web, bukan langganan: situsnya mungkin diblokir, atau tautannya mengarah ke tempat lain. Coba lagi nanti atau periksa tautannya</string>
     <string name="subscription_backups_failed">%1$s. Alamat cadangan penyedia (%2$d) juga tidak merespons</string>
+    <!-- After the node in the VPN notification, «Мобильная сеть» (D-423) -->
+    <string name="mobile_note">jaringan seluler</string>
+    <string name="mobile_note_silent">server dalam daftar tidak merespons</string>
 </resources>

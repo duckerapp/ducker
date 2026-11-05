@@ -1,5 +1,6 @@
 package com.github.kr328.clash.service
 
+import com.github.kr328.clash.service.clash.module.MobileModule
 import com.github.kr328.clash.service.store.UserRulesStore
 import android.content.Context
 import com.github.kr328.clash.common.util.backgroundScope
@@ -218,6 +219,9 @@ class ProfileManager(private val context: Context) : IProfileManager,
     }
 
     override suspend fun setActive(profile: Profile) {
+        // The person's own pick holds against «Мобильная сеть» until the network changes (D-424).
+        if (profile.uuid != store.activeProfile) MobileModule.manual(context)
+
         ProfileProcessor.active(context, profile.uuid)
     }
 

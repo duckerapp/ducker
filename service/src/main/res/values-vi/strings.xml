@@ -51,4 +51,7 @@
     <string name="no_space">Điện thoại đã hết dung lượng. Hãy giải phóng dung lượng — các gói đăng ký và cài đặt vẫn còn nguyên</string>
     <string name="subscription_web_page">Nhận được một trang web thay vì gói đăng ký: trang có thể đã bị chặn, hoặc liên kết dẫn sai chỗ. Hãy thử lại sau hoặc kiểm tra liên kết</string>
     <string name="subscription_backups_failed">%1$s. Các địa chỉ dự phòng của nhà cung cấp (%2$d) cũng không phản hồi</string>
+    <!-- After the node in the VPN notification, «Мобильная сеть» (D-423) -->
+    <string name="mobile_note">mạng di động</string>
+    <string name="mobile_note_silent">các máy chủ trong danh sách không phản hồi</string>
 </resources>

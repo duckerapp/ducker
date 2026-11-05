@@ -51,4 +51,7 @@
     <string name="no_space">手机存储空间已满。请释放一些空间，订阅和设置都完好无损</string>
     <string name="subscription_web_page">收到的是网页而不是订阅：网站可能被封锁，或链接指向了别处。请稍后重试或检查链接</string>
     <string name="subscription_backups_failed">%1$s。服务商的备用地址（%2$d 个）也没有响应</string>
+    <!-- After the node in the VPN notification, «Мобильная сеть» (D-423) -->
+    <string name="mobile_note">移动网络</string>
+    <string name="mobile_note_silent">列表中的节点均无响应</string>
 </resources>

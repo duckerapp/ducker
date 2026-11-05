@@ -603,4 +603,32 @@
         <item quantity="other">%d aturan</item>
     </plurals>
     <string name="separator">" · "</string>
+    <!-- «Мобильная сеть» (D-423, D-424) -->
+    <string name="mobile">Jaringan seluler</string>
+    <string name="mobile_card_off">Langganan dan server sendiri di luar Wi-Fi</string>
+    <string name="mobile_card_no_profile">Pilih langganan</string>
+    <string name="mobile_switch">Beralih sesuai jaringan</string>
+    <string name="mobile_switch_hint">Di luar Wi-Fi, pengaturan di bawah yang dipakai</string>
+    <string name="mobile_wifi">Wi-Fi</string>
+    <string name="mobile_wifi_hint">Seperti biasa: %1$s</string>
+    <string name="mobile_wifi_none">Seperti biasa</string>
+    <string name="mobile_now">sekarang</string>
+    <string name="mobile_profile">Langganan: %1$s</string>
+    <string name="mobile_profile_none">Belum ada langganan dipilih</string>
+    <string name="mobile_nodes">Server berurutan</string>
+    <string name="mobile_nodes_hint">Server pertama yang merespons dipakai. Seret untuk mengubah urutan</string>
+    <string name="mobile_nodes_none">Belum dipilih: langganan memakai servernya sendiri</string>
+    <string name="mobile_nodes_pick">Pilih server</string>
+    <string name="mobile_node_missing">Tidak ada di langganan</string>
+    <string name="mobile_rule_pick">Jika Anda memilih server atau langganan sendiri, pilihan itu bertahan sampai jaringan berganti lagi</string>
+    <string name="mobile_rule_time">Tanpa terburu-buru: jaringan harus bertahan sekitar satu menit, atau beberapa detik saat layar menyala</string>
+    <string name="mobile_pick_profile">Langganan untuk jaringan seluler</string>
+    <string name="mobile_pick_nodes">Server untuk jaringan seluler</string>
+    <string name="mobile_pick_nodes_hint">%1$s · yang dicentang masuk ke akhir daftar</string>
+    <string name="mobile_pick_nodes_empty">Tidak ada server di langganan ini</string>
+    <string name="mobile_no_profiles">Tambahkan langganan dulu</string>
+    <string name="hero_protected_mobile">VPN aktif · jaringan seluler</string>
+    <plurals name="mobile_card_nodes">
+        <item quantity="other">%1$s · %2$d server</item>
+    </plurals>
 </resources>

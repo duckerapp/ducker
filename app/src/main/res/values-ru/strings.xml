@@ -649,4 +649,35 @@
         <item quantity="other">%d правила</item>
     </plurals>
     <string name="separator">" · "</string>
+    <!-- «Мобильная сеть» (D-423, D-424) -->
+    <string name="mobile">Мобильная сеть</string>
+    <string name="mobile_card_off">Своя подписка и узлы вне Wi-Fi</string>
+    <string name="mobile_card_no_profile">Выберите подписку</string>
+    <string name="mobile_switch">Переключение по сети</string>
+    <string name="mobile_switch_hint">Ушли с Wi-Fi — включится то, что ниже</string>
+    <string name="mobile_wifi">Wi-Fi</string>
+    <string name="mobile_wifi_hint">Как обычно: %1$s</string>
+    <string name="mobile_wifi_none">Как обычно</string>
+    <string name="mobile_now">сейчас</string>
+    <string name="mobile_profile">Подписка: %1$s</string>
+    <string name="mobile_profile_none">Подписка не выбрана</string>
+    <string name="mobile_nodes">Узлы по порядку</string>
+    <string name="mobile_nodes_hint">Включится первый, который отвечает. Порядок — перетаскиванием</string>
+    <string name="mobile_nodes_none">Не выбраны — останется узел, выбранный в подписке</string>
+    <string name="mobile_nodes_pick">Выбрать узлы</string>
+    <string name="mobile_node_missing">Нет в подписке</string>
+    <string name="mobile_rule_pick">Выбрали узел или подписку сами — ваш выбор останется до следующей смены сети</string>
+    <string name="mobile_rule_time">Без спешки: сеть должна продержаться около минуты. Включили экран — через несколько секунд</string>
+    <string name="mobile_pick_profile">Подписка для мобильной сети</string>
+    <string name="mobile_pick_nodes">Узлы для мобильной сети</string>
+    <string name="mobile_pick_nodes_hint">%1$s · отмеченные встанут в конец списка</string>
+    <string name="mobile_pick_nodes_empty">В этой подписке не нашлось узлов</string>
+    <string name="mobile_no_profiles">Сначала добавьте подписку</string>
+    <string name="hero_protected_mobile">VPN работает · мобильная сеть</string>
+    <plurals name="mobile_card_nodes">
+        <item quantity="one">%1$s · %2$d узел</item>
+        <item quantity="few">%1$s · %2$d узла</item>
+        <item quantity="many">%1$s · %2$d узлов</item>
+        <item quantity="other">%1$s · %2$d узла</item>
+    </plurals>
 </resources>

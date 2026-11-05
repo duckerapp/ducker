@@ -4,6 +4,8 @@ import android.content.Context
 import com.github.kr328.clash.common.store.Store
 import com.github.kr328.clash.service.PreferenceProvider
 import com.github.kr328.clash.service.model.AccessControlMode
+import com.github.kr328.clash.service.model.MobileState
+import org.json.JSONArray
 import java.util.*
 
 class ServiceStore(context: Context) {
@@ -183,4 +185,72 @@ class ServiceStore(context: Context) {
         key = "share_password",
         defaultValue = true
     )
+
+    /** «Переключение по сети» on «Мобильная сеть» (D-423, D-424): off by default, off keeps what is set below. */
+    var mobileOn by store.boolean(
+        key = "mobile_on",
+        defaultValue = false
+    )
+
+    /** The subscription for the mobile network; `null` — not chosen, and nothing switches. */
+    var mobileProfile: UUID? by store.typedString(
+        key = "mobile_profile",
+        from = { if (it.isBlank()) null else UUID.fromString(it) },
+        to = { it?.toString() ?: "" }
+    )
+
+    /** Members of its main group to try in the person's order; empty — the subscription's own pick stays. */
+    var mobileNodes: List<String>
+        get() = mobileNodesJson.let { json ->
+            runCatching { JSONArray(json).let { array -> List(array.length()) { array.getString(it) } } }.getOrDefault(emptyList())
+        }
+        set(value) {
+            mobileNodesJson = JSONArray(value).toString()
+        }
+
+    private var mobileNodesJson by store.string(
+        key = "mobile_nodes",
+        defaultValue = "[]"
+    )
+
+    /** The network kind switching last acted on or the person last picked on, a [NetworkKind] ordinal. */
+    var mobileSettled by store.int(
+        key = "mobile_settled",
+        defaultValue = 0
+    )
+
+    /**
+     * What Wi-Fi had when the mobile choice came, to bring back on Wi-Fi: the subscription, its main group and the
+     * pick there. `null` — nothing to bring back.
+     */
+    var mobileBackProfile: UUID? by store.typedString(
+        key = "mobile_back_profile",
+        from = { if (it.isBlank()) null else UUID.fromString(it) },
+        to = { it?.toString() ?: "" }
+    )
+
+    var mobileBackGroup by store.string(
+        key = "mobile_back_group",
+        defaultValue = ""
+    )
+
+    var mobileBackNode by store.string(
+        key = "mobile_back_node",
+        defaultValue = ""
+    )
+
+    /** What Home and the notification say, a [MobileState.Shown] ordinal; read through [mobileShownNow]. */
+    var mobileShown by store.int(
+        key = "mobile_shown",
+        defaultValue = 0
+    )
+
+    /**
+     * [mobileShown] while it is still true: the mobile choice is in effect only while its subscription is the active
+     * one, and a subscription deleted or picked by hand would otherwise leave Home saying «мобильная сеть».
+     */
+    val mobileShownNow: MobileState.Shown
+        get() = MobileState.Shown.entries.getOrElse(mobileShown) { MobileState.Shown.None }
+            .takeIf { mobileOn && activeProfile != null && activeProfile == mobileProfile }
+            ?: MobileState.Shown.None
 }

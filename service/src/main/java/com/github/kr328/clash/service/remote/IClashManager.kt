@@ -4,6 +4,7 @@ import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.*
 import com.github.kr328.clash.service.model.LogSlice
 import com.github.kr328.clash.service.model.ShareState
+import com.github.kr328.clash.service.model.MobileState
 import com.github.kr328.kaidl.BinderInterface
 import java.util.UUID
 
@@ -115,4 +116,13 @@ interface IClashManager {
 
     /** The «Пароль» switch for a Wi-Fi that is not the phone's own, remembered (D-421). */
     suspend fun setSharePassword(on: Boolean): ShareState
+
+    /** «Мобильная сеть» (D-423, D-424) for its page: the settings, the network now, the subscription Wi-Fi has. */
+    suspend fun queryMobile(): MobileState
+
+    /** Saves the page's settings; on the mobile network a new choice applies at once. */
+    suspend fun setMobile(on: Boolean, profile: String, nodes: List<String>): MobileState
+
+    /** Members of [profile]'s main group to pick from: the core's while it runs that subscription, else its file's. */
+    suspend fun queryMobileNodes(profile: String): List<String>
 }

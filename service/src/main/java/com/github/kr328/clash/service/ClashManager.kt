@@ -15,6 +15,8 @@ import com.github.kr328.clash.service.data.SelectionDao
 import com.github.kr328.clash.service.model.LogSlice
 import com.github.kr328.clash.service.model.ShareState
 import com.github.kr328.clash.service.clash.module.ShareModule
+import com.github.kr328.clash.service.clash.module.MobileModule
+import com.github.kr328.clash.service.model.MobileState
 import com.github.kr328.clash.service.remote.IClashManager
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.importedDir
@@ -161,6 +163,9 @@ class ClashManager(private val context: Context) : IClashManager,
     override fun patchStoredSelector(group: String, name: String) {
         val active = store.activeProfile ?: return
 
+        // With the VPN off the core may hold no config: the main group is then the one saved to bring back.
+        if (group == MobileModule.mainGroup() || group == store.mobileBackGroup) MobileModule.manual(context)
+
         SelectionDao().setSelected(Selection(active, group, name))
     }
 
@@ -203,6 +208,9 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override fun patchSelector(group: String, name: String): Boolean {
+        // A node of the main group picked by the person holds against «Мобильная сеть» until the network changes.
+        if (group == MobileModule.mainGroup()) MobileModule.manual(context)
+
         return Clash.patchSelector(group, name).also {
             if (it) {
                 context.sendSelectorChanged()
@@ -272,6 +280,39 @@ class ClashManager(private val context: Context) : IClashManager,
         store.sharePassword = on
 
         return queryShare()
+    }
+
+    override suspend fun queryMobile(): MobileState = MobileModule.state(context)
+
+    override suspend fun setMobile(on: Boolean, profile: String, nodes: List<String>): MobileState {
+        val uuid = profile.takeIf { it.isNotEmpty() }?.let(java.util.UUID::fromString)
+
+        // A sheet closed without a change, a node put back where it was: nothing to switch again.
+        if (on == store.mobileOn && uuid == store.mobileProfile && nodes == store.mobileNodes) return queryMobile()
+
+        store.mobileOn = on
+        store.mobileProfile = uuid
+        store.mobileNodes = nodes
+
+        // Off: nothing is brought back or shown, with the VPN off too.
+        if (!on) MobileModule.forget(context)
+
+        MobileModule.active?.changed()
+
+        return queryMobile()
+    }
+
+    override suspend fun queryMobileNodes(profile: String): List<String> {
+        val uuid = java.util.UUID.fromString(profile)
+
+        // The core knows the members a file does not name (`use:` providers); it runs only the active subscription.
+        if (StatusProvider.serviceRunning && uuid == store.activeProfile) {
+            MobileModule.mainGroup()?.let { main -> MobileModule.members(main).let { if (it.isNotEmpty()) return it } }
+        }
+
+        return Clash.queryProfileGroups(context.importedDir.resolve(profile).absolutePath)
+            .firstOrNull { it.type.equals("select", ignoreCase = true) }
+            ?.proxies.orEmpty()
     }
 }
 

@@ -30,12 +30,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.service.model.ShareState
+import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.ScreenHeader
+import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.machine
 import com.github.kr328.clash.ui.components.TvLazyColumn
@@ -47,11 +50,14 @@ import com.github.kr328.clash.ui.components.DuckerCard as Card
 
 /**
  * «Возможности» (stage 15): the tools that are not needed every day, behind one pill on Home so that Home stays a
- * button and a node: «Подключения» and «Раздача по Wi-Fi»; the network choice goes above them when it is built (D-355).
+ * button and a node: «Мобильная сеть» above them (D-423; not on a TV, which has no mobile network), «Подключения» and
+ * «Раздача по Wi-Fi».
  */
 @Composable
 fun FeaturesScreen(
     share: ShareState,
+    mobile: MobilePage,
+    onMobile: () -> Unit,
     onConnections: () -> Unit,
     onShare: (Boolean) -> Unit,
     onSharePassword: (Boolean) -> Unit,
@@ -59,6 +65,7 @@ fun FeaturesScreen(
     modifier: Modifier = Modifier,
 ) {
     val list = rememberLazyListState()
+    val tv = LocalTv.current
 
     TvLazyColumn(
         state = list,
@@ -68,6 +75,25 @@ fun FeaturesScreen(
         contentPadding = PaddingValues(top = 16.dp + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
     ) {
         item { ScreenHeader(stringResource(R.string.features), onBack = onBack) }
+
+        if (!tv) {
+            item {
+                val settings = mobile.settings
+                val name = mobile.profileName?.asName()
+
+                ToolRow(
+                    icon = Symbols.CellWifi,
+                    title = stringResource(R.string.mobile),
+                    hint = when {
+                        !settings.on -> stringResource(R.string.mobile_card_off)
+                        name == null -> stringResource(R.string.mobile_card_no_profile)
+                        settings.nodes.isEmpty() -> name
+                        else -> pluralStringResource(R.plurals.mobile_card_nodes, settings.nodes.size, name, settings.nodes.size)
+                    },
+                    onClick = onMobile,
+                )
+            }
+        }
 
         item {
             ToolRow(

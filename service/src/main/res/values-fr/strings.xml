@@ -53,4 +53,7 @@
     <string name="no_space">Le téléphone n’a plus d’espace libre. Libérez de l’espace — vos abonnements et paramètres sont intacts</string>
     <string name="subscription_web_page">Une page web est arrivée à la place de l’abonnement : le site est peut-être bloqué, ou le lien mène ailleurs. Réessayez plus tard ou vérifiez le lien</string>
     <string name="subscription_backups_failed">%1$s. Les adresses de secours du fournisseur (%2$d) n’ont pas répondu non plus</string>
+    <!-- After the node in the VPN notification, «Мобильная сеть» (D-423) -->
+    <string name="mobile_note">réseau mobile</string>
+    <string name="mobile_note_silent">les serveurs de la liste ne répondent pas</string>
 </resources>

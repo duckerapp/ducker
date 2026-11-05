@@ -1228,11 +1228,16 @@ private fun HeroFace(
                     val hint = when {
                         state.busy && running -> R.string.hero_disconnecting
                         state.busy -> R.string.hero_connecting
+                        running && state.mobile -> R.string.hero_protected_mobile
                         running -> R.string.hero_protected_hint
                         else -> R.string.hero_off_hint
                     }
 
-                    Reserved({ HERO_HINTS.forEach { Text(stringResource(it), style = hintStyle) } }) {
+                    // The longer «· мобильная сеть» takes room only for whom it can appear: Home's height stays as it
+                    // was for everyone else (D-389).
+                    val hints = if (state.mobileSet) HERO_HINTS + R.string.hero_protected_mobile else HERO_HINTS
+
+                    Reserved({ hints.forEach { Text(stringResource(it), style = hintStyle) } }) {
                         // Копия сменила состояние, когда волна закончилась, — подпись встаёт сразу:
                         // иначе она доигрывала бы свой переход и на миг пропадала.
                         key(running) {

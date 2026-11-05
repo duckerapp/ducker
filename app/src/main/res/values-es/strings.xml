@@ -619,4 +619,34 @@
         <item quantity="other">%d reglas</item>
     </plurals>
     <string name="separator">" · "</string>
+    <!-- «Мобильная сеть» (D-423, D-424) -->
+    <string name="mobile">Red móvil</string>
+    <string name="mobile_card_off">Tu propia suscripción y servidores fuera del Wi-Fi</string>
+    <string name="mobile_card_no_profile">Elige una suscripción</string>
+    <string name="mobile_switch">Cambiar según la red</string>
+    <string name="mobile_switch_hint">Fuera del Wi-Fi se usa lo de abajo</string>
+    <string name="mobile_wifi">Wi-Fi</string>
+    <string name="mobile_wifi_hint">Como siempre: %1$s</string>
+    <string name="mobile_wifi_none">Como siempre</string>
+    <string name="mobile_now">ahora</string>
+    <string name="mobile_profile">Suscripción: %1$s</string>
+    <string name="mobile_profile_none">Ninguna suscripción elegida</string>
+    <string name="mobile_nodes">Servidores en orden</string>
+    <string name="mobile_nodes_hint">Se usa el primero que responde. Arrastra para cambiar el orden</string>
+    <string name="mobile_nodes_none">Ninguno elegido: la suscripción mantiene su propio servidor</string>
+    <string name="mobile_nodes_pick">Elegir servidores</string>
+    <string name="mobile_node_missing">No está en la suscripción</string>
+    <string name="mobile_rule_pick">Si eliges un servidor o una suscripción tú mismo, se mantiene hasta el próximo cambio de red</string>
+    <string name="mobile_rule_time">Sin prisa: la red debe mantenerse cerca de un minuto, o unos segundos con la pantalla encendida</string>
+    <string name="mobile_pick_profile">Suscripción para la red móvil</string>
+    <string name="mobile_pick_nodes">Servidores para la red móvil</string>
+    <string name="mobile_pick_nodes_hint">%1$s · los marcados van al final de la lista</string>
+    <string name="mobile_pick_nodes_empty">No se encontraron servidores en esta suscripción</string>
+    <string name="mobile_no_profiles">Primero añade una suscripción</string>
+    <string name="hero_protected_mobile">La VPN está activa · red móvil</string>
+    <plurals name="mobile_card_nodes">
+        <item quantity="one">%1$s · %2$d servidor</item>
+        <item quantity="many">%1$s · %2$d servidores</item>
+        <item quantity="other">%1$s · %2$d servidores</item>
+    </plurals>
 </resources>

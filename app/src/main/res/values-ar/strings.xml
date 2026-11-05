@@ -643,4 +643,37 @@
         <item quantity="other">%d قاعدة</item>
     </plurals>
     <string name="separator">"، "</string>
+    <!-- «Мобильная сеть» (D-423, D-424) -->
+    <string name="mobile">شبكة الجوال</string>
+    <string name="mobile_card_off">اشتراك وخوادم خاصة خارج Wi-Fi</string>
+    <string name="mobile_card_no_profile">اختر اشتراكًا</string>
+    <string name="mobile_switch">التبديل حسب الشبكة</string>
+    <string name="mobile_switch_hint">خارج Wi-Fi يُستخدم ما في الأسفل</string>
+    <string name="mobile_wifi">Wi-Fi</string>
+    <string name="mobile_wifi_hint">كالمعتاد: %1$s</string>
+    <string name="mobile_wifi_none">كالمعتاد</string>
+    <string name="mobile_now">الآن</string>
+    <string name="mobile_profile">الاشتراك: %1$s</string>
+    <string name="mobile_profile_none">لم يُختر اشتراك</string>
+    <string name="mobile_nodes">الخوادم بالترتيب</string>
+    <string name="mobile_nodes_hint">يُستخدم أول خادم يستجيب. اسحب لتغيير الترتيب</string>
+    <string name="mobile_nodes_none">لم يُختر شيء: يبقى خادم الاشتراك نفسه</string>
+    <string name="mobile_nodes_pick">اختيار الخوادم</string>
+    <string name="mobile_node_missing">غير موجود في الاشتراك</string>
+    <string name="mobile_rule_pick">إذا اخترت خادمًا أو اشتراكًا بنفسك فسيبقى حتى التغيير التالي للشبكة</string>
+    <string name="mobile_rule_time">دون عجلة: يجب أن تستقر الشبكة نحو دقيقة، أو بضع ثوانٍ والشاشة مضاءة</string>
+    <string name="mobile_pick_profile">اشتراك لشبكة الجوال</string>
+    <string name="mobile_pick_nodes">خوادم لشبكة الجوال</string>
+    <string name="mobile_pick_nodes_hint">%1$s · ما تحدده يُضاف إلى نهاية القائمة</string>
+    <string name="mobile_pick_nodes_empty">لم يُعثر على خوادم في هذا الاشتراك</string>
+    <string name="mobile_no_profiles">أضف اشتراكًا أولًا</string>
+    <string name="hero_protected_mobile">VPN نشط · شبكة الجوال</string>
+    <plurals name="mobile_card_nodes">
+        <item quantity="zero">%1$s · %2$d خادم</item>
+        <item quantity="one">%1$s · خادم واحد</item>
+        <item quantity="two">%1$s · خادمان</item>
+        <item quantity="few">%1$s · %2$d خوادم</item>
+        <item quantity="many">%1$s · %2$d خادمًا</item>
+        <item quantity="other">%1$s · %2$d خادم</item>
+    </plurals>
 </resources>

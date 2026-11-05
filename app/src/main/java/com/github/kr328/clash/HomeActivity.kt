@@ -129,6 +129,8 @@ import com.github.kr328.clash.ui.probe.ProbeScreen
 import com.github.kr328.clash.ui.features.ConnectionsScreen
 import com.github.kr328.clash.ui.features.ConnectionsViewModel
 import com.github.kr328.clash.ui.features.ShareViewModel
+import com.github.kr328.clash.ui.features.MobileScreen
+import com.github.kr328.clash.ui.features.MobileViewModel
 import com.github.kr328.clash.ui.features.FeaturesScreen
 import com.github.kr328.clash.ui.bird.BirdScreen
 import com.github.kr328.clash.ui.probe.ProbeViewModel
@@ -206,6 +208,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
     private val probeViewModel: ProbeViewModel by viewModels()
     private val connectionsViewModel: ConnectionsViewModel by viewModels()
     private val shareViewModel: ShareViewModel by viewModels()
+    private val mobileViewModel: MobileViewModel by viewModels()
     private val appsViewModel: AppsViewModel by viewModels()
     private val logsViewModel: LogsViewModel by viewModels()
     private val configViewModel: ConfigViewModel by viewModels()
@@ -388,6 +391,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // «Возможности» and its «Подключения» (stage 15), over the tabs as settings are.
                 var showFeatures by rememberSaveable { mutableStateOf(false) }
                 var showConnections by rememberSaveable { mutableStateOf(false) }
+                // «Мобильная сеть» (D-423), over «Возможности» as «Подключения» is.
+                var showMobile by rememberSaveable { mutableStateOf(false) }
                 // Ducker Bird: the question after six taps on Home's title, then the game over everything.
                 var birdAsk by remember { mutableStateOf(false) }
                 var showBird by rememberSaveable { mutableStateOf(false) }
@@ -427,6 +432,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     if (showLogs) logsViewModel.start()
                     if (showProbe) probeViewModel.refresh()
                     if (showConnections) connectionsViewModel.start(this@HomeActivity)
+                    if (showMobile) mobileViewModel.start(this@HomeActivity)
                 }
 
                 // «Подробный журнал» выключается сам через сутки (D-224), а настройки читаются один
@@ -453,6 +459,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     connectionsViewModel.stop()
                 }
+                val closeMobile = {
+                    showMobile = false
+
+                    mobileViewModel.stop()
+                }
                 val closeFeatures = { showFeatures = false }
                 val closeBird = { showBird = false }
 
@@ -466,7 +477,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     // обрывала жест прямо под пальцем.
                     // На телевизоре «назад» ведёт по доку, см. ниже.
                     enabled = !tv && !showSettings && !showProbe && !showApps && !showLogs && !showRules && !showConfig &&
-                        !showFeatures && !showConnections && pagerState.settledPage != 0,
+                        !showFeatures && !showConnections && !showMobile && pagerState.settledPage != 0,
                 ) { events ->
                     val from = pagerState.settledPage
 
@@ -505,7 +516,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // «Раздача по Wi-Fi» goes off by itself when the network changes: its card asks while the page is open.
                 LaunchedEffect(showFeatures) {
                     if (showFeatures) shareViewModel.start() else shareViewModel.stop()
+
+                    // The card says what is set for the mobile network.
+                    if (showFeatures) mobileViewModel.load(this@HomeActivity)
                 }
+                val mobileState by mobileViewModel.state.collectAsState()
                 val appsState by appsViewModel.state.collectAsState()
                 val logsState by logsViewModel.state.collectAsState()
 
@@ -738,6 +753,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     showApps -> "apps"
                     showProbe -> "probe"
                     showConnections -> "connections"
+                    showMobile -> "mobile"
                     showFeatures -> "features"
                     showBird -> "bird"
                     showSettings -> "settings"
@@ -921,6 +937,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         showFeatures = false
 
                         if (showConnections) closeConnections()
+                        if (showMobile) closeMobile()
 
                         if (showApps) {
                             showApps = false
@@ -1448,10 +1465,16 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showFeatures,
                         onBack = closeFeatures,
-                        enabled = !showConnections,
+                        enabled = !showConnections && !showMobile,
                     ) {
                         FeaturesScreen(
                             share = shareState,
+                            mobile = mobileState,
+                            onMobile = {
+                                showMobile = true
+
+                                mobileViewModel.start(this@HomeActivity)
+                            },
                             onConnections = {
                                 showConnections = true
 
@@ -1477,6 +1500,22 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onSearch = { connectionsViewModel.search(it) },
                             onCloseAll = { connectionsViewModel.closeAll(this@HomeActivity) },
                             onBack = closeConnections,
+                            modifier = layerModifier(listInsets),
+                        )
+                    }
+
+                    BackLayer(
+                        visible = showMobile,
+                        onBack = closeMobile,
+                    ) {
+                        MobileScreen(
+                            state = mobileState,
+                            onTurn = { mobileViewModel.turn(it) },
+                            onProfile = { mobileViewModel.pickProfile(it) },
+                            onNodes = { mobileViewModel.setNodes(it) },
+                            onMove = { from, to -> mobileViewModel.move(from, to) },
+                            onMoved = { mobileViewModel.dropped() },
+                            onBack = closeMobile,
                             modifier = layerModifier(listInsets),
                         )
                     }
@@ -2208,6 +2247,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         subscriptionsViewModel.reportUpdateFailed(this, uuid, reason)
         viewModel.refresh(this@HomeActivity)
     }
+    override fun onSelectorChanged() {
+        viewModel.refresh(this)
+    }
+
     override fun onProfileLoaded() {
         refreshAll()
 

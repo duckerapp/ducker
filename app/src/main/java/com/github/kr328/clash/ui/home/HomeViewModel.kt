@@ -8,6 +8,7 @@ import com.github.kr328.clash.core.model.ProxySort
 import com.github.kr328.clash.core.model.TunnelState
 import com.github.kr328.clash.remote.Remote
 import com.github.kr328.clash.service.StopNotice
+import com.github.kr328.clash.service.model.MobileState
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.store.DelayStore
@@ -71,6 +72,10 @@ data class HomeState(
      * кладёт на диск: приложение могли открыть и после того, как включить не вышло с плитки.
      */
     val stopFailure: Failure? = null,
+    /** «Мобильная сеть» (D-423): its choice is in effect, and the hint under the title says so. */
+    val mobile: Boolean = false,
+    /** Its switch is on with a subscription chosen: the card keeps room for that longer hint. */
+    val mobileSet: Boolean = false,
 )
 
 /**
@@ -222,6 +227,14 @@ class HomeViewModel : ViewModel() {
 
             val lockdownAsync = async(Dispatchers.IO) { running && ServiceStore(context).lockdownOffline }
 
+            val mobileAsync = async(Dispatchers.IO) {
+                ServiceStore(context).let { store ->
+                    val set = store.mobileOn && store.mobileProfile != null
+
+                    (set && running && store.mobileShownNow != MobileState.Shown.None) to set
+                }
+            }
+
             val stopAsync = async(Dispatchers.IO) { if (running) "" else ServiceStore(context).stopReason }
 
             // Первый показ при выключенном туннеле — без ядра (аудит, perf 5.2): загрузку профиля
@@ -361,6 +374,8 @@ class HomeViewModel : ViewModel() {
                     linkError = if (running && !nodeChanged) it.linkError else "",
                     noneAnswered = running && !nodeChanged && it.noneAnswered,
                     lockdownOffline = lockdownAsync.await(),
+                    mobile = mobileAsync.await().first,
+                    mobileSet = mobileAsync.await().second,
                     stopFailure = stopAsync.await().takeIf { reason -> reason.isNotEmpty() }?.let(Failure::of),
                 )
             }

@@ -62,7 +62,8 @@ class StaticNotificationModule(service: Service) : Module<Unit>(service) {
         fun currentNode(): String = runCatching {
             val group = Clash.queryGroupNames(true).firstOrNull() ?: return ""
 
-            Clash.queryGroup(group, ProxySort.Default).now
+            // « · мобильная сеть» while the mobile choice is in effect: a quiet line instead of a notice (D-423).
+            Clash.queryGroup(group, ProxySort.Default).now.ifEmpty { return "" } + MobileModule.note
         }.getOrDefault("")
 
         fun notificationBuilder(service: Service): NotificationCompat.Builder =

@@ -619,4 +619,34 @@
         <item quantity="other">%d règles</item>
     </plurals>
     <string name="separator">" · "</string>
+    <!-- «Мобильная сеть» (D-423, D-424) -->
+    <string name="mobile">Réseau mobile</string>
+    <string name="mobile_card_off">Votre abonnement et vos serveurs hors Wi-Fi</string>
+    <string name="mobile_card_no_profile">Choisissez un abonnement</string>
+    <string name="mobile_switch">Changer selon le réseau</string>
+    <string name="mobile_switch_hint">Hors Wi-Fi, ce qui est ci-dessous s’applique</string>
+    <string name="mobile_wifi">Wi-Fi</string>
+    <string name="mobile_wifi_hint">Comme d’habitude : %1$s</string>
+    <string name="mobile_wifi_none">Comme d’habitude</string>
+    <string name="mobile_now">maintenant</string>
+    <string name="mobile_profile">Abonnement : %1$s</string>
+    <string name="mobile_profile_none">Aucun abonnement choisi</string>
+    <string name="mobile_nodes">Serveurs par ordre</string>
+    <string name="mobile_nodes_hint">Le premier qui répond est utilisé. Faites glisser pour changer l’ordre</string>
+    <string name="mobile_nodes_none">Aucun choisi : l’abonnement garde son propre serveur</string>
+    <string name="mobile_nodes_pick">Choisir les serveurs</string>
+    <string name="mobile_node_missing">Absent de l’abonnement</string>
+    <string name="mobile_rule_pick">Si vous choisissez vous-même un serveur ou un abonnement, il reste jusqu’au prochain changement de réseau</string>
+    <string name="mobile_rule_time">Sans hâte : le réseau doit tenir environ une minute, ou quelques secondes écran allumé</string>
+    <string name="mobile_pick_profile">Abonnement pour le réseau mobile</string>
+    <string name="mobile_pick_nodes">Serveurs pour le réseau mobile</string>
+    <string name="mobile_pick_nodes_hint">%1$s · les cochés vont en fin de liste</string>
+    <string name="mobile_pick_nodes_empty">Aucun serveur trouvé dans cet abonnement</string>
+    <string name="mobile_no_profiles">Ajoutez d’abord un abonnement</string>
+    <string name="hero_protected_mobile">Le VPN est actif · réseau mobile</string>
+    <plurals name="mobile_card_nodes">
+        <item quantity="one">%1$s · %2$d serveur</item>
+        <item quantity="many">%1$s · %2$d serveurs</item>
+        <item quantity="other">%1$s · %2$d serveurs</item>
+    </plurals>
 </resources>

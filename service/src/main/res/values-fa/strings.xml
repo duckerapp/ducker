@@ -52,4 +52,7 @@
     <string name="no_space">حافظهٔ گوشی پر شده است. کمی فضا آزاد کنید — اشتراک‌ها و تنظیمات شما سالم‌اند</string>
     <string name="subscription_web_page">به‌جای اشتراک یک صفحه وب رسید: ممکن است سایت مسدود باشد یا لینک به جای دیگری برود. بعداً دوباره تلاش کنید یا لینک را بررسی کنید</string>
     <string name="subscription_backups_failed">%1$s. آدرس‌های پشتیبان ارائه‌دهنده (%2$d) هم پاسخ ندادند</string>
+    <!-- After the node in the VPN notification, «Мобильная сеть» (D-423) -->
+    <string name="mobile_note">شبکه همراه</string>
+    <string name="mobile_note_silent">سرورهای فهرست پاسخ نمی‌دهند</string>
 </resources>
