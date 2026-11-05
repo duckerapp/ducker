@@ -34,6 +34,12 @@ class AppStore(context: Context) {
         defaultValue = "",
     )
 
+    /** Ducker Bird's record: the one thing the game keeps after it closes. */
+    var birdBest: Int by store.int(
+        key = "bird_best",
+        defaultValue = 0,
+    )
+
     companion object {
         private const val FILE_NAME = "app"
     }

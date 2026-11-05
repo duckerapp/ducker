@@ -190,6 +190,12 @@
     <string name="exit_vpn_off">VPN is off. You can open ducker again from the TV’s home screen.</string>
     <string name="exit_yes">Yes, close</string>
     <string name="exit_no">No, stay</string>
+    <string name="bird_title">Are you sure?</string>
+    <string name="bird_hint">The duck is already stretching its wings.</string>
+    <string name="bird_yes">Oh yes</string>
+    <string name="bird_no">No</string>
+    <string name="bird_tap">Tap to fly</string>
+    <string name="bird_best">Best: %1$s</string>
     <string name="link_none_answered">No node answered — this network seems to block them. Try switching between Wi-Fi and mobile data</string>
     <!-- Apps in the tunnel (stage 8.3) -->
     <string name="apps_mode_only">Via VPN</string>

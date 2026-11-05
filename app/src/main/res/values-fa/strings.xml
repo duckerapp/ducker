@@ -165,6 +165,12 @@
     <string name="exit_vpn_off">VPN خاموش است. می‌توانید ducker را دوباره از صفحهٔ اصلی تلویزیون باز کنید.</string>
     <string name="exit_yes">بله، بسته شود</string>
     <string name="exit_no">نه، بمان</string>
+    <string name="bird_title">مطمئنید؟</string>
+    <string name="bird_hint">اردک دارد بال‌هایش را باز می‌کند.</string>
+    <string name="bird_yes">اوه، بله</string>
+    <string name="bird_no">نه</string>
+    <string name="bird_tap">برای پرواز بزنید</string>
+    <string name="bird_best">رکورد: %1$s</string>
     <string name="link_none_answered">هیچ سروری پاسخ نداد — به نظر می‌رسد این شبکه آن‌ها را مسدود کرده است. بین Wi-Fi و اینترنت همراه جابه‌جا شوید</string>
     <string name="apps_mode_only">از طریق VPN</string>
     <string name="apps_mode_except">بدون VPN</string>

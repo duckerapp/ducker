@@ -165,6 +165,12 @@
     <string name="exit_vpn_off">VPN 已关闭。可以从电视主屏幕再次打开 ducker。</string>
     <string name="exit_yes">是，关闭</string>
     <string name="exit_no">否，留下</string>
+    <string name="bird_title">你确定吗？</string>
+    <string name="bird_hint">小鸭已经在舒展翅膀了。</string>
+    <string name="bird_yes">哦，当然</string>
+    <string name="bird_no">不了</string>
+    <string name="bird_tap">点击起飞</string>
+    <string name="bird_best">最高分：%1$s</string>
     <string name="link_none_answered">所有节点均无响应，当前网络似乎屏蔽了这些节点。请尝试切换 Wi-Fi 和移动数据</string>
     <string name="apps_mode_only">走 VPN</string>
     <string name="apps_mode_except">不走 VPN</string>

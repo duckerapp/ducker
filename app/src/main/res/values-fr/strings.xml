@@ -165,6 +165,12 @@
     <string name="exit_vpn_off">Le VPN est désactivé. Vous pouvez rouvrir ducker depuis l’écran d’accueil du téléviseur.</string>
     <string name="exit_yes">Oui, fermer</string>
     <string name="exit_no">Non, rester</string>
+    <string name="bird_title">Vous êtes sûr ?</string>
+    <string name="bird_hint">Le canard s’étire déjà les ailes.</string>
+    <string name="bird_yes">Oh oui</string>
+    <string name="bird_no">Non</string>
+    <string name="bird_tap">Appuyez pour voler</string>
+    <string name="bird_best">Record : %1$s</string>
     <string name="link_none_answered">Aucun serveur n’a répondu. Ce réseau semble les bloquer. Essayez de passer du Wi-Fi aux données mobiles, ou l’inverse</string>
     <string name="apps_mode_only">Via le VPN</string>
     <string name="apps_mode_except">Sans VPN</string>

@@ -130,6 +130,7 @@ import com.github.kr328.clash.ui.features.ConnectionsScreen
 import com.github.kr328.clash.ui.features.ConnectionsViewModel
 import com.github.kr328.clash.ui.features.ShareViewModel
 import com.github.kr328.clash.ui.features.FeaturesScreen
+import com.github.kr328.clash.ui.bird.BirdScreen
 import com.github.kr328.clash.ui.probe.ProbeViewModel
 import com.github.kr328.clash.ui.proxy.ProxyViewModel
 import com.github.kr328.clash.ui.subscriptions.AddSubscriptionDialog
@@ -169,6 +170,7 @@ import com.github.kr328.clash.util.openVendor
 import com.github.kr328.clash.util.backgroundAllowed
 import com.github.kr328.clash.util.Vendor
 import com.github.kr328.clash.store.TipsStore
+import com.github.kr328.clash.store.AppStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
@@ -386,6 +388,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // «Возможности» and its «Подключения» (stage 15), over the tabs as settings are.
                 var showFeatures by rememberSaveable { mutableStateOf(false) }
                 var showConnections by rememberSaveable { mutableStateOf(false) }
+                // Ducker Bird: the question after six taps on Home's title, then the game over everything.
+                var birdAsk by remember { mutableStateOf(false) }
+                var showBird by rememberSaveable { mutableStateOf(false) }
                 val subscriptionsState by subscriptionsViewModel.state.collectAsState()
                 // Панель правки, как и добавления, живёт в композиции, пока уезжает вниз (D-100).
                 var editShown by remember { mutableStateOf(false) }
@@ -449,6 +454,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     connectionsViewModel.stop()
                 }
                 val closeFeatures = { showFeatures = false }
+                val closeBird = { showBird = false }
 
                 // С дальних вкладок «назад» — это свайп на соседнюю вкладку: лента едет
                 // ровно за пальцем, отпустил — доезжает (D-91). С главной — выход из
@@ -733,6 +739,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     showProbe -> "probe"
                     showConnections -> "connections"
                     showFeatures -> "features"
+                    showBird -> "bird"
                     showSettings -> "settings"
                     else -> null
                 }
@@ -767,6 +774,21 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             moveTaskToBack(true)
                         },
                         onStay = { exitAsk = false },
+                    )
+                }
+
+                if (birdAsk) {
+                    LeaveSheet(
+                        title = stringResource(R.string.bird_title),
+                        hint = stringResource(R.string.bird_hint),
+                        leave = stringResource(R.string.bird_yes),
+                        stay = stringResource(R.string.bird_no),
+                        danger = false,
+                        onLeave = {
+                            birdAsk = false
+                            showBird = true
+                        },
+                        onStay = { birdAsk = false },
                     )
                 }
 
@@ -1153,6 +1175,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         },
                                         onUpdatedSeen = Updater::acknowledged,
                                         onFeatures = { showFeatures = true },
+                                        onBird = { birdAsk = true },
                                         onChooseSubscription = {
                                             tvTarget = 2
                                             paging?.cancel()
@@ -1456,6 +1479,18 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onBack = closeConnections,
                             modifier = layerModifier(listInsets),
                         )
+                    }
+
+                    // Edge to edge, its own colours and its own arrow: no frame and no fade at the bottom.
+                    BackLayer(
+                        visible = showBird,
+                        onBack = closeBird,
+                        frameContent = false,
+                        fade = false,
+                    ) {
+                        val store = remember { AppStore(this@HomeActivity) }
+
+                        BirdScreen(best = store.birdBest, onBest = { store.birdBest = it }, onBack = closeBird)
                     }
                 }
 

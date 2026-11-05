@@ -165,6 +165,12 @@
     <string name="exit_vpn_off">VPN mati. Anda bisa membuka ducker lagi dari layar utama TV.</string>
     <string name="exit_yes">Ya, tutup</string>
     <string name="exit_no">Tidak, tetap di sini</string>
+    <string name="bird_title">Anda yakin?</string>
+    <string name="bird_hint">Bebeknya sudah meregangkan sayap.</string>
+    <string name="bird_yes">Oh, ya</string>
+    <string name="bird_no">Tidak</string>
+    <string name="bird_tap">Ketuk untuk terbang</string>
+    <string name="bird_best">Rekor: %1$s</string>
     <string name="link_none_answered">Tidak ada server yang merespons, sepertinya jaringan ini memblokirnya. Coba beralih antara Wi-Fi dan data seluler</string>
     <string name="apps_mode_only">Melalui VPN</string>
     <string name="apps_mode_except">Tanpa VPN</string>

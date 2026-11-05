@@ -1,5 +1,8 @@
 package com.github.kr328.clash.ui.home
 
+import android.os.Build
+import android.os.SystemClock
+import android.view.HapticFeedbackConstants
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.Symbols
@@ -39,6 +42,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.runtime.rememberUpdatedState
@@ -121,6 +125,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -265,6 +270,8 @@ fun HomeScreen(
     onUpdatedSeen: () -> Unit = {},
     /** «Возможности» (stage 15): the page of tools behind the pill under the subscription card. */
     onFeatures: () -> Unit = {},
+    /** Six quick taps on the header's title: Ducker Bird, the easter egg. */
+    onBird: (() -> Unit)? = null,
 ) {
     // The cards about the app's own version are the same with and without a subscription.
     val appCards: (@Composable () -> Unit)? = if (update == null && updated == null) null else {
@@ -276,7 +283,7 @@ fun HomeScreen(
     // мягкая: после первой подписки главная проявляется на месте приветствия.
     Crossfade(targetState = onboarding, animationSpec = tween(ONBOARDING_MS), label = "onboarding") { first ->
         if (first) {
-            Welcome(onSettings, header, appCards, outOfSpace, modifier)
+            Welcome(onSettings, onBird, header, appCards, outOfSpace, modifier)
         } else {
             HomeRegular(
                 state = state,
@@ -307,6 +314,7 @@ fun HomeScreen(
                 onCopyError = onCopyError,
                 appCards = appCards,
                 onFeatures = onFeatures,
+                onBird = onBird,
                 modifier = modifier,
             )
         }
@@ -320,6 +328,7 @@ fun HomeScreen(
 @Composable
 private fun Welcome(
     onSettings: () -> Unit,
+    onBird: (() -> Unit)?,
     header: Boolean,
     appCards: (@Composable () -> Unit)?,
     outOfSpace: Boolean,
@@ -330,7 +339,7 @@ private fun Welcome(
             .screenInsets()
             .padding(horizontal = 16.dp, vertical = 12.dp + tvEdge()),
     ) {
-        if (header) BrandHeader(null, onSettings)
+        if (header) BrandHeader(null, onSettings, onBird)
 
         // A new version matters before the first subscription too: whoever got an old file
         // from a friend should update before setting anything up. The notification cannot
@@ -414,6 +423,7 @@ private fun HomeRegular(
     onCopyError: (String) -> Unit,
     appCards: (@Composable () -> Unit)?,
     onFeatures: () -> Unit,
+    onBird: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val profile = state.profile
@@ -488,7 +498,7 @@ private fun HomeRegular(
                 .padding(horizontal = 16.dp, vertical = (if (tight) 0.dp else 12.dp) + tvEdge()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            if (header) BrandHeader(profile, onSettings)
+            if (header) BrandHeader(profile, onSettings, onBird)
 
             if (profile != null && profile.hwidBlocked) {
                 LimitCard(profile, onSupport, onRefresh)
@@ -677,13 +687,13 @@ private fun HomeSkeleton(compact: Boolean) {
 }
 
 @Composable
-private fun BrandHeader(profile: Profile?, onSettings: () -> Unit) {
+private fun BrandHeader(profile: Profile?, onSettings: () -> Unit, onBird: (() -> Unit)?) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
     ) {
-        BrandTitle(profile)
+        BrandTitle(profile, onBird)
 
         // Side by side, each a whole 48 dp target (Q-106): with the theme button 6 dp over the settings one, it took
         // touches on 42 dp only.
@@ -702,7 +712,7 @@ private fun BrandHeader(profile: Profile?, onSettings: () -> Unit) {
 
 /** Марка в шапке: значок и название провайдера или наша. Занимает всё свободное место строки. */
 @Composable
-internal fun RowScope.BrandTitle(profile: Profile?) {
+internal fun RowScope.BrandTitle(profile: Profile?, onBird: (() -> Unit)? = null) {
     // Шапку задаёт только `ducker-brand-name` — заголовок, который провайдер ставит
     // осознанно для этого приложения. `profile-title` сюда не годится: панель задаёт
     // его глобально для всех клиентов, и убрать его правилом нельзя (D-67).
@@ -717,16 +727,63 @@ internal fun RowScope.BrandTitle(profile: Profile?) {
     // Two steps of the type scale larger on a TV: above the dock, seen from the sofa, the phone's size read small.
     val style = if (LocalTv.current) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineSmall
 
+    // A provider's name counts too: the egg is the app's, and their people would never find it otherwise.
+    val taps = birdTaps(onBird)
+
     if (brand != null) {
-        BrandName(brand, style.copy(fontWeight = FontWeight.Bold), Modifier.weight(1f))
+        BrandName(brand, style.copy(fontWeight = FontWeight.Bold), Modifier.weight(1f), taps)
     } else {
-        Wordmark(style, Modifier.weight(1f))
+        Wordmark(style, Modifier.weight(1f), taps)
     }
 }
 
+/**
+ * Six quick taps open Ducker Bird ([onBird]), each one felt harder than the last: the system's touch feedback, no
+ * permission to vibrate — so nothing with touch feedback turned off. A longer pause than [TAP_PAUSE_MS] starts over.
+ * No ripple and nothing for TalkBack: the title does not look like a button.
+ */
+@Composable
+private fun birdTaps(onBird: (() -> Unit)?): Modifier {
+    if (onBird == null) return Modifier
+
+    val view = LocalView.current
+    val open by rememberUpdatedState(onBird)
+
+    return Modifier.pointerInput(Unit) {
+        var count = 0
+        var last = 0L
+
+        detectTapGestures {
+            val now = SystemClock.uptimeMillis()
+
+            count = if (now - last <= TAP_PAUSE_MS) count + 1 else 1
+            last = now
+
+            view.performHapticFeedback(TAP_FEEDBACK[count - 1])
+
+            if (count == TAP_FEEDBACK.size) {
+                count = 0
+                open()
+            }
+        }
+    }
+}
+
+/** From the faintest tick to the double knock, by AOSP's mapping; a maker's own mapping may order the middle ones differently. */
+private val TAP_FEEDBACK = intArrayOf(
+    HapticFeedbackConstants.CLOCK_TICK,
+    HapticFeedbackConstants.CONTEXT_CLICK,
+    HapticFeedbackConstants.KEYBOARD_TAP,
+    HapticFeedbackConstants.VIRTUAL_KEY,
+    HapticFeedbackConstants.LONG_PRESS,
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS,
+)
+
+private const val TAP_PAUSE_MS = 1000L
+
 /** A provider's name in the header's room, sized and broken by [fitBrand]. */
 @Composable
-private fun BrandName(name: String, style: TextStyle, modifier: Modifier) {
+private fun BrandName(name: String, style: TextStyle, modifier: Modifier, taps: Modifier) {
     val measurer = rememberTextMeasurer()
 
     BoxWithConstraints(modifier) {
@@ -743,6 +800,7 @@ private fun BrandName(name: String, style: TextStyle, modifier: Modifier) {
             style = style.copy(fontSize = style.fontSize * scale, lineHeight = style.lineHeight * scale),
             maxLines = if ('\n' in fit.text) 2 else 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = taps,
         )
     }
 }
@@ -795,16 +853,19 @@ private val BRAND_FLOOR = 16.sp
  * написано — в чёрно-белом стиле это единственный способ сделать шапку заметной.
  */
 @Composable
-private fun Wordmark(style: TextStyle, modifier: Modifier = Modifier) {
-    Text(
-        text = "DUCKER",
-        modifier = modifier,
-        style = style,
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Black,
-        letterSpacing = 0.14.em,
-        maxLines = 1,
-    )
+private fun Wordmark(style: TextStyle, modifier: Modifier = Modifier, taps: Modifier = Modifier) {
+    // The room around the word is not part of it: only the word takes the taps.
+    Box(modifier) {
+        Text(
+            text = "DUCKER",
+            modifier = taps,
+            style = style,
+            fontFamily = FontFamily.Default,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 0.14.em,
+            maxLines = 1,
+        )
+    }
 }
 
 /**

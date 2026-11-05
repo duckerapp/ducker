@@ -165,6 +165,12 @@
     <string name="exit_vpn_off">A VPN está desligada. Você pode abrir o ducker de novo pela tela inicial da TV.</string>
     <string name="exit_yes">Sim, fechar</string>
     <string name="exit_no">Não, ficar</string>
+    <string name="bird_title">Tem certeza?</string>
+    <string name="bird_hint">O pato já está esticando as asas.</string>
+    <string name="bird_yes">Ah, sim</string>
+    <string name="bird_no">Não</string>
+    <string name="bird_tap">Toque para voar</string>
+    <string name="bird_best">Recorde: %1$s</string>
     <string name="link_none_answered">Nenhum servidor respondeu: parece que esta rede os bloqueia. Tente alternar entre Wi-Fi e dados móveis</string>
     <string name="apps_mode_only">Pela VPN</string>
     <string name="apps_mode_except">Sem VPN</string>
