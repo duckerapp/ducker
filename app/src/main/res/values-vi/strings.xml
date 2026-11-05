@@ -211,7 +211,7 @@
     <string name="lock_prompt_title">Xác nhận đó là bạn</string>
     <string name="features">Tính năng</string>
     <string name="connections">Kết nối</string>
-    <string name="connections_hint">Ứng dụng nào kết nối đến đâu, trực tiếp</string>
+    <string name="connections_hint">Ứng dụng nào kết nối đến đâu</string>
     <plurals name="connections_count">
         <item quantity="other">%1$s kết nối</item>
     </plurals>
@@ -616,13 +616,12 @@
     <string name="mobile_profile">Gói đăng ký: %1$s</string>
     <string name="mobile_profile_none">Chưa chọn gói đăng ký</string>
     <string name="mobile_nodes">Máy chủ theo thứ tự</string>
-    <string name="mobile_nodes_hint">Dùng máy chủ đầu tiên phản hồi. Kéo để đổi thứ tự</string>
+    <string name="mobile_nodes_hint">Dùng máy chủ đầu tiên phản hồi</string>
     <string name="mobile_nodes_none">Chưa chọn: gói đăng ký giữ máy chủ của nó</string>
     <string name="mobile_nodes_pick">Chọn máy chủ</string>
     <string name="mobile_node_missing">Không có trong gói đăng ký</string>
     <string name="mobile_rule_pick">Nếu bạn tự chọn máy chủ hoặc gói đăng ký, lựa chọn đó giữ nguyên đến lần đổi mạng tiếp theo</string>
     <string name="mobile_rule_time">Không vội: mạng cần ổn định khoảng một phút, hoặc vài giây khi màn hình bật</string>
-    <string name="mobile_pick_profile">Gói đăng ký cho mạng di động</string>
     <string name="mobile_pick_nodes">Máy chủ cho mạng di động</string>
     <string name="mobile_pick_nodes_hint">%1$s · mục đã chọn sẽ thêm vào cuối danh sách</string>
     <string name="mobile_pick_nodes_empty">Không tìm thấy máy chủ trong gói đăng ký này</string>

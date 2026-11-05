@@ -211,7 +211,7 @@
     <string name="lock_prompt_title">Confirme que é você</string>
     <string name="features">Recursos</string>
     <string name="connections">Conexões</string>
-    <string name="connections_hint">Quais apps se conectam e para onde, ao vivo</string>
+    <string name="connections_hint">Quais apps se conectam e para onde</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s conexão</item>
         <item quantity="many">%1$s conexões</item>
@@ -632,13 +632,12 @@
     <string name="mobile_profile">Assinatura: %1$s</string>
     <string name="mobile_profile_none">Nenhuma assinatura escolhida</string>
     <string name="mobile_nodes">Servidores em ordem</string>
-    <string name="mobile_nodes_hint">Usa o primeiro que responder. Arraste para mudar a ordem</string>
+    <string name="mobile_nodes_hint">Usa o primeiro que responder</string>
     <string name="mobile_nodes_none">Nenhum escolhido: a assinatura mantém o próprio servidor</string>
     <string name="mobile_nodes_pick">Escolher servidores</string>
     <string name="mobile_node_missing">Não está na assinatura</string>
     <string name="mobile_rule_pick">Se você escolher um servidor ou uma assinatura, a escolha fica até a próxima troca de rede</string>
     <string name="mobile_rule_time">Sem pressa: a rede precisa se manter por cerca de um minuto, ou alguns segundos com a tela ligada</string>
-    <string name="mobile_pick_profile">Assinatura para a rede móvel</string>
     <string name="mobile_pick_nodes">Servidores para a rede móvel</string>
     <string name="mobile_pick_nodes_hint">%1$s · os marcados vão para o fim da lista</string>
     <string name="mobile_pick_nodes_empty">Nenhum servidor encontrado nesta assinatura</string>

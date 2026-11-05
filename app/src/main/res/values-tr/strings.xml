@@ -211,7 +211,7 @@
     <string name="lock_prompt_title">Siz olduğunuzu doğrulayın</string>
     <string name="features">Özellikler</string>
     <string name="connections">Bağlantılar</string>
-    <string name="connections_hint">Hangi uygulama nereye bağlanıyor, canlı</string>
+    <string name="connections_hint">Hangi uygulama nereye bağlanıyor</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s bağlantı</item>
         <item quantity="other">%1$s bağlantı</item>
@@ -624,13 +624,12 @@
     <string name="mobile_profile">Abonelik: %1$s</string>
     <string name="mobile_profile_none">Abonelik seçilmedi</string>
     <string name="mobile_nodes">Sırayla sunucular</string>
-    <string name="mobile_nodes_hint">Yanıt veren ilk sunucu kullanılır. Sırayı değiştirmek için sürükleyin</string>
+    <string name="mobile_nodes_hint">Yanıt veren ilk sunucu kullanılır</string>
     <string name="mobile_nodes_none">Seçilmedi: aboneliğin kendi sunucusu kalır</string>
     <string name="mobile_nodes_pick">Sunucuları seç</string>
     <string name="mobile_node_missing">Abonelikte yok</string>
     <string name="mobile_rule_pick">Sunucuyu veya aboneliği kendiniz seçerseniz, bir sonraki ağ değişikliğine kadar öyle kalır</string>
     <string name="mobile_rule_time">Acele yok: ağ yaklaşık bir dakika dayanmalı, ekran açıkken birkaç saniye</string>
-    <string name="mobile_pick_profile">Mobil ağ için abonelik</string>
     <string name="mobile_pick_nodes">Mobil ağ için sunucular</string>
     <string name="mobile_pick_nodes_hint">%1$s · işaretlenenler listenin sonuna eklenir</string>
     <string name="mobile_pick_nodes_empty">Bu abonelikte sunucu bulunamadı</string>

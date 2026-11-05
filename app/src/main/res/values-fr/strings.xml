@@ -211,7 +211,7 @@
     <string name="lock_prompt_title">Confirmez votre identité</string>
     <string name="features">Fonctions</string>
     <string name="connections">Connexions</string>
-    <string name="connections_hint">Quelles applis se connectent où, en direct</string>
+    <string name="connections_hint">Quelles applis se connectent où</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s connexion</item>
         <item quantity="many">%1$s connexions</item>
@@ -632,13 +632,12 @@
     <string name="mobile_profile">Abonnement : %1$s</string>
     <string name="mobile_profile_none">Aucun abonnement choisi</string>
     <string name="mobile_nodes">Serveurs par ordre</string>
-    <string name="mobile_nodes_hint">Le premier qui répond est utilisé. Faites glisser pour changer l’ordre</string>
+    <string name="mobile_nodes_hint">Le premier qui répond est utilisé</string>
     <string name="mobile_nodes_none">Aucun choisi : l’abonnement garde son propre serveur</string>
     <string name="mobile_nodes_pick">Choisir les serveurs</string>
     <string name="mobile_node_missing">Absent de l’abonnement</string>
     <string name="mobile_rule_pick">Si vous choisissez vous-même un serveur ou un abonnement, il reste jusqu’au prochain changement de réseau</string>
     <string name="mobile_rule_time">Sans hâte : le réseau doit tenir environ une minute, ou quelques secondes écran allumé</string>
-    <string name="mobile_pick_profile">Abonnement pour le réseau mobile</string>
     <string name="mobile_pick_nodes">Serveurs pour le réseau mobile</string>
     <string name="mobile_pick_nodes_hint">%1$s · les cochés vont en fin de liste</string>
     <string name="mobile_pick_nodes_empty">Aucun serveur trouvé dans cet abonnement</string>

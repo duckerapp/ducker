@@ -211,7 +211,7 @@
     <string name="lock_prompt_title">Konfirmasi bahwa ini Anda</string>
     <string name="features">Fitur</string>
     <string name="connections">Koneksi</string>
-    <string name="connections_hint">Aplikasi mana terhubung ke mana, langsung</string>
+    <string name="connections_hint">Aplikasi mana terhubung ke mana</string>
     <plurals name="connections_count">
         <item quantity="other">%1$s koneksi</item>
     </plurals>
@@ -616,13 +616,12 @@
     <string name="mobile_profile">Langganan: %1$s</string>
     <string name="mobile_profile_none">Belum ada langganan dipilih</string>
     <string name="mobile_nodes">Server berurutan</string>
-    <string name="mobile_nodes_hint">Server pertama yang merespons dipakai. Seret untuk mengubah urutan</string>
+    <string name="mobile_nodes_hint">Server pertama yang merespons dipakai</string>
     <string name="mobile_nodes_none">Belum dipilih: langganan memakai servernya sendiri</string>
     <string name="mobile_nodes_pick">Pilih server</string>
     <string name="mobile_node_missing">Tidak ada di langganan</string>
     <string name="mobile_rule_pick">Jika Anda memilih server atau langganan sendiri, pilihan itu bertahan sampai jaringan berganti lagi</string>
     <string name="mobile_rule_time">Tanpa terburu-buru: jaringan harus bertahan sekitar satu menit, atau beberapa detik saat layar menyala</string>
-    <string name="mobile_pick_profile">Langganan untuk jaringan seluler</string>
     <string name="mobile_pick_nodes">Server untuk jaringan seluler</string>
     <string name="mobile_pick_nodes_hint">%1$s · yang dicentang masuk ke akhir daftar</string>
     <string name="mobile_pick_nodes_empty">Tidak ada server di langganan ini</string>

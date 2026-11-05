@@ -238,7 +238,7 @@
     <string name="lock_prompt_title">Confirm it\'s you</string>
     <string name="features">Features</string>
     <string name="connections">Connections</string>
-    <string name="connections_hint">Which apps connect where, live</string>
+    <string name="connections_hint">Which apps connect where</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s connection</item>
         <item quantity="other">%1$s connections</item>
@@ -661,13 +661,12 @@
     <string name="mobile_profile">Subscription: %1$s</string>
     <string name="mobile_profile_none">No subscription chosen</string>
     <string name="mobile_nodes">Servers in order</string>
-    <string name="mobile_nodes_hint">The first one that answers is used. Drag to change the order</string>
+    <string name="mobile_nodes_hint">The first one that answers is used</string>
     <string name="mobile_nodes_none">None chosen: the subscription keeps its own server</string>
     <string name="mobile_nodes_pick">Choose servers</string>
     <string name="mobile_node_missing">Not in the subscription</string>
     <string name="mobile_rule_pick">If you pick a server or subscription yourself, it stays until the network changes again</string>
     <string name="mobile_rule_time">No rush: the network has to hold for about a minute, or a few seconds with the screen on</string>
-    <string name="mobile_pick_profile">Subscription for mobile network</string>
     <string name="mobile_pick_nodes">Servers for mobile network</string>
     <string name="mobile_pick_nodes_hint">%1$s · ticked ones go to the end of the list</string>
     <string name="mobile_pick_nodes_empty">No servers found in this subscription</string>

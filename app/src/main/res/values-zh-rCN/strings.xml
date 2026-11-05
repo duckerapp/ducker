@@ -211,7 +211,7 @@
     <string name="lock_prompt_title">请确认是您本人</string>
     <string name="features">更多功能</string>
     <string name="connections">连接</string>
-    <string name="connections_hint">实时查看哪些应用连接到了哪里</string>
+    <string name="connections_hint">查看哪些应用连接到了哪里</string>
     <plurals name="connections_count">
         <item quantity="other">%1$s 个连接</item>
     </plurals>
@@ -616,13 +616,12 @@
     <string name="mobile_profile">订阅：%1$s</string>
     <string name="mobile_profile_none">未选择订阅</string>
     <string name="mobile_nodes">节点顺序</string>
-    <string name="mobile_nodes_hint">使用第一个有响应的节点。拖动以调整顺序</string>
+    <string name="mobile_nodes_hint">使用第一个有响应的节点</string>
     <string name="mobile_nodes_none">未选择：保留订阅中选中的节点</string>
     <string name="mobile_nodes_pick">选择节点</string>
     <string name="mobile_node_missing">订阅中没有此节点</string>
     <string name="mobile_rule_pick">手动选择的节点或订阅会保持到下次网络切换</string>
     <string name="mobile_rule_time">不着急：网络需稳定约一分钟，亮屏时只需几秒</string>
-    <string name="mobile_pick_profile">移动网络使用的订阅</string>
     <string name="mobile_pick_nodes">移动网络使用的节点</string>
     <string name="mobile_pick_nodes_hint">%1$s · 勾选的节点会加到列表末尾</string>
     <string name="mobile_pick_nodes_empty">此订阅中未找到节点</string>

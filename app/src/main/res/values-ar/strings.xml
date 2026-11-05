@@ -211,7 +211,7 @@
     <string name="lock_prompt_title">أكّد أنك أنت</string>
     <string name="features">المزايا</string>
     <string name="connections">الاتصالات</string>
-    <string name="connections_hint">أي التطبيقات تتصل وإلى أين، مباشرةً</string>
+    <string name="connections_hint">أي التطبيقات تتصل وإلى أين</string>
     <plurals name="connections_count">
         <item quantity="zero">%1$s اتصال</item>
         <item quantity="one">اتصال واحد</item>
@@ -656,13 +656,12 @@
     <string name="mobile_profile">الاشتراك: %1$s</string>
     <string name="mobile_profile_none">لم يُختر اشتراك</string>
     <string name="mobile_nodes">الخوادم بالترتيب</string>
-    <string name="mobile_nodes_hint">يُستخدم أول خادم يستجيب. اسحب لتغيير الترتيب</string>
+    <string name="mobile_nodes_hint">يُستخدم أول خادم يستجيب</string>
     <string name="mobile_nodes_none">لم يُختر شيء: يبقى خادم الاشتراك نفسه</string>
     <string name="mobile_nodes_pick">اختيار الخوادم</string>
     <string name="mobile_node_missing">غير موجود في الاشتراك</string>
     <string name="mobile_rule_pick">إذا اخترت خادمًا أو اشتراكًا بنفسك فسيبقى حتى التغيير التالي للشبكة</string>
     <string name="mobile_rule_time">دون عجلة: يجب أن تستقر الشبكة نحو دقيقة، أو بضع ثوانٍ والشاشة مضاءة</string>
-    <string name="mobile_pick_profile">اشتراك لشبكة الجوال</string>
     <string name="mobile_pick_nodes">خوادم لشبكة الجوال</string>
     <string name="mobile_pick_nodes_hint">%1$s · ما تحدده يُضاف إلى نهاية القائمة</string>
     <string name="mobile_pick_nodes_empty">لم يُعثر على خوادم في هذا الاشتراك</string>

@@ -227,7 +227,7 @@
     <string name="lock_prompt_title">Подтвердите, что это вы</string>
     <string name="features">Возможности</string>
     <string name="connections">Подключения</string>
-    <string name="connections_hint">Какие приложения куда подключаются — вживую</string>
+    <string name="connections_hint">Какие приложения куда подключаются</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s подключение</item>
         <item quantity="few">%1$s подключения</item>
@@ -662,13 +662,12 @@
     <string name="mobile_profile">Подписка: %1$s</string>
     <string name="mobile_profile_none">Подписка не выбрана</string>
     <string name="mobile_nodes">Узлы по порядку</string>
-    <string name="mobile_nodes_hint">Включится первый, который отвечает. Порядок — перетаскиванием</string>
+    <string name="mobile_nodes_hint">Включится первый, который отвечает</string>
     <string name="mobile_nodes_none">Не выбраны — останется узел, выбранный в подписке</string>
     <string name="mobile_nodes_pick">Выбрать узлы</string>
     <string name="mobile_node_missing">Нет в подписке</string>
     <string name="mobile_rule_pick">Выбрали узел или подписку сами — ваш выбор останется до следующей смены сети</string>
     <string name="mobile_rule_time">Без спешки: сеть должна продержаться около минуты. Включили экран — через несколько секунд</string>
-    <string name="mobile_pick_profile">Подписка для мобильной сети</string>
     <string name="mobile_pick_nodes">Узлы для мобильной сети</string>
     <string name="mobile_pick_nodes_hint">%1$s · отмеченные встанут в конец списка</string>
     <string name="mobile_pick_nodes_empty">В этой подписке не нашлось узлов</string>

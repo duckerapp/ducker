@@ -211,7 +211,7 @@
     <string name="lock_prompt_title">تأیید کنید که خودتان هستید</string>
     <string name="features">امکانات</string>
     <string name="connections">اتصال‌ها</string>
-    <string name="connections_hint">کدام برنامه به کجا وصل می‌شود، زنده</string>
+    <string name="connections_hint">کدام برنامه به کجا وصل می‌شود</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s اتصال</item>
         <item quantity="other">%1$s اتصال</item>
@@ -624,13 +624,12 @@
     <string name="mobile_profile">اشتراک: %1$s</string>
     <string name="mobile_profile_none">اشتراکی انتخاب نشده</string>
     <string name="mobile_nodes">سرورها به ترتیب</string>
-    <string name="mobile_nodes_hint">نخستین سروری که پاسخ دهد به کار می‌رود. برای تغییر ترتیب بکشید</string>
+    <string name="mobile_nodes_hint">نخستین سروری که پاسخ دهد به کار می‌رود</string>
     <string name="mobile_nodes_none">انتخاب نشده: سرور خود اشتراک می‌ماند</string>
     <string name="mobile_nodes_pick">انتخاب سرورها</string>
     <string name="mobile_node_missing">در اشتراک نیست</string>
     <string name="mobile_rule_pick">اگر خودتان سرور یا اشتراکی انتخاب کنید، تا تغییر بعدی شبکه می‌ماند</string>
     <string name="mobile_rule_time">بی‌شتاب: شبکه باید حدود یک دقیقه پایدار بماند، یا چند ثانیه وقتی صفحه روشن است</string>
-    <string name="mobile_pick_profile">اشتراک برای شبکه همراه</string>
     <string name="mobile_pick_nodes">سرورها برای شبکه همراه</string>
     <string name="mobile_pick_nodes_hint">%1$s · موارد علامت‌خورده به انتهای فهرست می‌روند</string>
     <string name="mobile_pick_nodes_empty">در این اشتراک سروری پیدا نشد</string>

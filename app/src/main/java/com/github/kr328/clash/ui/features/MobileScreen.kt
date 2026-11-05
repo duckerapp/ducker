@@ -428,7 +428,7 @@ private fun ProfileSheet(
 
     DuckerSheet(
         open = open,
-        title = stringResource(R.string.mobile_pick_profile),
+        title = stringResource(R.string.mobile),
         hint = if (state.profiles.isEmpty()) stringResource(R.string.mobile_no_profiles) else null,
         busy = false,
         onDismiss = done,
