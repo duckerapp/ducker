@@ -159,7 +159,9 @@ fun ConnectionsScreen(
         }
 
         items(state.rows, key = { it.id }) { row ->
-            ConnectionCard(row, onClick = { onPick(row) }, modifier = Modifier.animateItem())
+            // No fade: a fading item draws in a layer cut to its bounds, and the Air shadow under it came in with a jump at
+            // the end, as on «Прокси».
+            ConnectionCard(row, onClick = { onPick(row) }, modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null))
         }
     }
 }
