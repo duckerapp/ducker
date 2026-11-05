@@ -99,4 +99,10 @@ interface IClashManager {
 
     /** “Очистить”: the service's copy too, or an evicted interface would read the lines again. */
     fun clearLogs()
+
+    /** «Подключения» (stage 15): the core's open connections, read about once a second while the page is open. */
+    fun queryConnections(): List<Connection>
+
+    /** «Сбросить все» on «Подключения»: every connection is closed, apps open new ones by the current rules. */
+    fun closeAllConnections()
 }

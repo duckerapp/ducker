@@ -126,6 +126,9 @@ import com.github.kr328.clash.ui.logs.LogsScreen
 import com.github.kr328.clash.ui.logs.LogsViewModel
 import com.github.kr328.clash.ui.apps.AppsViewModel
 import com.github.kr328.clash.ui.probe.ProbeScreen
+import com.github.kr328.clash.ui.features.ConnectionsScreen
+import com.github.kr328.clash.ui.features.ConnectionsViewModel
+import com.github.kr328.clash.ui.features.FeaturesScreen
 import com.github.kr328.clash.ui.probe.ProbeViewModel
 import com.github.kr328.clash.ui.proxy.ProxyViewModel
 import com.github.kr328.clash.ui.subscriptions.AddSubscriptionDialog
@@ -198,14 +201,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
     private val subscriptionsViewModel: SubscriptionsViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
     private val probeViewModel: ProbeViewModel by viewModels()
+    private val connectionsViewModel: ConnectionsViewModel by viewModels()
     private val appsViewModel: AppsViewModel by viewModels()
     private val logsViewModel: LogsViewModel by viewModels()
     private val configViewModel: ConfigViewModel by viewModels()
 
-    /** Кнопка «Подключиться» нажата без подписки — открыть вкладку подписок с окном добавления. */
-    private val needSubscription = mutableStateOf(false)
-
-    /** Открыли уведомлением о новой версии — показать панель обновления. */
     /** Stage 15's lock before the subscription link and the config. */
     private val lock = SensitiveLock(this)
 
@@ -213,6 +213,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
     private fun guard(@StringRes reason: Int, action: () -> Unit) =
         lock.guard(SettingsStore(this).lockSensitive, reason, action)
 
+    /** Кнопка «Подключиться» нажата без подписки — открыть вкладку подписок с окном добавления. */
+    private val needSubscription = mutableStateOf(false)
+
+    /** Открыли уведомлением о новой версии — показать панель обновления. */
     private val updateRequest = mutableStateOf(false)
 
     /** Запрос разрешения VPN ждёт, пока панель перед ним не отпустят (`askVpn`). */
@@ -377,6 +381,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 var showProbe by rememberSaveable { mutableStateOf(false) }
+                // «Возможности» and its «Подключения» (stage 15), over the tabs as settings are.
+                var showFeatures by rememberSaveable { mutableStateOf(false) }
+                var showConnections by rememberSaveable { mutableStateOf(false) }
                 val subscriptionsState by subscriptionsViewModel.state.collectAsState()
                 // Панель правки, как и добавления, живёт в композиции, пока уезжает вниз (D-100).
                 var editShown by remember { mutableStateOf(false) }
@@ -412,6 +419,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     if (showApps && appsViewModel.state.value.loading) appsViewModel.load(this@HomeActivity)
                     if (showLogs) logsViewModel.start()
                     if (showProbe) probeViewModel.refresh()
+                    if (showConnections) connectionsViewModel.start(this@HomeActivity)
                 }
 
                 // «Подробный журнал» выключается сам через сутки (D-224), а настройки читаются один
@@ -433,6 +441,12 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     logsViewModel.stop()
                 }
                 val closeProbe = { showProbe = false }
+                val closeConnections = {
+                    showConnections = false
+
+                    connectionsViewModel.stop()
+                }
+                val closeFeatures = { showFeatures = false }
 
                 // С дальних вкладок «назад» — это свайп на соседнюю вкладку: лента едет
                 // ровно за пальцем, отпустил — доезжает (D-91). С главной — выход из
@@ -444,7 +458,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     // обрывала жест прямо под пальцем.
                     // На телевизоре «назад» ведёт по доку, см. ниже.
                     enabled = !tv && !showSettings && !showProbe && !showApps && !showLogs && !showRules && !showConfig &&
-                        pagerState.settledPage != 0,
+                        !showFeatures && !showConnections && pagerState.settledPage != 0,
                 ) { events ->
                     val from = pagerState.settledPage
 
@@ -477,6 +491,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 val metrics = viewModel.metrics.collectAsState()
                 val proxyState by proxyViewModel.state.collectAsState()
                 val probeState by probeViewModel.state.collectAsState()
+                val connectionsState by connectionsViewModel.state.collectAsState()
                 val appsState by appsViewModel.state.collectAsState()
                 val logsState by logsViewModel.state.collectAsState()
 
@@ -708,6 +723,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     showLogs -> "logs"
                     showApps -> "apps"
                     showProbe -> "probe"
+                    showConnections -> "connections"
+                    showFeatures -> "features"
                     showSettings -> "settings"
                     else -> null
                 }
@@ -871,6 +888,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                         showSettings = false
                         showProbe = false
+                        showFeatures = false
+
+                        if (showConnections) closeConnections()
 
                         if (showApps) {
                             showApps = false
@@ -1062,6 +1082,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                                 qrScanner.launch(true)
                                             }
                                         },
+                                        secure = settingsState.lockSensitive,
+                                        guard = ::guard,
                                         onSeeAnnouncements = { subscriptionsViewModel.seeAnnouncements(this@HomeActivity, it) },
                                         modifier = Modifier.consumeWindowInsets(insets),
                                         contentPadding = insets,
@@ -1082,8 +1104,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         state = state,
                                         header = !tv,
                                         metrics = { if (homeVisible) metrics.value else Snapshot.withoutReadObservation { metrics.value } },
-                                        secure = settingsState.lockSensitive,
-                                        guard = ::guard,
                                         onToggle = { toggle() },
                                         onSettings = { showSettings = true },
                                         onSupport = { open(it) },
@@ -1124,6 +1144,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                             null
                                         },
                                         onUpdatedSeen = Updater::acknowledged,
+                                        onFeatures = { showFeatures = true },
                                         onChooseSubscription = {
                                             tvTarget = 2
                                             paging?.cancel()
@@ -1231,6 +1252,16 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                                 applyRecents(it)
                             },
+                            onLockSensitive = { on ->
+                                when {
+                                    // Nothing to check against: the screen lock is set up in Android first.
+                                    !SensitiveLock.available(this@HomeActivity) ->
+                                        runCatching { startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS)) }
+                                    on -> settingsViewModel.setLockSensitive(this@HomeActivity, true)
+                                    // Turning it off is behind the lock itself, or anyone could.
+                                    else -> guard(R.string.lock_sensitive) { settingsViewModel.setLockSensitive(this@HomeActivity, false) }
+                                }
+                            },
                             onDisguise = { settingsViewModel.setDisguise(this@HomeActivity, it) },
                             onLogs = {
                                 showLogs = true
@@ -1252,16 +1283,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                 if (on) withInstallPermission { Updater.setAuto(true) } else Updater.setAuto(false)
                             },
                             onBetaUpdates = { settingsViewModel.setBetaUpdates(this@HomeActivity, it) },
-                            onLockSensitive = { on ->
-                                when {
-                                    // Nothing to check against: the screen lock is set up in Android first.
-                                    !SensitiveLock.available(this@HomeActivity) ->
-                                        runCatching { startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS)) }
-                                    on -> settingsViewModel.setLockSensitive(this@HomeActivity, true)
-                                    // Turning it off is behind the lock itself, or anyone could.
-                                    else -> guard(R.string.lock_sensitive) { settingsViewModel.setLockSensitive(this@HomeActivity, false) }
-                                }
-                            },
                             onAllowBackground = { requestBackgroundWork() },
                             onVendor = { openVendor(it) },
                             hwid = subscriptionsState.hwid,
@@ -1358,6 +1379,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onDraft = { configViewModel.answerDraft(it) },
                             onAskLeave = { configViewModel.askLeave(it) },
                             onClose = { configViewModel.close() },
+                            secure = settingsState.lockSensitive,
                             modifier = Modifier.padding(configInsets).consumeWindowInsets(configInsets),
                         )
                     }
@@ -1379,7 +1401,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     BackLayer(
                         visible = showProbe,
-                            secure = settingsState.lockSensitive,
                         onBack = closeProbe,
                     ) {
                         ProbeScreen(
@@ -1389,6 +1410,38 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onStop = { probeViewModel.stop() },
                             onCopy = { copyReport(probeViewModel.report(this@HomeActivity)) },
                             onBack = closeProbe,
+                            modifier = layerModifier(listInsets),
+                        )
+                    }
+
+                    BackLayer(
+                        visible = showFeatures,
+                        onBack = closeFeatures,
+                        enabled = !showConnections,
+                    ) {
+                        FeaturesScreen(
+                            onConnections = {
+                                showConnections = true
+
+                                connectionsViewModel.start(this@HomeActivity)
+                            },
+                            onBack = closeFeatures,
+                            modifier = layerModifier(listInsets),
+                        )
+                    }
+
+                    BackLayer(
+                        visible = showConnections,
+                        onBack = closeConnections,
+                    ) {
+                        ConnectionsScreen(
+                            state = connectionsState,
+                            running = state.running,
+                            onPick = { connectionsViewModel.pick(it) },
+                            onClearApp = { connectionsViewModel.clearApp() },
+                            onClearSite = { connectionsViewModel.clearSite() },
+                            onCloseAll = { connectionsViewModel.closeAll(this@HomeActivity) },
+                            onBack = closeConnections,
                             modifier = layerModifier(listInsets),
                         )
                     }
@@ -1462,6 +1515,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         reach = subscriptionsState.editReach,
                         busy = subscriptionsState.editBusy,
                         backup = subscriptionsState.editBackup,
+                        secure = settingsState.lockSensitive,
                         onName = { subscriptionsViewModel.setEditName(it) },
                         onLink = { subscriptionsViewModel.setEditLink(it) },
                         onInterval = { subscriptionsViewModel.setEditInterval(it) },
@@ -1515,7 +1569,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                 subscriptionsViewModel.update(this@HomeActivity, uuid, force = true)
                             }
                         },
-                        secure = settingsState.lockSensitive,
                         onDismiss = { subscriptionsViewModel.dismissConfirmUpdate() },
                         onClosed = { confirmShown = false },
                     )
@@ -1756,6 +1809,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         // Именно onResume: окно системы прозрачное, и после него onStart не зовётся.
         settingsViewModel.refreshBackground(this)
         settingsViewModel.refreshAlwaysOn()
+        settingsViewModel.refreshLock(this)
         resumes.intValue++
 
         // Приложение на экране: о несостоявшемся VPN скажет карточка главной (D-227).
@@ -1768,6 +1822,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         Remote.broadcasts.removeObserver(this)
 
         viewModel.stopTrafficPolling()
+
+        // Gone from the screen: the next look at the link or the config asks again.
+        lock.relock()
 
         // Телевизор: кода на экране больше нет — порт закрыт (D-162).
         subscriptionsViewModel.expireReceive()
@@ -1809,7 +1866,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
         if (!tv) content.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
-        settingsViewModel.refreshLock(this)
                 if (!ready) return false
 
                 content.viewTreeObserver.removeOnPreDrawListener(this)
@@ -1822,9 +1878,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         // Иначе он приходил бы с опозданием вместе с соседними вкладками (D-91), и обычная
         // панель успевала мелькнуть перед приветствием.
         subscriptionsViewModel.refresh(this)
-
-        // Gone from the screen: the next look at the link or the config asks again.
-        lock.relock()
 
         val started = SystemClock.uptimeMillis()
 

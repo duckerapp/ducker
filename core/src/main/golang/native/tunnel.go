@@ -113,6 +113,12 @@ func healthCheckChosen(completable unsafe.Pointer, name C.c_string) {
 	handedOff = true
 }
 
+//export queryConnections
+func queryConnections() *C.char {
+	defer panicguard.Recover("queryConnections", failExport)
+	return marshalJson(tunnel.QueryConnections())
+}
+
 //export closeAllConnections
 func closeAllConnections() {
 	defer panicguard.Recover("closeAllConnections", failExport)

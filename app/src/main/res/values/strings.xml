@@ -230,6 +230,20 @@
     <string name="lock_sensitive_hint">Fingerprint, face or PIN before the QR code, subscription editing and the config. No screenshots of these screens</string>
     <string name="lock_sensitive_no_screen_lock">Set a screen lock in Android settings first</string>
     <string name="lock_prompt_title">Confirm it\'s you</string>
+    <string name="features">Features</string>
+    <string name="connections">Connections</string>
+    <string name="connections_hint">Which apps connect where, live</string>
+    <plurals name="connections_count">
+        <item quantity="one">%1$s connection</item>
+        <item quantity="other">%1$s connections</item>
+    </plurals>
+    <string name="connections_reset">Reset all</string>
+    <string name="connections_off_title">VPN is off</string>
+    <string name="connections_off">Connect the VPN to see where apps connect</string>
+    <string name="connections_empty">No connections right now</string>
+    <string name="connections_tap_hint">Tap a connection to keep only its app, then only its site</string>
+    <string name="connections_core">ducker: checks and updates</string>
+    <string name="connections_unknown_app">Unknown app</string>
     <string name="background_vendor_steps">Steps for %1$s</string>
     <string name="advanced_risky">These change how traffic is routed</string>
     <string name="system_proxy">System proxy</string>

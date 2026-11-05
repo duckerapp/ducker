@@ -198,6 +198,10 @@ object Clash {
         Bridge.nativeCloseAllConnections()
     }
 
+    /** The open connections for «Подключения» (stage 15), with the app that opened each where Android knows it. */
+    fun queryConnections(): List<Connection> =
+        CoreJson.decodeFromString(ListSerializer(Connection.serializer()), Bridge.nativeQueryConnections())
+
     /**
      * Закрыть все сессии мультиплекса (D-105). Сессия — одно соединение до сервера, по
      * которому идут потоки многих приложений; [closeAllConnections] её не видит. После

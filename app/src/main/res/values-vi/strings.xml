@@ -203,6 +203,19 @@
     <string name="lock_sensitive_hint">Vân tay, khuôn mặt hoặc mã PIN trước mã QR, khi sửa gói đăng ký và cấu hình. Không thể chụp màn hình các trang này</string>
     <string name="lock_sensitive_no_screen_lock">Hãy đặt khóa màn hình trong cài đặt Android trước</string>
     <string name="lock_prompt_title">Xác nhận đó là bạn</string>
+    <string name="features">Tính năng</string>
+    <string name="connections">Kết nối</string>
+    <string name="connections_hint">Ứng dụng nào kết nối đến đâu, trực tiếp</string>
+    <plurals name="connections_count">
+        <item quantity="other">%1$s kết nối</item>
+    </plurals>
+    <string name="connections_reset">Đặt lại tất cả</string>
+    <string name="connections_off_title">VPN đang tắt</string>
+    <string name="connections_off">Bật VPN để xem các ứng dụng kết nối đến đâu</string>
+    <string name="connections_empty">Hiện không có kết nối</string>
+    <string name="connections_tap_hint">Chạm vào một kết nối để chỉ giữ ứng dụng của nó, rồi chỉ giữ trang của nó</string>
+    <string name="connections_core">ducker: kiểm tra và cập nhật</string>
+    <string name="connections_unknown_app">Ứng dụng không xác định</string>
     <string name="background_vendor_steps">Các bước cho %1$s</string>
     <string name="advanced_risky">Các tùy chọn này thay đổi đường đi của lưu lượng</string>
     <string name="system_proxy">Proxy hệ thống</string>

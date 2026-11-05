@@ -252,6 +252,12 @@ class ClashManager(private val context: Context) : IClashManager,
     override fun clearLogs() {
         LogTail.clear()
     }
+
+    override fun queryConnections(): List<Connection> = Clash.queryConnections()
+
+    override fun closeAllConnections() {
+        Clash.closeAllConnections()
+    }
 }
 
 /**

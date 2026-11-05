@@ -203,6 +203,20 @@
     <string name="lock_sensitive_hint">اثر انگشت، چهره یا PIN پیش از کد QR، ویرایش اشتراک و کانفیگ. از این صفحه‌ها نمی‌توان اسکرین‌شات گرفت</string>
     <string name="lock_sensitive_no_screen_lock">ابتدا در تنظیمات Android قفل صفحه تعیین کنید</string>
     <string name="lock_prompt_title">تأیید کنید که خودتان هستید</string>
+    <string name="features">امکانات</string>
+    <string name="connections">اتصال‌ها</string>
+    <string name="connections_hint">کدام برنامه به کجا وصل می‌شود، زنده</string>
+    <plurals name="connections_count">
+        <item quantity="one">%1$s اتصال</item>
+        <item quantity="other">%1$s اتصال</item>
+    </plurals>
+    <string name="connections_reset">بازنشانی همه</string>
+    <string name="connections_off_title">VPN خاموش است</string>
+    <string name="connections_off">VPN را روشن کنید تا ببینید برنامه‌ها به کجا وصل می‌شوند</string>
+    <string name="connections_empty">اکنون اتصالی نیست</string>
+    <string name="connections_tap_hint">روی یک اتصال بزنید تا فقط برنامه‌اش بماند، سپس فقط سایتش</string>
+    <string name="connections_core">ducker: بررسی‌ها و به‌روزرسانی‌ها</string>
+    <string name="connections_unknown_app">برنامهٔ ناشناخته</string>
     <string name="background_vendor_steps">مراحل برای %1$s</string>
     <string name="advanced_risky">این گزینه‌ها مسیر ترافیک را تغییر می‌دهند</string>
     <string name="system_proxy">پروکسی سیستم</string>

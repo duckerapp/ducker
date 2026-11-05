@@ -203,6 +203,19 @@
     <string name="lock_sensitive_hint">Sidik jari, wajah, atau PIN sebelum kode QR, edit langganan, dan konfigurasi. Layar ini tidak bisa di-screenshot</string>
     <string name="lock_sensitive_no_screen_lock">Atur kunci layar di setelan Android terlebih dahulu</string>
     <string name="lock_prompt_title">Konfirmasi bahwa ini Anda</string>
+    <string name="features">Fitur</string>
+    <string name="connections">Koneksi</string>
+    <string name="connections_hint">Aplikasi mana terhubung ke mana, langsung</string>
+    <plurals name="connections_count">
+        <item quantity="other">%1$s koneksi</item>
+    </plurals>
+    <string name="connections_reset">Reset semua</string>
+    <string name="connections_off_title">VPN mati</string>
+    <string name="connections_off">Nyalakan VPN untuk melihat ke mana aplikasi terhubung</string>
+    <string name="connections_empty">Tidak ada koneksi saat ini</string>
+    <string name="connections_tap_hint">Ketuk koneksi untuk menyisakan aplikasinya saja, lalu situsnya saja</string>
+    <string name="connections_core">ducker: pemeriksaan dan pembaruan</string>
+    <string name="connections_unknown_app">Aplikasi tidak dikenal</string>
     <string name="background_vendor_steps">Langkah untuk %1$s</string>
     <string name="advanced_risky">Pengaturan ini mengubah jalur lalu lintas</string>
     <string name="system_proxy">Proksi sistem</string>

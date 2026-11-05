@@ -203,6 +203,21 @@
     <string name="lock_sensitive_hint">Digital, rosto ou PIN antes do código QR, da edição da assinatura e da configuração. Sem capturas destas telas</string>
     <string name="lock_sensitive_no_screen_lock">Primeiro defina um bloqueio de tela nas configurações do Android</string>
     <string name="lock_prompt_title">Confirme que é você</string>
+    <string name="features">Recursos</string>
+    <string name="connections">Conexões</string>
+    <string name="connections_hint">Quais apps se conectam e para onde, ao vivo</string>
+    <plurals name="connections_count">
+        <item quantity="one">%1$s conexão</item>
+        <item quantity="many">%1$s conexões</item>
+        <item quantity="other">%1$s conexões</item>
+    </plurals>
+    <string name="connections_reset">Redefinir todas</string>
+    <string name="connections_off_title">A VPN está desligada</string>
+    <string name="connections_off">Ligue a VPN para ver para onde os apps se conectam</string>
+    <string name="connections_empty">Nenhuma conexão agora</string>
+    <string name="connections_tap_hint">Toque em uma conexão para deixar só o app dela e, depois, só o site dela</string>
+    <string name="connections_core">ducker: verificações e atualizações</string>
+    <string name="connections_unknown_app">App desconhecido</string>
     <string name="background_vendor_steps">Etapas para %1$s</string>
     <string name="advanced_risky">Estas opções alteram o caminho do tráfego</string>
     <string name="system_proxy">Proxy do sistema</string>

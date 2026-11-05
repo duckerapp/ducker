@@ -203,6 +203,20 @@
     <string name="lock_sensitive_hint">QR kodu, abonelik düzenleme ve yapılandırmadan önce parmak izi, yüz veya PIN. Bu ekranların görüntüsü alınamaz</string>
     <string name="lock_sensitive_no_screen_lock">Önce Android ayarlarından bir ekran kilidi belirleyin</string>
     <string name="lock_prompt_title">Siz olduğunuzu doğrulayın</string>
+    <string name="features">Özellikler</string>
+    <string name="connections">Bağlantılar</string>
+    <string name="connections_hint">Hangi uygulama nereye bağlanıyor, canlı</string>
+    <plurals name="connections_count">
+        <item quantity="one">%1$s bağlantı</item>
+        <item quantity="other">%1$s bağlantı</item>
+    </plurals>
+    <string name="connections_reset">Tümünü sıfırla</string>
+    <string name="connections_off_title">VPN kapalı</string>
+    <string name="connections_off">Uygulamaların nereye bağlandığını görmek için VPN\'i açın</string>
+    <string name="connections_empty">Şu anda bağlantı yok</string>
+    <string name="connections_tap_hint">Yalnızca uygulamasını, ardından yalnızca sitesini görmek için bir bağlantıya dokunun</string>
+    <string name="connections_core">ducker: denetimler ve güncellemeler</string>
+    <string name="connections_unknown_app">Bilinmeyen uygulama</string>
     <string name="background_vendor_steps">%1$s için adımlar</string>
     <string name="advanced_risky">Bu ayarlar trafiğin izlediği yolu değiştirir</string>
     <string name="system_proxy">Sistem proxy’si</string>

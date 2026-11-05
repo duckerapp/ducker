@@ -203,6 +203,24 @@
     <string name="lock_sensitive_hint">البصمة أو الوجه أو رمز PIN قبل رمز QR وتعديل الاشتراك وملف الإعدادات. لا لقطات شاشة لهذه الشاشات</string>
     <string name="lock_sensitive_no_screen_lock">اضبط قفل الشاشة أولاً في إعدادات Android</string>
     <string name="lock_prompt_title">أكّد أنك أنت</string>
+    <string name="features">المزايا</string>
+    <string name="connections">الاتصالات</string>
+    <string name="connections_hint">أي التطبيقات تتصل وإلى أين، مباشرةً</string>
+    <plurals name="connections_count">
+        <item quantity="zero">%1$s اتصال</item>
+        <item quantity="one">اتصال واحد</item>
+        <item quantity="two">اتصالان</item>
+        <item quantity="few">%1$s اتصالات</item>
+        <item quantity="many">%1$s اتصالًا</item>
+        <item quantity="other">%1$s اتصال</item>
+    </plurals>
+    <string name="connections_reset">إعادة ضبط الكل</string>
+    <string name="connections_off_title">VPN متوقف</string>
+    <string name="connections_off">شغّل VPN لترى إلى أين تتصل التطبيقات</string>
+    <string name="connections_empty">لا اتصالات الآن</string>
+    <string name="connections_tap_hint">انقر على اتصال لإبقاء تطبيقه فقط، ثم موقعه فقط</string>
+    <string name="connections_core">ducker: الفحوصات والتحديثات</string>
+    <string name="connections_unknown_app">تطبيق غير معروف</string>
     <string name="background_vendor_steps">الخطوات لأجهزة %1$s</string>
     <string name="advanced_risky">تغيّر هذه الخيارات مسار حركة البيانات</string>
     <string name="system_proxy">بروكسي النظام</string>

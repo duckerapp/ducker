@@ -106,6 +106,7 @@ ICONS = [
     ("VitalSigns", "vital_signs", False, False),
     ("VpnLock", "vpn_lock", False, False),
     ("WarningAmber", "warning", False, False),
+    ("Widgets", "widgets", False, False),
 ]
 
 PATH_DATA = re.compile(r"[MmLlHhVvCcSsQqTtAaZz0-9.,\- ]+")

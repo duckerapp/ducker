@@ -135,6 +135,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.minimumInteractiveComponentSize
+import com.github.kr328.clash.ui.components.airShadow
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -261,6 +263,8 @@ fun HomeScreen(
     /** “What's new” on that card; `null` — the release came without notes. */
     onWhatsNew: (() -> Unit)? = null,
     onUpdatedSeen: () -> Unit = {},
+    /** «Возможности» (stage 15): the page of tools behind the pill under the subscription card. */
+    onFeatures: () -> Unit = {},
 ) {
     // The cards about the app's own version are the same with and without a subscription.
     val appCards: (@Composable () -> Unit)? = if (update == null && updated == null) null else {
@@ -302,6 +306,7 @@ fun HomeScreen(
                 header = header,
                 onCopyError = onCopyError,
                 appCards = appCards,
+                onFeatures = onFeatures,
                 modifier = modifier,
             )
         }
@@ -408,6 +413,7 @@ private fun HomeRegular(
     header: Boolean,
     onCopyError: (String) -> Unit,
     appCards: (@Composable () -> Unit)?,
+    onFeatures: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val profile = state.profile
@@ -590,6 +596,11 @@ private fun HomeRegular(
             // Свой конфиг — без срока, трафика и обновлений: карточке нечего показать (D-125).
             if (profile != null && !profile.local) {
                 SubscriptionCard(profile, updating, updateFailed, onRefresh, onSupport)
+            }
+
+            // Under «Действует до», or under the power card when a config of one's own has no subscription card.
+            if (profile != null) {
+                FeaturesPill(onFeatures, Modifier.align(Alignment.CenterHorizontally))
             }
 
         }
@@ -2103,6 +2114,32 @@ private fun SubscriptionCard(
                 }
             }
         }
+    }
+}
+
+/**
+ * «Возможности» (stage 15): a small pill, not a card — Home stays the button, the node and the subscription, and the
+ * tools wait one tap away. The card's own white with its shadow, the brand's colour on the mark only.
+ */
+@Composable
+private fun FeaturesPill(onClick: () -> Unit, modifier: Modifier) {
+    val scheme = MaterialTheme.colorScheme
+
+    Row(
+        modifier = modifier
+            .minimumInteractiveComponentSize()
+            .airShadow(CircleShape)
+            .clip(CircleShape)
+            .background(scheme.surface)
+            .clickable(role = Role.Button, onClick = onClick)
+            .heightIn(min = 40.dp)
+            .padding(start = 14.dp, end = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(Symbols.Widgets, contentDescription = null, modifier = Modifier.size(18.dp), tint = scheme.primary)
+        Text(stringResource(R.string.features), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        Icon(Symbols.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(18.dp), tint = scheme.onSurfaceVariant)
     }
 }
 
