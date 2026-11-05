@@ -287,7 +287,6 @@ fun MobileScreen(
                 onProfile(it)
                 profilesOpen = false
             },
-            onDismiss = { profilesOpen = false },
             onClosed = { profilesShown = false },
         )
     }
@@ -413,25 +412,26 @@ private fun NodeRow(
 }
 
 /**
- * The subscription for the mobile network, laid out as the node sheet: a card each, the chosen one filled. A tap picks
- * and closes; a tap on the chosen one leaves none chosen.
+ * The subscription for the mobile network: the node sheet as it is, «Готово» included, with one tick at most — a tick
+ * moves the choice, an untick leaves none. Closed any way the choice is kept, as the nodes' ticks are.
  */
 @Composable
 private fun ProfileSheet(
     open: Boolean,
     state: MobilePage,
     onPick: (String) -> Unit,
-    onDismiss: () -> Unit,
     onClosed: () -> Unit,
 ) {
+    var picked by remember { mutableStateOf(state.settings.profile) }
     val shortWindow = LocalConfiguration.current.screenHeightDp < 480
+    val done = { onPick(picked) }
 
     DuckerSheet(
         open = open,
         title = stringResource(R.string.mobile_pick_profile),
         hint = if (state.profiles.isEmpty()) stringResource(R.string.mobile_no_profiles) else null,
         busy = false,
-        onDismiss = onDismiss,
+        onDismiss = done,
         onClosed = onClosed,
         scrollable = false,
         compact = true,
@@ -443,11 +443,19 @@ private fun ProfileSheet(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(state.profiles, key = { it.uuid }) { profile ->
-                NodeChoice(name = profile.name, checked = profile.uuid == state.settings.profile) { on ->
-                    onPick(if (on) profile.uuid else "")
+                NodeChoice(name = profile.name, checked = profile.uuid == picked) { on ->
+                    picked = if (on) profile.uuid else ""
                 }
             }
         }
+
+        SheetButton(
+            text = stringResource(R.string.done),
+            busyText = stringResource(R.string.done),
+            busy = false,
+            enabled = true,
+            onClick = done,
+        )
     }
 }
 
