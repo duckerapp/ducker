@@ -3,7 +3,9 @@ package config
 import (
 	"os"
 	P "path"
+	"strings"
 
+	"github.com/dlclark/regexp2"
 	"github.com/metacubex/mihomo/config"
 )
 
@@ -36,6 +38,15 @@ func QueryGroups(profilePath string) []GroupInfo {
 
 	result := make([]GroupInfo, 0, len(raw.ProxyGroup))
 
+	// What `include-all` and `include-all-proxies` add: every top-level node, in the file's order. The built-in
+	// template's main group has nothing else, so without them a subscription of links showed only «⚡ AUTO» (D-424).
+	all := make([]string, 0, len(raw.Proxy))
+	for _, proxy := range raw.Proxy {
+		if name, _ := proxy["name"].(string); name != "" {
+			all = append(all, name)
+		}
+	}
+
 	for _, group := range raw.ProxyGroup {
 		name, _ := group["name"].(string)
 		if name == "" {
@@ -59,9 +70,72 @@ func QueryGroups(profilePath string) []GroupInfo {
 			}
 		}
 
+		// As mihomo's own parser (`adapter/outboundgroup/parser.go`, `groupbase.go`): `filter` picks among the
+		// top-level nodes, `exclude-filter` drops from all members, the group's own list included; several patterns
+		// are joined by «`». ponytail: `exclude-type` and nodes of `use:` providers are not here — the file does not
+		// name a node's type as the core does, nor list a provider's nodes; a subscription loaded in the core is read
+		// from the core instead.
+		if flag(group["include-all"]) || flag(group["include-all-proxies"]) {
+			filter, _ := group["filter"].(string)
+			members = append(members, matching(all, filter, true)...)
+		}
+
+		if exclude, _ := group["exclude-filter"].(string); exclude != "" {
+			members = matching(members, exclude, false)
+		}
+
 		icon, _ := group["icon"].(string)
 
-		result = append(result, GroupInfo{Name: name, Type: kind, Proxies: members, Icon: icon})
+		result = append(result, GroupInfo{Name: name, Type: kind, Proxies: unique(members), Icon: icon})
+	}
+
+	return result
+}
+
+func flag(value any) bool {
+	on, _ := value.(bool)
+	return on
+}
+
+// matching keeps the [names] some pattern of [patterns] matches (keep), or those none matches (!keep); empty
+// [patterns] keep everything. A pattern the regexp engine refuses is skipped: the core refuses such a config anyway.
+func matching(names []string, patterns string, keep bool) []string {
+	if patterns == "" {
+		return names
+	}
+
+	var regs []*regexp2.Regexp
+	for _, pattern := range strings.Split(patterns, "`") {
+		if reg, err := regexp2.Compile(pattern, regexp2.None); err == nil {
+			regs = append(regs, reg)
+		}
+	}
+
+	result := make([]string, 0, len(names))
+	for _, name := range names {
+		matched := false
+		for _, reg := range regs {
+			if ok, _ := reg.MatchString(name); ok {
+				matched = true
+				break
+			}
+		}
+		if matched == keep {
+			result = append(result, name)
+		}
+	}
+
+	return result
+}
+
+func unique(names []string) []string {
+	seen := make(map[string]struct{}, len(names))
+	result := make([]string, 0, len(names))
+	for _, name := range names {
+		if _, ok := seen[name]; !ok {
+			seen[name] = struct{}{}
+			result = append(result, name)
+		}
 	}
 
 	return result
