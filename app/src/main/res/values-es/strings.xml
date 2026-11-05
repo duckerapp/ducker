@@ -215,9 +215,11 @@
     <string name="connections_off_title">La VPN está desactivada</string>
     <string name="connections_off">Activa la VPN para ver adónde se conectan las aplicaciones</string>
     <string name="connections_empty">No hay conexiones ahora</string>
-    <string name="connections_tap_hint">Toca una conexión para dejar solo su aplicación y luego solo su sitio</string>
+    <string name="connections_tap_hint">Toca para dejar solo esa aplicación; otra vez, solo ese sitio</string>
     <string name="connections_core">ducker: comprobaciones y actualizaciones</string>
     <string name="connections_unknown_app">Aplicación desconocida</string>
+    <string name="connections_search">Aplicación, sitio o servidor</string>
+    <string name="connections_closed">Cerrada</string>
     <string name="background_vendor_steps">Pasos para %1$s</string>
     <string name="advanced_risky">Estos ajustes cambian la ruta del tráfico</string>
     <string name="system_proxy">Proxy del sistema</string>

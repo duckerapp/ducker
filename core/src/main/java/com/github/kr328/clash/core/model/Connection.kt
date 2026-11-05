@@ -6,7 +6,7 @@ import com.github.kr328.clash.core.util.Parcelizer
 import kotlinx.serialization.Serializable
 
 /**
- * One open connection of the core for «Подключения» (stage 15). [uid] is the app's — from the core when a rule looked it
+ * One connection of the core for «Подключения» (stage 15): open, or [closed] since the page last asked. [uid] is the app's — from the core when a rule looked it
  * up, else asked of Android; -1 or 0 — not known. [process] is the package the core found, when it did. [inner] — the
  * core's own (node checks, provider downloads). [chain] names the node first, then the groups it was reached through.
  */
@@ -26,6 +26,7 @@ data class Connection(
     val upload: Long = 0,
     val download: Long = 0,
     val start: Long = 0,
+    val closed: Boolean = false,
 ) : Parcelable {
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         Parcelizer.encodeToParcel(serializer(), parcel, this)

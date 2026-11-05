@@ -213,9 +213,11 @@
     <string name="connections_off_title">VPN đang tắt</string>
     <string name="connections_off">Bật VPN để xem các ứng dụng kết nối đến đâu</string>
     <string name="connections_empty">Hiện không có kết nối</string>
-    <string name="connections_tap_hint">Chạm vào một kết nối để chỉ giữ ứng dụng của nó, rồi chỉ giữ trang của nó</string>
+    <string name="connections_tap_hint">Chạm để chỉ giữ ứng dụng đó, chạm lần nữa để chỉ giữ trang đó</string>
     <string name="connections_core">ducker: kiểm tra và cập nhật</string>
     <string name="connections_unknown_app">Ứng dụng không xác định</string>
+    <string name="connections_search">Ứng dụng, trang hoặc máy chủ</string>
+    <string name="connections_closed">Đã đóng</string>
     <string name="background_vendor_steps">Các bước cho %1$s</string>
     <string name="advanced_risky">Các tùy chọn này thay đổi đường đi của lưu lượng</string>
     <string name="system_proxy">Proxy hệ thống</string>

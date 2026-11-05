@@ -320,7 +320,7 @@ private val PILLS_GAP = 8.dp
  * pills. Wherever the row fits nothing changes.
  */
 @Composable
-private fun CountBesidePills(count: @Composable () -> Unit, pills: @Composable () -> Unit, modifier: Modifier = Modifier) {
+internal fun CountBesidePills(count: @Composable () -> Unit, pills: @Composable () -> Unit, modifier: Modifier = Modifier) {
     Layout(contents = listOf(count, pills), modifier = modifier) { (counts, pillRows), constraints ->
         val gap = PILLS_GAP.roundToPx()
         val width = constraints.maxWidth

@@ -35,31 +35,40 @@ data class ConnectionRow(
     val speed: Long,
     val total: Long,
     val start: Long,
+    /** Gone from the core: it stays on the page, dimmed, so a short one can still be read and tapped. */
+    val closed: Boolean = false,
 )
 
 data class ConnectionsState(
     val loaded: Boolean = false,
     /** What the page shows: the filter applied, the newest first. */
     val rows: List<ConnectionRow> = emptyList(),
-    /** Every open connection, before the filter. */
+    /** Every open connection, before the filter; the closed ones are not counted. */
     val count: Int = 0,
     /** All of them together, bytes per second. */
     val speed: Long = 0,
     /** The filter, narrowed by taps: an app, then a site within it. */
     val app: ConnectionApp? = null,
     val site: String? = null,
+    /** The search: an app, a site, a rule or a node. */
+    val query: String = "",
 )
 
 /**
  * «Подключения» (stage 15): the core's open connections, read about once a second while the page is open and never in
- * the background — the request waits while the app is hidden, as the log's does.
+ * the background — the request waits while the app is hidden, as the log's does. The core keeps what closed meanwhile.
  */
 class ConnectionsViewModel : ViewModel() {
     private val _state = MutableStateFlow(ConnectionsState())
     val state: StateFlow<ConnectionsState> = _state.asStateFlow()
 
     private var pump: Job? = null
-    private var all: List<ConnectionRow> = emptyList()
+    /** Open and closed rows by id; reset by «Сбросить все». */
+    private var all: Map<String, ConnectionRow> = emptyMap()
+    /** Moves on «Сбросить все»: a read begun before it would bring back what it closed. */
+    private var epoch = 0
+    /** When «Сбросить все» was pressed: what it closed comes back from the core as closed, and is not shown. */
+    private var resetAt = 0L
     private val apps = HashMap<String, ConnectionApp>()
     private var last: Map<String, Long> = emptyMap()
     private var lastAt = 0L
@@ -70,7 +79,7 @@ class ConnectionsViewModel : ViewModel() {
         val app = context.applicationContext
 
         // A fresh page each time, without the old filter; the closing page keeps its rows while it slides away.
-        all = emptyList()
+        all = emptyMap()
         last = emptyMap()
         apps.clear()
         _state.value = ConnectionsState()
@@ -102,12 +111,18 @@ class ConnectionsViewModel : ViewModel() {
 
     fun clearSite() = filter { it.copy(site = null) }
 
+    fun search(query: String) = filter { it.copy(query = query) }
+
     /** «Сбросить все»: apps open new connections by the current rules at once. */
     fun closeAll(context: Context) {
         val app = context.applicationContext
 
         viewModelScope.launch {
             runCatching { withClash { closeAllConnections() } }
+            // The page starts over: what was closed is not kept, unlike a connection an app closes itself.
+            epoch++
+            all = emptyMap()
+            resetAt = System.currentTimeMillis()
             read(app)
         }
     }
@@ -117,21 +132,26 @@ class ConnectionsViewModel : ViewModel() {
     }
 
     private suspend fun read(context: Context) {
+        val began = epoch
         val connections = runCatching { withClash { queryConnections() } }.getOrNull() ?: return
         val now = SystemClock.elapsedRealtime()
         val seconds = ((now - lastAt) / 1000.0).takeIf { lastAt != 0L && it > 0 }
         val rows = withContext(Dispatchers.IO) {
-            connections.map { it.row(appOf(context, it), last[it.id], seconds) }
+            connections.filter { !it.closed || it.start >= resetAt }.map { it.row(appOf(context, it), last[it.id], seconds) }
         }
+
+        if (began != epoch) return
 
         last = connections.associate { it.id to it.upload + it.download }
         lastAt = now
-        all = rows
+        all = merge(all, rows)
 
-        _state.update { it.copy(loaded = true, count = rows.size, speed = rows.sumOf(ConnectionRow::speed)).shown() }
+        val open = rows.filterNot(ConnectionRow::closed)
+
+        _state.update { it.copy(loaded = true, count = open.size, speed = open.sumOf(ConnectionRow::speed)).shown() }
     }
 
-    private fun ConnectionsState.shown() = copy(rows = all.filtered(app, site))
+    private fun ConnectionsState.shown() = copy(rows = all.values.filtered(app, site, query))
 
     private fun appOf(context: Context, connection: Connection): ConnectionApp {
         val key = connectionKey(connection)
@@ -176,15 +196,39 @@ internal fun Connection.row(app: ConnectionApp, before: Long?, seconds: Double?)
         site = host.ifEmpty { address },
         port = port,
         route = listOf(rule, chain.firstOrNull().orEmpty()).filter { it.isNotEmpty() }.joinToString(" → "),
-        speed = if (before != null && seconds != null) ((total - before).coerceAtLeast(0) / seconds).toLong() else 0,
+        speed = if (before != null && seconds != null && !closed) ((total - before).coerceAtLeast(0) / seconds).toLong() else 0,
         total = total,
         start = start,
+        closed = closed,
     )
 }
 
+/**
+ * The rows read and the closed ones kept: a connection that was there and is gone stays, closed, in its place. Most
+ * live for a second — a page load, a check — and were gone before they could be read (stage 15). The core sends the
+ * ones that closed between reads, or while the app was hidden, once, as closed.
+ */
+internal fun merge(before: Map<String, ConnectionRow>, read: List<ConnectionRow>): Map<String, ConnectionRow> {
+    val now = read.associateBy { it.id }
+    val gone = before.values.filter { it.id !in now }
+        .map { if (it.closed) it else it.copy(closed = true, speed = 0) }
+        .sortedByDescending { it.start }
+        .take(MAX_CLOSED)
+
+    return now + gone.associateBy { it.id }
+}
+
 /** The newest first: a new connection comes on top, the others keep their order between refreshes. */
-internal fun List<ConnectionRow>.filtered(app: ConnectionApp?, site: String?): List<ConnectionRow> =
-    filter { (app == null || it.app.key == app.key) && (site == null || it.site == site) }
-        .sortedWith(compareByDescending<ConnectionRow> { it.start }.thenBy { it.id })
+internal fun Collection<ConnectionRow>.filtered(app: ConnectionApp?, site: String?, query: String = ""): List<ConnectionRow> {
+    val words = query.trim()
+
+    return filter {
+        (app == null || it.app.key == app.key) && (site == null || it.site == site) &&
+            (words.isEmpty() || listOfNotNull(it.app.label, it.app.packageName, it.site, it.route).any { field -> field.contains(words, ignoreCase = true) })
+    }.sortedWith(compareByDescending<ConnectionRow> { it.start }.thenBy { it.id })
+}
 
 private const val REFRESH_MS = 1_000L
+
+/** The closed rows kept, the newest: a page left open while browsing would grow without end. */
+private const val MAX_CLOSED = 300

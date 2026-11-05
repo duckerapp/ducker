@@ -232,9 +232,11 @@
     <string name="connections_off_title">VPN выключен</string>
     <string name="connections_off">Включите VPN, и здесь будет видно, куда подключаются приложения</string>
     <string name="connections_empty">Сейчас подключений нет</string>
-    <string name="connections_tap_hint">Нажмите на подключение, чтобы оставить только его приложение, а затем — только его сайт</string>
+    <string name="connections_tap_hint">Нажмите — останется только это приложение, ещё раз — только этот сайт</string>
     <string name="connections_core">ducker: проверки и обновления</string>
     <string name="connections_unknown_app">Неизвестное приложение</string>
+    <string name="connections_search">Приложение, сайт или узел</string>
+    <string name="connections_closed">Закрыто</string>
     <string name="background_vendor_steps">Шаги для %1$s</string>
     <string name="advanced_risky">Меняют путь трафика</string>
     <string name="system_proxy">Системный прокси</string>

@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -34,8 +35,10 @@ import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.common.util.formatSpeed
 import com.github.kr328.clash.ui.apps.AppIcon
+import com.github.kr328.clash.ui.apps.CountBesidePills
 import com.github.kr328.clash.ui.components.EmptyState
 import com.github.kr328.clash.ui.components.Pill
+import com.github.kr328.clash.ui.components.SearchField
 import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.TvLazyColumn
@@ -63,6 +66,7 @@ fun ConnectionsScreen(
     onPick: (ConnectionRow) -> Unit,
     onClearApp: () -> Unit,
     onClearSite: () -> Unit,
+    onSearch: (String) -> Unit,
     onCloseAll: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -92,28 +96,36 @@ fun ConnectionsScreen(
         }
 
         item {
-            // The count and the speed on the left, the reset on the right; under each other on a narrow screen.
-            FlowRow(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                itemVerticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = pluralStringResource(R.plurals.connections_count, state.count, formatCount(state.count)) +
-                        if (state.speed > 0) stringResource(R.string.separator) + context.formatSpeed(state.speed) else "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 12.dp),
-                )
+            SearchField(value = state.query, onValue = onSearch, hint = stringResource(R.string.connections_search))
+        }
 
-                Pill(
-                    text = stringResource(R.string.connections_reset),
-                    onClick = onCloseAll,
-                    icon = Symbols.RestartAlt,
-                    enabled = state.count > 0,
-                )
-            }
+        item {
+            // The speed on a line of its own, always there: changing every second beside the count, it moved the reset
+            // from the line to under it and back, and the list with it.
+            CountBesidePills(
+                modifier = Modifier.padding(start = 4.dp),
+                count = {
+                    Column {
+                        Text(
+                            text = pluralStringResource(R.plurals.connections_count, state.count, formatCount(state.count)),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            text = context.formatSpeed(state.speed),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
+                pills = {
+                    Pill(
+                        text = stringResource(R.string.connections_reset),
+                        onClick = onCloseAll,
+                        icon = Symbols.RestartAlt,
+                        enabled = state.count > 0,
+                    )
+                },
+            )
         }
 
         // The filter as pills with ✕: what narrowed the list, and the way back.
@@ -124,12 +136,13 @@ fun ConnectionsScreen(
                     state.site?.let { Pill(text = it.isolated(), onClick = onClearSite, selected = true, icon = Symbols.Close) }
                 }
             }
-        } else if (state.count > 0) {
+        } else if (state.rows.isNotEmpty()) {
             item {
                 Text(
                     text = stringResource(R.string.connections_tap_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp),
                 )
             }
         }
@@ -137,7 +150,7 @@ fun ConnectionsScreen(
         if (state.loaded && state.rows.isEmpty()) {
             item {
                 Text(
-                    text = stringResource(R.string.connections_empty),
+                    text = stringResource(if (state.query.isBlank()) R.string.connections_empty else R.string.proxy_search_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 24.dp).fillMaxWidth(),
@@ -160,7 +173,8 @@ private fun ConnectionCard(row: ConnectionRow, onClick: () -> Unit, modifier: Mo
         surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).clickable(role = Role.Button, onClick = onClick),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            // The card stays, its content fades: a closed one keeps its place and its shadow among the open ones.
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp).alpha(if (row.closed) CLOSED_ALPHA else 1f),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -174,13 +188,17 @@ private fun ConnectionCard(row: ConnectionRow, onClick: () -> Unit, modifier: Mo
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
+                        // The whole line but the speed: with a spacer beside it, a name had only half and was cut.
+                        modifier = Modifier.weight(1f),
                     )
-                    Box(Modifier.weight(1f))
 
                     // Speed while it moves, otherwise how much went: a still connection is not «0 B/s».
                     Text(
-                        text = if (row.speed > 0) LocalContext.current.formatSpeed(row.speed) else formatBytes(row.total),
+                        text = when {
+                            row.closed -> stringResource(R.string.connections_closed)
+                            row.speed > 0 -> LocalContext.current.formatSpeed(row.speed)
+                            else -> formatBytes(row.total)
+                        },
                         style = MaterialTheme.typography.labelMedium.machine(),
                         color = if (row.speed > 0) scheme.primary else scheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 8.dp),
@@ -207,6 +225,8 @@ private fun ConnectionCard(row: ConnectionRow, onClick: () -> Unit, modifier: Mo
         }
     }
 }
+
+private const val CLOSED_ALPHA = 0.5f
 
 /** The app's icon; ours for the core's own connections; a plain mark when Android named nobody. */
 @Composable

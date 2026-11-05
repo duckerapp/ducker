@@ -1440,6 +1440,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onPick = { connectionsViewModel.pick(it) },
                             onClearApp = { connectionsViewModel.clearApp() },
                             onClearSite = { connectionsViewModel.clearSite() },
+                            onSearch = { connectionsViewModel.search(it) },
                             onCloseAll = { connectionsViewModel.closeAll(this@HomeActivity) },
                             onBack = closeConnections,
                             modifier = layerModifier(listInsets),

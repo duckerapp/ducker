@@ -213,9 +213,11 @@
     <string name="connections_off_title">VPN 已关闭</string>
     <string name="connections_off">开启 VPN 后，这里会显示应用连接到了哪里</string>
     <string name="connections_empty">当前没有连接</string>
-    <string name="connections_tap_hint">点按一个连接，只看它的应用；再点一次，只看它的网站</string>
+    <string name="connections_tap_hint">点按只看这个应用，再点一次只看这个网站</string>
     <string name="connections_core">ducker：检测与更新</string>
     <string name="connections_unknown_app">未知应用</string>
+    <string name="connections_search">应用、网站或节点</string>
+    <string name="connections_closed">已关闭</string>
     <string name="background_vendor_steps">%1$s 设置步骤</string>
     <string name="advanced_risky">以下设置会改变流量走向</string>
     <string name="system_proxy">系统代理</string>

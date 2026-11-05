@@ -25,6 +25,7 @@ class ConnectionsTest {
         // The first look has nothing to compare with; a counter that went down (a reset) is not negative.
         assertEquals(0L, c.row(app, before = null, seconds = null).speed)
         assertEquals(0L, c.row(app, before = 9_000, seconds = 1.0).speed)
+        assertEquals(true to 0L, c.copy(closed = true).row(app, before = 1_000, seconds = 2.0).let { it.closed to it.speed })
         assertEquals("Match → Node", c.copy(rule = "Match", rulePayload = "", chain = listOf("Node", "Proxy")).row(app, null, null).route)
     }
 
@@ -41,5 +42,20 @@ class ConnectionsTest {
         assertEquals(listOf("2", "3", "1"), rows.filtered(null, null).map { it.id })
         assertEquals(listOf("3", "1"), rows.filtered(a, null).map { it.id })
         assertEquals(listOf("1"), rows.filtered(a, "one.example").map { it.id })
+        assertEquals(listOf("3"), rows.filtered(null, null, " TWO ").map { it.id })
+    }
+
+    @Test
+    fun `a gone connection stays closed in its place`() {
+        val a = ConnectionApp("a", ConnectionApp.Kind.App, "A")
+        val one = ConnectionRow("1", a, "one.example", 443, "", speed = 700, total = 900, start = 1)
+        val two = ConnectionRow("2", a, "two.example", 443, "", speed = 0, total = 10, start = 2)
+
+        val after = merge(merge(emptyMap(), listOf(one, two)), listOf(two))
+
+        assertEquals(setOf("1", "2"), after.keys)
+        assertEquals(one.copy(closed = true, speed = 0), after["1"])
+        assertEquals(false, after.getValue("2").closed)
+        assertEquals(listOf("2", "1"), after.values.filtered(null, null).map { it.id })
     }
 }

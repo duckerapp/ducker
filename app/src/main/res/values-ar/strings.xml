@@ -218,9 +218,11 @@
     <string name="connections_off_title">VPN متوقف</string>
     <string name="connections_off">شغّل VPN لترى إلى أين تتصل التطبيقات</string>
     <string name="connections_empty">لا اتصالات الآن</string>
-    <string name="connections_tap_hint">انقر على اتصال لإبقاء تطبيقه فقط، ثم موقعه فقط</string>
+    <string name="connections_tap_hint">انقر لإبقاء هذا التطبيق فقط، ومرة أخرى لهذا الموقع فقط</string>
     <string name="connections_core">ducker: الفحوصات والتحديثات</string>
     <string name="connections_unknown_app">تطبيق غير معروف</string>
+    <string name="connections_search">تطبيق أو موقع أو خادم</string>
+    <string name="connections_closed">مغلق</string>
     <string name="background_vendor_steps">الخطوات لأجهزة %1$s</string>
     <string name="advanced_risky">تغيّر هذه الخيارات مسار حركة البيانات</string>
     <string name="system_proxy">بروكسي النظام</string>

@@ -82,7 +82,8 @@ published by `.github/workflows/pages.yaml`.
   - `settings`; `config` — the YAML editor; `rules` — My rules; `apps` — per-app access;
     `logs`; `probe` — the node test; `update` — the app update sheet;
   - `features` — the Features page behind the pill on Home and its Connections page (the core's open
-    connections, read once a second while the page is open).
+    connections, read once a second while the page is open; the closed ones stay dimmed, and the core keeps those
+    that closed while the app was hidden for five minutes after the page last asked).
 - **`ui/components/SensitiveLock.kt`** — the fingerprint, face or screen-lock check before the
   subscription link and the config, and `SecureWindow` (no screenshots of those screens).
 - **`ui/components/`** — `DuckerScaffold` (the tab dock), `Tv` (the TV layout, the focus frame and
