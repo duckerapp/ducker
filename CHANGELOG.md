@@ -5,6 +5,38 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.45 — 2026-11-05
+
+- “Features” on Home, under the subscription card, with two tools:
+  - “Connections”: which apps connect where, live — the app's icon, the site, the rule and the node, the speed. Tap a
+    card to keep only that app, again for only that site; there is a search and “Reset all”, and closed connections
+    stay greyed out as “Closed”.
+  - “Wi-Fi sharing”: the VPN's internet for a laptop or another phone. Turn it on and enter the IP and the port from the
+    card — on someone else's Wi-Fi also the login and the password — in the second device's Wi-Fi proxy settings.
+    Through the phone's own hotspot no password is needed. It turns itself off when the network changes or the VPN
+    stops; only apps that support a proxy go through it.
+- “Protect subscription” (Settings → Privacy): the subscription link, its QR code, sending it to a TV and the config
+  editor open only after your fingerprint, face or PIN, and those screens can't be captured. Off by default.
+- A bell on “Profiles”: providers' announcements of the last 10 days, the new ones marked “New”.
+- A warning when 80% and 95% of the subscription's traffic is used.
+- “Add subscription” fills in a link from the clipboard.
+- The “Could not update the subscription” notification has an “Update” button.
+- Something is hidden on Home.
+- “Proxies” checks its nodes only while it is open, and a node shared by several groups once; its list no longer slows
+  the screen down and shows at once after the app was closed.
+- After the VPN starts, Home checks its own node first: the delay under the button comes sooner, without a false
+  “no answer”.
+- A full phone is named as such — “Your phone is out of storage” — instead of blaming the provider, and no longer
+  crashes the app at every start.
+- A subscription is no longer damaged when the app is closed in the middle of its update, and a failed update no
+  longer takes the VPN down.
+- When the VPN went off after repeated crashes, the app no longer shows it as connected and sends “VPN turned off” with
+  “Connect”.
+- Under the largest system font labels shrink instead of being cut, a long subscription name takes up to three lines,
+  and Home's theme button is bigger.
+- Persian and Arabic: the screens are mirrored, while links, addresses and the log read left to right.
+- On phones with three buttons at the bottom, lists fade out under the bar instead of the system's dark strip.
+
 ## 0.4.44 — 2026-10-27
 
 - On a phone the round “+” no longer covers the subscription cards: a moment after you open “Profiles”, the tab
