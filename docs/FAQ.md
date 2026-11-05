@@ -19,6 +19,7 @@ in the app.
 - [The subscription does not update](#the-subscription-does-not-update)
 - [No internet with the VPN on](#no-internet-with-the-vpn-on)
 - [An app complains about the VPN](#an-app-complains-about-the-vpn)
+- [Sharing the VPN with a laptop or another device](#sharing-the-vpn-with-a-laptop-or-another-device)
 - [Google Play Protect asks to scan the app](#google-play-protect-asks-to-scan-the-app)
 - [How to send a log](#how-to-send-a-log)
 - [What never to send](#what-never-to-send)
@@ -290,6 +291,38 @@ rest go past it. While nothing is checked, all apps go through the VPN.
      lockdown_offline; the screen ui/apps/AppsScreen.kt; the restart after a change —
      HomeActivity.applyAppFilter (the list is set when the tunnel is created); the provider's
      list cannot be unchecked; no internet in lockdown mode — measured on a phone. -->
+
+## Sharing the VPN with a laptop or another device
+
+Android sends devices connected to the phone's hotspot past the VPN, with any VPN app. ducker can give them a proxy
+instead: Home → "Features" → "Wi-Fi sharing".
+
+1. Connect the VPN.
+2. Connect the second device to the phone's hotspot, or put both on the same Wi-Fi.
+3. Turn on "Wi-Fi sharing". The card shows the IP and the port; a tap copies them.
+4. On the second device, set a manual proxy with that IP and port in the Wi-Fi network's settings:
+   - Android: Wi-Fi → the network's settings → "Proxy" → "Manual" (sometimes under "Advanced options");
+   - iPhone and iPad: Settings → Wi-Fi → ⓘ next to the network → "Configure Proxy" → "Manual";
+   - Windows: Settings → "Network & internet" → "Proxy" → "Use a proxy server";
+   - macOS: System Settings → "Network" → Wi-Fi → "Details" → "Proxies".
+
+On the phone's own hotspot no password is asked: only people you told the hotspot's password can join it. On any
+other Wi-Fi the card also shows a login and a password, and "Password sign-in" is on, so that neighbours on a café's
+Wi-Fi cannot use your VPN. The proxy settings of Android phones, TVs and Windows have no fields for a password, and
+only a browser asks for it. Connect such a device to the phone's hotspot, or turn "Password sign-in" off: the port is
+then open to everyone on that Wi-Fi.
+
+What goes through it: browsers and the apps that follow the proxy settings. Games, calls and some apps with a
+connection of their own go past it — straight through the phone's internet, without the VPN. To send everything, run
+a VPN client on the second device that sends all its traffic to this port as a SOCKS5 proxy; UDP goes through too.
+
+The sharing turns itself off when its network changes — the Wi-Fi is lost or another one is joined, the hotspot is
+turned off — and when the VPN stops. One tap turns it on again; the port and the password stay the same. A provider
+can turn sharing off for its subscription, and the card then says so.
+
+<!-- Sources: the strings share_*; the card — ui/features/FeaturesScreen.kt (ShareCard); when it goes off —
+     service/…/clash/module/ShareModule.kt; the port itself — core/src/main/golang/native/proxy/share.go. The
+     system menu names are Android's, Apple's and Microsoft's and differ between versions. -->
 
 ## Google Play Protect asks to scan the app
 

@@ -83,7 +83,8 @@ published by `.github/workflows/pages.yaml`.
     `logs`; `probe` — the node test; `update` — the app update sheet;
   - `features` — the Features page behind the pill on Home and its Connections page (the core's open
     connections, read once a second while the page is open; the closed ones stay dimmed, and the core keeps those
-    that closed while the app was hidden for five minutes after the page last asked).
+    that closed while the app was hidden for five minutes after the page last asked); the Wi-Fi sharing card
+    (`ShareViewModel`).
 - **`ui/components/SensitiveLock.kt`** — the fingerprint, face or screen-lock check before the
   subscription link and the config, and `SecureWindow` (no screenshots of those screens).
 - **`ui/components/`** — `DuckerScaffold` (the tab dock), `Tv` (the TV layout, the focus frame and
@@ -114,11 +115,12 @@ published by `.github/workflows/pages.yaml`.
   `ProfileProcessor` downloads, validates and commits a profile.
 - **`clash/ClashRuntime.kt`** with `clash/module/*Module.kt`: `Tun`, `Configuration`,
   `NetworkObserve`, `AppListCache`, `StaticNotification`, `DynamicNotification`, `Lockdown`,
-  `Suspend`, `TimeZone`, `Close`.
+  `Suspend`, `TimeZone`, `Close`, `Share` (Wi-Fi sharing: the phone's address on its hotspot or Wi-Fi, off when
+  that network changes).
 - **`data/`** — Room: `Imported`, `Pending`, `Selection` with DAOs and `migrations/`.
 - **`store/`** — `ServiceStore`, `UserRulesStore` (`files/user-rules/<uuid>.json`), `AnnouncementStore` (the
   providers' announcements of the last ten days, `files/announcements.json`).
-  **`model/`** — `Profile`, `UserRule`, `AccessControlMode`.
+  **`model/`** — `Profile`, `UserRule`, `AccessControlMode`, `ShareState`.
 - **`util/`** — `SubscriptionHeaders.kt` (the `User-Agent` and device headers),
   `ProviderInfo.kt` (subscription and `ducker-*` headers), `SubscriptionMirrors.kt` (a
   subscription's backup addresses and the provider's move), `Failure.kt` (a table that turns raw
@@ -133,7 +135,8 @@ published by `.github/workflows/pages.yaml`.
   `config/` (user rules placed before the provider's, fetching — a subscription's addresses in
   turn, then a last resort directly and through its own node; the mirror headers also read from
   Happ-style `#name: value` lines at the top of the body — overrides), `convert/` (links to
-  a config through the built-in template), `tunnel/`, `tun/`, `app/`.
+  a config through the built-in template), `tunnel/`, `tun/`, `app/`, `proxy/` (the system proxy's own
+  port and the Wi-Fi sharing port: one address, only that network's devices, the phone itself refused).
 - **`core/src/foss/golang/`** — the main `go.mod` with `replace` directives and three git
   submodules.
 - **`core/toolchain/`** — `go.sh`, the pinned Go the core is built with in CI and in releases, and

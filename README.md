@@ -169,7 +169,7 @@ look like its own with response headers of the subscription request. In
 - **`ducker-local-proxy: off`** — the tunnel starts with the config's local ports closed
   (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`) and without `listeners`, so
   other apps on the phone cannot find a proxy on `127.0.0.1`. The config itself is not rewritten.
-  A header cannot open a port.
+  A header cannot open a port. It also keeps "Wi-Fi sharing" closed.
 - **`ducker-override-user: on | off`** — reserved for settings that the provider sets with
   headers. The app reads it, but it has no effect yet.
 
