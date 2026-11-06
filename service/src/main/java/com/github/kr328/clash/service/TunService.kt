@@ -34,6 +34,10 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     /** С каким режимом блокировки собран текущий туннель. */
     private var lockdownApplied = false
 
+    /** The subscription's `tun` values the interface was built with; [openLock] guards both. */
+    private var builtWith: ProfileNetwork? = null
+    private val openLock = Any()
+
     private val runtime = clashRuntime {
         val store = ServiceStore(self)
 
@@ -56,7 +60,12 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             if (rechecked.compareAndSet(false, true)) Clash.healthCheckAuto()
         }
 
-        config.onLoaded = { if (tunOpened.get()) recheck() }
+        config.onLoaded = {
+            if (tunOpened.get()) {
+                recheck()
+                tun.rebuildIfChanged()
+            }
+        }
         val network = install(NetworkObserveModule(self))
         val lockdown = install(LockdownModule(self))
 
@@ -72,7 +81,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         install(MobileModule(self))
 
         try {
-            tun.open()
+            synchronized(openLock) { tun.open() }
 
             tunOpened.set(true)
 
@@ -103,7 +112,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                         val now = isLockdownEnabled
 
                         if (now != lockdownApplied) {
-                            tun.open(now)
+                            synchronized(openLock) { tun.open(now) }
 
                             // Главная и плитка перечитают состояние, в том числе
                             // предупреждение о приложениях без сети.
@@ -226,6 +235,29 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         } > 0
     }
 
+    /**
+     * The interface takes the subscription's `tun` values — app lists, excluded routes, stack, DNS (F-69) — and a
+     * load of another subscription, picked by the person or by «Мобильная сеть», kept the first one's. Rebuilt in
+     * place as for the lockdown switch; called before the load is announced, so what waits for it runs on the new one.
+     * The core closes the old interface before it starts on the new one (`startTun`), so a rebuild that fails leaves
+     * no tunnel: its exception goes out of `onLoaded` to ConfigurationModule, which stops the service with the reason.
+     */
+    private fun TunModule.rebuildIfChanged() {
+        synchronized(openLock) {
+            val active = ServiceStore(self).activeProfile ?: return
+            val now = Clash.queryProfileNetwork(self.importedDir.resolve(active.toString()).absolutePath)
+
+            if (now.tunValues() == builtWith) return
+
+            Log.i("Another subscription's tun values: rebuilding the interface")
+
+            open(lockdownApplied)
+        }
+
+        // Home and the tile read the state again, the warning about apps without network included.
+        sendClashStarted()
+    }
+
     private fun TunModule.open(lockdown: Boolean = false) {
         val store = ServiceStore(self)
 
@@ -241,6 +273,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         // а локальные адреса ядро само отправит напрямую: правило для них в шаблоне
         // есть, а сокеты ядра блокировка не трогает.
         lockdownApplied = lockdown
+        builtWith = profile.tunValues()
 
         val device = with(Builder()) {
             // Interface address
@@ -412,3 +445,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         )
     }
 }
+
+/** What of a subscription the interface is built from: all but `mode`, which the core applies by itself. */
+internal fun ProfileNetwork.tunValues() = copy(mode = "")
