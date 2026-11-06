@@ -88,7 +88,9 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
         val screen = receiveBroadcast(false, Channel.CONFLATED) {
             addAction(Intent.ACTION_SCREEN_ON)
         }
-        val loaded = receiveBroadcast {
+        // Bounded: only activate reads it, and it first drains the loads that came before. Only those pile up, so a
+        // full buffer drops only loads no switch waits for.
+        val loaded = receiveBroadcast(capacity = Channel.BUFFERED) {
             addAction(Intents.ACTION_PROFILE_LOADED)
         }
 
