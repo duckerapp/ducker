@@ -81,6 +81,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         install(MobileModule(self) { config.ready })
 
         try {
+            tun.protectEarly()
             synchronized(openLock) { tun.open() }
 
             tunOpened.set(true)

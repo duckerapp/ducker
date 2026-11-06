@@ -91,6 +91,17 @@ object Clash {
     ): Boolean =
         Bridge.nativeStartTun(fd, stack, congestion, gateway, portal, dns, SafeTunInterface(markSocket, querySocketUid)) == 0
 
+    /**
+     * The core's sockets are protected with [markSocket] from here, before the first [startTun] (F-414); a no-op if a
+     * tunnel runs. [stopTun] releases it.
+     */
+    fun protectTun(
+        markSocket: (Int) -> Boolean,
+        querySocketUid: (protocol: Int, source: InetSocketAddress, target: InetSocketAddress) -> Int
+    ) {
+        Bridge.nativeProtectTun(SafeTunInterface(markSocket, querySocketUid))
+    }
+
     fun stopTun() {
         Bridge.nativeStopTun()
     }

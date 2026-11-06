@@ -35,7 +35,7 @@ func TestTunCallbacksSwapWhileRead(t *testing.T) {
 	close(stop)
 	wg.Wait()
 
-	if TunRunning() || QuerySocketUid(&net.TCPAddr{}, &net.TCPAddr{}) != -1 {
+	if QuerySocketUid(&net.TCPAddr{}, &net.TCPAddr{}) != -1 {
 		t.Fatal("a stopped tunnel must answer as stopped")
 	}
 }

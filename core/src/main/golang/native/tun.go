@@ -31,6 +31,13 @@ func startTun(fd C.int, stack, congestion, gateway, portal, dns C.c_string, call
 	return 0
 }
 
+//export protectTun
+func protectTun(callback unsafe.Pointer) {
+	defer panicguard.Recover("protectTun", failExport)
+
+	protectEarly(callback)
+}
+
 //export stopTun
 func stopTun() {
 	defer panicguard.Recover("stopTun", failExport)

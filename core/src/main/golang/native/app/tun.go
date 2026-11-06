@@ -42,9 +42,9 @@ func QuerySocketUid(source, target net.Addr) int {
 	return tunCallbacks.Load().querySocketUid(protocol, source.String(), target.String())
 }
 
+// ApplyTunContext sets what protects the core's sockets; nil puts back the stopped tunnel's no-op. Whether the
+// tunnel is up is SetTunRunning's: the VPN service's protection comes before the interface (F-414).
 func ApplyTunContext(markSocket func(fd int) error, querySocketUid func(int, string, string) int) {
-	tunRunning.Store(markSocket != nil)
-
 	if markSocket == nil {
 		markSocket = func(fd int) error { return nil }
 	}
@@ -54,6 +54,10 @@ func ApplyTunContext(markSocket func(fd int) error, querySocketUid func(int, str
 	}
 
 	tunCallbacks.Store(&tunContext{markSocket: markSocket, querySocketUid: querySocketUid})
+}
+
+func SetTunRunning(running bool) {
+	tunRunning.Store(running)
 }
 
 func init() {

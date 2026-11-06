@@ -131,6 +131,13 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeStartTun(JNIEnv *env, jobje
 }
 
 JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeProtectTun(JNIEnv *env, jobject thiz, jobject cb) {
+    TRACE_METHOD();
+
+    protectTun(new_global(cb));
+}
+
+JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeStopTun(JNIEnv *env, jobject thiz) {
     TRACE_METHOD();
 

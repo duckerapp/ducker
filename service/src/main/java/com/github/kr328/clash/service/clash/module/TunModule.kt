@@ -68,6 +68,15 @@ class TunModule(private val vpn: VpnService) : Module<Unit>(vpn) {
         ) { START_FAILED }
     }
 
+    /**
+     * Before the first establish(): the interface is up from it, and until [attach] the core's sockets would go into
+     * it unprotected (F-414). Android lets the prepared VPN app protect with no interface yet (F-416). [requestStop]
+     * releases it, after a failed establish() as well.
+     */
+    fun protectEarly() {
+        Clash.protectTun(markSocket = vpn::protect, querySocketUid = this::queryUid)
+    }
+
     suspend fun close() {
         close.send(Unit)
     }

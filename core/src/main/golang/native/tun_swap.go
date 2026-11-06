@@ -79,8 +79,26 @@ func (t *remoteTun) close() {
 
 }
 
-// swapTun replaces the running tunnel, if any, with one on fd. The callbacks go straight from the old tunnel's to
-// the new one's; the no-op is set only when no tunnel is left.
+// protectEarly hands the core the VPN service's protect callback before its first establish(): the interface is up
+// from establish(), the tunnel's own callbacks come with startTun, and a core socket dialed in between went into the
+// tunnel and back into the core (F-414). Android lets the prepared VPN app protect with no interface yet (F-416). Kept
+// as a tunnel with nothing to close, so startTun swaps from it as from any tunnel and stopTun releases it, a start
+// whose establish() failed included; «tunnel up» waits for startTun. A no-op if a tunnel or a hand-over is in place.
+func protectEarly(callback unsafe.Pointer) {
+	rTunLock.Lock()
+	defer rTunLock.Unlock()
+
+	if rTun != nil {
+		bridgeRelease(callback)
+		return
+	}
+
+	rTun = &remoteTun{callback: callback, limit: semaphore.NewWeighted(4)}
+	app.ApplyTunContext(rTun.markSocket, rTun.querySocketUid)
+}
+
+// swapTun replaces the running tunnel or the early protection, if any, with a tunnel on fd. The callbacks go straight
+// from the old ones to the new; the no-op is set only when no tunnel is left.
 func swapTun(fd int, stack, congestion, gateway, portal, dns string, callback unsafe.Pointer) bool {
 	rTunLock.Lock()
 	defer rTunLock.Unlock()
@@ -93,6 +111,7 @@ func swapTun(fd int, stack, congestion, gateway, portal, dns string, callback un
 			tun.CloseIfOpen(fd)
 			// After the fd: until it closes, the interface is up and takes unprotected sockets.
 			app.ApplyTunContext(nil, nil)
+			app.SetTunRunning(false)
 		}
 	}()
 
@@ -109,6 +128,7 @@ func swapTun(fd int, stack, congestion, gateway, portal, dns string, callback un
 	}
 
 	remote.closer = closer
+	app.SetTunRunning(true)
 
 	rTun = remote
 	handedOff = true
@@ -124,5 +144,6 @@ func closeTun() {
 		rTun.close()
 		rTun = nil
 		app.ApplyTunContext(nil, nil)
+		app.SetTunRunning(false)
 	}
 }
