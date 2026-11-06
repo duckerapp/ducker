@@ -35,7 +35,9 @@ fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): Cl
                                 // once: nothing may be shared here without a guard. A plain list of
                                 // the modules, written and never read, crashed the process (D-293).
                                 launch {
-                                    module.execute()
+                                    moduleFailure { module.execute() }?.let {
+                                        Log.e("${module.javaClass.simpleName} failed: ${it.message}", it)
+                                    }
                                 }
 
                                 return module
@@ -62,3 +64,19 @@ fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): Cl
         }
     }
 }
+
+/**
+ * Runs a module and hands back its own failure instead of throwing it. A child that fails cancels the runtime, and
+ * TunService's scope has no handler: one module's exception took the whole `:background` process down with the
+ * tunnel. The module is gone; the rest go on. Cancellation still passes.
+ */
+internal suspend fun moduleFailure(block: suspend () -> Unit): Exception? =
+    try {
+        block()
+
+        null
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        e
+    }
