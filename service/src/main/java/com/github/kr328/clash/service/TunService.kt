@@ -179,7 +179,11 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         sendClashStopped(reason)
 
-        cancelAndJoinBlocking()
+        // The runtime's cleanup resets the core, which waits while a config is still loading — up to the 20 s
+        // of a provider download. On the main thread that froze `:background`: an ANR, and a start tapped
+        // meanwhile could not reach startForeground in time. The next start waits for this runtime anyway
+        // (`globalLock` in ClashRuntime), so the wait here can be short.
+        cancelAndJoinBlocking(STOP_WAIT_MS)
 
         Log.i("TunService destroyed: ${reason ?: "successfully"}")
 
@@ -372,6 +376,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     }
 
     companion object {
+        private const val STOP_WAIT_MS = 3_000L
         private const val TUN_MTU = 9000
         private const val TUN_SUBNET_PREFIX = 30
         private const val TUN_GATEWAY = "172.19.0.1"
