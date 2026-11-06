@@ -3,6 +3,7 @@ package com.github.kr328.clash.service
 import android.content.Context
 import android.net.Uri
 import com.github.kr328.clash.common.log.Log
+import com.github.kr328.clash.common.util.backgroundScope
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.FetchStatus
 import com.github.kr328.clash.service.data.Imported
@@ -23,6 +24,7 @@ import com.github.kr328.clash.service.util.processingDir
 import com.github.kr328.clash.service.util.replaceWithCopyOf
 import com.github.kr328.clash.service.util.sendProfileChanged
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -32,6 +34,31 @@ import java.util.concurrent.TimeUnit
 object ProfileProcessor {
     private val profileLock = Mutex()
     private val processLock = Mutex()
+    private val prefetchLock = Mutex()
+    private val prefetchScope = backgroundScope("ProfileProcessor")
+
+    /**
+     * Downloads, in the background, the provider files [uuid] has none of yet. A subscription never loaded here
+     * downloaded its rule sets that go through a node inside its first load, while the core dropped every connection
+     * for up to 20 s: picked for «Мобильная сеть», on the first switch to it. No [profileLock]: [active] waits on it.
+     */
+    fun prefetch(context: Context, uuid: UUID) {
+        prefetchScope.launch {
+            prefetchLock.withLock {
+                val dir = context.importedDir.resolve(uuid.toString())
+                if (!dir.isDirectory) return@withLock
+
+                when (val left = Clash.fetchMissingProviders(dir.absolutePath)) {
+                    0 -> Unit
+                    -1 -> Log.w("Prefetch: the config of $uuid does not read")
+                    else -> Log.w("Prefetch: $left provider files of $uuid still missing")
+                }
+
+                // Deleted while the files came: the downloads made its folder again.
+                if (!ImportedDao().exists(uuid)) profileLock.withLock { if (!ImportedDao().exists(uuid)) dir.deleteRecursively() }
+            }
+        }
+    }
 
     /**
      * Панель отказала из-за идентификатора устройства и прислала вместо профиля заглушку

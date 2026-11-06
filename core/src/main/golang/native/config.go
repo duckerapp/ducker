@@ -219,3 +219,13 @@ func queryProfileGroups(path C.c_string) *C.char {
 	defer panicguard.Recover("queryProfileGroups", failExport)
 	return marshalJson(config.QueryGroups(C.GoString(path)))
 }
+
+//export fetchMissingProviders
+func fetchMissingProviders(path C.c_string) C.int {
+	defer panicguard.Recover("fetchMissingProviders", failExport)
+	left, err := config.FetchMissingProviders(C.GoString(path))
+	if err != nil {
+		return -1
+	}
+	return C.int(left)
+}

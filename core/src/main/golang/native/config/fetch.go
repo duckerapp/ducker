@@ -104,14 +104,14 @@ func (e *httpStatusError) Error() string {
 	return fmt.Sprintf("HTTP %d %s", e.code, http.StatusText(e.code))
 }
 
-// openUrl fetches a subscription by route r (subscription_mirrors.go); providers ignore r.
+// openUrl fetches a subscription by route r (subscription_mirrors.go); providers take only r.direct.
 func openUrl(ctx context.Context, url string, subscription bool, r route) (io.ReadCloser, fetchHeader, error) {
 	// Ядро шлёт свои запросы по правилам загруженного конфига. При выключенном VPN там
 	// лежит конфиг для замеров (D-63), и подписка качалась через его узел: мёртвый узел —
 	// и новую подписку не добавить («first record does not look like a TLS handshake»).
 	// VPN выключен — значит, напрямую, как было до D-63 (D-100).
 	var options []clashHttp.Option
-	if !app.TunRunning() {
+	if !app.TunRunning() || r.direct {
 		options = append(options, clashHttp.WithDialer(dialer.NewDialer()))
 	}
 

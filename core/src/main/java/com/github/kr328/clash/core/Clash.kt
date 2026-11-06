@@ -146,6 +146,13 @@ object Clash {
         }
     }
 
+    /**
+     * Downloads the provider files the subscription in [path] has none of, the rule sets that go through a node too:
+     * through the VPN while it is up, directly if that fails or it is down. Blocks for the downloads. Returns how many
+     * are still missing, -1 if the subscription's config does not read.
+     */
+    fun fetchMissingProviders(path: String): Int = Bridge.nativeFetchMissingProviders(path)
+
     fun queryGroupNames(excludeNotSelectable: Boolean): List<String> {
         val names = CoreJson.decodeFromString(
             JsonArray.serializer(),

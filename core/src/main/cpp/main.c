@@ -274,6 +274,16 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryProfileGroups(JNIEnv *
     return new_string(response);
 }
 
+JNIEXPORT jint JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeFetchMissingProviders(JNIEnv *env, jobject thiz,
+                                                                           jstring path) {
+    TRACE_METHOD();
+
+    scoped_string _path = get_string(path);
+
+    return (jint) fetchMissingProviders(_path);
+}
+
 JNIEXPORT jstring JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryGroupNames(JNIEnv *env, jobject thiz,
                                                                      jboolean exclude_not_selectable) {

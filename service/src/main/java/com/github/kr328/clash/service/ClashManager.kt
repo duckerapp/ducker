@@ -299,6 +299,9 @@ class ClashManager(private val context: Context) : IClashManager,
 
         MobileModule.active?.changed()
 
+        // The picked subscription's files come now, not inside the first switch to it.
+        if (on && uuid != null) ProfileProcessor.prefetch(context, uuid)
+
         return queryMobile()
     }
 

@@ -109,6 +109,9 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
             // node while Home said it had, and saved no Wi-Fi node to bring back.
             if (!awaitReady(LOAD_WAIT_MS, CONFIG_POLL_MS, configReady)) Log.w("Mobile: no config after a minute, acting anyway")
 
+            // Also at every start: the pick may be older than the fetch at the pick, or that fetch may have failed.
+            if (store.mobileOn) store.mobileProfile?.let { ProfileProcessor.prefetch(service, it) }
+
             // At the start nothing waits: the VPN was just turned on, or the phone has just come up.
             var starting = true
             var failed = false
