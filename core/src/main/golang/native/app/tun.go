@@ -6,8 +6,14 @@ import (
 	"syscall"
 )
 
-var markSocketImpl func(fd int) error
-var querySocketUidImpl func(protocol int, source, target string) int
+// tunContext is swapped whole at every start and stop of the tunnel while dialing goroutines read it: plain
+// variables were a data race.
+type tunContext struct {
+	markSocket     func(fd int) error
+	querySocketUid func(protocol int, source, target string) int
+}
+
+var tunCallbacks atomic.Pointer[tunContext]
 
 var tunRunning atomic.Bool
 
@@ -18,7 +24,7 @@ func TunRunning() bool {
 }
 
 func MarkSocket(fd int) error {
-	return markSocketImpl(fd)
+	return tunCallbacks.Load().markSocket(fd)
 }
 
 func QuerySocketUid(source, target net.Addr) int {
@@ -33,7 +39,7 @@ func QuerySocketUid(source, target net.Addr) int {
 		return -1
 	}
 
-	return querySocketUidImpl(protocol, source.String(), target.String())
+	return tunCallbacks.Load().querySocketUid(protocol, source.String(), target.String())
 }
 
 func ApplyTunContext(markSocket func(fd int) error, querySocketUid func(int, string, string) int) {
@@ -47,8 +53,7 @@ func ApplyTunContext(markSocket func(fd int) error, querySocketUid func(int, str
 		querySocketUid = func(int, string, string) int { return -1 }
 	}
 
-	markSocketImpl = markSocket
-	querySocketUidImpl = querySocketUid
+	tunCallbacks.Store(&tunContext{markSocket: markSocket, querySocketUid: querySocketUid})
 }
 
 func init() {
