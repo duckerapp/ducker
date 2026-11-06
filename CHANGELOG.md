@@ -5,6 +5,24 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.46 — 2026-11-06
+
+- “Mobile network” in “Features”: a subscription and servers of its own for when the phone leaves Wi-Fi. Turn on
+  “Switch by network”, choose the subscription and, if you like, servers in order — the first one that answers is
+  used; back on Wi-Fi everything is as usual. A server or subscription you pick yourself stays until the network
+  changes again. The network has to hold for about a minute, or a few seconds with the screen on.
+- The subscription chosen for the mobile network downloads its rule sets in advance, so the first switch off Wi-Fi
+  does not pause your connections.
+- The switch waits until the VPN has loaded the subscription and tries again if it failed, instead of reporting a
+  switch that did not happen.
+- A subscription with VPN settings of its own (app lists, excluded addresses) rebuilds the VPN with them instead of
+  running on the previous subscription's.
+- Turning the VPN off while a subscription loads no longer hangs.
+- A failure in one part of the VPN no longer takes the whole VPN down.
+- The app's own connections no longer slip into the VPN for a moment when it rebuilds its interface.
+- Choosing servers for a subscription that is not running lists all of them, including those its groups add by
+  themselves.
+
 ## 0.4.45 — 2026-11-05
 
 - “Features” on Home, under the subscription card, with two tools:
