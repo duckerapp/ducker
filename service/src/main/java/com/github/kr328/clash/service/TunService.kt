@@ -78,7 +78,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         install(TimeZoneModule(self))
         install(SuspendModule(self))
         install(ShareModule(self))
-        install(MobileModule(self))
+        install(MobileModule(self) { config.ready })
 
         try {
             synchronized(openLock) { tun.open() }

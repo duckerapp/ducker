@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * subscription or a node of the main group, holds until the kind changes ([manual]). What was acted on is kept in
  * [ServiceStore], so a restart of the VPN neither repeats a switch nor forgets what to bring back.
  */
-class MobileModule(service: Service) : Module<Unit>(service) {
+class MobileModule(service: Service, private val configReady: () -> Boolean = { true }) : Module<Unit>(service) {
     private val store = ServiceStore(service)
     private val connectivity = service.getSystemService<ConnectivityManager>()!!
     private val power = service.getSystemService<PowerManager>()
@@ -103,38 +103,38 @@ class MobileModule(service: Service) : Module<Unit>(service) {
             // The networks there are come within milliseconds of registering (D-109): the start acts on all of them.
             delay(SETTLE_MS)
 
+            // The tunnel's first config may still be loading: the core has no groups yet, a switch made now set no
+            // node while Home said it had, and saved no Wi-Fi node to bring back.
+            if (!awaitReady(LOAD_WAIT_MS, CONFIG_POLL_MS, configReady)) Log.w("Mobile: no config after a minute, acting anyway")
+
             // At the start nothing waits: the VPN was just turned on, or the phone has just come up.
             var starting = true
+            var failed = false
 
             while (true) {
                 if (changed) {
                     changed = false
 
-                    settingsChanged(loaded)
+                    if (!settingsChanged(loaded)) failed = true
                 }
 
                 val now = kind
                 val settled = NetworkKind.entries.getOrElse(store.mobileSettled) { NetworkKind.None }
+                val wait = mobileWait(now, settled, starting, failed, SystemClock.elapsedRealtime() - since, power?.isInteractive != false)
 
-                if (now == NetworkKind.None || now == settled) {
-                    starting = false
+                if (wait != 0L) {
+                    if (wait == UNTIL_WAKE) {
+                        starting = false
+                        failed = false
+                    }
 
-                    pause(screen, 0)
-
-                    continue
-                }
-
-                val left = if (starting) 0 else holdLeft(SystemClock.elapsedRealtime() - since, power?.isInteractive != false)
-
-                if (left > 0) {
-                    pause(screen, left)
+                    pause(screen, wait.coerceAtLeast(0))
 
                     continue
                 }
 
                 starting = false
-
-                act(now, settled, loaded)
+                failed = !act(now, settled, loaded)
             }
         } finally {
             withContext(NonCancellable) {
@@ -177,52 +177,72 @@ class MobileModule(service: Service) : Module<Unit>(service) {
         wake.trySend(Unit)
     }
 
-    private suspend fun act(now: NetworkKind, settled: NetworkKind, loaded: ReceiveChannel<Intent>) {
+    /** False — the switch failed, and the kind stays unsettled for the next try. */
+    private suspend fun act(now: NetworkKind, settled: NetworkKind, loaded: ReceiveChannel<Intent>): Boolean {
         store.mobileSettled = now.ordinal
 
         val action = mobileAction(now, configured(), store.mobileBackProfile != null)
 
         Log.i("Mobile: ${settled.name} -> ${now.name}, ${action.name}")
 
-        when (action) {
+        val done = when (action) {
             MobileAction.Apply -> apply(loaded)
             MobileAction.Restore -> restore(loaded)
-            MobileAction.Nothing -> Unit
+            MobileAction.Nothing -> true
         }
+
+        if (!done) {
+            Log.w("Mobile: the switch to ${now.name} failed, again at the next screen-on or change")
+
+            store.mobileSettled = settled.ordinal
+        }
+
+        return done
     }
 
-    private suspend fun settingsChanged(loaded: ReceiveChannel<Intent>) {
-        if (!store.mobileOn) return
+    private suspend fun settingsChanged(loaded: ReceiveChannel<Intent>): Boolean {
+        if (!store.mobileOn) return true
 
         // Set up on the mobile network itself: the person's new choice applies at once, a pick of theirs before it
         // included — it is them who changed it.
         if (kind == NetworkKind.Mobile && configured()) {
             store.mobileSettled = NetworkKind.Mobile.ordinal
 
-            apply(loaded)
+            if (!apply(loaded)) {
+                // Unsettled, not the kind it was: that was usually Mobile already, and the loop then never tried again.
+                store.mobileSettled = NetworkKind.None.ordinal
+
+                return false
+            }
         }
+
+        return true
     }
 
     private suspend fun configured(): Boolean =
         store.mobileOn && store.mobileProfile?.let { ImportedDao().exists(it) } == true
 
-    private suspend fun apply(loaded: ReceiveChannel<Intent>) {
-        val target = store.mobileProfile ?: return
+    /** False — it failed. A pick of the person's own that came meanwhile is not a failure: the switch gave way. */
+    private suspend fun apply(loaded: ReceiveChannel<Intent>): Boolean {
+        val target = store.mobileProfile ?: return true
         val started = epoch.incrementAndGet()
 
         if (store.mobileBackProfile == null) saveBack(store)
 
-        if (store.activeProfile != target && !activate(target, started, loaded)) return
-        if (epoch.get() != started) return
+        if (store.activeProfile != target && !activate(target, started, loaded)) return epoch.get() != started
+        if (epoch.get() != started) return true
 
         val main = mainGroup()
         val members = main?.let { members(it) }.orEmpty()
         val list = store.mobileNodes.filter { it in members }
 
+        // Nodes are set, yet the core has no main group: nothing was switched, so nothing may say it was.
+        if (main == null && store.mobileNodes.isNotEmpty()) return false
+
         if (main == null || list.isEmpty()) {
             show(MobileState.Shown.InEffect)
 
-            return
+            return true
         }
 
         pick(main, list.first())
@@ -230,7 +250,7 @@ class MobileModule(service: Service) : Module<Unit>(service) {
 
         val answered = firstAnswering(list)
 
-        if (epoch.get() != started) return
+        if (epoch.get() != started) return true
 
         Log.i("Mobile: ${answered ?: "none"} of ${list.size} answered")
 
@@ -238,23 +258,31 @@ class MobileModule(service: Service) : Module<Unit>(service) {
             answered == null -> show(MobileState.Shown.NoneAnswered)
             answered != list.first() -> pick(main, answered)
         }
+
+        return true
     }
 
-    private suspend fun restore(loaded: ReceiveChannel<Intent>) {
-        val back = store.mobileBackProfile ?: return
+    private suspend fun restore(loaded: ReceiveChannel<Intent>): Boolean {
+        val back = store.mobileBackProfile ?: return true
         val group = store.mobileBackGroup
         val node = store.mobileBackNode
         val started = epoch.incrementAndGet()
 
         // Home must not say «мобильная сеть» on Wi-Fi, whatever comes of the switch.
+        show(MobileState.Shown.None)
+
+        if (ImportedDao().exists(back)) {
+            if (store.activeProfile != back && !activate(back, started, loaded)) return epoch.get() != started
+            if (epoch.get() != started) return true
+
+            // The same subscription on both sides keeps one pick per group: the list's node is in it now (D-423).
+            if (group.isNotEmpty() && node.isNotEmpty()) pick(group, node)
+        }
+
+        // Only once done: a switch that failed keeps what to bring back for its next try.
         forget(service)
 
-        if (!ImportedDao().exists(back)) return
-        if (store.activeProfile != back && !activate(back, started, loaded)) return
-        if (epoch.get() != started || group.isEmpty() || node.isEmpty()) return
-
-        // The same subscription on both sides keeps one pick per group: the list's node is in it now (D-423).
-        pick(group, node)
+        return true
     }
 
     /** Makes [uuid] the active subscription and waits for the core to load it; false — it did not, or a pick came. */
@@ -264,14 +292,22 @@ class MobileModule(service: Service) : Module<Unit>(service) {
 
         if (epoch.get() != started) return false
 
+        val before = store.activeProfile
+
         ProfileProcessor.active(service, uuid)
 
         val done = withTimeoutOrNull(LOAD_WAIT_MS) {
             while (loaded.receive().getStringExtra(Intents.EXTRA_UUID) != uuid.toString()) Unit
         } != null
 
-        // A config the core refuses keeps the previous one running (D-207); its card names the error.
-        if (!done) Log.w("Mobile: $uuid did not load")
+        // A config the core refuses keeps the previous one running (D-207); its card names the error. The mark of the
+        // active subscription goes back to it too: else Home named a subscription the core does not run, and the
+        // next try took the mark for a done switch.
+        if (!done) {
+            Log.w("Mobile: $uuid did not load")
+
+            if (epoch.get() == started && before != null && store.activeProfile == uuid) ProfileProcessor.active(service, before)
+        }
 
         return done
     }
@@ -415,6 +451,7 @@ class MobileModule(service: Service) : Module<Unit>(service) {
             .build()
 
         private const val SETTLE_MS = 1_500L
+        private const val CONFIG_POLL_MS = 250L
         private const val LOAD_WAIT_MS = 60_000L
         private const val CHECKS_AT_ONCE = 5
     }
@@ -459,6 +496,30 @@ internal fun mobileAction(now: NetworkKind, configured: Boolean, back: Boolean):
 /** How much longer a new network must hold, ms: a minute in the pocket, seconds with the screen on (D-355). */
 internal fun holdLeft(heldMs: Long, screenOn: Boolean): Long =
     ((if (screenOn) SCREEN_ON_HOLD_MS else POCKET_HOLD_MS) - heldMs).coerceAtLeast(0)
+
+/**
+ * How long the loop waits before it switches: 0 — it switches now; [UNTIL_WAKE] — until the next change of network,
+ * screen-on or change of settings. A failed switch waits for such a wake too: tried again at once, it reloaded the core
+ * in a loop — `apply` fails at once while the core has no main group.
+ */
+internal fun mobileWait(
+    now: NetworkKind,
+    settled: NetworkKind,
+    starting: Boolean,
+    failed: Boolean,
+    heldMs: Long,
+    screenOn: Boolean,
+): Long = when {
+    now == NetworkKind.None || now == settled || failed -> UNTIL_WAKE
+    starting -> 0
+    else -> holdLeft(heldMs, screenOn)
+}
+
+internal const val UNTIL_WAKE = -1L
+
+/** Waits until [ready], looking every [pollMs], at most [timeoutMs]; false — it never was. */
+internal suspend fun awaitReady(timeoutMs: Long, pollMs: Long, ready: () -> Boolean): Boolean =
+    withTimeoutOrNull(timeoutMs) { while (!ready()) delay(pollMs) } != null
 
 // Starting values, to tune on the phone (D-355).
 internal const val POCKET_HOLD_MS = 60_000L

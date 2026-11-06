@@ -1,8 +1,11 @@
 package com.github.kr328.clash.service.clash.module
 
 import com.github.kr328.clash.service.model.NetworkKind
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /** «Мобильная сеть» (D-423, D-424): which side a network is on, what a settled change does, how long it waits. */
 class MobileModuleTest {
@@ -34,5 +37,41 @@ class MobileModuleTest {
         assertEquals(0, holdLeft(20_000, screenOn = true))
         assertEquals(SCREEN_ON_HOLD_MS - 3_000, holdLeft(3_000, screenOn = true))
         assertEquals(0, holdLeft(POCKET_HOLD_MS + 1, screenOn = false))
+    }
+
+    @Test
+    fun `a failed switch waits for a screen-on or a change, then is tried again at once`() {
+        val held = POCKET_HOLD_MS * 10
+
+        // Long held, screen on: switches now…
+        assertEquals(0, mobileWait(NetworkKind.Mobile, NetworkKind.Wifi, false, false, held, screenOn = true))
+        // …but not again right after it failed: that was a loop of reloads.
+        assertEquals(UNTIL_WAKE, mobileWait(NetworkKind.Mobile, NetworkKind.Wifi, false, failed = true, held, screenOn = true))
+        assertEquals(UNTIL_WAKE, mobileWait(NetworkKind.Wifi, NetworkKind.Mobile, true, failed = true, 0, screenOn = true))
+        // The wake clears `failed`: the next pass switches without a new hold.
+        assertEquals(0, mobileWait(NetworkKind.Mobile, NetworkKind.Wifi, false, false, held, screenOn = true))
+        // A failed settings change leaves the kind unsettled (None), so the mobile side is tried again after the wake.
+        assertEquals(0, mobileWait(NetworkKind.Mobile, NetworkKind.None, false, false, held, screenOn = false))
+    }
+
+    @Test
+    fun `the loop rests on a settled kind or no network, the start does not wait, a fresh change holds`() {
+        assertEquals(UNTIL_WAKE, mobileWait(NetworkKind.Mobile, NetworkKind.Mobile, true, false, 0, screenOn = true))
+        assertEquals(UNTIL_WAKE, mobileWait(NetworkKind.None, NetworkKind.Wifi, true, false, 0, screenOn = true))
+        assertEquals(0, mobileWait(NetworkKind.Mobile, NetworkKind.Wifi, starting = true, false, 0, screenOn = false))
+        assertEquals(POCKET_HOLD_MS - 1_000, mobileWait(NetworkKind.Mobile, NetworkKind.Wifi, false, false, 1_000, false))
+    }
+
+    @Test
+    fun `the switch waits for the first config, and goes on without it after the limit`() = runBlocking {
+        var polls = 0
+
+        assertTrue(awaitReady(timeoutMs = 5_000, pollMs = 5) { ++polls >= 4 })
+        assertEquals(4, polls)
+
+        val started = System.nanoTime()
+
+        assertFalse(awaitReady(timeoutMs = 100, pollMs = 5) { false })
+        assertTrue(System.nanoTime() - started >= 100_000_000)
     }
 }
