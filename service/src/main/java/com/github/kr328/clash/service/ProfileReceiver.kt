@@ -165,15 +165,21 @@ class ProfileReceiver : BroadcastReceiver() {
         }
 
         private fun pendingIntentOf(context: Context, imported: Imported): PendingIntent {
+            // Foreground queue: on a slow phone the background one holds a manifest receiver's broadcast
+            // for over an hour, and «Обновить» answered «Нет ответа» without downloading anything (F-421).
             val intent = Intent(Intents.ACTION_PROFILE_REQUEST_UPDATE)
                 .setComponent(ProfileReceiver::class.componentName)
                 .setUUID(imported.uuid)
+                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
 
+            // Cancel, not update: an update keeps the flags of the intent the alarm already holds, and the request
+            // stayed in the background queue after an app update. Cancelling drops that alarm; every caller sets or
+            // sends a new one.
             return PendingIntent.getBroadcast(
                 context,
                 0,
                 intent,
-                pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT)
+                pendingIntentFlags(PendingIntent.FLAG_CANCEL_CURRENT)
             )
         }
     }
