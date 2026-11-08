@@ -98,17 +98,26 @@ class TunGuard : Service() {
          * background drops it a minute later (F-397): nothing of ours runs, the VPN is off with no word, and its
          * marks stay. Whatever starts this process next — the app, a widget, the tile, an update alarm — tells
          * the person, without reconnecting: that start may come hours later (Q-105).
+         *
+         * A tunnel cut by the app's update is brought back by the same start (D-433): `ProfileReceiver` does it on
+         * Android's word of the update, and a slow phone delivers that word half an hour late (F-420).
          */
         fun Context.noticeTunnelLeftDown() {
             Handler(Looper.getMainLooper()).postDelayed({
                 val now = System.currentTimeMillis()
                 val updatedAt = packageManager.getPackageInfo(packageName, 0).lastUpdateTime
                 val startedAt = ServiceStore(this).tunnelStartedAt
+                val bootedAt = now - SystemClock.elapsedRealtime()
+                val running = StatusProvider.serviceRunning
 
-                if (leftDownUnnoticed(startedAt, now - SystemClock.elapsedRealtime(), updatedAt, StatusProvider.serviceRunning)) {
+                if (leftDownUnnoticed(startedAt, bootedAt, updatedAt, running)) {
                     Log.w("Tunnel found down with no word after its process died")
 
                     leftDown(startedAt)
+                } else if (cutByUpdate(startedAt, bootedAt, updatedAt, running)) {
+                    Log.i("Tunnel cut by the app's update, restoring before Android's word of it")
+
+                    restoreTunnel(afterCrash = false)
                 }
             }, SETTLE)
         }
@@ -119,6 +128,10 @@ class TunGuard : Service() {
          */
         internal fun leftDownUnnoticed(startedAt: Long, bootedAt: Long, updatedAt: Long, running: Boolean): Boolean =
             !running && startedAt > maxOf(bootedAt, updatedAt)
+
+        /** The tunnel was up after the last boot and the app's update cut it: what `ProfileReceiver` restores. */
+        internal fun cutByUpdate(startedAt: Long, bootedAt: Long, updatedAt: Long, running: Boolean): Boolean =
+            !running && startedAt > bootedAt && startedAt <= updatedAt
 
         /**
          * A crash of ours left a record after the tunnel came up at [startedAt]: Go's panic or fatal error in the

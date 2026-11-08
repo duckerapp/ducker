@@ -1,6 +1,7 @@
 package com.github.kr328.clash.service
 
 import com.github.kr328.clash.service.TunGuard.Companion.crashedSince
+import com.github.kr328.clash.service.TunGuard.Companion.cutByUpdate
 import com.github.kr328.clash.service.TunGuard.Companion.leftDownUnnoticed
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -34,6 +35,16 @@ class TunGuardTest {
     fun `a tunnel cut by a reboot or an update is left to their receivers`() {
         assertFalse(leftDownUnnoticed(startedAt = 500_000L, bootedAt = boot, updatedAt = 0L, running = false))
         assertFalse(leftDownUnnoticed(startedAt = 1_500_000L, bootedAt = boot, updatedAt = update, running = false))
+    }
+
+    @Test
+    fun `a tunnel the update cut is restored at the next start, others are not`() {
+        assertTrue(cutByUpdate(startedAt = 1_500_000L, bootedAt = boot, updatedAt = update, running = false))
+        assertFalse(cutByUpdate(startedAt = 1_500_000L, bootedAt = boot, updatedAt = update, running = true))
+        // Turned off before the update, up since it, or cut by a reboot: not the update's.
+        assertFalse(cutByUpdate(startedAt = 0L, bootedAt = boot, updatedAt = update, running = false))
+        assertFalse(cutByUpdate(startedAt = 3_000_000L, bootedAt = boot, updatedAt = update, running = false))
+        assertFalse(cutByUpdate(startedAt = 500_000L, bootedAt = boot, updatedAt = update, running = false))
     }
 
     /** A file of the files directory, last written at [time]. */
