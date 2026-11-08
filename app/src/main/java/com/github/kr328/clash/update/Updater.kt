@@ -473,13 +473,13 @@ object Updater {
                 session.fsync(output)
             }
 
-            // Изменяемый: ответ установщик дописывает в это же намерение.
-            val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            // Изменяемый: ответ установщик дописывает в это же намерение. Foreground queue: the answer
+            // «confirm the install» waited behind a slow phone's background queue (D-435); a new record keeps the flag.
+            val flags = PendingIntent.FLAG_CANCEL_CURRENT or
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0
+            val answer = Intent(context, UpdateReceiver::class.java).addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
 
-            session.commit(
-                PendingIntent.getBroadcast(context, 0, Intent(context, UpdateReceiver::class.java), flags).intentSender
-            )
+            session.commit(PendingIntent.getBroadcast(context, 0, answer, flags).intentSender)
         }
     }
 

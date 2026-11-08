@@ -6,9 +6,13 @@ import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.common.constants.Permissions
 import java.util.*
 
+/**
+ * Foreground queue: these also reach the widgets' manifest receiver (`WidgetEvents`), and on a slow phone the
+ * background queue holds a manifest receiver's broadcast for over an hour (F-421, D-435).
+ */
 fun Context.sendBroadcastSelf(intent: Intent) {
     sendBroadcast(
-        intent.setPackage(this.packageName),
+        intent.setPackage(this.packageName).addFlags(Intent.FLAG_RECEIVER_FOREGROUND),
         Permissions.RECEIVE_SELF_BROADCASTS
     )
 }

@@ -230,15 +230,17 @@ class ProfileWorker : BaseService("ProfileWorker") {
         )
 
         // «Обновить» updates from the shade without opening the app. Its own request code: with the alarm's 0 it
-        // would be the alarm's PendingIntent, as extras do not tell two apart.
+        // would be the alarm's PendingIntent, as extras do not tell two apart. Foreground queue and a new record,
+        // as for the alarm (D-434, D-435).
         val retry = PendingIntent.getBroadcast(
             this,
             RETRY_REQUEST,
             Intent(Intents.ACTION_PROFILE_REQUEST_UPDATE)
                 .setComponent(ProfileReceiver::class.componentName)
                 .setUUID(uuid)
-                .putExtra(EXTRA_RETRY, true),
-            pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT),
+                .putExtra(EXTRA_RETRY, true)
+                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND),
+            pendingIntentFlags(PendingIntent.FLAG_CANCEL_CURRENT),
         )
 
         val notification = resultBuilder(uuid)

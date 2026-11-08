@@ -252,17 +252,19 @@ abstract class DuckerWidget(
             )
             row.setInt(R.id.node_row, "setBackgroundResource", if (name == state.now) style.selected else 0)
 
+            // Foreground queue, and a new record each time so the flag is not lost to an old one (D-435).
             val select = Intent(context, javaClass)
                 .setAction(ACTION_SELECT)
                 .putExtra(EXTRA_GROUP, state.group)
                 .putExtra(EXTRA_NAME, name)
+                .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
 
             // Код запроса свой у каждой строки каждого виджета: намерения различаются только
             // дополнениями, и с общим кодом система отдала бы всем строкам одно и то же.
             row.setOnClickPendingIntent(
                 R.id.node_row,
                 PendingIntent.getBroadcast(
-                    context, id * NODES + index, select, pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT),
+                    context, id * NODES + index, select, pendingIntentFlags(PendingIntent.FLAG_CANCEL_CURRENT),
                 ),
             )
 
