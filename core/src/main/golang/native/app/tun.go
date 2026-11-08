@@ -17,6 +17,10 @@ var tunCallbacks atomic.Pointer[tunContext]
 
 var tunRunning atomic.Bool
 
+// tunEpoch counts the times the VPN service took the core's sockets over or let them go.
+var tunEpoch atomic.Uint64
+var serviceProtects atomic.Bool
+
 // TunRunning — поднят ли туннель. Конфиг в ядре бывает загружен и без него: для замеров
 // узлов при выключенном VPN (D-63), и тогда его правилам нельзя доверять чужие запросы.
 func TunRunning() bool {
@@ -45,6 +49,10 @@ func QuerySocketUid(source, target net.Addr) int {
 // ApplyTunContext sets what protects the core's sockets; nil puts back the stopped tunnel's no-op. Whether the
 // tunnel is up is SetTunRunning's: the VPN service's protection comes before the interface (F-414).
 func ApplyTunContext(markSocket func(fd int) error, querySocketUid func(int, string, string) int) {
+	if serviceProtects.Swap(markSocket != nil) != (markSocket != nil) {
+		tunEpoch.Add(1)
+	}
+
 	if markSocket == nil {
 		markSocket = func(fd int) error { return nil }
 	}
@@ -54,6 +62,13 @@ func ApplyTunContext(markSocket func(fd int) error, querySocketUid func(int, str
 	}
 
 	tunCallbacks.Store(&tunContext{markSocket: markSocket, querySocketUid: querySocketUid})
+}
+
+// TunEpoch changes when the VPN service takes the core's sockets over or lets them go, swaps aside. A socket opened
+// before the VPN comes up is not protected, and once the interface is up its connection breaks: a download that failed
+// across a change may have been cut by it rather than refused (D-431).
+func TunEpoch() uint64 {
+	return tunEpoch.Load()
 }
 
 func SetTunRunning(running bool) {

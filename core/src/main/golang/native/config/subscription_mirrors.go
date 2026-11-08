@@ -293,6 +293,25 @@ func looksLikeWebPage(body *bufio.Reader) bool {
 // fetchSubscription downloads the subscription `source` into file, trying its addresses in order.
 func fetchSubscription(source, file string, report func(string)) (fetchHeader, error) {
 	addresses := subscriptionAddresses(source)
+
+	var tried []subscriptionAttempt
+	// Every try and every address left untried go to the service, whatever the end (Q-82).
+	defer func() { reportTries(addresses, tried, report) }()
+
+	epoch := app.TunEpoch()
+	header, err := tryAddresses(addresses, source, file, report, &tried)
+	// The VPN came up or went down meanwhile and no server answered with a status: the download was likely cut by
+	// that, and the ways to the server are others now — the whole plan once more, its tries added to the list (D-431).
+	if err != nil && app.TunEpoch() != epoch && !anyStatus(tried) {
+		log.Warnln("[Subscription] the VPN came up or went down during the download; trying again")
+		header, err = tryAddresses(addresses, source, file, report, &tried)
+	}
+
+	return header, err
+}
+
+// tryAddresses runs the plan once: every address the usual way, then the last resort.
+func tryAddresses(addresses []string, source, file string, report func(string), tried *[]subscriptionAttempt) (fetchHeader, error) {
 	resort := lastResortRoutes(addresses[0])
 
 	type step struct {
@@ -314,14 +333,10 @@ func fetchSubscription(source, file string, report func(string)) (fetchHeader, e
 		}
 	}
 
-	var tried []subscriptionAttempt
-	// Every try and every address left untried go to the service, whatever the end (Q-82).
-	defer func() { reportTries(addresses, tried, report) }()
-
 	for i, s := range steps {
 		// The server answered with a status at one of its addresses: another way to the same
 		// server would hear the same, so the last resort is skipped.
-		if i >= len(addresses) && anyStatus(tried) {
+		if i >= len(addresses) && anyStatus(*tried) {
 			break
 		}
 
@@ -333,7 +348,7 @@ func fetchSubscription(source, file string, report func(string)) (fetchHeader, e
 		reportFetching(hostOf(s.address), s.address != addresses[0], report)
 
 		a := fetchSubscriptionAttempt(s.address, s.route, file, timeout)
-		tried = append(tried, a)
+		*tried = append(*tried, a)
 
 		if a.err == nil {
 			reportSource(a, report)
@@ -350,7 +365,7 @@ func fetchSubscription(source, file string, report func(string)) (fetchHeader, e
 		}
 	}
 
-	best := mostTelling(tried, source)
+	best := mostTelling(*tried, source)
 
 	return best.header, withBackups(best.err, len(addresses)-1)
 }

@@ -15,6 +15,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"cfa/native/app"
 )
 
 // D-345: the subscription is tried at its addresses in turn. Every server here is on loopback.
@@ -551,5 +553,53 @@ func TestSubscriptionLastResortTriesEveryAddressDirectly(t *testing.T) {
 	}
 	if !reflect.DeepEqual(backups, []bool{false, true, false, true}) {
 		t.Fatalf("backup flags %v", backups)
+	}
+}
+
+// D-431: a download cut because the VPN came up meanwhile is tried once more; a cut with no change, or a status, is not.
+func TestSubscriptionRetriedWhenTheVpnChanges(t *testing.T) {
+	noLastResort(t)
+	t.Cleanup(func() { app.ApplyTunContext(nil, nil) })
+
+	cut := func(vpn bool) *mirrorTestServer {
+		var m *mirrorTestServer
+		m = mirrorServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if m.hits.Load() > 1 {
+				_, _ = w.Write([]byte(mirrorTestConfig))
+				return
+			}
+			if vpn { // the VPN service takes the core's sockets over while the body comes
+				app.ApplyTunContext(func(int) error { return nil }, nil)
+			}
+			conn, buf, _ := w.(http.Hijacker).Hijack()
+			_, _ = buf.WriteString("HTTP/1.1 200 OK\r\nContent-Length: 1000\r\n\r\nproxies:")
+			_ = buf.Flush()
+			_ = conn.Close()
+		})
+		return m
+	}
+
+	retried := cut(true)
+	log := &statusLog{}
+	file := previousConfig(t)
+	if _, err := fetchSubscription(retried.url, file, log.report); err != nil {
+		t.Fatal(err)
+	}
+	if retried.hits.Load() != 2 || readConfig(t, file) != mirrorTestConfig || len(log.tries()) != 2 {
+		t.Fatalf("hits %d, config %q, tries %v", retried.hits.Load(), readConfig(t, file), log.tries())
+	}
+
+	app.ApplyTunContext(nil, nil)
+	plain := cut(false)
+	if _, err := fetchSubscription(plain.url, previousConfig(t), (&statusLog{}).report); err == nil || plain.hits.Load() != 1 {
+		t.Fatalf("a cut with no change: err %v, hits %d", err, plain.hits.Load())
+	}
+
+	busy := mirrorServer(t, func(w http.ResponseWriter, r *http.Request) {
+		app.ApplyTunContext(func(int) error { return nil }, nil)
+		w.WriteHeader(503)
+	})
+	if _, err := fetchSubscription(busy.url, previousConfig(t), (&statusLog{}).report); err == nil || busy.hits.Load() != 1 {
+		t.Fatalf("a status: err %v, hits %d", err, busy.hits.Load())
 	}
 }
