@@ -972,8 +972,12 @@ class SubscriptionsViewModel : ViewModel() {
     }
 
     private companion object {
-        /** Сколько ждём ответа службы об окончании обновления, прежде чем сдаться. */
-        const val UPDATE_TIMEOUT = 90_000L
+        /**
+         * Сколько ждём ответа службы об окончании обновления, прежде чем сдаться. Only a killed service needs
+         * this: a subscription with mirrors may take longer than 90 s — 10 s for each silent address, twice with
+         * the VPN on, and 60 s for the last (`subscription_mirrors.go`) — and was told «Нет ответа» mid-download.
+         */
+        const val UPDATE_TIMEOUT = 5 * 60_000L
 
         /** Сколько ждём от системы адрес домашней сети, прежде чем сказать, что её нет. */
         const val NO_NETWORK_MS = 500L
