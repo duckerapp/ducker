@@ -5,6 +5,25 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 The versions below were built for testers before the repository was opened; they are listed here
 for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
 
+## 0.4.47 — 2026-11-09
+
+- When the phone closes ducker in the background, the notice now says so — “Your phone closed ducker in the
+  background” — and Home offers “Background work”, instead of blaming an error in ducker.
+- On Xiaomi phones “Background work” shows whether MIUI's autostart is on for ducker, and Home stops suggesting the
+  Xiaomi steps once it is.
+- After ducker updates itself, the VPN that was on comes back as soon as ducker starts — the app, the widget or the
+  tile — without waiting for the phone.
+- “Update” on a subscription no longer ends in “No response” on slow phones without trying: the button, “Update” in
+  the notification and the update by schedule start at once. A subscription with backup links gets more time before
+  “No response”.
+- The nodes widget switches the server at once and follows the VPN without delay on slow phones; the confirmation of
+  an app update no longer waits there either.
+- The update error on “Subscriptions” disappears once the subscription has updated, also when that happened while
+  ducker was in the background; “Proxies” and “Subscriptions” show what changed while you were away.
+- A subscription download cut short by the VPN coming up or going down is tried again.
+- The app's own connections stay outside the VPN from its very first start, so the subscription and its rule sets
+  download while the VPN is starting.
+
 ## 0.4.46 — 2026-11-06
 
 - “Mobile network” in “Features”: a subscription and servers of its own for when the phone leaves Wi-Fi. Turn on
