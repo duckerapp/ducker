@@ -332,6 +332,8 @@
     <string name="background_restricted">Android mungkin menidurkan ducker sehingga VPN terputus saat layar mati.</string>
     <string name="background_allow">Izinkan</string>
     <string name="background_autostart">Mulai otomatis MIUI</string>
+    <string name="background_autostart_on">Mulai otomatis MIUI: aktif</string>
+    <string name="background_autostart_off">Mulai otomatis MIUI: nonaktif</string>
     <string name="background_battery">Baterai: tanpa batasan</string>
     <string name="background_app_settings">Buka setelan aplikasi ducker</string>
     <string name="background_hint_action">Atur</string>

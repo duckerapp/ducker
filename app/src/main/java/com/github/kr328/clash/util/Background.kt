@@ -1,11 +1,13 @@
 package com.github.kr328.clash.util
 
 import android.annotation.SuppressLint
+import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
+import android.os.Process
 import android.provider.Settings
 import androidx.annotation.StringRes
 import androidx.core.content.getSystemService
@@ -67,6 +69,36 @@ enum class Vendor(@StringRes val names: Int, private vararg val keys: String) {
 /** Android не усыпляет приложение: оно в исключениях экономии батареи. */
 fun Context.backgroundAllowed(): Boolean =
     getSystemService<PowerManager>()?.isIgnoringBatteryOptimizations(packageName) ?: true
+
+/**
+ * MIUI's own «Автозапуск» (F-418): without it MIUI closes ducker in the background and Android does not restart
+ * it. MIUI keeps the switch as its app-op 10008, read through `AppOpsManager.checkOpNoThrow(int, int, String)`,
+ * hidden from the SDK. `null` — not a Xiaomi, or MIUI did not answer.
+ */
+fun Context.miuiAutostart(): Boolean? {
+    if (Vendor.current != Vendor.Xiaomi) return null
+
+    val mode = runCatching {
+        AppOpsManager::class.java
+            .getMethod("checkOpNoThrow", Int::class.java, Int::class.java, String::class.java)
+            .invoke(getSystemService<AppOpsManager>(), MIUI_AUTOSTART, Process.myUid(), packageName)
+    }.getOrNull()
+
+    return when (mode) {
+        AppOpsManager.MODE_ALLOWED -> true
+        AppOpsManager.MODE_IGNORED -> false
+        else -> null
+    }
+}
+
+/** The shortcut's label with what MIUI says of its autostart; the other screens cannot be read. */
+@StringRes
+fun Shortcut?.labelWith(autostart: Boolean?): Int = when {
+    this == null -> R.string.background_app_settings
+    label != R.string.background_autostart || autostart == null -> label
+    autostart -> R.string.background_autostart_on
+    else -> R.string.background_autostart_off
+}
 
 /**
  * Системное окно «Разрешить работу в фоне?». VPN — ровно тот случай, ради которого оно
@@ -140,3 +172,4 @@ private fun Context.start(intent: Intent) = runCatching { startActivity(intent) 
 private const val SYSTEM_SETTINGS = "com.android.settings"
 private const val MIUI_SECURITY = "com.miui.securitycenter"
 private const val MIUI_POWER = "com.miui.powerkeeper"
+private const val MIUI_AUTOSTART = 10008

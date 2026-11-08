@@ -342,6 +342,8 @@
     <string name="background_restricted">قد يضع Android تطبيق ducker في وضع السكون، وينقطع VPN عند إطفاء الشاشة.</string>
     <string name="background_allow">سماح</string>
     <string name="background_autostart">التشغيل التلقائي في MIUI</string>
+    <string name="background_autostart_on">التشغيل التلقائي في MIUI: مفعّل</string>
+    <string name="background_autostart_off">التشغيل التلقائي في MIUI: متوقف</string>
     <string name="background_battery">البطارية: بلا قيود</string>
     <string name="background_app_settings">فتح إعدادات ducker</string>
     <string name="background_hint_action">إعداد</string>

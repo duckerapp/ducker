@@ -334,6 +334,8 @@
     <string name="background_restricted">ممکن است Android برنامه ducker را به خواب ببرد و با خاموش شدن صفحه، VPN قطع شود.</string>
     <string name="background_allow">اجازه دادن</string>
     <string name="background_autostart">اجرای خودکار MIUI</string>
+    <string name="background_autostart_on">اجرای خودکار MIUI: روشن</string>
+    <string name="background_autostart_off">اجرای خودکار MIUI: خاموش</string>
     <string name="background_battery">باتری: بدون محدودیت</string>
     <string name="background_app_settings">باز کردن تنظیمات ducker</string>
     <string name="background_hint_action">تنظیم</string>

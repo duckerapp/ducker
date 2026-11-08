@@ -79,6 +79,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.github.kr328.clash.R
 import com.github.kr328.clash.util.Shortcut
+import com.github.kr328.clash.util.labelWith
 import com.github.kr328.clash.util.shortcuts
 import com.github.kr328.clash.util.Vendor
 import com.github.kr328.clash.ui.components.Pill
@@ -130,6 +131,8 @@ data class SettingsState(
     val trafficNotification: Boolean = false,
     /** Android не усыпляет ducker: он в исключениях экономии батареи (D-106). */
     val backgroundAllowed: Boolean = true,
+    /** MIUI's autostart for ducker; `null` — not a Xiaomi, or unknown (F-418). */
+    val autostart: Boolean? = null,
     /** Получать выпуски на несколько дней раньше остальных. */
     val betaUpdates: Boolean = false,
 )
@@ -358,7 +361,7 @@ fun SettingsScreen(
                         // Not on a TV, as Home's prompt (F-346).
                         if (!tv) {
                             item {
-                                BackgroundCard(state.backgroundAllowed, onAllowBackground, onVendor)
+                                BackgroundCard(state.backgroundAllowed, state.autostart, onAllowBackground, onVendor)
                             }
                         }
 
@@ -776,7 +779,7 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
  * приложение проверить не может, поэтому они не пропадают, а раскрываются касанием по карточке.
  */
 @Composable
-private fun BackgroundCard(allowed: Boolean, onAllow: () -> Unit, onVendor: (Shortcut?) -> Unit) {
+private fun BackgroundCard(allowed: Boolean, autostart: Boolean?, onAllow: () -> Unit, onVendor: (Shortcut?) -> Unit) {
     val vendor = Vendor.current
     var stepsOpen by rememberSaveable { mutableStateOf(false) }
     val foldable = allowed && vendor != null
@@ -831,7 +834,7 @@ private fun BackgroundCard(allowed: Boolean, onAllow: () -> Unit, onVendor: (Sho
                         )
                         vendor.shortcuts.ifEmpty { listOf(null) }.forEach { shortcut ->
                             Pill(
-                                text = stringResource(shortcut?.label ?: R.string.background_app_settings),
+                                text = stringResource(shortcut.labelWith(autostart)),
                                 onClick = { onVendor(shortcut) },
                                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                                 onCard = true,

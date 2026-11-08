@@ -368,6 +368,8 @@
     <string name="background_restricted">Android may put ducker to sleep, and the VPN will drop when the screen is off.</string>
     <string name="background_allow">Allow</string>
     <string name="background_autostart">MIUI autostart</string>
+    <string name="background_autostart_on">MIUI autostart: on</string>
+    <string name="background_autostart_off">MIUI autostart: off</string>
     <string name="background_battery">Battery: no restrictions</string>
     <string name="background_app_settings">Open ducker settings</string>
     <string name="background_hint_action">Set up</string>

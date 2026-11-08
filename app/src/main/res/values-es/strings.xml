@@ -336,6 +336,8 @@
     <string name="background_restricted">Android puede poner ducker en reposo y la VPN se desconectará con la pantalla apagada.</string>
     <string name="background_allow">Permitir</string>
     <string name="background_autostart">Inicio automático de MIUI</string>
+    <string name="background_autostart_on">Inicio automático de MIUI: activado</string>
+    <string name="background_autostart_off">Inicio automático de MIUI: desactivado</string>
     <string name="background_battery">Batería: sin restricciones</string>
     <string name="background_app_settings">Abrir ajustes de ducker</string>
     <string name="background_hint_action">Configurar</string>

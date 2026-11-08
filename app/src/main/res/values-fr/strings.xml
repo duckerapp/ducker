@@ -336,6 +336,8 @@
     <string name="background_restricted">Android peut mettre ducker en veille. Le VPN sera alors déconnecté lorsque l’écran sera éteint.</string>
     <string name="background_allow">Autoriser</string>
     <string name="background_autostart">Démarrage automatique MIUI</string>
+    <string name="background_autostart_on">Démarrage automatique MIUI : activé</string>
+    <string name="background_autostart_off">Démarrage automatique MIUI : désactivé</string>
     <string name="background_battery">Batterie : sans restriction</string>
     <string name="background_app_settings">Ouvrir les paramètres de ducker</string>
     <string name="background_hint_action">Configurer</string>

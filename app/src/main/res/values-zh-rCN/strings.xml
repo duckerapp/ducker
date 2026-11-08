@@ -332,6 +332,8 @@
     <string name="background_restricted">Android 可能会让 ducker 休眠，导致息屏后 VPN 断开。</string>
     <string name="background_allow">允许</string>
     <string name="background_autostart">MIUI 自启动</string>
+    <string name="background_autostart_on">MIUI 自启动：已开启</string>
+    <string name="background_autostart_off">MIUI 自启动：已关闭</string>
     <string name="background_battery">电池：无限制</string>
     <string name="background_app_settings">打开 ducker 应用设置</string>
     <string name="background_hint_action">去设置</string>

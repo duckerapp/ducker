@@ -334,6 +334,8 @@
     <string name="background_restricted">Android ducker uygulamasını uykuya alabilir; bu durumda ekran kapalıyken VPN bağlantısı kesilir.</string>
     <string name="background_allow">İzin ver</string>
     <string name="background_autostart">MIUI otomatik başlatma</string>
+    <string name="background_autostart_on">MIUI otomatik başlatma: açık</string>
+    <string name="background_autostart_off">MIUI otomatik başlatma: kapalı</string>
     <string name="background_battery">Pil: kısıtlama yok</string>
     <string name="background_app_settings">ducker uygulama ayarlarını aç</string>
     <string name="background_hint_action">Ayarla</string>

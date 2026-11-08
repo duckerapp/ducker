@@ -19,6 +19,7 @@ import com.github.kr328.clash.service.util.SubscriptionHeaders
 import com.github.kr328.clash.ui.components.SensitiveLock
 import com.github.kr328.clash.update.Updater
 import com.github.kr328.clash.util.backgroundAllowed
+import com.github.kr328.clash.util.miuiAutostart
 import com.github.kr328.clash.util.disguised
 import com.github.kr328.clash.util.setDisguised
 import com.github.kr328.clash.util.withClash
@@ -42,7 +43,7 @@ class SettingsViewModel : ViewModel() {
      * батареи, и карточка должна показать новое состояние сразу (D-106).
      */
     fun refreshBackground(context: Context) {
-        _state.update { it.copy(backgroundAllowed = context.backgroundAllowed()) }
+        _state.update { it.copy(backgroundAllowed = context.backgroundAllowed(), autostart = context.miuiAutostart()) }
     }
 
     /** A screen lock is set in Android's settings: read again when the person comes back from there. */
@@ -111,6 +112,7 @@ class SettingsViewModel : ViewModel() {
                     alwaysOn = alwaysOnVpn(),
                     alwaysOnSettings = pm.resolveActivity(Intent(Settings.ACTION_VPN_SETTINGS), 0) != null,
                     backgroundAllowed = context.backgroundAllowed(),
+                    autostart = context.miuiAutostart(),
                 )
             }
 

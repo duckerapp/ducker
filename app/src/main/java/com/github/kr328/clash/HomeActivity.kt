@@ -1736,6 +1736,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         open = backgroundOpen,
                         step = backgroundStep,
                         vendor = Vendor.current,
+                        autostart = settingsState.autostart,
                         onAllow = {
                             awaitingSystem = true
                             requestBackgroundWork()

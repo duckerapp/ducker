@@ -332,6 +332,8 @@
     <string name="background_restricted">Android có thể đưa ducker vào chế độ ngủ, khiến VPN ngắt kết nối khi tắt màn hình.</string>
     <string name="background_allow">Cho phép</string>
     <string name="background_autostart">Tự khởi động MIUI</string>
+    <string name="background_autostart_on">Tự khởi động MIUI: bật</string>
+    <string name="background_autostart_off">Tự khởi động MIUI: tắt</string>
     <string name="background_battery">Pin: không hạn chế</string>
     <string name="background_app_settings">Mở cài đặt ứng dụng ducker</string>
     <string name="background_hint_action">Thiết lập</string>

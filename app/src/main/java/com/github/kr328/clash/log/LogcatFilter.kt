@@ -13,6 +13,7 @@ import com.github.kr328.clash.core.model.LogMessage
 import com.github.kr328.clash.service.FlightRecorder
 import com.github.kr328.clash.util.Vendor
 import com.github.kr328.clash.util.backgroundAllowed
+import com.github.kr328.clash.util.miuiAutostart
 import java.io.BufferedWriter
 import java.io.Writer
 import java.text.SimpleDateFormat
@@ -42,6 +43,11 @@ class LogcatFilter(output: Writer, private val context: Context) : BufferedWrite
         appendLine("# Device: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
         appendLine("# Build: ${Build.DISPLAY}")
         appendLine("# Shell family: ${Vendor.current?.name ?: "stock"}")
+
+        // Without it MIUI closes the VPN's process and blocks its restart: a death with no trace (F-418).
+        if (Vendor.current == Vendor.Xiaomi) {
+            appendLine("# MIUI autostart: ${context.miuiAutostart()?.let { if (it) "on" else "off" } ?: "unknown"}")
+        }
 
         val power = context.getSystemService<PowerManager>()
         val activity = context.getSystemService<ActivityManager>()

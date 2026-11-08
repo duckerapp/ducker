@@ -359,6 +359,8 @@
     <string name="background_restricted">Android может усыплять ducker, и VPN будет отключаться при выключенном экране.</string>
     <string name="background_allow">Разрешить</string>
     <string name="background_autostart">Автозапуск MIUI</string>
+    <string name="background_autostart_on">Автозапуск MIUI: включён</string>
+    <string name="background_autostart_off">Автозапуск MIUI: выключен</string>
     <string name="background_battery">Батарея: без ограничений</string>
     <string name="background_app_settings">Открыть настройки ducker</string>
     <string name="background_hint_action">Настроить</string>

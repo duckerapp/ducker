@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.github.kr328.clash.R
 import com.github.kr328.clash.util.Shortcut
+import com.github.kr328.clash.util.labelWith
 import com.github.kr328.clash.util.shortcuts
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.SheetButton
@@ -37,6 +38,8 @@ fun BackgroundSheet(
     open: Boolean,
     step: BackgroundStep,
     vendor: Vendor?,
+    /** MIUI's autostart for ducker; `null` — unknown (F-418). */
+    autostart: Boolean?,
     onAllow: () -> Unit,
     /** Экран оболочки; `null` — страница приложения. */
     onOpen: (Shortcut?) -> Unit,
@@ -66,7 +69,7 @@ fun BackgroundSheet(
             // Прямые ссылки оболочки, если есть (D-128), иначе — страница приложения.
             vendor.shortcuts.ifEmpty { listOf(null) }.forEach { shortcut ->
                 SheetButton(
-                    text = stringResource(shortcut?.label ?: R.string.background_app_settings),
+                    text = stringResource(shortcut.labelWith(autostart)),
                     busyText = "",
                     busy = false,
                     enabled = true,
