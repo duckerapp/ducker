@@ -639,7 +639,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         },
                     )
 
-                    settingsState.backgroundAllowed && !shellSeen -> Vendor.current?.let { vendor ->
+                    // MIUI's autostart on: the step whose lack kills the VPN is done (F-418); the rest cannot be read.
+                    settingsState.backgroundAllowed && !shellSeen &&
+                        settingsState.autostart != true -> Vendor.current?.let { vendor ->
                         BackgroundNotice.Shell(vendor) { openBackground(BackgroundStep.Vendor) }
                     }
 
