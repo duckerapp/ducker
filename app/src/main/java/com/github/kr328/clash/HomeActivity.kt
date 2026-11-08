@@ -678,6 +678,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // `currentPage` переключается на середине жеста: незавершённый свайп
                 // запускал бы замер задержек, которого никто не просил (D-76).
                 LaunchedEffect(pagerState.settledPage) {
+                    settledTab = pagerState.settledPage
+
                     when (pagerState.settledPage) {
                         1 -> proxyViewModel.open(this@HomeActivity)
                         2 -> subscriptionsViewModel.refresh(this@HomeActivity)
@@ -1876,6 +1878,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         configViewModel.openFile(this, uri)
     }
 
+    /** The tab the pager has settled on: read again when the app comes back (D-436). */
+    private var settledTab = 0
+
     override fun onStart() {
         super.onStart()
 
@@ -1893,7 +1898,13 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         viewModel.refresh(this@HomeActivity)
 
         // Back from freeing space, perhaps: the list is read again, or home would stay on «кончилось место» (Q-104).
-        if (subscriptionsViewModel.state.value.outOfSpace) subscriptionsViewModel.refresh(this@HomeActivity)
+        // The open tab is read again too, as home is: what changed while the app was away — a node chosen on the
+        // widget, the mobile network's switch, an update's end — came by broadcasts nobody heard (D-436).
+        val subscriptions = subscriptionsViewModel.state.value
+        if (settledTab == 2 || subscriptions.outOfSpace || subscriptions.updating != null || subscriptions.updateErrorFor != null) {
+            subscriptionsViewModel.refresh(this@HomeActivity)
+        }
+        if (settledTab == 1) proxyViewModel.refresh(this@HomeActivity)
 
         starts.intValue++
 
