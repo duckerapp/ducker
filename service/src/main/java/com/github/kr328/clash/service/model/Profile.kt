@@ -66,6 +66,9 @@ data class Profile(
     val addresses: List<SubscriptionAddress> = emptyList(),
     /** When they were last tried. */
     val triedAt: Long = 0,
+    /** When the last update ended, and its raw failure; empty — it succeeded (D-436). */
+    val updateEndedAt: Long = 0,
+    val updateFailure: String = "",
 ) : Parcelable {
     enum class Type {
         File, Url, External

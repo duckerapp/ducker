@@ -177,11 +177,11 @@ object ProfileProcessor {
                     // а причину — нигде (D-26). Следующее удачное обновление перезапишет
                     // сведения провайдера целиком и отметка сама исчезнет.
                     markHwidBlocked(context, snapshot.uuid, e)
-                    recordTries(context, snapshot.uuid, tries)
+                    recordTries(context, snapshot.uuid, tries, e)
 
                     throw e
                 } catch (e: Exception) {
-                    recordTries(context, snapshot.uuid, tries)
+                    recordTries(context, snapshot.uuid, tries, e)
 
                     throw e
                 }
@@ -191,6 +191,10 @@ object ProfileProcessor {
                     if (imported != null) {
                         val shown = announcements(context, snapshot.uuid)
 
+                        ProviderInfo.write(
+                            context.processingDir,
+                            ProviderInfo.read(context.processingDir).copy(updateEndedAt = System.currentTimeMillis(), updateFailure = ""),
+                        )
                         context.importedDir.resolve(snapshot.uuid.toString()).replaceWithCopyOf(context.processingDir)
                         AnnouncementStore.record(context, snapshot.uuid, shown.second, shown.first)
 
@@ -307,13 +311,26 @@ object ProfileProcessor {
         return ProviderInfo.read(context.importedDir.resolve(uuid.toString())).templateFromConfig
     }
 
-    /** A failed update keeps the old profile, yet the list of addresses shows this try (Q-82). */
-    private fun recordTries(context: Context, uuid: UUID, tries: List<FetchStatus.Try>) {
-        if (tries.isEmpty()) return
-
+    /**
+     * A failed update keeps the old profile, yet the list of addresses shows this try (Q-82), and the screens its
+     * failure (D-436). Not for a subscription deleted meanwhile: writing would make its folder again.
+     */
+    private fun recordTries(context: Context, uuid: UUID, tries: List<FetchStatus.Try>, failure: Exception) {
         val dir = context.importedDir.resolve(uuid.toString())
+        if (!dir.isDirectory) return
 
-        ProviderInfo.write(dir, ProviderInfo.read(dir).copy(tries = tries, triedAt = System.currentTimeMillis()))
+        val now = System.currentTimeMillis()
+        val info = ProviderInfo.read(dir)
+
+        ProviderInfo.write(
+            dir,
+            info.copy(
+                tries = tries.ifEmpty { info.tries },
+                triedAt = if (tries.isEmpty()) info.triedAt else now,
+                updateEndedAt = now,
+                updateFailure = failure.message.orEmpty(),
+            ),
+        )
     }
 
     private fun markHwidBlocked(context: Context, uuid: UUID, failure: HwidBlockedException) {

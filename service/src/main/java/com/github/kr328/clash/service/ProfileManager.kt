@@ -288,6 +288,8 @@ class ProfileManager(private val context: Context) : IProfileManager,
                 SubscriptionMirrors.addresses(source, mirrors, provider.tries, provider.servedBy)
             }.orEmpty(),
             triedAt = if (provider.source == source) provider.triedAt else 0,
+            updateEndedAt = provider.updateEndedAt,
+            updateFailure = provider.updateFailure,
         )
     }
 

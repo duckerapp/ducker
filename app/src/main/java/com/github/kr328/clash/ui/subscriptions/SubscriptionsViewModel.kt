@@ -198,12 +198,23 @@ sealed interface Receive {
 /** Как часто подписка обновляется сама. Восемь часов — три раза в сутки. */
 private val UPDATE_INTERVAL = TimeUnit.HOURS.toMillis(8)
 
+/**
+ * The end of [profile]'s update after [since], as the service recorded it (D-436): `null` — none ended since; empty —
+ * it succeeded; otherwise its raw failure. The screen hears of an end only while it is open.
+ */
+internal fun endedSince(profile: Profile?, since: Long): String? =
+    profile?.takeIf { since > 0 && it.updateEndedAt > since }?.updateFailure
+
 class SubscriptionsViewModel : ViewModel() {
     private val _state = MutableStateFlow(SubscriptionsState())
     val state: StateFlow<SubscriptionsState> = _state.asStateFlow()
 
     /** The order set by dragging — this is what is stored; the screen splits it into groups. */
     private var manual: List<Profile> = emptyList()
+
+    /** When the screen's own update began, and when the failure it shows was set (D-436). */
+    private var updateSince = 0L
+    private var errorSince = 0L
 
     fun refresh(context: Context) {
         viewModelScope.launch {
@@ -225,6 +236,14 @@ class SubscriptionsViewModel : ViewModel() {
                 profiles.associate { it.uuid to rules.read(it.uuid).size }
             }
 
+            // An update that ended while the screen was not listening: from the shade, on schedule, or while the app
+            // was in the background. Its end replaces «Обновляю…» or an older failure (D-436).
+            val state = _state.value
+            val ended = listOfNotNull(
+                state.updating?.let { uuid -> endedSince(manual.find { it.uuid == uuid }, updateSince)?.let { uuid to it } },
+                state.updateErrorFor?.let { uuid -> endedSince(manual.find { it.uuid == uuid }, errorSince)?.let { uuid to it } },
+            ).firstOrNull()
+
             _state.update {
                 it.copy(
                     profiles = profiles,
@@ -237,6 +256,15 @@ class SubscriptionsViewModel : ViewModel() {
                     loaded = true,
                     outOfSpace = outOfSpace,
                 )
+            }
+
+            ended?.let { (uuid, failure) ->
+                if (failure.isEmpty()) {
+                    reportUpdateFinished(context, uuid, reload = false)
+                } else {
+                    reportUpdateFailed(context, uuid, failure, reload = false)
+                    errorSince = manual.find { it.uuid == uuid }?.updateEndedAt ?: errorSince
+                }
             }
         }
     }
@@ -653,6 +681,7 @@ class SubscriptionsViewModel : ViewModel() {
         val loaded = _state.value.profiles.firstOrNull { it.uuid == uuid }?.imported != false
 
         if (!loaded) {
+            errorSince = System.currentTimeMillis()
             _state.update {
                 it.copy(
                     updating = null,
@@ -673,6 +702,7 @@ class SubscriptionsViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
+            updateSince = System.currentTimeMillis()
             _state.update { it.copy(updating = uuid, updateError = "", updateErrorFor = null, updateFailure = null) }
 
             runCatching { withProfile { update(uuid) } }
@@ -687,6 +717,8 @@ class SubscriptionsViewModel : ViewModel() {
                 delay(UPDATE_TIMEOUT)
 
                 if (_state.value.updating == uuid) {
+                    // From the update's start: an end the screen did not hear of replaces this at the next refresh.
+                    errorSince = updateSince
                     _state.update {
                         it.copy(
                             updating = null,
@@ -695,6 +727,8 @@ class SubscriptionsViewModel : ViewModel() {
                             updateFailure = null,
                         )
                     }
+
+                    refresh(context)
                 }
             }
         }
@@ -707,7 +741,7 @@ class SubscriptionsViewModel : ViewModel() {
      * и чужое «готово» снимало «Обновляю…» с той, что ещё качается. Удалось — её прежняя ошибка
      * больше не правда.
      */
-    fun reportUpdateFinished(context: Context, uuid: UUID?) {
+    fun reportUpdateFinished(context: Context, uuid: UUID?, reload: Boolean = true) {
         _state.update {
             it.copy(
                 updating = if (it.updating == uuid) null else it.updating,
@@ -717,14 +751,16 @@ class SubscriptionsViewModel : ViewModel() {
             )
         }
 
-        refresh(context)
+        if (reload) refresh(context)
     }
 
     /**
      * Молчать нельзя: профиль при отказе остаётся прежним, и без объяснения это выглядит
      * так, будто кнопка «Обновить» ничего не делает (D-26).
      */
-    fun reportUpdateFailed(context: Context, uuid: UUID?, reason: String?) {
+    fun reportUpdateFailed(context: Context, uuid: UUID?, reason: String?, reload: Boolean = true) {
+        errorSince = System.currentTimeMillis()
+
         // Причина приходит сырым текстом ядра или службы — словами её говорит `Failure` (D-227).
         val failure = reason?.takeIf { it.isNotBlank() }?.let { Failure.of(it, Failure.Kind.BadConfig, context.outOfSpace) }
 
@@ -737,7 +773,7 @@ class SubscriptionsViewModel : ViewModel() {
             )
         }
 
-        refresh(context)
+        if (reload) refresh(context)
     }
 
     fun dismissUpdateError() {

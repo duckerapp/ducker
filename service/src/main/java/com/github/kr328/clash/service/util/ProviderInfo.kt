@@ -69,6 +69,12 @@ data class ProviderInfo(
     /** The last download's tries (Q-82), kept when it failed too; [triedAt] — when. */
     val tries: List<FetchStatus.Try> = emptyList(),
     val triedAt: Long = 0,
+    /**
+     * When the last update of this subscription ended, and its raw failure; empty — it succeeded (D-436). The
+     * screens read them back: they hear of an update's end only while they are open.
+     */
+    val updateEndedAt: Long = 0,
+    val updateFailure: String = "",
 ) {
     fun mirrorsFor(link: String): List<String> = if (source == link) mirrors else emptyList()
 
