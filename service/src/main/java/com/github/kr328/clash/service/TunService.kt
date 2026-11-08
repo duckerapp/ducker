@@ -46,6 +46,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         val close = install(CloseModule(self))
         val tun = install(TunModule(self))
+        // Before the config starts loading: a socket its downloads open before this stays unprotected, and once the
+        // interface is up its packets go into the tunnel (D-431). Every stop releases it: TunModule's finally, onDestroy.
+        tun.protectEarly()
         val config = install(ConfigurationModule(self))
 
         // Первая проверка групп с автовыбором идёт при загрузке конфига, а конфиг и туннель
@@ -81,7 +84,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         install(MobileModule(self) { config.ready })
 
         try {
-            tun.protectEarly()
             synchronized(openLock) { tun.open() }
 
             tunOpened.set(true)
