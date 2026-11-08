@@ -7,6 +7,7 @@ import com.github.kr328.clash.common.compat.startForegroundServiceCompat
 import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.service.TunService
+import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.sendBroadcastSelf
 
 fun Context.startClashService(): Intent? {
@@ -20,5 +21,9 @@ fun Context.startClashService(): Intent? {
 }
 
 fun Context.stopClashService() {
+    // Asked off: no restore brings the tunnel back. With the service not up yet the request reaches nobody, and the
+    // mark left by an update made the next start restore it seconds after a stop (F-423).
+    ServiceStore(this).tunnelStartedAt = 0
+
     sendBroadcastSelf(Intent(Intents.ACTION_CLASH_REQUEST_STOP))
 }
