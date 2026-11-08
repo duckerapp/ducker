@@ -14,6 +14,7 @@ import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.service.util.sendClashStopped
+import java.io.File
 
 /**
  * Поднимает туннель обратно, если процесс службы умер, а человек туннель не выключал (F-110).
@@ -51,8 +52,9 @@ class TunGuard : Service() {
          */
         fun Context.restoreTunnel(afterCrash: Boolean): Boolean {
             val store = ServiceStore(this)
+            val startedAt = store.tunnelStartedAt
 
-            if (store.tunnelStartedAt == 0L || StatusProvider.serviceRunning) return false
+            if (startedAt == 0L || StatusProvider.serviceRunning) return false
 
             val now = System.currentTimeMillis()
 
@@ -73,7 +75,7 @@ class TunGuard : Service() {
             if (!allowed) {
                 store.tunnelStartedAt = 0
 
-                if (afterCrash) leftDown()
+                if (afterCrash) leftDown(startedAt)
 
                 return false
             }
@@ -81,7 +83,7 @@ class TunGuard : Service() {
             Log.i("Tunnel died unexpectedly, restoring")
 
             if (!startForegroundServiceCompat(TunService::class.intent)) {
-                if (afterCrash) leftDown()
+                if (afterCrash) leftDown(startedAt)
 
                 return false
             }
@@ -106,7 +108,7 @@ class TunGuard : Service() {
                 if (leftDownUnnoticed(startedAt, now - SystemClock.elapsedRealtime(), updatedAt, StatusProvider.serviceRunning)) {
                     Log.w("Tunnel found down with no word after its process died")
 
-                    leftDown()
+                    leftDown(startedAt)
                 }
             }, SETTLE)
         }
@@ -119,22 +121,40 @@ class TunGuard : Service() {
             !running && startedAt > maxOf(bootedAt, updatedAt)
 
         /**
+         * A crash of ours left a record after the tunnel came up at [startedAt]: Go's panic or fatal error in the
+         * core's stderr, or the crash handler's file of the tunnel's process (`CrashRecorder`). With none, the
+         * system closed the process (F-418): MIUI without its autostart, a cleaned recents list, low memory.
+         * A panic the core recovered from also lands in stderr; such a death is put down to us.
+         */
+        internal fun crashedSince(files: File, startedAt: Long): Boolean {
+            val crashes = files.resolve(CrashRecorder.DIR).resolve("background")
+
+            return listOf(
+                files.resolve("clash/stderr.log"),
+                crashes.resolve(FlightRecorder.CURRENT),
+                crashes.resolve(FlightRecorder.PREVIOUS),
+            ).any { it.lastModified() > startedAt }
+        }
+
+        /**
          * The tunnel stays down after its process died. Android keeps the dead [TunService] started and in
          * the foreground with its ongoing notification, and never restarts it (F-113): the shade would say
          * the VPN is up while nothing is protected. Stopping drops both; the notice says why it is off.
          * The dead service could not remove its marks either: `RestartReceiver` would bring the tunnel up at
          * the next boot, and `ProfileReceiver` at the next update.
          */
-        private fun Context.leftDown() {
+        private fun Context.leftDown(startedAt: Long) {
             stopService(TunService::class.intent)
 
             ServiceStore(this).tunnelStartedAt = 0
             StatusProvider.shouldStartClashOnBoot = false
 
-            StopNotice.show(this, Failure.CRASHED)
+            val reason = if (crashedSince(filesDir, startedAt)) Failure.CRASHED else Failure.KILLED
+
+            StopNotice.show(this, reason)
 
             // Home on screen reads the reason at a stop, as do the tile and the widget.
-            sendClashStopped(Failure.CRASHED)
+            sendClashStopped(reason)
         }
     }
 }

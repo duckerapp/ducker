@@ -55,6 +55,7 @@
     <string name="vpn_crashed_title">VPN выключился</string>
     <string name="vpn_crashed">Сбой в ducker выключил VPN. Подключитесь снова</string>
     <string name="vpn_crashed_connect">Подключить</string>
+    <string name="vpn_killed">Телефон сам закрыл ducker в фоне. Подключитесь снова и проверьте «Работу в фоне»</string>
     <string name="no_space">На телефоне кончилось место. Освободите место — подписки и настройки целы</string>
     <string name="subscription_web_page">Вместо подписки пришла веб-страница: сайт может быть заблокирован, или ссылка ведёт не туда. Попробуйте позже или проверьте ссылку</string>
     <string name="subscription_backups_failed">%1$s. Запасные адреса провайдера (%2$d) тоже не ответили</string>

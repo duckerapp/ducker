@@ -19,7 +19,7 @@ import com.github.kr328.clash.service.clash.module.TunModule
  */
 data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", val backups: Int = 0) {
     /** Что поможет — по этому экран выбирает кнопку. */
-    enum class Fix { None, Retry, EditLink, Support, VpnSettings }
+    enum class Fix { None, Retry, EditLink, Support, VpnSettings, Background }
 
     /**
      * @param download подписку не удалось скачать, до разбора конфига дело не дошло: встроенному
@@ -58,6 +58,9 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", v
         TunnelFailed(R.string.failure_try_again),
         Crashed(R.string.vpn_crashed),
 
+        /** The tunnel's process died with no crash record of ours: the system closed it (F-418). */
+        Killed(R.string.vpn_killed, Fix.Background),
+
         /** Nothing else explains the failure, and the phone is out of space (Q-104). */
         NoSpace(R.string.no_space),
         Unknown(R.string.failure_try_again),
@@ -70,7 +73,7 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", v
     /** The heading of a stop, shared by the notification and the home card. */
     @get:StringRes
     val stopTitle: Int
-        get() = if (kind == Kind.Crashed) R.string.vpn_crashed_title else R.string.vpn_failure_title
+        get() = if (kind == Kind.Crashed || kind == Kind.Killed) R.string.vpn_crashed_title else R.string.vpn_failure_title
 
     companion object {
         const val NO_PROFILE = "No profile selected"
@@ -78,6 +81,9 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", v
 
         /** The tunnel's process crashed while running; its own crash handler reports it (D-343). */
         const val CRASHED = "Tunnel process crashed"
+
+        /** The tunnel's process died with no crash record since the tunnel came up (`TunGuard.leftDown`). */
+        const val KILLED = "Tunnel process killed by the system"
 
         /** Метки службы перед текстом ядра — по образцу `DOWNLOAD_FAILED:` из `config/download.go`. */
         const val LOAD = "LOAD_FAILED: "
@@ -147,6 +153,7 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", v
                 text == NO_PROFILE -> Failure(Kind.NoProfile)
                 text == VPN_REJECTED -> Failure(Kind.VpnRejected)
                 text == CRASHED -> Failure(Kind.Crashed)
+                text == KILLED -> Failure(Kind.Killed)
                 text == TunModule.START_FAILED -> Failure(Kind.TunnelFailed)
                 text == "Invalid url" || text.startsWith("Unsupported url") -> Failure(Kind.BadLink)
                 // Вставили текст, а не адрес: ядро не разобрало его как ссылки протоколов или не

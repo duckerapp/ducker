@@ -97,6 +97,7 @@ class FailureTest {
         assertEquals(Kind.NoProfile, Failure.of(Failure.NO_PROFILE).kind)
         assertEquals(Kind.VpnRejected, Failure.of(Failure.VPN_REJECTED).kind)
         assertEquals(Kind.Crashed, Failure.of(Failure.CRASHED).kind)
+        assertEquals(Kind.Killed, Failure.of(Failure.KILLED).kind)
         assertEquals(Kind.TunnelFailed, Failure.of(TunModule.START_FAILED).kind)
     }
 

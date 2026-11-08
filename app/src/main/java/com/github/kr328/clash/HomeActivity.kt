@@ -646,6 +646,15 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     else -> null
                 }
 
+                // What is left to set up after the system closed the VPN (F-418): nothing on a TV, or on a phone
+                // whose shell closes nothing itself once Android allows the background.
+                val backgroundLeft = when {
+                    tv -> null
+                    !settingsState.backgroundAllowed -> BackgroundStep.Allow
+                    Vendor.current != null -> BackgroundStep.Vendor
+                    else -> null
+                }
+
                 LaunchedEffect(needSubscription.value) {
                     if (!needSubscription.value) return@LaunchedEffect
 
@@ -1211,6 +1220,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onboarding = onboarding,
                                         outOfSpace = subscriptionsState.outOfSpace,
                                         backgroundNotice = backgroundNotice,
+                                        onBackground = backgroundLeft?.let { step -> { openBackground(step) } },
                                         picker = picker,
                                         pickerState = proxyState,
                                         onSortNodes = { proxyViewModel.setSort(this@HomeActivity, it) },

@@ -235,6 +235,8 @@ fun HomeScreen(
     outOfSpace: Boolean = false,
     /** Карточка про работу в фоне; `null` — не показывать (D-109). */
     backgroundNotice: BackgroundNotice? = null,
+    /** «Работа в фоне» from the card of a VPN the system closed (F-418); `null` — nothing to set up there. */
+    onBackground: (() -> Unit)? = null,
     /** Узлы для быстрой смены в карточке (D-116); `null` — ещё не загружены. */
     picker: NodePicker? = null,
     /** The prepared proxy-tab order, including favorites and non-selectable groups. */
@@ -299,6 +301,7 @@ fun HomeScreen(
                 onDismissStop = onDismissStop,
                 onFastest = onFastest,
                 backgroundNotice = backgroundNotice,
+                onBackground = onBackground,
                 picker = picker,
                 pickerState = pickerState,
                 onSortNodes = onSortNodes,
@@ -408,6 +411,7 @@ private fun HomeRegular(
     onDismissStop: () -> Unit,
     onFastest: (() -> Unit)?,
     backgroundNotice: BackgroundNotice?,
+    onBackground: (() -> Unit)?,
     picker: NodePicker?,
     pickerState: ProxyState,
     onSortNodes: (ProxySort) -> Unit,
@@ -572,7 +576,7 @@ private fun HomeRegular(
             // VPN остановился не по команде (D-227) — почему и что с этим делать. Без подписки
             // причина уже не к месту: об этом говорит заглушка выше.
             if (profile != null && state.stopFailure != null) {
-                StopCard(state.stopFailure, profile, onRefresh, onSupport, onVpnSettings, onDismissStop)
+                StopCard(state.stopFailure, profile, onRefresh, onSupport, onVpnSettings, onBackground, onDismissStop)
             }
 
             // Туннель поднят, а связи нет — про это надо сказать прямо, иначе человек
@@ -1853,6 +1857,7 @@ private fun StopCard(
     onRefresh: () -> Unit,
     onSupport: (String) -> Unit,
     onVpnSettings: () -> Unit,
+    onBackground: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
     val actions = buildList<Pair<String, () -> Unit>> {
@@ -1864,6 +1869,8 @@ private fun StopCard(
             }
 
             Failure.Fix.VpnSettings -> add(stringResource(R.string.vpn_settings) to onVpnSettings)
+
+            Failure.Fix.Background -> onBackground?.let { add(stringResource(R.string.background_title) to it) }
 
             else -> Unit
         }

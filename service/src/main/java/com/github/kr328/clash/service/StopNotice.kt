@@ -48,7 +48,7 @@ object StopNotice {
             pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT),
         )
 
-        val crashed = failure.kind == Failure.Kind.Crashed
+        val crashed = failure.kind == Failure.Kind.Crashed || failure.kind == Failure.Kind.Killed
 
         val notification = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_logo_service)
@@ -61,7 +61,7 @@ object StopNotice {
             .apply {
                 // Started from the app's own process: after a repeated crash Android holds the tunnel's
                 // process back for half an hour or until the person starts it, and this tap is that
-                // start (F-327, F-328).
+                // start (F-327, F-328). MIUI without its autostart never restarts it either (F-418).
                 if (crashed) addAction(0, context.getString(R.string.vpn_crashed_connect), connect(context))
             }
             .build()

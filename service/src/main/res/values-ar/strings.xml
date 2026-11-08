@@ -53,6 +53,7 @@
     <string name="vpn_crashed_title">توقف VPN</string>
     <string name="vpn_crashed">أدى خطأ في ducker إلى إيقاف VPN. اتصل مجددًا</string>
     <string name="vpn_crashed_connect">اتصال</string>
+    <string name="vpn_killed">أغلق الهاتف ducker في الخلفية. اتصل مجددًا وتحقق من «العمل في الخلفية»</string>
     <string name="no_space">نفدت مساحة التخزين في الهاتف. أفرغ بعض المساحة — اشتراكاتك وإعداداتك سليمة</string>
     <string name="subscription_web_page">وصلت صفحة ويب بدلًا من الاشتراك: قد يكون الموقع محجوبًا أو أن الرابط يؤدي إلى مكان آخر. حاول لاحقًا أو تحقق من الرابط</string>
     <string name="subscription_backups_failed">%1$s. ولم تستجب العناوين الاحتياطية لدى المزوّد (%2$d) أيضًا</string>
