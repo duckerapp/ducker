@@ -53,17 +53,22 @@ func SetRequestHeaders(jsonHeaders string) error {
 // ТОЛЬКО к запросу подписки: через ту же функцию качаются провайдеры правил с чужих
 // адресов (jsdelivr, github), и отправлять туда идентификатор устройства нельзя —
 // правило 3 в docs/ARCHITECTURE.md.
+//
+// The User-Agent goes with every download, rule sets too: a provider's own list of nodes is a panel
+// link as well, and the panel picks its format by the User-Agent (D-439).
 func buildRequestHeader(subscription bool, address, fallbackUA string) http.Header {
 	header := http.Header{}
 
-	if subscription {
-		requestHeadersMu.RLock()
-		defer requestHeadersMu.RUnlock()
+	requestHeadersMu.RLock()
+	defer requestHeadersMu.RUnlock()
 
-		for k, v := range requestHeaders {
-			if !sensitiveSubscriptionHeader(k) || deviceHeadersAllowed(address) {
-				header.Set(k, v)
-			}
+	for k, v := range requestHeaders {
+		if v = cleanRequestValue(v); v == "" {
+			continue
+		}
+		if strings.EqualFold(k, "User-Agent") ||
+			subscription && (!sensitiveSubscriptionHeader(k) || deviceHeadersAllowed(address)) {
+			header.Set(k, v)
 		}
 	}
 
@@ -75,4 +80,15 @@ func buildRequestHeader(subscription bool, address, fallbackUA string) http.Head
 	}
 
 	return header
+}
+
+// cleanRequestValue drops control characters: one of them in a phone's model name made the HTTP client
+// refuse the whole request, and the subscription did not download at all.
+func cleanRequestValue(value string) string {
+	return strings.TrimSpace(strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f {
+			return -1
+		}
+		return r
+	}, value))
 }

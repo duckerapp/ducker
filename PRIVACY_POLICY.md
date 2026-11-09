@@ -15,7 +15,7 @@
 
 **1. Your subscription provider** — when you add or update a subscription. The request uses
 the URL you supplied and includes:
-- a `User-Agent` such as `mihomo/<core version> ducker/<app version>`;
+- a `User-Agent` such as `mihomo/<core version> ducker/<app version> (android)`;
 - if **Settings → Device ID** is enabled (the default): the device id, the word `Android`,
   the Android version, and the phone's manufacturer and model. The id is `ANDROID_ID`:
   Android assigns it separately to each app on the phone, and other apps cannot see it.

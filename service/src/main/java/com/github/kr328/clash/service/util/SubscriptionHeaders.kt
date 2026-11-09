@@ -57,18 +57,16 @@ object SubscriptionHeaders {
         return headers
     }
 
+    private fun userAgent(context: Context): String = userAgent(
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
+    )
+
     /**
      * Начинается с `mihomo/` не для красоты: панель выбирает формат ответа по User-Agent,
-     * и незнакомому клиенту отдаёт base64-список ссылок вместо конфига (F-42, D-38).
+     * и незнакомому клиенту отдаёт base64-список ссылок вместо конфига (F-42, D-38). The platform closes it
+     * (D-439): a desktop client says `(windows)`, `(linux)` or `(macos)` in the same place.
      */
-    private fun userAgent(context: Context): String {
-        val appVersion = context.packageManager
-            .getPackageInfo(context.packageName, 0)
-            .versionName
-            ?: "unknown"
-
-        return "mihomo/$MIHOMO_RELEASE ducker/$appVersion"
-    }
+    internal fun userAgent(appVersion: String): String = "mihomo/$MIHOMO_RELEASE ducker/$appVersion (android)"
 
     /**
      * Показывается на экране подписок (D-25): человек должен видеть, что именно уходит

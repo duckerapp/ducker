@@ -115,7 +115,7 @@ func openUrl(ctx context.Context, url string, subscription bool, r route) (io.Re
 		options = append(options, clashHttp.WithDialer(dialer.NewDialer()))
 	}
 
-	headers := buildRequestHeader(subscription, url, "mihomo/"+app.VersionName()+" ducker")
+	headers := buildRequestHeader(subscription, url, "mihomo ducker/"+app.VersionName()+" (android)")
 	var response *metaHttp.Response
 	var err error
 	if subscription {
