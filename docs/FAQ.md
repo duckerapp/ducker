@@ -20,7 +20,9 @@ in the app.
 - [No internet with the VPN on](#no-internet-with-the-vpn-on)
 - [An app complains about the VPN](#an-app-complains-about-the-vpn)
 - [Sharing the VPN with a laptop or another device](#sharing-the-vpn-with-a-laptop-or-another-device)
+- [Updating ducker](#updating-ducker)
 - [Google Play Protect asks to scan the app](#google-play-protect-asks-to-scan-the-app)
+- [Android asks to allow apps from unverified developers](#android-asks-to-allow-apps-from-unverified-developers)
 - [How to send a log](#how-to-send-a-log)
 - [What never to send](#what-never-to-send)
 
@@ -324,6 +326,25 @@ can turn sharing off for its subscription, and the card then says so.
      service/…/clash/module/ShareModule.kt; the port itself — core/src/main/golang/native/proxy/share.go. The
      system menu names are Android's, Apple's and Microsoft's and differ between versions. -->
 
+## Updating ducker
+
+ducker updates itself: there is no need to download each new version by hand.
+
+- It checks for a new version twice a day and when you open it. When there is one, a card
+  appears on Home and a notification "Update available: ducker …". Tap it, read "What's new" and
+  press "Update". After the installation the VPN comes back by itself.
+- The first time, Android asks to allow installs from this source: turn it on and go back — the
+  update continues by itself.
+- Without tapping anything: ⚙ Settings → "Update automatically". New versions then download over
+  Wi-Fi and install while the screen is off, usually at night. This needs Android 12 or newer; on
+  Android 10–11 Android asks to confirm each update.
+- To check right now: ⚙ Settings → "Check for updates".
+- "Beta versions" in the same place gives you new versions a few days early.
+
+ducker installs only a file signed with the same key as the app already on your phone, and only
+if its checksum matches. To check a file you downloaded yourself, each release lists its
+`SHA256SUMS` and a VirusTotal report for every APK.
+
 ## Google Play Protect asks to scan the app
 
 When you install or update ducker, a "Google Play Protect" window may appear with the title
@@ -339,6 +360,28 @@ from Google Play, and every new version is a new file to Google.
 
 <!-- The window's labels come from the Google Play Store, not from the app: recorded on a phone on
      12.10.2026. In ducker the button is the string update. -->
+
+## Android asks to allow apps from unverified developers
+
+From 2027 Google lets certified Android phones and TVs install apps from outside Google Play only
+if their developer is registered with Google; in Brazil, Indonesia, Singapore and Thailand this
+started in 2026. ducker is not registered, so on such a device installing or updating it needs a
+one-time setting:
+
+1. Android offers to allow apps from unverified developers. Agree and confirm with your PIN or
+   fingerprint.
+2. Restart the phone and wait 24 hours: Google requires this pause.
+3. After that, install ducker or let it update as usual.
+
+Keep the setting on: while it is off, ducker cannot update. Installing over `adb` from a computer
+does not need it.
+
+Google is only starting to show these screens, so their names on your phone may differ. If
+something does not match, write to us through ⚙ Settings → "Help and diagnostics".
+
+<!-- Source: Google's rollout as reported by Android Authority, 9to5Google and XDA, August–September
+     2026, searched on 09.11.2026; not yet seen on our own devices. Update the wording once a phone
+     shows these screens. -->
 
 ## How to send a log
 
