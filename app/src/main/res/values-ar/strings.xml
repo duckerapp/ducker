@@ -39,6 +39,7 @@
     <string name="hwid_show">إظهار المعرّف</string>
     <string name="hwid_hide">إخفاء المعرّف</string>
     <string name="subscription_link">الرابط</string>
+    <string name="subscription_age_key">مفتاح فك التشفير</string>
     <string name="subscription_link_hint">رابط اشتراك أو رابط خادم مثل vless://\u200E</string>
     <string name="subscription_link_placeholder">https://…\u200E أو vless://…\u200E</string>
     <string name="adding_hint">قد يستغرق ذلك ما يصل إلى دقيقة.</string>

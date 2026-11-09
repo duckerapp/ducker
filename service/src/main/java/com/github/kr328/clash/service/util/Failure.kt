@@ -38,6 +38,11 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", v
         BadLink(R.string.subscription_bad_link, Fix.EditLink, download = true),
         /** A web page came instead: a block page, a captive portal, or a link to a site page (D-345). */
         WebPage(R.string.subscription_web_page, Fix.Retry, download = true),
+        /**
+         * The provider encrypted the body to its user's age key, and the subscription has none or another one. Not the
+         * built-in template's case: there is nothing to read nodes from. Its key goes in «Изменить».
+         */
+        Encrypted(R.string.subscription_encrypted, Fix.EditLink, download = true),
 
         NotLinks(R.string.subscription_not_links),
         NoServers(R.string.subscription_no_servers, Fix.Support),
@@ -150,6 +155,8 @@ data class Failure(val kind: Kind, val code: Int = 0, val detail: String = "", v
                 )
                 text.startsWith(LOAD) -> Failure(Kind.LoadFailed, detail = text.removePrefix(LOAD))
                 text.startsWith(RELOAD) -> Failure(Kind.Reload, detail = text.removePrefix(RELOAD))
+                // The core's text for an age-armored config it could not decrypt (`config/config.go`, D-442).
+                text.startsWith("decrypt config error") -> Failure(Kind.Encrypted)
                 text == NO_PROFILE -> Failure(Kind.NoProfile)
                 text == VPN_REJECTED -> Failure(Kind.VpnRejected)
                 text == CRASHED -> Failure(Kind.Crashed)

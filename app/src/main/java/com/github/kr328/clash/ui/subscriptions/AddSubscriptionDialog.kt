@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
+import com.github.kr328.clash.ui.components.SecureWindow
 import com.github.kr328.clash.ui.components.SheetField
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
@@ -72,6 +73,12 @@ fun AddSubscriptionDialog(
     /** [value] is only the beginning of a long text (F-268): it is shown, not edited. */
     longText: Boolean = false,
     error: String,
+    /** The age key of an encrypted subscription (D-442): its field shows after a download said so. */
+    key: String = "",
+    keyShown: Boolean = false,
+    onKey: (String) -> Unit = {},
+    /** «Замок на ссылку и конфиг» is on (D-415): no screenshots while the key is on screen. */
+    secure: Boolean = false,
     busy: Boolean,
     /** Доля загрузки подписки, 0..1 (D-212); `null` — пока неизвестна. */
     progress: Float? = null,
@@ -127,6 +134,18 @@ fun AddSubscriptionDialog(
             }
 
             if (error.isNotEmpty()) FailureText(error)
+
+            if (keyShown) {
+                SecureWindow(secure)
+                SheetField(
+                    value = key,
+                    onValue = onKey,
+                    placeholder = stringResource(R.string.subscription_age_key),
+                    enabled = !busy,
+                    next = add,
+                    machine = true,
+                )
+            }
 
             SubscriptionHttpWarning(value)
 
@@ -265,6 +284,9 @@ internal fun SourceTile(
 }
 
 private val TILE_PADDING = 8.dp
+
+/** How every age key starts; the post-quantum ones go on `PQ-1`. */
+internal const val AGE_KEY_PLACEHOLDER = "AGE-SECRET-KEY-1…"
 private val CODE_SIZE = 248.dp
 
 /**

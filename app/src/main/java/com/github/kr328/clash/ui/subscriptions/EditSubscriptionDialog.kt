@@ -121,6 +121,10 @@ fun EditSubscriptionDialog(
     /** The provider's hours of the last download; 0 — none sent, and there is no “Провайдер”. */
     providerInterval: Long,
     error: String,
+    /** The age key of an encrypted subscription (D-442); its field shows only when [keyShown]. */
+    key: String = "",
+    keyShown: Boolean = false,
+    onKey: (String) -> Unit = {},
     reach: SubscriptionReach,
     busy: Boolean,
     /** The core asks a backup address of the subscription (stage 21): a line under the button says so. */
@@ -182,6 +186,17 @@ fun EditSubscriptionDialog(
             }
 
             ReachLines(reach)
+        }
+
+        if (!local && keyShown) Labeled(stringResource(R.string.subscription_age_key)) {
+            SheetField(
+                value = key,
+                onValue = onKey,
+                placeholder = AGE_KEY_PLACEHOLDER,
+                enabled = !busy,
+                next = save,
+                machine = true,
+            )
         }
 
         if (!local) SubscriptionHttpWarning(link)

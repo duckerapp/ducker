@@ -39,6 +39,7 @@
     <string name="hwid_show">Tampilkan ID</string>
     <string name="hwid_hide">Sembunyikan ID</string>
     <string name="subscription_link">Tautan</string>
+    <string name="subscription_age_key">Kunci dekripsi</string>
     <string name="subscription_link_hint">Tautan langganan atau tautan seperti vless://</string>
     <string name="subscription_link_placeholder">https://… atau vless://…</string>
     <string name="adding_hint">Proses ini dapat memakan waktu hingga satu menit.</string>

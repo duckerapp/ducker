@@ -80,6 +80,12 @@ data class SubscriptionsState(
     /** The provider's mirrors that came with a link (stage 21, package 3): only while [input] is that very link. */
     val given: InstallLink? = null,
     val addError: String = "",
+    /**
+     * The provider's age key for an encrypted subscription (Remnawave's response rules). Its field shows only once a
+     * download said the subscription is encrypted, or while a key is set: almost nobody needs it.
+     */
+    val addKey: String = "",
+    val addKeyShown: Boolean = false,
     val busy: Boolean = false,
     /** Какую подписку правим. Пусто — окно правки закрыто. */
     val editing: UUID? = null,
@@ -93,6 +99,8 @@ data class SubscriptionsState(
     val editFollow: Boolean = false,
     val editProviderInterval: Long = 0,
     val editError: String = "",
+    val editKey: String = "",
+    val editKeyShown: Boolean = false,
     val editReach: SubscriptionReach = SubscriptionReach(),
     val editBusy: Boolean = false,
     /** The core asks a backup address of the subscription while it is saved: «Пробую запасной адрес…». */
@@ -290,10 +298,14 @@ class SubscriptionsViewModel : ViewModel() {
                 input = if (show) it.input else "",
                 given = if (show) it.given else null,
                 addError = "",
+                addKey = if (show) it.addKey else "",
+                addKeyShown = show && it.addKeyShown,
                 linked = show && it.linked,
             )
         }
     }
+
+    fun setAddKey(value: String) = _state.update { it.copy(addKey = value) }
 
     fun setInput(value: String) {
         _state.update { it.copy(input = value, addError = "") }
@@ -322,6 +334,7 @@ class SubscriptionsViewModel : ViewModel() {
 
         // Со страницы провайдера подписку добавляют, чтобы включить, — как присланную с телефона.
         val activate = fromPhone || _state.value.linked
+        val key = _state.value.addKey.trim().takeIf { it.isNotEmpty() }
         val mirrors = _state.value.given?.takeIf { it.link == raw }?.mirrors.orEmpty()
 
         addJob = viewModelScope.launch {
@@ -336,13 +349,13 @@ class SubscriptionsViewModel : ViewModel() {
                     if (isUrl) {
                         val name = defaultName(raw).ifEmpty { context.getString(R.string.subscription_default_name) }
 
-                        create(Profile.Type.Url, name, raw).also { created ->
+                        create(Profile.Type.Url, name, raw, key).also { created ->
                             // Ядро создаёт профиль с interval = 0, то есть без автообновления,
                             // и человек об этом не узнает, пока узлы не протухнут. Ставим сами,
                             // до commit: патч правит ещё не импортированный профиль, поэтому
                             // лишней загрузки не будет. A new subscription follows its provider's
                             // hours; the eight are what it keeps while the provider sends none (D-286).
-                            patch(created, name, raw, UPDATE_INTERVAL, true, null)
+                            patch(created, name, raw, UPDATE_INTERVAL, true, key)
 
                             // The core tries them already at this first download, as it tries the previous
                             // download's on an update (`ProfileProcessor.fetchProfile`): the link may be blocked
@@ -483,6 +496,7 @@ class SubscriptionsViewModel : ViewModel() {
                 it.copy(
                     busy = false,
                     addError = failure.shown(context).ifEmpty { context.getString(R.string.add_failed) },
+                    addKeyShown = it.addKeyShown || failure.encrypted,
                     // Код одноразовый: ссылка осталась в поле — повторить можно кнопкой «Добавить».
                     receive = if (fromPhone) Receive.Expired else it.receive,
                 )
@@ -796,6 +810,10 @@ class SubscriptionsViewModel : ViewModel() {
                     editFollow = profile.followProvider,
                     editProviderInterval = profile.providerInterval,
                     editError = "",
+                    editKey = profile.ageSecretKey.orEmpty(),
+                    // The update card's «Изменить» after an encrypted download opens the field at once.
+                    editKeyShown = !profile.ageSecretKey.isNullOrBlank() ||
+                        it.updateErrorFor == profile.uuid && it.updateFailure?.kind == Failure.Kind.Encrypted,
                     editReach = SubscriptionReach(
                         backups = profile.backups,
                         movedFrom = profile.movedFrom,
@@ -812,6 +830,8 @@ class SubscriptionsViewModel : ViewModel() {
     fun setEditName(value: String) = _state.update { it.copy(editName = value) }
 
     fun setEditLink(value: String) = _state.update { it.copy(editLink = value) }
+
+    fun setEditKey(value: String) = _state.update { it.copy(editKey = value) }
 
     /** “Вручную” (0) or the person's own hours: either way the provider's are no longer followed. */
     fun setEditInterval(value: Long) = _state.update { it.copy(editInterval = value, editFollow = false) }
@@ -841,7 +861,7 @@ class SubscriptionsViewModel : ViewModel() {
         viewModelScope.launch {
             val result = runCatching {
                 withProfile {
-                    patch(uuid, name, link, current.editInterval, current.editFollow, null)
+                    patch(uuid, name, link, current.editInterval, current.editFollow, current.editKey.trim().takeIf { it.isNotEmpty() })
                     commit(uuid, IFetchObserver { status ->
                         backupTry(status)?.let { backup -> _state.update { it.copy(editBackup = backup) } }
                     })
@@ -859,6 +879,7 @@ class SubscriptionsViewModel : ViewModel() {
                     it.copy(
                         editBusy = false,
                         editError = failure.shown(context).ifEmpty { context.getString(R.string.update_failed) },
+                        editKeyShown = it.editKeyShown || failure.encrypted,
                     )
                 }
             }
@@ -1096,6 +1117,10 @@ private class Told(text: String) : Exception(text)
  * Неудача загрузки подписки словами (D-227). Незнакомую ошибку ядра дописываем строкой ниже, без
  * адресов: по ней поддержка поймёт, что не так с конфигом.
  */
+/** The download failed on an encrypted subscription: no key, or not the one it was encrypted to. */
+private val Throwable.encrypted: Boolean
+    get() = this !is Told && Failure.of(message).kind == Failure.Kind.Encrypted
+
 private fun Throwable.shown(context: Context): String {
     if (this is Told) return message.orEmpty()
 

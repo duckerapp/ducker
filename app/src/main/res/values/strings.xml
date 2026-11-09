@@ -58,6 +58,7 @@
     <string name="hwid_hide">Hide the ID</string>
 
     <string name="subscription_link">Link</string>
+    <string name="subscription_age_key">Decryption key</string>
     <string name="subscription_link_hint">Subscription link, or a vless:// or similar link</string>
     <string name="subscription_link_placeholder">https://… or vless://…</string>
     <string name="adding_hint">This can take up to a minute.</string>

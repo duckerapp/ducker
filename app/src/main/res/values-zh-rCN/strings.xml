@@ -39,6 +39,7 @@
     <string name="hwid_show">显示设备 ID</string>
     <string name="hwid_hide">隐藏设备 ID</string>
     <string name="subscription_link">链接</string>
+    <string name="subscription_age_key">解密密钥</string>
     <string name="subscription_link_hint">订阅链接，或 vless:// 等节点链接</string>
     <string name="subscription_link_placeholder">https://… 或 vless://…</string>
     <string name="adding_hint">最多可能需要一分钟。</string>

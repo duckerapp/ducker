@@ -50,6 +50,7 @@
     <string name="hwid_hide">Скрыть идентификатор</string>
 
     <string name="subscription_link">Ссылка</string>
+    <string name="subscription_age_key">Ключ расшифровки</string>
     <string name="subscription_link_hint">Ссылка на подписку или ссылка вида vless://</string>
     <string name="subscription_link_placeholder">https://… или vless://…</string>
     <string name="adding_hint">Загрузка может занять до минуты.</string>

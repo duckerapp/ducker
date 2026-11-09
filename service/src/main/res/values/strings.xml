@@ -60,6 +60,7 @@
     <string name="vpn_killed">Your phone closed ducker in the background. Connect again and check “Background work”</string>
     <string name="no_space">Your phone is out of storage. Free up some space — your subscriptions and settings are safe</string>
     <string name="subscription_web_page">A web page came instead of the subscription: the site may be blocked, or the link leads elsewhere. Try again later or check the link</string>
+    <string name="subscription_encrypted">The subscription is encrypted and needs the key from your provider. If a key is already entered, it does not fit</string>
     <string name="subscription_backups_failed">%1$s. The provider’s backup addresses (%2$d) didn’t answer either</string>
     <!-- After the node in the VPN notification, «Мобильная сеть» (D-423) -->
     <string name="mobile_note">mobile network</string>

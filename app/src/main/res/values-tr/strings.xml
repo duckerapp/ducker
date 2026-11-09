@@ -39,6 +39,7 @@
     <string name="hwid_show">Kimliği göster</string>
     <string name="hwid_hide">Kimliği gizle</string>
     <string name="subscription_link">Bağlantı</string>
+    <string name="subscription_age_key">Şifre çözme anahtarı</string>
     <string name="subscription_link_hint">Abonelik bağlantısı veya vless:// gibi bir sunucu bağlantısı</string>
     <string name="subscription_link_placeholder">https://… veya vless://…</string>
     <string name="adding_hint">Bu işlem bir dakika kadar sürebilir.</string>

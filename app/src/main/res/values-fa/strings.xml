@@ -39,6 +39,7 @@
     <string name="hwid_show">نمایش شناسه</string>
     <string name="hwid_hide">پنهان کردن شناسه</string>
     <string name="subscription_link">لینک</string>
+    <string name="subscription_age_key">کلید رمزگشایی</string>
     <string name="subscription_link_hint">لینک اشتراک، یا لینکی مانند vless://\u200E</string>
     <string name="subscription_link_placeholder">https://…\u200E یا vless://…\u200E</string>
     <string name="adding_hint">ممکن است تا یک دقیقه طول بکشد.</string>

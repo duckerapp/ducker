@@ -135,4 +135,18 @@ class FailureTest {
         // Only a download carries the count; elsewhere the text stays whole.
         assertEquals(Failure(Kind.Unknown, detail = "odd (+2 backups)"), Failure.of("odd (+2 backups)"))
     }
+
+    @Test
+    fun `an encrypted subscription is not a broken config`() {
+        for (raw in listOf(
+            "decrypt config error: failed to read header: failed to parse header: failed to read line: EOF",
+            "decrypt config error: no identity matched any of the recipients",
+        )) {
+            val failure = Failure.of(raw, Kind.BadConfig)
+
+            assertEquals(raw, Kind.Encrypted, failure.kind)
+            // Not the template's case (`ProfileProcessor.fetchProfile`): there are no nodes to take.
+            assertTrue(raw, failure.kind.download)
+        }
+    }
 }

@@ -53,6 +53,7 @@
     <string name="vpn_killed">El teléfono cerró ducker en segundo plano. Vuelve a conectarte y revisa “Funcionamiento en segundo plano”</string>
     <string name="no_space">El teléfono se quedó sin espacio. Libera espacio: tus suscripciones y ajustes están a salvo</string>
     <string name="subscription_web_page">Llegó una página web en lugar de la suscripción: el sitio puede estar bloqueado o el enlace lleva a otro lugar. Inténtalo más tarde o revisa el enlace</string>
+    <string name="subscription_encrypted">La suscripción está cifrada y necesita la clave de tu proveedor. Si ya hay una clave, no es la correcta</string>
     <string name="subscription_backups_failed">%1$s. Las direcciones de respaldo del proveedor (%2$d) tampoco respondieron</string>
     <!-- After the node in the VPN notification, «Мобильная сеть» (D-423) -->
     <string name="mobile_note">red móvil</string>

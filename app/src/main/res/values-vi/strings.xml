@@ -39,6 +39,7 @@
     <string name="hwid_show">Hiện ID</string>
     <string name="hwid_hide">Ẩn ID</string>
     <string name="subscription_link">Liên kết</string>
+    <string name="subscription_age_key">Khóa giải mã</string>
     <string name="subscription_link_hint">Liên kết gói đăng ký hoặc liên kết dạng vless://</string>
     <string name="subscription_link_placeholder">https://… hoặc vless://…</string>
     <string name="adding_hint">Quá trình này có thể mất đến một phút.</string>

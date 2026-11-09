@@ -58,6 +58,7 @@
     <string name="vpn_killed">Телефон сам закрыл ducker в фоне. Подключитесь снова и проверьте «Работу в фоне»</string>
     <string name="no_space">На телефоне кончилось место. Освободите место — подписки и настройки целы</string>
     <string name="subscription_web_page">Вместо подписки пришла веб-страница: сайт может быть заблокирован, или ссылка ведёт не туда. Попробуйте позже или проверьте ссылку</string>
+    <string name="subscription_encrypted">Подписка зашифрована, нужен ключ от провайдера. Если ключ уже введён, он не подходит</string>
     <string name="subscription_backups_failed">%1$s. Запасные адреса провайдера (%2$d) тоже не ответили</string>
     <!-- After the node in the VPN notification, «Мобильная сеть» (D-423) -->
     <string name="mobile_note">мобильная сеть</string>

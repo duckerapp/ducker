@@ -39,6 +39,7 @@
     <string name="hwid_show">Mostrar ID</string>
     <string name="hwid_hide">Ocultar ID</string>
     <string name="subscription_link">Enlace</string>
+    <string name="subscription_age_key">Clave de descifrado</string>
     <string name="subscription_link_hint">Enlace de suscripción o de un servidor, como vless://</string>
     <string name="subscription_link_placeholder">https://… o vless://…</string>
     <string name="adding_hint">Puede tardar hasta un minuto.</string>
