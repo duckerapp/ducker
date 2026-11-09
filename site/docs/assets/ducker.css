@@ -1,170 +1,693 @@
 /*
- * Вид как у приложения: чёрно-белый, цветом ничего не обозначается.
- * Цвета — из app/src/main/java/com/github/kr328/clash/ui/theme/Theme.kt:
- * светлая тема — чернила #101010 на фоне #F2F2F2, карточки белые;
- * тёмная — белое на #0A0A0A, поверхности #161616.
+ * ducker site — "the duck over the edge".
+ * The app's black-and-white world at poster scale: a giant DUCKER wordmark, slabs of ink
+ * (inverted in the dark theme, as the app's Home card is), and the duck peeking over a slab's edge.
+ * Colors follow app/src/main/java/com/github/kr328/clash/ui/theme/Theme.kt: ink #0A0A0A/#101010,
+ * mist #F2F2F2, dark surface #161616. Unbounded and Onest are self-hosted (SIL OFL, assets/fonts).
  */
+
+@font-face {
+  font-family: "Unbounded";
+  src: url("fonts/unbounded.woff2") format("woff2");
+  font-weight: 600 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Onest";
+  src: url("fonts/onest.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
 
 :root,
 [data-md-color-scheme="default"] {
-  --md-primary-fg-color: #f2f2f2;
-  --md-primary-fg-color--light: #ffffff;
-  --md-primary-fg-color--dark: #e4e4e4;
-  --md-primary-bg-color: #101010;
-  --md-primary-bg-color--light: #6e6e6e;
-  --md-accent-fg-color: #101010;
-  --md-accent-fg-color--transparent: rgba(16, 16, 16, 0.08);
-  --md-typeset-a-color: #101010;
-  --md-default-bg-color: #ffffff;
-  --md-footer-bg-color: #101010;
-  --md-footer-bg-color--dark: #0a0a0a;
-  --md-footer-fg-color: #f5f5f5;
+  --dk-paper: #ffffff;
+  --dk-mist: #f2f2f2;
+  --dk-ink: #0a0a0a;
+  --dk-muted: #5a5a5a;
+  --dk-line: rgba(10, 10, 10, 0.12);
+  /* The slab is the inverted surface: ink on the light page, mist on the dark one. */
+  --dk-slab: #0a0a0a;
+  --dk-on-slab: #f2f2f2;
+  --dk-on-slab-muted: #a8a8a8;
+  --dk-slab-line: rgba(242, 242, 242, 0.22);
+  --dk-display: "Unbounded", "Onest", system-ui, sans-serif;
+
+  --md-text-font: "Onest";
+  --md-primary-fg-color: var(--dk-paper);
+  --md-primary-fg-color--light: var(--dk-paper);
+  --md-primary-fg-color--dark: var(--dk-mist);
+  --md-primary-bg-color: var(--dk-ink);
+  --md-primary-bg-color--light: var(--dk-muted);
+  --md-accent-fg-color: var(--dk-ink);
+  --md-accent-fg-color--transparent: rgba(10, 10, 10, 0.07);
+  --md-accent-bg-color: var(--dk-paper);
+  --md-typeset-a-color: var(--dk-ink);
+  --md-default-bg-color: var(--dk-paper);
+  --md-default-fg-color: rgba(10, 10, 10, 0.92);
+  --md-default-fg-color--light: rgba(10, 10, 10, 0.62);
+  --md-default-fg-color--lighter: rgba(10, 10, 10, 0.24);
+  --md-default-fg-color--lightest: rgba(10, 10, 10, 0.08);
+  --md-typeset-color: var(--md-default-fg-color);
+  --md-code-bg-color: var(--dk-mist);
+  --md-code-fg-color: var(--dk-ink);
+  --md-footer-bg-color: var(--dk-slab);
+  --md-footer-bg-color--dark: var(--dk-slab);
+  --md-footer-fg-color: var(--dk-on-slab);
+  --md-footer-fg-color--light: var(--dk-on-slab-muted);
+  --md-footer-fg-color--lighter: var(--dk-on-slab-muted);
 }
 
 [data-md-color-scheme="slate"] {
   --md-hue: 0;
-  --md-primary-fg-color: #0a0a0a;
-  --md-primary-fg-color--light: #161616;
+  --dk-paper: #0a0a0a;
+  --dk-mist: #161616;
+  --dk-ink: #f2f2f2;
+  --dk-muted: #a3a3a3;
+  --dk-line: rgba(242, 242, 242, 0.14);
+  --dk-slab: #f2f2f2;
+  --dk-on-slab: #0a0a0a;
+  --dk-on-slab-muted: #555555;
+  --dk-slab-line: rgba(10, 10, 10, 0.2);
+
+  --md-primary-fg-color: var(--dk-paper);
+  --md-primary-fg-color--light: var(--dk-mist);
   --md-primary-fg-color--dark: #000000;
-  --md-primary-bg-color: #f5f5f5;
-  --md-primary-bg-color--light: #a3a3a3;
-  --md-accent-fg-color: #ffffff;
-  --md-accent-fg-color--transparent: rgba(255, 255, 255, 0.1);
-  --md-typeset-a-color: #f5f5f5;
-  --md-default-bg-color: #0a0a0a;
-  --md-default-fg-color: rgba(245, 245, 245, 0.92);
-  --md-code-bg-color: #161616;
-  --md-footer-bg-color: #161616;
-  --md-footer-bg-color--dark: #000000;
-  --md-footer-fg-color: #f5f5f5;
+  --md-primary-bg-color: var(--dk-ink);
+  --md-primary-bg-color--light: var(--dk-muted);
+  --md-accent-fg-color: var(--dk-ink);
+  --md-accent-fg-color--transparent: rgba(242, 242, 242, 0.08);
+  --md-accent-bg-color: var(--dk-paper);
+  --md-typeset-a-color: var(--dk-ink);
+  --md-default-bg-color: var(--dk-paper);
+  --md-default-fg-color: rgba(242, 242, 242, 0.92);
+  --md-default-fg-color--light: rgba(242, 242, 242, 0.64);
+  --md-default-fg-color--lighter: rgba(242, 242, 242, 0.26);
+  --md-default-fg-color--lightest: rgba(242, 242, 242, 0.09);
+  --md-typeset-color: var(--md-default-fg-color);
+  --md-code-bg-color: var(--dk-mist);
+  --md-code-fg-color: var(--dk-ink);
+  --md-footer-bg-color: var(--dk-slab);
+  --md-footer-bg-color--dark: var(--dk-slab);
+  --md-footer-fg-color: var(--dk-on-slab);
+  --md-footer-fg-color--light: var(--dk-on-slab-muted);
+  --md-footer-fg-color--lighter: var(--dk-on-slab-muted);
 }
 
-/* Шапка и вкладки — как фон приложения, отделены волосяной линией вместо тени. */
+/* ---------- Browser surfaces ---------- */
+
+::selection {
+  background: var(--dk-ink);
+  color: var(--dk-paper);
+}
+html {
+  scrollbar-color: var(--md-default-fg-color--lighter) transparent;
+  accent-color: var(--dk-ink);
+}
+:focus-visible {
+  outline: 2px solid var(--dk-ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------- Header and tabs: the masthead ---------- */
+
 .md-header,
 .md-tabs {
+  background-color: var(--dk-paper);
+  color: var(--dk-ink);
   box-shadow: none;
-  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+.md-tabs {
+  border-bottom: 1px solid var(--dk-line);
+}
+.md-header__topic:first-child,
+.md-header__title {
+  font-family: var(--dk-display);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+.md-tabs__link {
+  font-weight: 500;
+  opacity: 0.72;
+}
+.md-tabs__item--active .md-tabs__link,
+.md-tabs__link:hover {
+  opacity: 1;
+  color: var(--dk-ink);
 }
 
-/* Марка: прописными, жирно, с разрядкой 0.14em — как Wordmark на главной приложения. */
-.md-header__topic:first-child {
-  font-weight: 900;
-  letter-spacing: 0.14em;
-}
+/* ---------- Reading column ---------- */
 
-/* Ссылки отличаются подчёркиванием, а не цветом. */
+.md-typeset {
+  font-size: 0.82rem;
+  line-height: 1.7;
+  letter-spacing: 0;
+}
+.md-typeset h1,
+.md-typeset h2 {
+  font-family: var(--dk-display);
+  color: var(--dk-ink);
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+}
+.md-typeset h1 {
+  font-size: 2.1em;
+  font-weight: 800;
+  line-height: 1.12;
+  margin: 0 0 1.1em;
+}
+.md-typeset h2 {
+  font-size: 1.32em;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 2.4em 0 0.8em;
+}
+.md-typeset h3 {
+  font-weight: 700;
+  color: var(--dk-ink);
+  margin: 2em 0 0.6em;
+}
 .md-typeset a {
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
+  text-underline-offset: 0.22em;
+  text-decoration-color: var(--md-default-fg-color--lighter);
+  transition: text-decoration-color 0.15s;
 }
-.md-typeset a.headerlink,
-.md-typeset .md-button {
+.md-typeset a:hover {
+  text-decoration-color: currentColor;
+}
+.md-typeset a.headerlink {
   text-decoration: none;
 }
+.md-typeset code {
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+}
+.md-typeset pre > code {
+  border-radius: 16px;
+  padding: 1em 1.2em;
+}
+.md-typeset hr {
+  border-color: var(--dk-line);
+}
 
-/* Заголовки — чернилами, иерархию держат вес и размер, а не бледность. */
-.md-typeset h1 {
-  color: var(--md-default-fg-color);
+/* Tables: the head row is a slab, rows ruled with hairlines. */
+.md-typeset table:not([class]) {
+  border: 1px solid var(--dk-line);
+  border-radius: 18px;
+  overflow: hidden;
+  font-size: 0.78rem;
+  box-shadow: none;
+}
+.md-typeset table:not([class]) th {
+  background: var(--dk-slab);
+  color: var(--dk-on-slab);
   font-weight: 700;
 }
-.md-typeset h1.ducker-title {
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  margin-bottom: 0.6em;
+.md-typeset table:not([class]) td {
+  border-top: 1px solid var(--dk-line);
+  vertical-align: top;
+}
+.md-typeset table:not([class]) tr:hover {
+  background: var(--md-accent-fg-color--transparent);
+}
+.md-typeset td:first-child code {
+  white-space: nowrap;
 }
 
-/* Поиск в шапке — серая плашка, как поле ввода в приложении. */
-@media screen and (min-width: 60em) {
-  .md-search__form,
-  .md-search__input {
-    background-color: var(--md-default-fg-color--lightest);
-  }
-  .md-search__form:hover {
-    background-color: var(--md-default-fg-color--lighter);
-  }
+/* Buttons in the reading column. */
+.md-typeset .md-button {
+  border-radius: 999px;
+  border: 1px solid var(--dk-ink);
+  color: var(--dk-ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+.md-typeset .md-button:hover,
+.md-typeset .md-button:focus {
+  background: var(--dk-ink);
+  color: var(--dk-paper);
+  border-color: var(--dk-ink);
+}
+
+/* Side navigation: the current page is the app's selected dock pill. */
+.md-sidebar .md-nav__link.md-nav__link--active {
+  background-color: var(--dk-ink) !important;
+  color: var(--dk-paper) !important;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.md-nav__title {
+  font-family: var(--dk-display);
+  font-weight: 700;
+}
+
+/* Search: a mist pill, like the app's text fields. */
+.md-search__form {
+  border-radius: 999px;
+  background-color: var(--dk-mist);
 }
 .md-search__input {
-  color: var(--md-default-fg-color);
+  color: var(--dk-ink);
 }
 .md-search__input::placeholder,
 .md-search__icon {
   color: var(--md-default-fg-color--light);
 }
 
-/* Кнопки: обычная — волосяная рамка, главная — сплошная заливка,
-   как выбранное состояние в приложении. */
-.md-typeset .md-button {
-  color: var(--md-default-fg-color);
-  border-color: var(--md-default-fg-color--light);
+/* ---------- Footer: a slab with the duck peeking over its edge, on every page ---------- */
+
+.md-footer {
+  position: relative;
+  margin-top: 5rem;
+  border-radius: 2.2rem 2.2rem 0 0;
+  background: var(--dk-slab);
+  color: var(--dk-on-slab);
 }
-.md-typeset .md-button:hover,
-.md-typeset .md-button:focus {
-  color: var(--md-default-bg-color);
-  background-color: var(--md-default-fg-color);
-  border-color: var(--md-default-fg-color);
+.md-footer::before {
+  content: "";
+  position: absolute;
+  right: 12%;
+  top: -3.1rem;
+  width: 3.6rem;
+  height: 3.9rem;
+  background: var(--dk-slab);
+  -webkit-mask: url("ducker-duck.svg") no-repeat center / contain;
+  mask: url("ducker-duck.svg") no-repeat center / contain;
 }
-.md-typeset .md-button--primary {
-  background-color: var(--md-primary-bg-color);
-  border-color: var(--md-primary-bg-color);
-  color: var(--md-default-bg-color);
+.md-footer-meta {
+  background: transparent;
+}
+.md-footer a,
+.md-footer-meta__inner a {
+  color: var(--dk-on-slab);
+}
+.md-copyright,
+.md-copyright__highlight {
+  color: var(--dk-on-slab-muted);
 }
 
-/* Карточки разделов на главной — белые с волосяной рамкой, без тени. */
-.md-typeset .grid.cards > ul > li,
-.md-typeset .grid > .card {
-  border: 1px solid var(--md-default-fg-color--lightest);
-  border-radius: 0.8rem;
-  box-shadow: none;
-}
-.md-typeset .grid.cards > ul > li:hover {
-  border-color: var(--md-default-fg-color--light);
-  box-shadow: none;
-}
+/* ---------- Home ---------- */
 
-/* Утка на главной: плитка контрастна странице — чёрная на светлой теме, белая на тёмной. */
-.ducker-mark {
-  width: 7rem;
-  height: 7rem;
-  border-radius: 1.6rem;
+.dk-home {
+  --dk-gutter: max(1rem, 4vw);
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  color: var(--dk-ink);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  overflow-x: clip;
 }
-[data-md-color-scheme="slate"] .ducker-mark--light,
-[data-md-color-scheme="default"] .ducker-mark--dark {
+.dk-home h1,
+.dk-home h2,
+.dk-home h3 {
+  font-family: var(--dk-display);
+  color: inherit;
+  text-wrap: balance;
+  margin: 0;
+}
+.dk-home p {
+  margin: 0;
+}
+.dk-home .headerlink {
   display: none;
 }
-
-/* Снимки экрана: тоже свои под каждую тему. */
-.ducker-shot {
+/* Markdown wraps a row of images in a paragraph; let the images be the layout's items. */
+.dk-fan > p,
+.dk-hero__shots > p {
+  display: contents;
+}
+.dk-home img {
   display: block;
-  margin: 2rem auto;
   max-width: 100%;
+  height: auto;
 }
-[data-md-color-scheme="slate"] .ducker-shot--light,
-[data-md-color-scheme="default"] .ducker-shot--dark {
-  display: none;
-}
-
-/* Admonition без цветовых акцентов: все типы — в серой гамме. */
-.md-typeset .admonition,
-.md-typeset details {
-  border-color: var(--md-default-fg-color--light) !important;
-  box-shadow: none;
-}
-.md-typeset .admonition-title,
-.md-typeset summary {
-  background-color: var(--md-accent-fg-color--transparent) !important;
-}
-.md-typeset .admonition-title::before,
-.md-typeset summary::before {
-  background-color: var(--md-default-fg-color) !important;
+.dk-wrap {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding-inline: var(--dk-gutter);
 }
 
-/* Имена заголовков и ключей в первом столбце таблиц не переносим посреди слова. */
-.md-typeset td:first-child code {
+/* Actions */
+.dk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.dk-home a.dk-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.6rem;
+  padding: 0 1.4rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.18s, color 0.18s, transform 0.18s;
+}
+.dk-home a.dk-btn:hover {
+  transform: translateY(-1px);
+}
+.dk-home a.dk-btn--solid {
+  background: var(--dk-on-slab);
+  border-color: var(--dk-on-slab);
+  color: var(--dk-slab);
+}
+.dk-home .dk-on-paper a.dk-btn--solid {
+  background: var(--dk-ink);
+  border-color: var(--dk-ink);
+  color: var(--dk-paper);
+}
+.dk-home a:not(.dk-btn) {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+/* Hero: the wordmark across the page, the slab below it, the duck between them. */
+.dk-hero {
+  container-type: inline-size;
+  padding-inline: max(0.5rem, 1.6vw);
+}
+.dk-word {
+  font-family: var(--dk-display);
+  font-weight: 900;
+  font-size: 18.4cqi;
+  line-height: 0.74;
+  letter-spacing: -0.035em;
+  text-align: center;
   white-space: nowrap;
+  padding-top: 0.08em;
+  user-select: none;
+}
+.dk-slab {
+  position: relative;
+  background: var(--dk-slab);
+  color: var(--dk-on-slab);
+  border-radius: 2.4rem;
+}
+.dk-hero .dk-slab {
+  margin-top: max(7cqi, 3rem);
+  border-radius: 2.4rem 2.4rem 0 0;
+}
+.dk-duck {
+  position: absolute;
+  width: clamp(2.8rem, 8cqi, 7.5rem);
+  aspect-ratio: 24 / 26;
+  right: 30%;
+  bottom: calc(100% - 0.6rem);
+  color: var(--dk-slab);
+  overflow: visible;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dk-hero .dk-duck {
+    animation: dk-peek 1.1s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+@keyframes dk-peek {
+  from {
+    transform: translateY(38%);
+  }
+  to {
+    transform: none;
+  }
+}
+.dk-hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 2rem 3rem;
+  align-items: center;
+  padding: clamp(2rem, 5cqi, 4.5rem) clamp(1.2rem, 4cqi, 4rem) clamp(2.5rem, 5cqi, 4.5rem);
+}
+.dk-hero h1 {
+  font-size: clamp(1.35rem, 2.5cqi, 2.3rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+.dk-lede {
+  margin-top: 1rem !important;
+  font-size: 1.08em;
+  color: var(--dk-on-slab);
+  max-width: 34ch;
+}
+.dk-hero .dk-actions {
+  margin-top: 1.8rem;
+}
+.dk-quiet {
+  margin-top: 1.4rem !important;
+  color: var(--dk-on-slab-muted);
+  font-size: 0.85em;
+  max-width: 40ch;
+}
+.dk-hero__shots {
+  position: relative;
+  min-width: 0;
+  padding-right: 18%;
+}
+.dk-hero__shots .dk-tv {
+  border-radius: 1.1rem;
+  border: 1px solid var(--dk-slab-line);
+}
+.dk-hero__shots .dk-phone {
+  position: absolute;
+  right: 0;
+  bottom: -14%;
+  width: 30%;
+  filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.35));
 }
 
-/* The base64 converter on the ducker-* headers page: fields like the app's text fields. */
+/* Sections on paper */
+.dk-section {
+  padding-block: clamp(4rem, 9vw, 8rem);
+}
+.dk-home h2 {
+  font-size: clamp(1.7rem, 4.2vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+}
+.dk-split {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 3rem;
+  align-items: start;
+}
+.dk-split > * {
+  min-width: 0;
+}
+.dk-claims {
+  display: grid;
+  gap: 1.6rem;
+  margin-top: 2.2rem;
+}
+.dk-claims h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+.dk-claims p {
+  color: var(--md-default-fg-color--light);
+  max-width: 44ch;
+}
+
+/* Three phones fanned out like cards in a hand. */
+.dk-fan {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 1rem;
+}
+.dk-fan img {
+  width: 34%;
+  margin-inline: -2.4%;
+  filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.16));
+}
+.dk-fan img:nth-child(1) {
+  transform: rotate(-5deg) translateY(1.6rem);
+}
+.dk-fan img:nth-child(2) {
+  position: relative;
+  z-index: 1;
+}
+.dk-fan img:nth-child(3) {
+  transform: rotate(5deg) translateY(1.6rem);
+}
+
+/* The index of features: ruled rows, three columns. */
+.dk-index {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 2.4rem;
+  margin-top: 2.6rem;
+}
+.dk-index > div {
+  border-top: 1px solid var(--dk-line);
+  padding: 1.2rem 0 1.6rem;
+}
+.dk-index h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+.dk-index p {
+  color: var(--md-default-fg-color--light);
+}
+
+/* The TV: a whole slab. */
+.dk-tv-slab {
+  margin-inline: max(0.5rem, 1.6vw);
+}
+.dk-tv-slab .dk-split {
+  align-items: center;
+  padding: clamp(2.4rem, 6vw, 5.5rem) clamp(1.2rem, 4vw, 4rem);
+}
+.dk-tv-slab h2 {
+  font-size: clamp(1.6rem, 3.6vw, 3rem);
+  font-weight: 800;
+  line-height: 1.06;
+}
+.dk-tv-slab p {
+  margin-top: 1.1rem;
+  color: var(--dk-on-slab);
+  max-width: 42ch;
+}
+.dk-tv-slab .dk-quiet {
+  color: var(--dk-on-slab-muted);
+}
+.dk-tv-slab img {
+  border-radius: 1.1rem;
+  border: 1px solid var(--dk-slab-line);
+}
+
+/* Providers: the User-Agent set large, the way a provider meets ducker. */
+.dk-ua {
+  margin-top: 1.6rem !important;
+  font-family: var(--md-code-font-family);
+  font-size: clamp(0.8rem, 1.6vw, 1.1rem);
+  background: var(--dk-mist);
+  border-radius: 1rem;
+  padding: 0.9rem 1.2rem;
+  overflow-wrap: anywhere;
+}
+.dk-ua code {
+  background: none;
+  padding: 0;
+}
+.dk-links {
+  margin-top: 1.6rem;
+}
+.dk-links ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 !important;
+}
+.dk-home .dk-links li {
+  border-top: 1px solid var(--dk-line);
+  margin: 0;
+}
+.dk-home .dk-links a {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8rem 0;
+  font-weight: 700;
+  text-decoration: none;
+}
+.dk-home .dk-links a::after {
+  content: "→";
+  transition: transform 0.18s;
+}
+.dk-home .dk-links a:hover::after {
+  transform: translateX(4px);
+}
+.dk-brand {
+  max-width: 15rem;
+  margin: 0 auto;
+  filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.16));
+}
+
+/* Privacy: one statement set large. */
+.dk-statement {
+  font-family: var(--dk-display);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 4.6vw, 3.8rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  max-width: 18ch;
+  text-wrap: balance;
+}
+.dk-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.6rem 2.4rem;
+  margin-top: 2.6rem;
+}
+.dk-facts p {
+  color: var(--md-default-fg-color--light);
+}
+.dk-facts strong {
+  color: var(--dk-ink);
+}
+
+/* Closing call: the last slab, with the duck again. */
+.dk-end {
+  margin-top: clamp(5rem, 9vw, 8rem);
+  border-radius: 2.4rem 2.4rem 0 0;
+  text-align: center;
+}
+.dk-end .dk-duck {
+  right: auto;
+  left: calc(50% - clamp(2.1rem, 5.5vw, 4.75rem));
+  width: clamp(4.2rem, 11vw, 9.5rem);
+}
+.dk-end__inner {
+  padding: clamp(3rem, 7vw, 6rem) var(--dk-gutter);
+  display: grid;
+  justify-items: center;
+  gap: 1.4rem;
+}
+.dk-end h2 {
+  font-size: clamp(1.8rem, 5vw, 4rem);
+  font-weight: 800;
+  line-height: 1.02;
+}
+.dk-end .dk-quiet {
+  margin-top: 0 !important;
+}
+
+@media screen and (max-width: 60em) {
+  .dk-hero__inner,
+  .dk-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dk-hero__shots {
+    padding-right: 14%;
+  }
+  .dk-index,
+  .dk-facts {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+@media screen and (max-width: 36em) {
+  .dk-index,
+  .dk-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dk-hero .dk-slab {
+    border-radius: 1.6rem 1.6rem 0 0;
+  }
+  .dk-fan img {
+    width: 40%;
+    margin-inline: -4%;
+  }
+}
+
+/* ---------- The base64 converter on the ducker-* headers page ---------- */
+
 .ducker-b64 label {
   display: block;
   margin-top: 0.8em;
@@ -175,11 +698,11 @@
   box-sizing: border-box;
   width: 100%;
   margin-top: 0.4em;
-  padding: 0.6em 0.8em;
-  border: 1px solid var(--md-default-fg-color--lighter);
-  border-radius: 0.6rem;
-  background-color: var(--md-code-bg-color);
-  color: var(--md-default-fg-color);
+  padding: 0.7em 1em;
+  border: 1px solid var(--dk-line);
+  border-radius: 14px;
+  background-color: var(--dk-mist);
+  color: var(--dk-ink);
   font-family: var(--md-code-font-family);
   font-size: 0.85em;
 }
@@ -188,4 +711,32 @@
 }
 .ducker-b64 .md-button {
   margin-top: 0.8em;
+}
+
+/* Pictures made for one theme only. */
+[data-md-color-scheme="slate"] .dk-only-light,
+[data-md-color-scheme="default"] .dk-only-dark {
+  display: none;
+}
+.dk-more {
+  margin-top: 2rem !important;
+  color: var(--md-default-fg-color--light);
+}
+
+/* The home page fills the width, and its closing slab runs on into the footer (one duck, no gap). */
+.md-main__inner:has(> .dk-home) {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.md-container:has(.dk-home) .md-footer {
+  margin-top: 0;
+  border-radius: 0;
+}
+.md-container:has(.dk-home) .md-footer::before {
+  display: none;
+}
+.dk-on-paper .dk-split > div > p + p,
+.dk-on-paper .dk-split > div > h2 + p {
+  margin-top: 1.1rem;
 }

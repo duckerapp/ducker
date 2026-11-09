@@ -30,9 +30,13 @@ works on the published site, not under `zensical serve`.
   Edit the source; the site picks up the change. The written files are excluded from Git.
 - Screenshots are the same as in the `README`: `sources.py` copies `docs/images/en` and
   `docs/images/ru` into each language's `assets/shots`.
-- `docs/assets/`: the app's black-and-white palette and DUCKER branding (`ducker.css`), the
-  base64 converter on the headers page (`base64.js`), and the duck images. The Russian site gets
-  a copy from `sources.py`.
+- `docs/assets/`: the look (`ducker.css` — the app's black-and-white palette at poster scale: the
+  DUCKER wordmark, ink slabs that invert in the dark theme, the duck peeking over a slab's edge),
+  the base64 converter on the headers page (`base64.js`), the duck images, and the self-hosted
+  fonts in `fonts/` (Unbounded for headings, Onest for text, both SIL OFL, cut down to Latin and
+  Cyrillic). The Russian site gets a copy from `sources.py`.
+- `overrides/home.html`: the home page's template — full width, no sidebars. Both `index.md` files
+  share one markup; only the texts differ.
 - `overrides/.icons/ducker/duck.svg`: the duck wearing a hat.
 
 ## Rules

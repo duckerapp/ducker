@@ -109,10 +109,11 @@ def prepare(lang: str) -> None:
     for shot in shots:
         shutil.copy2(shot, docs / "assets/shots" / shot.name)
 
-    # The Russian site shares the stylesheet, script, and images kept in docs/assets.
+    # The Russian site shares the stylesheet, script, fonts, and images kept in docs/assets.
     if docs != DOCS["en"]:
         for asset in (DOCS["en"] / "assets").glob("*.*"):
             shutil.copy2(asset, docs / "assets" / asset.name)
+        shutil.copytree(DOCS["en"] / "assets/fonts", docs / "assets/fonts", dirs_exist_ok=True)
 
 
 if __name__ == "__main__":
