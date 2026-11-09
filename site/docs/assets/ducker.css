@@ -304,6 +304,10 @@ html {
 html .md-footer-meta.md-typeset a:not(:focus, :hover) {
   color: var(--dk-on-slab);
 }
+html .md-footer-meta.md-typeset a:is(:focus, :hover),
+.md-footer a:is(:focus, :hover) {
+  color: var(--dk-on-slab-muted);
+}
 .md-copyright,
 .md-copyright__highlight {
   color: var(--dk-on-slab-muted);
@@ -369,10 +373,12 @@ html .md-footer-meta.md-typeset a:not(:focus, :hover) {
   color: inherit;
   font-weight: 700;
   text-decoration: none;
-  transition: background-color 0.18s, color 0.18s, box-shadow 0.18s, transform 0.18s;
+  transition: background-color 0.18s, color 0.18s, box-shadow 0.18s;
 }
+/* Hovers change colour only: moving an element by a fraction of a pixel re-renders its text, which
+   blurs and jumps. */
 .dk-home a.dk-btn:hover {
-  transform: translateY(-1px);
+  background-color: color-mix(in srgb, currentColor 12%, transparent);
 }
 .dk-home a.dk-btn--solid {
   background: var(--dk-on-slab);
@@ -382,6 +388,12 @@ html .md-footer-meta.md-typeset a:not(:focus, :hover) {
 .dk-home .dk-on-paper a.dk-btn--solid {
   background: var(--dk-ink);
   color: var(--dk-paper);
+}
+.dk-home a.dk-btn--solid:hover {
+  background: var(--dk-on-slab-muted);
+}
+.dk-home .dk-on-paper a.dk-btn--solid:hover {
+  background: var(--dk-muted);
 }
 .dk-home a:not(.dk-btn) {
   color: inherit;
@@ -624,10 +636,10 @@ html .md-footer-meta.md-typeset a:not(:focus, :hover) {
 }
 .dk-home .dk-links a::after {
   content: "→";
-  transition: transform 0.18s;
 }
-.dk-home .dk-links a:hover::after {
-  transform: translateX(4px);
+.dk-home .dk-links a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
 }
 .dk-home .dk-brand {
   max-width: 15rem;
@@ -787,4 +799,81 @@ html .md-footer-meta.md-typeset a:not(:focus, :hover) {
 }
 .dk-404 .dk-actions {
   margin-top: 1.6em;
+}
+
+/* Three steps to connect: the sequence is the information, so the steps are numbered. */
+.dk-steps-section {
+  padding-top: clamp(3.5rem, 7vw, 6rem);
+}
+.dk-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.6rem 2.4rem;
+  margin-top: 2.2rem;
+}
+.dk-steps > div {
+  border-top: 2px solid var(--dk-ink);
+  padding-top: 1.1rem;
+  min-width: 0;
+}
+.dk-step__n {
+  display: block;
+  color: var(--dk-ink);
+  font-weight: 900;
+  font-size: 2.6rem;
+  line-height: 1;
+  margin-bottom: 0.9rem;
+}
+.dk-steps h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+.dk-steps p {
+  color: var(--md-default-fg-color--light);
+}
+.dk-steps strong {
+  color: var(--dk-ink);
+}
+.dk-home code {
+  background: var(--dk-mist);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+  font-size: 0.88em;
+}
+@media screen and (max-width: 44em) {
+  .dk-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* A feature that has its own section in the docs leads there. */
+.dk-home .dk-index h3 a {
+  text-decoration: none;
+}
+.dk-home .dk-index h3 a::after {
+  content: "→";
+  margin-left: 0.3em;
+}
+.dk-home .dk-index h3 a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+
+/* The theme wave (assets/ducker.js): the new theme opens as a circle from the switch. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: dk-wave 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes dk-wave {
+  from {
+    clip-path: circle(0 at var(--dk-wave-x, 100%) var(--dk-wave-y, 0));
+  }
+  to {
+    clip-path: circle(150vmax at var(--dk-wave-x, 100%) var(--dk-wave-y, 0));
+  }
 }

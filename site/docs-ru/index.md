@@ -32,6 +32,43 @@ template: home.html
 </div>
 </section>
 
+<section class="dk-steps-section dk-on-paper" markdown>
+<div class="dk-wrap" markdown>
+
+## Подключиться — три шага
+
+<div class="dk-steps" markdown>
+<div markdown>
+
+<span class="dk-step__n" aria-hidden="true">1</span>
+
+### Скачайте APK
+
+Из [выпусков](https://github.com/duckerapp/ducker/releases) на GitHub. `arm64-v8a` подходит почти любому телефону новее 2017 года; [какой файл брать](users/install.md).
+
+</div>
+<div markdown>
+
+<span class="dk-step__n" aria-hidden="true">2</span>
+
+### Добавьте подписку
+
+**«Подписки» → «Добавить»**: вставьте ссылку от провайдера, отсканируйте QR-код или выберите файл.
+
+</div>
+<div markdown>
+
+<span class="dk-step__n" aria-hidden="true">3</span>
+
+### Нажмите кнопку
+
+Кнопка включения на главной. Android один раз попросит разрешить VPN — и вы подключены.
+
+</div>
+</div>
+</div>
+</section>
+
 <section class="dk-section dk-on-paper" markdown>
 <div class="dk-wrap dk-split" markdown>
 <div markdown>
@@ -75,26 +112,26 @@ template: home.html
 <section class="dk-on-paper" markdown>
 <div class="dk-wrap" markdown>
 
-## Всё остальное — когда понадобится
+## Всё остальное — когда понадобится
 
 <div class="dk-index" markdown>
 <div markdown>
 
-### Подписка в любом виде
+### [Подписка в любом виде](users/faq.md#как-добавить-подписку)
 
 Ссылка, QR-код или файл. Готовый конфиг mihomo применяется как есть, простой список ссылок встаёт во встроенный профиль.
 
 </div>
 <div markdown>
 
-### Узлы
+### [Узлы](users/faq.md#что-такое-vpn-подписка-и-сервер)
 
 Группы со своими значками, проверка задержки, избранное, поиск и замер узла: потери и задержка.
 
 </div>
 <div markdown>
 
-### Обновляется сам
+### [Обновляется сам](users/install.md#обновления)
 
 Новая версия ставится одним касанием с главной, а можно разрешить ставить её самой, ночью.
 
@@ -115,21 +152,21 @@ template: home.html
 </div>
 <div markdown>
 
-### Раздача по Wi-Fi
+### [Раздача по Wi-Fi](users/faq.md#раздать-vpn-на-ноутбук-или-другое-устройство)
 
 Интернет через VPN для ноутбука или другого телефона — через прокси в вашей сети.
 
 </div>
 <div markdown>
 
-### Приложения и мои правила
+### [Приложения и мои правила](users/faq.md#приложение-ругается-на-vpn)
 
 Приложение, сайт или целую страну — через VPN, мимо него или заблокировать, не открывая YAML.
 
 </div>
 <div markdown>
 
-### Не засыпает
+### [Не засыпает](users/faq.md#vpn-сам-отключается)
 
 Автозапуск после перезагрузки и пошаговая помощь с телефонами, которые любят выключать VPN.
 
@@ -142,6 +179,10 @@ template: home.html
 
 </div>
 </div>
+
+Подробно о каждой возможности — [в README](https://github.com/duckerapp/ducker/blob/main/docs/README.ru.md#возможности).
+{ .dk-more }
+
 </div>
 </section>
 
@@ -149,7 +190,7 @@ template: home.html
 <div class="dk-split" markdown>
 <div markdown>
 
-## На телевизоре — без набора ссылки пультом
+## На телевизоре — без набора ссылки пультом
 
 Тот же APK работает на Android TV и Google TV. Телевизор показывает QR-код; отсканируйте его в ducker на телефоне, и подписка уйдёт на телевизор по домашней сети, зашифрованная одноразовым ключом, который есть только в этом коде.
 

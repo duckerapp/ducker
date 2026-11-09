@@ -41,6 +41,8 @@ theme:
     - navigation.sections
     - navigation.top
     - navigation.footer
+    # The page's contents sit in the left menu, so the reading column has the room for wide tables.
+    - toc.integrate
     - content.code.copy
     - search.highlight
 
@@ -52,9 +54,10 @@ validation:
 extra_css:
   - assets/ducker.css
 
-# The base64 converter on the ducker-* headers page; works in the browser, sends nothing.
+# The base64 converter on the ducker-* headers page and the theme wave; both run in the browser only.
 extra_javascript:
   - assets/base64.js
+  - assets/ducker.js
 
 extra:
   # Omit the "Made with Material for MkDocs" footer text.

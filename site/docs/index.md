@@ -32,6 +32,43 @@ No ads, analytics, or reports to the developer. This site sends nothing either.
 </div>
 </section>
 
+<section class="dk-steps-section dk-on-paper" markdown>
+<div class="dk-wrap" markdown>
+
+## Connected in three steps
+
+<div class="dk-steps" markdown>
+<div markdown>
+
+<span class="dk-step__n" aria-hidden="true">1</span>
+
+### Download the APK
+
+From [Releases](https://github.com/duckerapp/ducker/releases) on GitHub. `arm64-v8a` fits almost any phone made after 2017; [which file to take](users/install.md).
+
+</div>
+<div markdown>
+
+<span class="dk-step__n" aria-hidden="true">2</span>
+
+### Add the subscription
+
+**Profiles → Add**: paste the link from your provider, scan its QR code or pick a file.
+
+</div>
+<div markdown>
+
+<span class="dk-step__n" aria-hidden="true">3</span>
+
+### Press the button
+
+The power button on Home. Android asks once to allow the VPN, and you are connected.
+
+</div>
+</div>
+</div>
+</section>
+
 <section class="dk-section dk-on-paper" markdown>
 <div class="dk-wrap dk-split" markdown>
 <div markdown>
@@ -80,21 +117,21 @@ When the VPN stops or a subscription fails to update, you see why and what to do
 <div class="dk-index" markdown>
 <div markdown>
 
-### Subscriptions your way
+### [Subscriptions your way](users/faq.md#how-to-add-a-subscription)
 
 A link, a QR code or a file. Full mihomo configs work as they are; plain lists of links get a built-in profile.
 
 </div>
 <div markdown>
 
-### Nodes
+### [Nodes](users/faq.md#what-a-vpn-a-subscription-and-a-server-are)
 
 Groups with their icons, delay checks, favorites, search, and a node test with loss and delay.
 
 </div>
 <div markdown>
 
-### Updates itself
+### [Updates itself](users/install.md#updates)
 
 A new version is one tap from Home, or let it install by itself at night.
 
@@ -115,21 +152,21 @@ Which apps connect where, live: the app, the site, the rule, the node, the speed
 </div>
 <div markdown>
 
-### Wi-Fi sharing
+### [Wi-Fi sharing](users/faq.md#sharing-the-vpn-with-a-laptop-or-another-device)
 
 The VPN's internet for a laptop or another phone, through a proxy on your network.
 
 </div>
 <div markdown>
 
-### Apps and my rules
+### [Apps and my rules](users/faq.md#an-app-complains-about-the-vpn)
 
 Send an app, a site or a whole country through the VPN, past it, or block it, without touching YAML.
 
 </div>
 <div markdown>
 
-### Stays up
+### [Stays up](users/faq.md#the-vpn-turns-itself-off)
 
 Autostart after a reboot, and step-by-step help with phones that like to kill VPN apps.
 
@@ -142,6 +179,10 @@ Hide ducker from recent apps, disguise its icon, put the link and the config beh
 
 </div>
 </div>
+
+Every feature in detail: [the README](https://github.com/duckerapp/ducker#features).
+{ .dk-more }
+
 </div>
 </section>
 
