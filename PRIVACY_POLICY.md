@@ -66,7 +66,7 @@ only while the code is displayed.
 not respond, or, failing both, from a copy of that file on the jsDelivr CDN. The request
 contains no information about you or the phone: only a `User-Agent` such as
 `ducker/<app version>`. The new version itself is downloaded from GitHub or GitLab, only after
-you tap **Update**. Like any server, GitHub, GitLab, and jsDelivr see your IP address — or the
+you tap **Update** or, if you turned on **Update automatically**, over Wi-Fi while the screen is off. Like any server, GitHub, GitLab, and jsDelivr see your IP address — or the
 provider node's address if the VPN is enabled. Before installation, the app checks the file's
 checksum and signature: it will not install a file from someone else.
 
