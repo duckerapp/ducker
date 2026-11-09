@@ -117,6 +117,11 @@ LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
   echo "- \`ducker-$VERSION-armeabi-v7a.apk\` — старый телефон, если первый не ставится."
   echo
   echo "Минимальная версия Android — 10."
+  echo
+  # The report's address is the file's SHA-256; the report exists once the file is uploaded there.
+  echo "## Проверка файла"
+  echo
+  ( cd "$OUT" && sha256sum ./*.apk | sed 's|^\([0-9a-f]*\)  \./\(.*\)$|- `\2`: [VirusTotal](https://www.virustotal.com/gui/file/\1)|' )
 } > "$OUT/release-notes.md"
 
 echo
