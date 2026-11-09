@@ -38,6 +38,9 @@ if git rev-parse "v$VERSION" >/dev/null 2>&1; then
   exit 1
 fi
 
+# The APK ships the licences of every Go module in the core; a dependency change needs a new list.
+python3 scripts/core-licenses.py --check || exit 1
+
 OLD_VERSION=$(grep -m1 'versionName = ' build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
 OLD_CODE=$(grep -m1 'versionCode = ' build.gradle.kts | sed 's/[^0-9]//g')
 NEW_CODE=$((OLD_CODE + 1))
