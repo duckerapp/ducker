@@ -4,7 +4,8 @@
 
 site_name: DUCKER
 site_description: Open-source VPN client for Android and Android TV powered by mihomo
-site_url: https://duckerapp.github.io/ducker/
+# preview.sh sets DUCKER_SITE_URL to serve both languages locally; otherwise the published address.
+site_url: !ENV [DUCKER_SITE_URL, 'https://duckerapp.github.io/ducker/']
 site_dir: build
 
 # Intentionally omit repo_url: the theme would request star and fork counts from

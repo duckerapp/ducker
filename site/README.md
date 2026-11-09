@@ -16,6 +16,10 @@ zensical build --strict -f mkdocs.ru.yml   # Russian into build/ru/
 zensical serve                             # http://127.0.0.1:8000; rebuilds when files change
 ```
 
+To look at both languages with a working language switch, run `./preview.sh` and open
+http://localhost:8002/ducker/: it sets up Zensical in `.venv/` on the first run, builds both sites with local
+addresses and serves them.
+
 `--strict` turns a broken link or anchor into an error. The built site is in `site/build/`,
 which is excluded from Git. The language switch links to `/ducker/` and `/ducker/ru/`, so it
 works on the published site, not under `zensical serve`.

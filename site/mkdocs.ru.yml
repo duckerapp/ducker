@@ -3,7 +3,7 @@
 INHERIT: mkdocs.yml
 
 site_description: Открытый VPN-клиент для Android и Android TV на ядре mihomo
-site_url: https://duckerapp.github.io/ducker/ru/
+site_url: !ENV [DUCKER_SITE_URL_RU, 'https://duckerapp.github.io/ducker/ru/']
 site_dir: build/ru
 docs_dir: docs-ru
 copyright: ducker — GPL-3.0. Без аналитики и трекеров.
