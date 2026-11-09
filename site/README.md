@@ -38,7 +38,7 @@ works on the published site, not under `zensical serve`.
   gets a copy from `sources.py`.
 - `overrides/home.html`: the home page's template — full width, no sidebars. Both `index.md` files
   share one markup; only the texts differ.
-- `overrides/.icons/ducker/duck.svg`: the duck wearing a hat.
+- `docs/assets/ducker-logo.svg`: the header logo, the app icon's tile with the duck cut by its edge.
 
 ## Rules
 

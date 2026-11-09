@@ -19,8 +19,8 @@ theme:
   # Use system fonts, as in the app, instead of fetching Google Fonts.
   font: false
   favicon: assets/favicon.png
-  icon:
-    logo: ducker/duck
+  # The app icon: the tile, and the duck cut by its bottom edge.
+  logo: assets/ducker-logo.svg
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
