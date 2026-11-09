@@ -26,7 +26,10 @@
   --dk-on-slab-muted: #a8a8a8;
   --dk-slab-line: rgba(242, 242, 242, 0.22);
   --dk-display: "Onest", system-ui, sans-serif;
-  --dk-max: 62rem;
+  /* One column for every page: the theme's grid (.md-grid, 61rem) and the inset its header uses,
+     so the logo, the tabs, the search and the slabs share their edges. */
+  --dk-max: 61rem;
+  --dk-gutter: 1rem;
 
   --md-text-font: "Onest";
   --md-primary-fg-color: var(--dk-paper);
@@ -115,6 +118,13 @@ html {
 }
 .md-tabs {
   border-bottom: 1px solid var(--dk-line);
+}
+/* The space the theme keeps for a repository link: the site has none (no repo_url, see mkdocs.yml). */
+.md-header__source {
+  display: none !important;
+}
+.md-header__inner {
+  padding-right: var(--dk-gutter);
 }
 .md-header__topic:first-child,
 .md-header__title {
@@ -287,7 +297,6 @@ html {
 /* ---------- Home ---------- */
 
 .dk-home {
-  --dk-gutter: max(1rem, 4vw);
   flex: 1 1 auto;
   width: 100%;
   min-width: 0;
