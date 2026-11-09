@@ -13,12 +13,18 @@ on:
   #     - main
   #   paths:
   #     - "site/**"
+  #     - "docs/FAQ.md"
   #     - "docs/FAQ.ru.md"
+  #     - "CONTRIBUTING.md"
   #     - "docs/CONTRIBUTING.ru.md"
   #     - "docs/CREDITS.md"
+  #     - "docs/CREDITS.ru.md"
+  #     - "docs/images/en/**"
   #     - "docs/images/ru/**"
   #     - "PRIVACY_POLICY.md"
+  #     - "docs/PRIVACY_POLICY.ru.md"
   #     - "SECURITY.md"
+  #     - "docs/SECURITY.ru.md"
   #     - ".github/workflows/pages.yaml"
 
 permissions:
@@ -44,13 +50,17 @@ jobs:
           cache: pip
           cache-dependency-path: site/requirements.txt
 
-      - name: Install MkDocs
+      - name: Install Zensical
         run: pip install -r site/requirements.txt
 
-      # --strict: битая ссылка, якорь или промах замены в hooks/sources.py — ошибка сборки.
+      # --strict: a broken link or anchor fails the build, and so does a missed replacement in sources.py.
+      # English first: its build clears build/, the Russian one writes build/ru/.
       - name: Build
         working-directory: site
-        run: mkdocs build --strict
+        run: |
+          python sources.py
+          zensical build --strict
+          zensical build --strict -f mkdocs.ru.yml
 
       - name: Upload
         uses: actions/upload-pages-artifact@v4

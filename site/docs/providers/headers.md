@@ -69,12 +69,28 @@ For a user whose first download is already blocked, put them in the
 ## General rules
 
 - Header names are case-insensitive.
-- Text containing Cyrillic characters or newlines is sent as `base64:<…>` (UTF-8),
-  just as Remnawave sends `announce`.
+- Text with non-ASCII characters (Cyrillic, emoji) or line breaks is sent as `base64:<…>` (UTF-8),
+  just as Remnawave sends `announce`. In Remnawave, `rwEncodeBase64:` does it for you; elsewhere,
+  use the [converter](#encoding-a-value) below.
 - A single dash, `-`, means “not set”. The panel does not allow an empty header;
   a dash clears your value, for example to keep DUCKER in the Home header.
 - These headers change only the appearance and behavior listed above. They cannot change
   security-related values: the core API secret, logs, or the app update address.
+
+## Encoding a value
+
+Type the text and copy the value into the header. The conversion happens in your browser;
+nothing is sent anywhere.
+
+<div class="ducker-b64">
+  <label for="b64-in">Text</label>
+  <textarea id="b64-in" rows="3" spellcheck="false">Pond 🦆</textarea>
+  <label for="b64-out">Header value</label>
+  <input id="b64-out" type="text" readonly>
+  <button id="b64-copy" class="md-button" type="button" data-done="Copied">Copy</button>
+</div>
+
+The same value works in a `#name: value` line at the top of the subscription file.
 
 ## Standard headers
 

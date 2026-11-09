@@ -1,0 +1,56 @@
+# ducker documentation site, Russian. Shares everything with mkdocs.yml except the texts below.
+# Build it after the English site: the English build clears build/, this one writes build/ru/.
+INHERIT: mkdocs.yml
+
+site_description: Открытый VPN-клиент для Android и Android TV на ядре mihomo
+site_url: https://duckerapp.github.io/ducker/ru/
+site_dir: build/ru
+docs_dir: docs-ru
+copyright: ducker — GPL-3.0. Без аналитики и трекеров.
+
+theme:
+  language: ru
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Тёмная тема
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Светлая тема
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/duckerapp/ducker
+      name: Исходный код на GitHub
+
+plugins:
+  - search:
+      lang: [ru, en]
+
+nav:
+  - Главная: index.md
+  - Пользователям:
+      - Установка: users/install.md
+      - Вопросы и ответы: users/faq.md
+      - Приватность: users/privacy.md
+  - Провайдерам:
+      - Подписка для ducker: providers/start.md
+      - Заголовки ducker-*: providers/headers.md
+      - Устройства и лимит: providers/devices.md
+      - Встроенный шаблон: providers/template.md
+  - Помочь проекту:
+      - Как помочь: help/contributing.md
+      - Безопасность: help/security.md
+  - Сообщество:
+      - Сообщество и связь: support/contact.md
+      - Что дальше: support/roadmap.md
+      - Благодарности: support/credits.md

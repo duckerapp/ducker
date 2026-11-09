@@ -54,7 +54,7 @@ No ads, analytics, or reports sent to the developer. This site sends nothing ext
 
     ---
 
-    [Telegram channel and chat](support/contact.md), and
-    [credits](support/credits.md) for the work ducker is built on.
+    [Telegram channel and chat](support/contact.md), [what comes next](support/roadmap.md),
+    and [credits](support/credits.md) for the work ducker is built on.
 
 </div>

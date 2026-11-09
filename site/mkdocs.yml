@@ -1,12 +1,13 @@
-# ducker documentation site. Build from this directory:
-#   pip install -r requirements.txt && mkdocs build --strict
+# ducker documentation site, English. The Russian site is mkdocs.ru.yml. Build from this directory:
+#   pip install -r requirements.txt
+#   python sources.py && zensical build --strict && zensical build --strict -f mkdocs.ru.yml
 
 site_name: DUCKER
 site_description: Open-source VPN client for Android and Android TV powered by mihomo
 site_url: https://duckerapp.github.io/ducker/
 site_dir: build
 
-# Intentionally omit repo_url: Material would request star and fork counts from
+# Intentionally omit repo_url: the theme would request star and fork counts from
 # the GitHub API in the visitor's browser. Like the app, the site sends no data.
 # The footer repository link (extra.social) is a plain link without API requests.
 copyright: ducker — GPL-3.0. No analytics or trackers.
@@ -43,11 +44,6 @@ theme:
     - content.code.copy
     - search.highlight
 
-hooks:
-  # Load FAQ, privacy, CONTRIBUTING, SECURITY, credits, and screenshots from the
-  # repository documents on every build.
-  - hooks/sources.py
-
 # A broken link or anchor fails the build with --strict.
 validation:
   links:
@@ -56,9 +52,21 @@ validation:
 extra_css:
   - assets/ducker.css
 
+# The base64 converter on the ducker-* headers page; works in the browser, sends nothing.
+extra_javascript:
+  - assets/base64.js
+
 extra:
   # Omit the "Made with Material for MkDocs" footer text.
   generator: false
+  # Both languages are published side by side: English at /ducker/, Russian at /ducker/ru/.
+  alternate:
+    - name: English
+      link: /ducker/
+      lang: en
+    - name: Русский
+      link: /ducker/ru/
+      lang: ru
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/duckerapp/ducker
@@ -100,4 +108,5 @@ nav:
       - Security: help/security.md
   - Community:
       - Community and contact: support/contact.md
+      - Roadmap: support/roadmap.md
       - Credits: support/credits.md

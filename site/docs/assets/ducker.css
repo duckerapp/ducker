@@ -163,3 +163,29 @@
 .md-typeset td:first-child code {
   white-space: nowrap;
 }
+
+/* The base64 converter on the ducker-* headers page: fields like the app's text fields. */
+.ducker-b64 label {
+  display: block;
+  margin-top: 0.8em;
+  font-weight: 700;
+}
+.ducker-b64 textarea,
+.ducker-b64 input {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 0.4em;
+  padding: 0.6em 0.8em;
+  border: 1px solid var(--md-default-fg-color--lighter);
+  border-radius: 0.6rem;
+  background-color: var(--md-code-bg-color);
+  color: var(--md-default-fg-color);
+  font-family: var(--md-code-font-family);
+  font-size: 0.85em;
+}
+.ducker-b64 textarea {
+  resize: vertical;
+}
+.ducker-b64 .md-button {
+  margin-top: 0.8em;
+}

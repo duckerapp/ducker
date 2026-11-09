@@ -1,3 +1,17 @@
 # Готовый сайт и кэш Python при сборке
 build/
 __pycache__/
+# Zensical's build cache
+.cache/
+# Written by sources.py before each build: pages from repository documents, screenshots,
+# and the Russian site's copy of the shared assets.
+docs/users/faq.md
+docs/users/privacy.md
+docs/help/
+docs/support/credits.md
+docs/assets/shots/
+docs-ru/users/faq.md
+docs-ru/users/privacy.md
+docs-ru/help/
+docs-ru/support/credits.md
+docs-ru/assets/
