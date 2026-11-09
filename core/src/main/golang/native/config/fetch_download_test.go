@@ -62,7 +62,7 @@ func TestFetchHTTPDownloadLimits(t *testing.T) {
 					file := filepath.Join(t.TempDir(), "config.yaml")
 					_ = os.WriteFile(file, []byte("previous"), 0600)
 					u, _ := U.Parse(server.URL)
-					_, err := fetch(u, file, subscription)
+					_, err := fetch(u, file, subscription, nil)
 					if extra == 1 {
 						if err == nil {
 							t.Fatal("overflow reported success")
@@ -115,7 +115,7 @@ func TestFetchBrokenHTTPPreservesFile(t *testing.T) {
 			file := filepath.Join(t.TempDir(), "config.yaml")
 			_ = os.WriteFile(file, []byte("previous"), 0600)
 			u, _ := U.Parse(server.URL)
-			if _, err := fetch(u, file, true); err == nil {
+			if _, err := fetch(u, file, true, nil); err == nil {
 				t.Fatal("broken response accepted")
 			}
 			assertDownloadFiles(t, file, "previous")

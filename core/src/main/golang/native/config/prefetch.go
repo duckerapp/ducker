@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"errors"
+	"net/http"
 	U "net/url"
 	"os"
 	"sync"
@@ -28,9 +29,10 @@ func FetchMissingProviders(path string) (int, error) {
 	}
 
 	type file struct {
-		name string
-		url  *U.URL
-		path string
+		name   string
+		url    *U.URL
+		path   string
+		header http.Header
 	}
 	var missing []file
 	forEachProviders(rawCfg, func(_ int, _ int, name string, provider map[string]any, _ string) {
@@ -53,7 +55,7 @@ func FetchMissingProviders(path string) (int, error) {
 		if err != nil || (url.Scheme != "http" && url.Scheme != "https") {
 			return
 		}
-		missing = append(missing, file{name, url, p})
+		missing = append(missing, file{name, url, p, providerHeader(provider, rawCfg.GlobalUA)})
 	})
 
 	var left atomic.Int32
@@ -66,9 +68,9 @@ func FetchMissingProviders(path string) (int, error) {
 			defer func() { <-limit; wg.Done() }()
 
 			err := panicguard.Run("fetchMissingProviders", func() error {
-				err := fetchProvider(f.url, f.path, route{})
+				err := fetchProvider(f.url, f.path, route{}, f.header)
 				if err != nil && app.TunRunning() {
-					err = fetchProvider(f.url, f.path, route{direct: true})
+					err = fetchProvider(f.url, f.path, route{direct: true}, f.header)
 				}
 				return err
 			})
@@ -90,11 +92,11 @@ func FetchMissingProviders(path string) (int, error) {
 	return int(left.Load()), nil
 }
 
-func fetchProvider(url *U.URL, file string, r route) error {
+func fetchProvider(url *U.URL, file string, r route, header http.Header) error {
 	ctx, cancel := context.WithTimeout(context.Background(), fetchTimeout)
 	defer cancel()
 
-	reader, _, err := openUrl(ctx, url.String(), false, r)
+	reader, _, err := openUrl(ctx, url.String(), false, r, header)
 	if err != nil {
 		return err
 	}

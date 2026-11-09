@@ -175,7 +175,7 @@ func fetchSubscriptionAttempt(address string, r route, file string, answerTimeou
 		answered = time.AfterFunc(answerTimeout, cancel).Stop
 	}
 
-	reader, header, err := openUrl(ctx, address, true, r)
+	reader, header, err := openUrl(ctx, address, true, r, nil)
 	if !answered() {
 		if reader != nil {
 			_ = reader.Close()

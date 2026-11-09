@@ -49,14 +49,10 @@ func SetRequestHeaders(jsonHeaders string) error {
 	return nil
 }
 
-// buildRequestHeader собирает заголовки запроса. Заголовки устройства добавляются
-// ТОЛЬКО к запросу подписки: через ту же функцию качаются провайдеры правил с чужих
-// адресов (jsdelivr, github), и отправлять туда идентификатор устройства нельзя —
-// правило 3 в docs/ARCHITECTURE.md.
-//
-// The User-Agent goes with every download, rule sets too: a provider's own list of nodes is a panel
-// link as well, and the panel picks its format by the User-Agent (D-439).
-func buildRequestHeader(subscription bool, address, fallbackUA string) http.Header {
+// buildRequestHeader собирает заголовки запроса подписки. Провайдеры правил и узлов их не
+// получают: они качаются с чужих адресов (jsdelivr, github), и отправлять туда идентификатор
+// устройства нельзя — правило 3 в docs/ARCHITECTURE.md; их заголовки — providerHeader.
+func buildRequestHeader(address, fallbackUA string) http.Header {
 	header := http.Header{}
 
 	requestHeadersMu.RLock()
@@ -66,8 +62,7 @@ func buildRequestHeader(subscription bool, address, fallbackUA string) http.Head
 		if v = cleanRequestValue(v); v == "" {
 			continue
 		}
-		if strings.EqualFold(k, "User-Agent") ||
-			subscription && (!sensitiveSubscriptionHeader(k) || deviceHeadersAllowed(address)) {
+		if !sensitiveSubscriptionHeader(k) || deviceHeadersAllowed(address) {
 			header.Set(k, v)
 		}
 	}
@@ -91,4 +86,31 @@ func cleanRequestValue(value string) string {
 		}
 		return r
 	}, value))
+}
+
+// providerHeader is what the core itself sends for a provider's file (`resource.HTTPVehicle`): the provider's own
+// `header:`, and the config's `global-ua` (the core's default `clash.meta/<version>`) unless that header names a
+// User-Agent. The first download of a file is the core's later updates of it: the provider decides both (invariant 1).
+func providerHeader(provider map[string]any, globalUA string) http.Header {
+	header := http.Header{}
+
+	own, _ := provider["header"].(map[string]any)
+	for name, values := range own {
+		switch v := values.(type) {
+		case string:
+			header.Add(name, v)
+		case []any:
+			for _, value := range v {
+				if s, ok := value.(string); ok {
+					header.Add(name, s)
+				}
+			}
+		}
+	}
+
+	if header.Get("User-Agent") == "" && globalUA != "" {
+		header.Set("User-Agent", globalUA)
+	}
+
+	return header
 }

@@ -76,7 +76,7 @@ func syntheticSubscriptionHeaders(t *testing.T) {
 func requestTestSubscription(address string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := subscriptionHttpRequest(ctx, address, buildRequestHeader(true, address, "mihomo/fallback ducker"), loopbackSubscriptionDialer{}.DialContext)
+	resp, err := subscriptionHttpRequest(ctx, address, buildRequestHeader(address, "mihomo/fallback ducker"), loopbackSubscriptionDialer{}.DialContext)
 	if resp != nil {
 		_, _ = io.Copy(io.Discard, resp.Body)
 		_ = resp.Body.Close()

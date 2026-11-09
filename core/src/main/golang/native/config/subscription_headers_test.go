@@ -17,7 +17,7 @@ func TestDeviceHeadersRequireHTTPS(t *testing.T) {
 	}
 	defer SetRequestHeaders("")
 	for _, address := range []string{"http://provider.invalid/sub", "content://files/sub", "https:///sub", "https://"} {
-		h := buildRequestHeader(true, address, "mihomo/fallback ducker")
+		h := buildRequestHeader(address, "mihomo/fallback ducker")
 		for name := range h {
 			if sensitiveSubscriptionHeader(name) {
 				t.Errorf("%s: device header %s", address, name)
@@ -27,27 +27,22 @@ func TestDeviceHeadersRequireHTTPS(t *testing.T) {
 			t.Fatal("panel User-Agent lost")
 		}
 	}
-	h := buildRequestHeader(true, "https://provider.invalid/sub", "mihomo/fallback ducker")
+	h := buildRequestHeader("https://provider.invalid/sub", "mihomo/fallback ducker")
 	if h.Get("x-hwid") != "SYNTHETIC-HWID-1234" || h.Get("x-device-model") != "QA MODEL" {
 		t.Fatal("HTTPS provider headers lost")
-	}
-	// A rule set gets the User-Agent and nothing of the device (D-439).
-	h = buildRequestHeader(false, "https://provider.invalid/rules", "mihomo/fallback ducker")
-	if len(h) != 1 || h.Get("User-Agent") != "mihomo/1.19.31 ducker/QA" {
-		t.Fatalf("rule-provider request: %v", h)
 	}
 	// Replacing the map with UA only is Kotlin's existing sendHwid=false path.
 	if err := SetRequestHeaders(`{"User-Agent":"mihomo/1.19.31 ducker/QA"}`); err != nil {
 		t.Fatal(err)
 	}
-	h = buildRequestHeader(true, "https://provider.invalid/sub", "mihomo/fallback ducker")
+	h = buildRequestHeader("https://provider.invalid/sub", "mihomo/fallback ducker")
 	if h.Get("x-hwid") != "" || h.Get("x-device-model") != "" || h.Get("User-Agent") != "mihomo/1.19.31 ducker/QA" {
 		t.Fatal("disabled HWID or panel UA changed")
 	}
 	if err := SetRequestHeaders(""); err != nil {
 		t.Fatal(err)
 	}
-	h = buildRequestHeader(true, "https://provider.invalid/sub", "mihomo/fallback ducker")
+	h = buildRequestHeader("https://provider.invalid/sub", "mihomo/fallback ducker")
 	if h.Get("x-hwid") != "" || h.Get("User-Agent") != "mihomo/fallback ducker" {
 		t.Fatal("header reset/fallback changed")
 	}
@@ -59,7 +54,7 @@ func TestRequestHeadersDropControlCharacters(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer SetRequestHeaders("")
-	h := buildRequestHeader(true, "https://provider.invalid/sub", "fallback")
+	h := buildRequestHeader("https://provider.invalid/sub", "fallback")
 	if h.Get("x-device-model") != "QX-Evil: 1Model" || h.Get("X-Evil") != "" || len(h.Values("x-device-os")) != 0 {
 		t.Fatalf("headers %v", h)
 	}

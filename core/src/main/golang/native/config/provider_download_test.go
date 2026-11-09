@@ -119,3 +119,39 @@ func TestRuleProviderWithProxyIsNotPrefetched(t *testing.T) {
 		})
 	}
 }
+
+// A provider's file is first downloaded with what the core sends on its later updates: the provider's own
+// `header:`, else the config's `global-ua`, else the core's default — never the subscription's headers.
+func TestProviderGetsItsOwnHeaders(t *testing.T) {
+	_ = SetRequestHeaders(`{"x-hwid":"SYNTHETIC-HWID-ONLY","User-Agent":"mihomo/QA ducker/QA (android)"}`)
+	defer SetRequestHeaders("")
+	for name, c := range map[string]struct{ config, ua, auth string }{
+		"own header": {"global-ua: qa-global\n", "qa-own", "Bearer qa"},
+		"global-ua":  {"global-ua: qa-global\n", "qa-global", ""},
+		"default":    {"", "clash.meta/", ""},
+	} {
+		t.Run(name, func(t *testing.T) {
+			seen := make(chan http.Header, 1)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				seen <- r.Header.Clone()
+				_, _ = w.Write([]byte("payload:\n  - example.com\n"))
+			}))
+			defer server.Close()
+			header := ""
+			if c.auth != "" {
+				header = "    header:\n      User-Agent: [qa-own]\n      Authorization: [\"Bearer qa\"]\n"
+			}
+			dir := t.TempDir()
+			profile := c.config + "proxies:\n  - {name: QA_DIRECT, type: direct}\nrule-providers:\n  QA:\n    type: http\n    behavior: domain\n    url: " +
+				server.URL + "\n    path: rules/qa.yaml\n" + header + "rules:\n  - RULE-SET,QA,QA_DIRECT\n  - MATCH,DIRECT\n"
+			_ = os.WriteFile(filepath.Join(dir, "config.yaml"), []byte(profile), 0600)
+			if err := FetchAndValid(dir, "", false, func(string) {}); err != nil {
+				t.Fatal(err)
+			}
+			h := <-seen
+			if !strings.HasPrefix(h.Get("User-Agent"), c.ua) || h.Get("Authorization") != c.auth || h.Get("X-Hwid") != "" {
+				t.Fatalf("headers %v", h)
+			}
+		})
+	}
+}

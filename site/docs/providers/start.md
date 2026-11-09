@@ -15,8 +15,8 @@ User-Agent: mihomo/<core-version> ducker/<app-version> (android)
 It starts with `mihomo/`, so a panel which selects its response format by `User-Agent`
 returns a mihomo config. Remnawave uses its normal rule for mihomo clients.
 The word `ducker` in the same header distinguishes the app from other clients, and the last word names
-the platform. Rule sets and proxy providers the config downloads get the same `User-Agent`, without
-the device data.
+the platform. Rule sets and proxy providers the config downloads are fetched as mihomo fetches them:
+with the provider's own `header:`, else the config's `global-ua`, and without the device data.
 
 The request also includes device data: id, Android version, and model. These and the
 device limit are explained under [Devices and limits](devices.md).

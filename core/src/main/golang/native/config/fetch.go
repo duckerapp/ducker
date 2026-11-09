@@ -162,8 +162,9 @@ func (e *httpStatusError) Error() string {
 	return fmt.Sprintf("HTTP %d %s", e.code, http.StatusText(e.code))
 }
 
-// openUrl fetches a subscription by route r (subscription_mirrors.go); providers take only r.direct.
-func openUrl(ctx context.Context, url string, subscription bool, r route) (io.ReadCloser, fetchHeader, error) {
+// openUrl fetches a subscription by route r (subscription_mirrors.go); providers take only r.direct and send
+// their own provider headers (providerHeader).
+func openUrl(ctx context.Context, url string, subscription bool, r route, provider http.Header) (io.ReadCloser, fetchHeader, error) {
 	// Ядро шлёт свои запросы по правилам загруженного конфига. При выключенном VPN там
 	// лежит конфиг для замеров (D-63), и подписка качалась через его узел: мёртвый узел —
 	// и новую подписку не добавить («first record does not look like a TLS handshake»).
@@ -173,7 +174,10 @@ func openUrl(ctx context.Context, url string, subscription bool, r route) (io.Re
 		options = append(options, clashHttp.WithDialer(dialer.NewDialer()))
 	}
 
-	headers := buildRequestHeader(subscription, url, "mihomo ducker/"+app.VersionName()+" (android)")
+	headers := provider
+	if subscription {
+		headers = buildRequestHeader(url, "mihomo ducker/"+app.VersionName()+" (android)")
+	}
 	var response *metaHttp.Response
 	var err error
 	if subscription {
@@ -224,7 +228,7 @@ func openContent(url string) (io.ReadCloser, error) {
 	return app.OpenContent(url)
 }
 
-func fetch(url *U.URL, file string, subscription bool) (fetchHeader, error) {
+func fetch(url *U.URL, file string, subscription bool, provider http.Header) (fetchHeader, error) {
 	if subscription && (url.Scheme == "http" || url.Scheme == "https") {
 		a := fetchSubscriptionAttempt(url.String(), route{}, file, 0)
 		return a.header, a.err
@@ -239,7 +243,7 @@ func fetch(url *U.URL, file string, subscription bool) (fetchHeader, error) {
 
 	switch url.Scheme {
 	case "http", "https":
-		reader, header, err = openUrl(ctx, url.String(), subscription, route{})
+		reader, header, err = openUrl(ctx, url.String(), subscription, route{}, provider)
 	case "content":
 		reader, err = openContent(url.String())
 	default:
@@ -319,7 +323,7 @@ func FetchAndValid(
 			header, err = fetchSubscription(url.String(), configPath, reportStatus)
 		} else {
 			reportFetching(url.Host, false, reportStatus)
-			header, err = fetch(url, configPath, true)
+			header, err = fetch(url, configPath, true, nil)
 		}
 
 		// Заголовки — и при отказе сервера (F-19, F-155): причину отказа панель пишет в них.
@@ -404,7 +408,7 @@ func FetchAndValid(
 		// правок аудита: на медленной сети с 26 наборами шаблона обрыв одного — частый случай.
 		// Срываем добавление подписки только при превышении размера: такой файл не скачается
 		// и потом. Недокачанного файла не остаётся — writeDownload пишет во временный (D-206).
-		if _, err = fetch(url, ps, false); errors.Is(err, errDownloadTooLarge) {
+		if _, err = fetch(url, ps, false, providerHeader(provider, rawCfg.GlobalUA)); errors.Is(err, errDownloadTooLarge) {
 			providerFailure = err
 		}
 	})

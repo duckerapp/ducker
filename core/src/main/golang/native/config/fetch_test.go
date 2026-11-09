@@ -28,7 +28,7 @@ func TestFetchRejectsErrorStatus(t *testing.T) {
 	file := P.Join(t.TempDir(), "config.yaml")
 
 	url, _ := U.Parse(server.URL + "/sub")
-	header, err := fetch(url, file, true)
+	header, err := fetch(url, file, true, nil)
 
 	if err == nil || !strings.HasPrefix(err.Error(), "DOWNLOAD_FAILED: profile: HTTP 503") {
 		t.Fatalf("want HTTP 503 error, got %v", err)
@@ -41,7 +41,7 @@ func TestFetchRejectsErrorStatus(t *testing.T) {
 	}
 
 	url, _ = U.Parse(server.URL + "/ok")
-	if _, err := fetch(url, file, true); err != nil {
+	if _, err := fetch(url, file, true, nil); err != nil {
 		t.Fatalf("200 failed: %v", err)
 	}
 	if data, _ := os.ReadFile(file); string(data) != "proxies: []" {
