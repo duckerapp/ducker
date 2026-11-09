@@ -1,0 +1,13 @@
+{#- GitHub Pages serves this one page for every missing address, in either language: both texts, absolute links. -#}
+{% extends "main.html" %}
+{% block content %}
+  <div class="dk-404">
+    <h1>404</h1>
+    <p lang="ru">Такой страницы нет. Возможно, она переехала.</p>
+    <p lang="en">This page does not exist. It may have moved.</p>
+    <p class="dk-actions">
+      <a class="md-button md-button--primary" href="{{ config.site_url }}ru/" lang="ru">На главную</a>
+      <a class="md-button" href="{{ config.site_url }}" lang="en">Home page</a>
+    </p>
+  </div>
+{% endblock %}

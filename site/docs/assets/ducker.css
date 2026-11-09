@@ -234,6 +234,7 @@ html {
 
 /* Buttons in the reading column. */
 .md-typeset .md-button {
+  background-color: transparent;
   border-radius: 999px;
   border: 0;
   box-shadow: inset 0 0 0 1.5px var(--dk-ink);
@@ -241,6 +242,7 @@ html {
   font-weight: 700;
   text-decoration: none;
 }
+.md-typeset .md-button--primary,
 .md-typeset .md-button:hover,
 .md-typeset .md-button:focus {
   background: var(--dk-ink);
@@ -295,8 +297,11 @@ html {
 .md-footer-meta {
   background: transparent;
 }
+/* The theme colours footer links with the page's text colour, which is the slab's own colour:
+   the GitHub icon was invisible. Match the theme's selector to override it. */
 .md-footer a,
-.md-footer-meta__inner a {
+.md-footer-meta__inner a,
+html .md-footer-meta.md-typeset a:not(:focus, :hover) {
   color: var(--dk-on-slab);
 }
 .md-copyright,
@@ -759,4 +764,27 @@ html {
 .dk-on-paper .dk-split > div > p + p,
 .dk-on-paper .dk-split > div > h2 + p {
   margin-top: 1.1rem;
+}
+
+/* A landing page has no "next page"; the footer keeps only its copyright and links there. */
+.md-container:has(.dk-home) .md-footer__inner {
+  display: none;
+}
+
+/* 404: one page for both languages, GitHub Pages serves it for every missing address. */
+.dk-404 {
+  padding-block: 3rem 1rem;
+}
+.dk-404 h1 {
+  font-size: 4em !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.14em !important;
+  margin-bottom: 0.4em !important;
+}
+.dk-404 p {
+  font-size: 1.1em;
+  margin: 0.2em 0;
+}
+.dk-404 .dk-actions {
+  margin-top: 1.6em;
 }
