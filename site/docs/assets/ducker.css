@@ -215,7 +215,8 @@ html {
 /* Buttons in the reading column. */
 .md-typeset .md-button {
   border-radius: 999px;
-  border: 1px solid var(--dk-ink);
+  border: 0;
+  box-shadow: inset 0 0 0 1.5px var(--dk-ink);
   color: var(--dk-ink);
   font-weight: 700;
   text-decoration: none;
@@ -224,7 +225,6 @@ html {
 .md-typeset .md-button:focus {
   background: var(--dk-ink);
   color: var(--dk-paper);
-  border-color: var(--dk-ink);
 }
 
 /* Side navigation: the current page is the app's selected dock pill. */
@@ -338,23 +338,25 @@ html {
   min-height: 2.6rem;
   padding: 0 1.4rem;
   border-radius: 999px;
-  border: 1px solid currentColor;
+  /* An inset shadow, not a border: browsers snap a 1px border to whole pixels and its curve steps;
+     a shadow is drawn antialiased. */
+  border: 0;
+  box-shadow: inset 0 0 0 1.5px currentColor;
   color: inherit;
   font-weight: 700;
   text-decoration: none;
-  transition: background-color 0.18s, color 0.18s, transform 0.18s;
+  transition: background-color 0.18s, color 0.18s, box-shadow 0.18s, transform 0.18s;
 }
 .dk-home a.dk-btn:hover {
   transform: translateY(-1px);
 }
 .dk-home a.dk-btn--solid {
   background: var(--dk-on-slab);
-  border-color: var(--dk-on-slab);
+  box-shadow: none;
   color: var(--dk-slab);
 }
 .dk-home .dk-on-paper a.dk-btn--solid {
   background: var(--dk-ink);
-  border-color: var(--dk-ink);
   color: var(--dk-paper);
 }
 .dk-home a:not(.dk-btn) {
