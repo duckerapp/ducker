@@ -126,6 +126,16 @@ html {
 .md-header__inner {
   padding-right: var(--dk-gutter);
 }
+/* The logo is the app icon's tile: larger than the theme's 1.2rem, and inverted in the dark theme
+   (a mist tile with an ink duck), as the slabs are, so the tile does not vanish into the header. */
+.md-header__button.md-logo img {
+  height: 1.7rem;
+  width: auto;
+  border-radius: 0.4rem;
+}
+[data-md-color-scheme="slate"] .md-header__button.md-logo img {
+  filter: invert(1);
+}
 .md-header__topic:first-child,
 .md-header__title {
   font-family: var(--dk-display);
