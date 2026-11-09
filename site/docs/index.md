@@ -1,6 +1,9 @@
 ---
 title: Home
 template: home.html
+hide:
+  - navigation
+  - toc
 ---
 
 <section class="dk-hero" markdown>
