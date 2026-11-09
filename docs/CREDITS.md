@@ -19,7 +19,8 @@ repository README.
   `duckerapp/sing-mux`.
 - **meta-rules-dat** — MetaCubeX. The country and site databases (`geoip.metadb`, `geosite.dat`)
   behind the country and category rules, downloaded during the build; that project builds them from
-  Loyalsoldier/v2ray-rules-dat, v2fly/domain-list-community and the other sources it lists.
+  Loyalsoldier/v2ray-rules-dat, v2fly/domain-list-community and the other sources it lists. It
+  publishes only a daily `latest`, so each release's notes give the SHA-256 of the databases inside.
 
 ## Libraries in the app
 

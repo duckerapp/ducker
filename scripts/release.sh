@@ -122,6 +122,12 @@ LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
   echo "## Проверка файла"
   echo
   ( cd "$OUT" && sha256sum ./*.apk | sed 's|^\([0-9a-f]*\)  \./\(.*\)$|- `\2`: [VirusTotal](https://www.virustotal.com/gui/file/\1)|' )
+  echo
+  # meta-rules-dat publishes only a daily `latest`, so the hashes say which databases this file has;
+  # placed in app/src/main/assets/, they are not downloaded again and a rebuild matches.
+  echo "Базы стран и сайтов — MetaCubeX/meta-rules-dat \`latest\` на $(date +%d.%m.%Y), SHA-256:"
+  echo
+  ( cd app/src/main/assets && sha256sum geoip.metadb geosite.dat | sed 's/^\([0-9a-f]*\)  \(.*\)$/- `\2`: `\1`/' )
 } > "$OUT/release-notes.md"
 
 echo
