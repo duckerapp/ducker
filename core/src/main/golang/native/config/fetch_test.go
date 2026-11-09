@@ -48,3 +48,24 @@ func TestFetchRejectsErrorStatus(t *testing.T) {
 		t.Fatalf("200 body not written: %q", data)
 	}
 }
+
+// Hostile response values: empty and too long count as not sent; a lone Latin-1 byte is read as Latin-1,
+// a run of them (cp1251) is left for the app to count as broken (D-387).
+func TestCollectHeadersHostileValues(t *testing.T) {
+	got := collectHeaders(map[string][]string{
+		"Profile-Title":        {"Caf\xe9 M\xfcller"},
+		"Announce":             {"\xcf\xf0\xee"},
+		"Support-Url":          {""},
+		"Profile-Web-Page-Url": {strings.Repeat("a", headerValueMax+1)},
+		"Ducker-Brand-Logo":    {"data:image/png;base64," + strings.Repeat("A", 200*1024)},
+		"Ducker-Brand-Name":    {strings.Repeat("a", headerValueMax)},
+		"Content-Type":         {"text/plain"},
+	})
+	if got["profile-title"] != "Café Müller" || got["announce"] != "\xcf\xf0\xee" || len(got["ducker-brand-logo"]) == 0 ||
+		len(got["ducker-brand-name"]) != headerValueMax || len(got) != 4 {
+		t.Fatalf("%q", got)
+	}
+	if _, ok := collectHeaders(map[string][]string{"Ducker-Brand-Logo": {strings.Repeat("A", logoValueMax+1)}})["ducker-brand-logo"]; ok {
+		t.Fatal("a huge logo passed up")
+	}
+}

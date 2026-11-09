@@ -171,10 +171,11 @@ data class ProviderInfo(
         private fun String?.decode(): String {
             val value = this?.trim().orEmpty()
 
+            // Broken base64 counts as not sent, not as the text «base64:…» on screen.
             val decoded = if (value.startsWith("base64:")) {
                 runCatching {
                     String(Base64.decode(value.removePrefix("base64:"), Base64.DEFAULT))
-                }.getOrDefault(value)
+                }.getOrDefault("")
             } else value
 
             return if (decoded.trim() == "-") "" else decoded

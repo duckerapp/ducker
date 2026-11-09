@@ -12,7 +12,9 @@ import (
 	"os"
 	P "path"
 	"runtime"
+	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"cfa/native/app"
 
@@ -74,26 +76,82 @@ func collectHeaders(raw map[string][]string) map[string]string {
 	lower := make(map[string]string, len(raw))
 
 	for name, values := range raw {
-		if len(values) > 0 && values[0] != "" {
-			lower[strings.ToLower(name)] = values[0]
+		if len(values) > 0 {
+			name = strings.ToLower(name)
+			if value, ok := headerValue(name, values[0]); ok {
+				lower[name] = value
+			}
 		}
 	}
 
 	result := map[string]string{}
 
-	for _, name := range interestingHeaders {
-		if value, ok := lower[name]; ok {
-			result[name] = value
-		}
-	}
-
 	for name, value := range lower {
-		if strings.HasPrefix(name, duckerHeaderPrefix) {
+		if passedUp(name) {
 			result[name] = value
 		}
 	}
 
 	return result
+}
+
+func passedUp(name string) bool {
+	return strings.HasPrefix(name, duckerHeaderPrefix) || slices.Contains(interestingHeaders, name)
+}
+
+// A value longer than these counts as not sent: the provider's texts and links fit in a few hundred characters,
+// and a huge one would only travel through the app's processes to its screens. The logo may be a `data:` picture.
+const (
+	headerValueMax = 16 * 1024
+	logoValueMax   = 1024 * 1024
+)
+
+// headerValue is a response header's value as it goes up, or false when it counts as not sent: empty or too long.
+// Bytes that are not UTF-8 are read as Latin-1 when each stands alone between ASCII ones — `é` in «Café», as Node and
+// Python servers send a Latin-1 character. Runs of them are left as they are: that is cp1251 or another encoding's
+// text, which the app counts as broken (D-387) rather than show it as «Ïðîâàéäåð».
+func headerValue(name, value string) (string, bool) {
+	limit := headerValueMax
+	if name == "ducker-brand-logo" {
+		limit = logoValueMax
+	}
+	if value == "" || len(value) > limit {
+		return "", false
+	}
+	if utf8.ValidString(value) {
+		return value, true
+	}
+	for i := 1; i < len(value); i++ {
+		if value[i-1] >= 0x80 && value[i] >= 0x80 {
+			return value, true
+		}
+	}
+	runes := make([]rune, len(value))
+	for i := 0; i < len(value); i++ {
+		runes[i] = rune(value[i])
+	}
+	return string(runes), true
+}
+
+// PasarGuard refuses a device with a bare HTTP 403 and its reason in the JSON body
+// (`app/operation/subscription.py:432`–`447`); the other panels say it in `x-hwid-*` headers. Its reasons become those
+// headers, so the person sees the device-limit screen rather than «Доступ закрыт».
+func deviceRefusal(code int, body io.Reader, header map[string]string) {
+	if code != http.StatusForbidden {
+		return
+	}
+	var answer struct {
+		Detail string `json:"detail"`
+	}
+	if json.NewDecoder(io.LimitReader(body, 4096)).Decode(&answer) != nil {
+		return
+	}
+	switch answer.Detail {
+	case "Device limit reached":
+		header["x-hwid-max-devices-reached"] = "true"
+	case "HWID header required":
+		header["x-hwid-not-supported"] = "true"
+	}
 }
 
 // httpStatusError is the server's own answer with a status other than 2xx. Its text starts with
@@ -151,6 +209,9 @@ func openUrl(ctx context.Context, url string, subscription bool, r route) (io.Re
 	// начинается с «HTTP <код>»: по нему служба подбирает объяснение на языке приложения.
 	// Заголовки отдаём и с ошибкой — ими панель может объяснить отказ (лимит устройств).
 	if response.StatusCode < 200 || response.StatusCode > 299 {
+		if subscription {
+			deviceRefusal(response.StatusCode, response.Body, header.All)
+		}
 		_ = response.Body.Close()
 
 		return nil, header, &httpStatusError{response.StatusCode}

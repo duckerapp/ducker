@@ -37,9 +37,10 @@ subscription file, before the links or the config, as Happ reads them:
 vless://…
 ```
 
-ducker reads only these four names from lines, and only from the `#` lines at the top. In a base64
-file the lines are encoded with the rest; in a YAML config they are comments. A header of the
-same name wins over its line.
+ducker reads every header on these pages from such lines, `subscription-userinfo` included, from
+the `#` lines at the top of the file and at its end (as PasarGuard writes them with its header
+placement at the start or the end of the body). In a base64 file the lines are encoded with the
+rest; in a YAML config they are comments. A header of the same name wins over its line.
 
 How ducker tries them:
 

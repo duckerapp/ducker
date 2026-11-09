@@ -418,8 +418,8 @@ func TestSubscriptionTriesOfTheLastResortAndAStop(t *testing.T) {
 	}
 }
 
-// Happ's `#name: value` lines at the top of the body (F-329): only the mirror ones, only the leading
-// block, a base64 body decoded, a cut head without its last line.
+// `#name: value` lines (F-329, PasarGuard's `header_placement`): every header passed up, the leading and
+// the trailing block of a whole body, a base64 body decoded, a cut head without its last line.
 func TestBodyHeaders(t *testing.T) {
 	encode := func(s string) string { return base64.StdEncoding.EncodeToString([]byte(s)) }
 	// As MIME wraps base64: 76 characters a line.
@@ -431,6 +431,7 @@ func TestBodyHeaders(t *testing.T) {
 		b.WriteString(s)
 		return b.String()
 	}
+	fromList := map[string]string{"profile-title": "Duck", "fallback-url": "https://b.example.org/sub", "new-url": "https://late.example.org/x"}
 	list := "#profile-title: Duck\n# Fallback-URL :  https://b.example.org/sub \n#new-domain:\n\r\nvless://id@host:443#a\n#new-url: https://late.example.org/x\n"
 
 	for name, c := range map[string]struct {
@@ -438,10 +439,13 @@ func TestBodyHeaders(t *testing.T) {
 		whole bool
 		want  map[string]string
 	}{
-		"plain":          {list, true, map[string]string{"fallback-url": "https://b.example.org/sub"}},
-		"bom and yaml":   {"\xef\xbb\xbf#ducker-mirrors: b.example.org, c.example.net\nproxies: []\n#new-url: https://x/", true, map[string]string{"ducker-mirrors": "b.example.org, c.example.net"}},
-		"base64":         {encode(list), true, map[string]string{"fallback-url": "https://b.example.org/sub"}},
-		"base64 wrapped": {wrap(encode(list)), true, map[string]string{"fallback-url": "https://b.example.org/sub"}},
+		"plain":          {list, true, fromList},
+		"bom and yaml":   {"\xef\xbb\xbf#ducker-mirrors: b.example.org, c.example.net\nproxies: []\n#new-url: https://x/", true, map[string]string{"ducker-mirrors": "b.example.org, c.example.net", "new-url": "https://x/"}},
+		"base64":         {encode(list), true, fromList},
+		"base64 wrapped": {wrap(encode(list)), true, fromList},
+		"pasarguard end": {"proxies: []\n#profile-title: base64:RHVjaw==\n#subscription-userinfo: upload=1; download=2; total=3; expire=4\n#x-hwid-limit: 1\n\n", true, map[string]string{"profile-title": "base64:RHVjaw==", "subscription-userinfo": "upload=1; download=2; total=3; expire=4"}},
+		"not ours":       {"#x-hwid-max-devices-reached: true\n#content-disposition: a\n#ducker-brand-name: Pond\n", true, map[string]string{"ducker-brand-name": "Pond"}},
+		"latin-1 line":   {"#profile-title: Caf\xe9\n", true, map[string]string{"profile-title": "Café"}},
 		"first wins":     {"#fallback-url: https://a/\n#fallback-url: https://b/\n", true, map[string]string{"fallback-url": "https://a/"}},
 		"cut head":       {"#new-url: https://a.example.org/x\n#fallback-url: https://b.exa", false, map[string]string{"new-url": "https://a.example.org/x"}},
 		"cut base64":     {encode("#new-url: https://a.example.org/x\n#fallback-url: https://b.example.org/sub\nvless://")[:50], false, map[string]string{"new-url": "https://a.example.org/x"}},
@@ -601,5 +605,57 @@ func TestSubscriptionRetriedWhenTheVpnChanges(t *testing.T) {
 	})
 	if _, err := fetchSubscription(busy.url, previousConfig(t), (&statusLog{}).report); err == nil || busy.hits.Load() != 1 {
 		t.Fatalf("a status: err %v, hits %d", err, busy.hits.Load())
+	}
+}
+
+// PasarGuard's `body_end` on a body longer than the head: the lines are read from the written file, the
+// subscription's traffic too, and a real header still wins.
+func TestSubscriptionBodyTailLines(t *testing.T) {
+	noLastResort(t)
+	long := mirrorTestConfig + "# " + strings.Repeat("x", 2*bodyHeadSize) + "\nrules: []\n"
+	panel := mirrorServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("announce", "from the header")
+		_, _ = w.Write([]byte(long + "#profile-title: Pond\n#announce: from the body\n#subscription-userinfo: upload=1; download=2; total=3; expire=4\n"))
+	})
+
+	header, err := fetchSubscription(panel.url, previousConfig(t), (&statusLog{}).report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if header.All["profile-title"] != "Pond" || header.All["announce"] != "from the header" ||
+		header.SubscriptionUserInfo != "upload=1; download=2; total=3; expire=4" {
+		t.Fatalf("headers %v, userinfo %q", header.All, header.SubscriptionUserInfo)
+	}
+}
+
+// PasarGuard's device refusal is a bare HTTP 403 with its reason in JSON; it stops the mirrors as the
+// other panels' headers do.
+func TestSubscriptionPasarGuardDeviceRefusal(t *testing.T) {
+	noLastResort(t)
+	for detail, want := range map[string]string{
+		"Device limit reached": "x-hwid-max-devices-reached",
+		"HWID header required": "x-hwid-not-supported",
+		"Subscription expired": "",
+	} {
+		panel := mirrorServer(t, func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(`{"detail": "` + detail + `"}`))
+		})
+		mirror := configServer(t)
+		if want != "" {
+			setMirrorPlan(t, panel.url, panel.url, mirror.url)
+		}
+
+		header, err := fetchSubscription(panel.url, previousConfig(t), (&statusLog{}).report)
+		if err == nil || !strings.Contains(err.Error(), "HTTP 403") {
+			t.Fatalf("%s: %v", detail, err)
+		}
+		if want != "" && (header.All[want] != "true" || mirror.hits.Load() != 0) {
+			t.Errorf("%s: headers %v, mirror hits %d", detail, header.All, mirror.hits.Load())
+		}
+		if want == "" && len(header.All) != 0 {
+			t.Errorf("%s: headers %v", detail, header.All)
+		}
 	}
 }

@@ -133,8 +133,8 @@ published by `.github/workflows/pages.yaml`.
 - **`G/`** (the Go module `cfa`) — exports in `main.go`, `app.go`, `config.go`, `convert.go`,
   `tun.go`, `tunnel.go`, `log.go`, `proxy.go`; the logic is in packages of the same names:
   `config/` (user rules placed before the provider's, fetching — a subscription's addresses in
-  turn, then a last resort directly and through its own node; the mirror headers also read from
-  Happ-style `#name: value` lines at the top of the body — overrides), `convert/` (links to
+  turn, then a last resort directly and through its own node; the provider's headers also read from
+  Happ-style `#name: value` lines at the top or the end of the body — overrides), `convert/` (links to
   a config through the built-in template), `tunnel/`, `tun/`, `app/`, `proxy/` (the system proxy's own
   port and the Wi-Fi sharing port: one address, only that network's devices, the phone itself refused).
 - **`core/src/foss/golang/`** — the main `go.mod` with `replace` directives and three git

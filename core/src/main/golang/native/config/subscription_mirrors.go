@@ -11,6 +11,8 @@ import (
 	"io"
 	"net"
 	U "net/url"
+	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -206,12 +208,21 @@ func fetchSubscriptionAttempt(address string, r route, file string, answerTimeou
 
 	// Read before the body is written: Peek's bytes are the reader's own buffer.
 	head, _ := body.Peek(bodyHeadSize)
-	lines := bodyHeaders(head, len(head) < bodyHeadSize)
+	whole := len(head) < bodyHeadSize
+	lines := bodyHeaders(head, whole)
 
 	a.err = writeDownload(file, struct {
 		io.Reader
 		io.Closer
 	}{body, reader}, true)
+
+	if a.err == nil && !whole {
+		for name, value := range bodyTailHeaders(file) {
+			if _, ok := lines[name]; !ok {
+				lines[name] = value
+			}
+		}
+	}
 
 	// A real header wins over the same line.
 	if a.err == nil {
@@ -219,6 +230,9 @@ func fetchSubscriptionAttempt(address string, r route, file string, answerTimeou
 			if _, sent := a.header.All[name]; !sent {
 				a.header.All[name] = value
 			}
+		}
+		if a.header.SubscriptionUserInfo == "" {
+			a.header.SubscriptionUserInfo = a.header.All["subscription-userinfo"]
 		}
 	}
 
@@ -228,13 +242,16 @@ func fetchSubscriptionAttempt(address string, r route, file string, answerTimeou
 // bodyHeadSize is how much of a subscription's beginning is read for its `#name: value` lines.
 const bodyHeadSize = 64 * 1024
 
-// bodyHeaderNames may also come as `#name: value` lines at the top of the body, as Happ reads them
-// (F-329): a provider on static hosting cannot send headers.
-var bodyHeaderNames = map[string]bool{"ducker-mirrors": true, "fallback-url": true, "new-url": true, "new-domain": true}
+// bodyHeaderName: every header passed up may also come as a `#name: value` line, as Happ reads them (F-329): a
+// provider on static hosting cannot send headers, and PasarGuard can put all of its own at the start or the end of
+// the body (`header_placement`). Not `x-hwid-*`: a device refusal is the panel's answer, not a line in a file.
+func bodyHeaderName(name string) bool {
+	return passedUp(name) && !strings.HasPrefix(name, "x-hwid-")
+}
 
 // bodyHeaders reads those lines from head, the body's beginning, up to the first line that is not a
-// `#` one; whole — head is the entire body. A base64 body is decoded first, as the core decodes a list
-// of links.
+// `#` one; whole — head is the entire body, and its last lines are read the same way from the end. A
+// base64 body is decoded first, as the core decodes a list of links.
 func bodyHeaders(head []byte, whole bool) map[string]string {
 	text := bytes.TrimPrefix(head, []byte("\xef\xbb\xbf"))
 	if decoded, ok := decodeBase64Head(text, whole); ok {
@@ -248,22 +265,66 @@ func bodyHeaders(head []byte, whole bool) map[string]string {
 	}
 
 	result := map[string]string{}
+	headerLines(lines, result)
+	if whole {
+		slices.Reverse(lines)
+		headerLines(lines, result)
+	}
+
+	return result
+}
+
+// bodyTailHeaders reads the lines at the end of a body longer than its head, from the file it was written to.
+// ponytail: plain text only — the end of a long base64 body is not decoded; PasarGuard sends ducker YAML (R1).
+func bodyTailHeaders(file string) map[string]string {
+	result := map[string]string{}
+	f, err := os.Open(file)
+	if err != nil {
+		return result
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return result
+	}
+	start := info.Size() - bodyHeadSize
+	if start < 0 {
+		start = 0
+	}
+	tail := make([]byte, info.Size()-start)
+	if _, err := f.ReadAt(tail, start); err != nil {
+		return result
+	}
+	lines := strings.Split(string(tail), "\n")
+	// The first line of a cut tail may be cut too.
+	if start > 0 {
+		lines = lines[1:]
+	}
+	slices.Reverse(lines)
+	headerLines(lines, result)
+
+	return result
+}
+
+// headerLines takes `#name: value` lines up to the first that is not one; the first value of a name is kept.
+func headerLines(lines []string, result map[string]string) {
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 		if !strings.HasPrefix(line, "#") {
-			break
+			return
 		}
-		name, value, ok := strings.Cut(line[1:], ":")
-		name, value = strings.ToLower(strings.TrimSpace(name)), strings.TrimSpace(value)
-		if ok && bodyHeaderNames[name] && value != "" && result[name] == "" {
+		name, raw, ok := strings.Cut(line[1:], ":")
+		name = strings.ToLower(strings.TrimSpace(name))
+		if _, seen := result[name]; !ok || seen || !bodyHeaderName(name) {
+			continue
+		}
+		if value, ok := headerValue(name, strings.TrimSpace(raw)); ok {
 			result[name] = value
 		}
 	}
-
-	return result
 }
 
 // decodeBase64Head decodes a base64 body; a cut one up to its last whole group of four characters.
