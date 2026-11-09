@@ -2,8 +2,29 @@
 
 What changed in each version of ducker. [Русская версия](docs/CHANGELOG.ru.md).
 
-The versions below were built for testers before the repository was opened; they are listed here
-for history. APK files are on the [Releases](https://github.com/duckerapp/ducker/releases) page.
+1.0.0 is the first public release. The versions before it were built for testers while the
+repository was closed; they are listed here for history. APK files are on the
+[Releases](https://github.com/duckerapp/ducker/releases) page.
+
+## 1.0.0 — draft
+<!-- Draft until the 1.0.0 build: set the date then. Keep every line inside the list: publish.sh
+     joins any other line to the item above it, and the in-app "What's new" shows the result. -->
+
+- The first public release: the source, the releases and the updates are open. Updates from inside the app now
+  work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
+- Encrypted subscriptions: when a provider encrypts its subscription, the add sheet says so and shows a “Decryption
+  key” field for the key the provider gives you. Editing the subscription keeps the key.
+- The subscription request names the platform: `mihomo/<core> ducker/<app> (android)`.
+- A provider's broken or oversized headers no longer reach the screen: a huge announcement or name is ignored, a
+  value that fails to decode counts as not sent, and accented Latin text such as “Café” shows correctly.
+- A provider's logo or group icon larger than 2 MB, or one that takes over 30 seconds, is skipped instead of filling
+  the phone's memory.
+- PasarGuard: its device limit shows the device-limit screen instead of a general error, and the subscription details
+  it puts at the end of the file are read.
+- Rule sets and node lists that a config downloads are requested with the headers the config sets for them from the
+  very first download, so a provider's token in them works at once.
+- A phone or TV whose model name contains unusual characters no longer fails every subscription request.
+- TV: “Features” is a round button under the dock, so it always fits on the screen.
 
 ## 0.4.47 — 2026-11-09
 
