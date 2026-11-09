@@ -3,19 +3,13 @@
  * The app's black-and-white world at poster scale: a giant DUCKER wordmark, slabs of ink
  * (inverted in the dark theme, as the app's Home card is), and the duck peeking over a slab's edge.
  * Colors follow app/src/main/java/com/github/kr328/clash/ui/theme/Theme.kt: ink #0A0A0A/#101010,
- * mist #F2F2F2, dark surface #161616. Unbounded and Onest are self-hosted (SIL OFL, assets/fonts).
+ * mist #F2F2F2, dark surface #161616. Onest, the app's own font, is self-hosted (SIL OFL, assets/fonts).
  */
 
 @font-face {
-  font-family: "Unbounded";
-  src: url("fonts/unbounded.woff2") format("woff2");
-  font-weight: 600 900;
-  font-display: swap;
-}
-@font-face {
   font-family: "Onest";
   src: url("fonts/onest.woff2") format("woff2");
-  font-weight: 400 700;
+  font-weight: 400 900;
   font-display: swap;
 }
 
@@ -31,7 +25,8 @@
   --dk-on-slab: #f2f2f2;
   --dk-on-slab-muted: #a8a8a8;
   --dk-slab-line: rgba(242, 242, 242, 0.22);
-  --dk-display: "Unbounded", "Onest", system-ui, sans-serif;
+  --dk-display: "Onest", system-ui, sans-serif;
+  --dk-max: 62rem;
 
   --md-text-font: "Onest";
   --md-primary-fg-color: var(--dk-paper);
@@ -124,8 +119,8 @@ html {
 .md-header__topic:first-child,
 .md-header__title {
   font-family: var(--dk-display);
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  font-weight: 900;
+  letter-spacing: 0.14em;
 }
 .md-tabs__link {
   font-weight: 500;
@@ -149,10 +144,10 @@ html {
   font-family: var(--dk-display);
   color: var(--dk-ink);
   text-wrap: balance;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 .md-typeset h1 {
-  font-size: 2.1em;
+  font-size: 2.2em;
   font-weight: 800;
   line-height: 1.12;
   margin: 0 0 1.1em;
@@ -270,9 +265,9 @@ html {
   content: "";
   position: absolute;
   right: 12%;
-  top: -3.1rem;
+  bottom: calc(100% - 1px);
   width: 3.6rem;
-  height: 3.9rem;
+  aspect-ratio: 52.6 / 42.1;
   background: var(--dk-slab);
   -webkit-mask: url("ducker-duck.svg") no-repeat center / contain;
   mask: url("ducker-duck.svg") no-repeat center / contain;
@@ -326,7 +321,7 @@ html {
   height: auto;
 }
 .dk-wrap {
-  max-width: 76rem;
+  max-width: var(--dk-max);
   margin: 0 auto;
   padding-inline: var(--dk-gutter);
 }
@@ -372,17 +367,20 @@ html {
 /* Hero: the wordmark across the page, the slab below it, the duck between them. */
 .dk-hero {
   container-type: inline-size;
-  padding-inline: max(0.5rem, 1.6vw);
+  max-width: var(--dk-max);
+  margin: 0 auto;
+  padding: 1.6rem var(--dk-gutter) 0;
 }
+/* Set like the app's Wordmark: Onest Black, 0.14em apart; the trailing space is cancelled to centre it. */
 .dk-word {
   font-family: var(--dk-display);
   font-weight: 900;
-  font-size: 18.4cqi;
-  line-height: 0.74;
-  letter-spacing: -0.035em;
+  font-size: 17.4cqi;
+  line-height: 0.8;
+  letter-spacing: 0.14em;
+  margin-right: -0.14em;
   text-align: center;
   white-space: nowrap;
-  padding-top: 0.08em;
   user-select: none;
 }
 .dk-slab {
@@ -392,17 +390,16 @@ html {
   border-radius: 2.4rem;
 }
 .dk-hero .dk-slab {
-  margin-top: max(7cqi, 3rem);
-  border-radius: 2.4rem 2.4rem 0 0;
+  margin-top: max(9cqi, 3.4rem);
 }
+/* The icon's duck, cut flat where the icon's tile ends: it stands on the slab's edge. */
 .dk-duck {
   position: absolute;
-  width: clamp(2.8rem, 8cqi, 7.5rem);
-  aspect-ratio: 24 / 26;
-  right: 30%;
-  bottom: calc(100% - 0.6rem);
+  width: clamp(3.4rem, 10cqi, 6.4rem);
+  aspect-ratio: 52.6 / 42.1;
+  right: 22%;
+  bottom: calc(100% - 1px);
   color: var(--dk-slab);
-  overflow: visible;
 }
 @media (prefers-reduced-motion: no-preference) {
   .dk-hero .dk-duck {
@@ -411,7 +408,7 @@ html {
 }
 @keyframes dk-peek {
   from {
-    transform: translateY(38%);
+    transform: translateY(45%);
   }
   to {
     transform: none;
@@ -422,12 +419,13 @@ html {
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: 2rem 3rem;
   align-items: center;
-  padding: clamp(2rem, 5cqi, 4.5rem) clamp(1.2rem, 4cqi, 4rem) clamp(2.5rem, 5cqi, 4.5rem);
+  padding: clamp(2rem, 5cqi, 3.6rem) clamp(1.2rem, 4cqi, 3.4rem);
 }
 .dk-hero h1 {
-  font-size: clamp(1.35rem, 2.5cqi, 2.3rem);
-  font-weight: 700;
-  line-height: 1.15;
+  font-size: clamp(1.5rem, 3.2cqi, 2.2rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
 }
 .dk-lede {
   margin-top: 1rem !important;
@@ -466,10 +464,10 @@ html {
   padding-block: clamp(4rem, 9vw, 8rem);
 }
 .dk-home h2 {
-  font-size: clamp(1.7rem, 4.2vw, 3.4rem);
+  font-size: clamp(1.6rem, 3.4vw, 2.6rem);
   font-weight: 800;
-  line-height: 1.04;
-  letter-spacing: -0.02em;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
 }
 .dk-split {
   display: grid;
@@ -539,17 +537,18 @@ html {
 }
 
 /* The TV: a whole slab. */
+/* Same edges as the hero slab: the page column minus its gutter. */
 .dk-tv-slab {
-  margin-inline: max(0.5rem, 1.6vw);
+  margin-inline: max(var(--dk-gutter), (100% - var(--dk-max)) / 2 + var(--dk-gutter));
 }
 .dk-tv-slab .dk-split {
   align-items: center;
   padding: clamp(2.4rem, 6vw, 5.5rem) clamp(1.2rem, 4vw, 4rem);
 }
 .dk-tv-slab h2 {
-  font-size: clamp(1.6rem, 3.6vw, 3rem);
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
   font-weight: 800;
-  line-height: 1.06;
+  line-height: 1.08;
 }
 .dk-tv-slab p {
   margin-top: 1.1rem;
@@ -604,7 +603,7 @@ html {
 .dk-home .dk-links a:hover::after {
   transform: translateX(4px);
 }
-.dk-brand {
+.dk-home .dk-brand {
   max-width: 15rem;
   margin: 0 auto;
   filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.16));
@@ -614,10 +613,10 @@ html {
 .dk-statement {
   font-family: var(--dk-display);
   font-weight: 800;
-  font-size: clamp(1.6rem, 4.6vw, 3.8rem);
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  max-width: 18ch;
+  font-size: clamp(1.6rem, 3.6vw, 2.9rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  max-width: 20ch;
   text-wrap: balance;
 }
 .dk-facts {
@@ -641,8 +640,8 @@ html {
 }
 .dk-end .dk-duck {
   right: auto;
-  left: calc(50% - clamp(2.1rem, 5.5vw, 4.75rem));
-  width: clamp(4.2rem, 11vw, 9.5rem);
+  left: calc(50% - clamp(1.7rem, 4vw, 3.2rem));
+  width: clamp(3.4rem, 8vw, 6.4rem);
 }
 .dk-end__inner {
   padding: clamp(3rem, 7vw, 6rem) var(--dk-gutter);
@@ -651,9 +650,9 @@ html {
   gap: 1.4rem;
 }
 .dk-end h2 {
-  font-size: clamp(1.8rem, 5vw, 4rem);
+  font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 800;
-  line-height: 1.02;
+  line-height: 1.05;
 }
 .dk-end .dk-quiet {
   margin-top: 0 !important;
@@ -677,8 +676,8 @@ html {
   .dk-facts {
     grid-template-columns: minmax(0, 1fr);
   }
-  .dk-hero .dk-slab {
-    border-radius: 1.6rem 1.6rem 0 0;
+  .dk-slab {
+    border-radius: 1.6rem;
   }
   .dk-fan img {
     width: 40%;

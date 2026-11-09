@@ -11,17 +11,13 @@
 - **mihomo** — MetaCubeX, GPL-3.0. Ядро.
 - **zashboard** — Zephyruso, MIT. Панель диагностики в разделе «Помощь и диагностика».
 
-## Шрифты и значки
+## Шрифт и значки
 
 - **Onest** — The Onest Project Authors (Дмитрий Волошин, Андрей Кудрявцев), SIL Open Font
   License 1.1. Шрифт интерфейса, без изменений: версия 2.001 из Google Fonts. Лицензия и
   уведомление лежат в самом приложении, в `app/src/main/assets/licenses/`. Им же набран сайт —
-  урезанным до латиницы и кириллицы, начертания 400–700 (`site/docs/assets/fonts/`, вместе с
+  урезанным до латиницы и кириллицы, начертания 400–900 (`site/docs/assets/fonts/`, вместе с
   лицензией).
-- **Unbounded** — The Unbounded Project Authors (Luke Prowse, Jean-Baptiste Morizot, Fátima Lázaro,
-  Florian Runge), SIL Open Font License 1.1. Заголовки сайта и надпись DUCKER на нём: версия 1.701
-  из Google Fonts, урезанная до латиницы и кириллицы, начертания 600–900 (`site/docs/assets/fonts/`,
-  вместе с лицензией).
 - **Material Symbols** — Google, Apache License 2.0. Все значки приложения: стиль Rounded, вес
   500, контуры без изменений из npm-пакета `@material-symbols/svg-500` 0.47.6, хранятся векторами
   в `ui/components/Symbols.kt`, их пишет `scripts/material-symbols.py`. Лицензия и уведомление —

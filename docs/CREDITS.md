@@ -13,16 +13,12 @@ repository README.
 - **mihomo** — MetaCubeX, GPL-3.0. The core.
 - **zashboard** — Zephyruso, MIT. The diagnostics dashboard under **Help and diagnostics**.
 
-## Fonts and icons
+## Font and icons
 
 - **Onest** — The Onest Project Authors (Dmitri Voloshin, Andrey Kudryavtsev), SIL Open Font
   License 1.1. The interface font, unmodified: version 2.001 from Google Fonts. Its license and
-  notice ship inside the app, in `app/src/main/assets/licenses/`. The website uses it too, cut down
-  to Latin and Cyrillic, weights 400–700 (`site/docs/assets/fonts/`, with its license).
-- **Unbounded** — The Unbounded Project Authors (Luke Prowse, Jean-Baptiste Morizot, Fátima Lázaro,
-  Florian Runge), SIL Open Font License 1.1. The website's headings and the DUCKER wordmark there:
-  version 1.701 from Google Fonts, cut down to Latin and Cyrillic, weights 600–900
-  (`site/docs/assets/fonts/`, with its license).
+  notice ship inside the app, in `app/src/main/assets/licenses/`. The website is set in it too,
+  cut down to Latin and Cyrillic, weights 400–900 (`site/docs/assets/fonts/`, with its license).
 - **Material Symbols** — Google, Apache License 2.0. Every icon in the app: style Rounded, weight
   500, unmodified outlines from the npm package `@material-symbols/svg-500` 0.47.6, stored as
   vectors in `ui/components/Symbols.kt` by `scripts/material-symbols.py`. License and notice in
