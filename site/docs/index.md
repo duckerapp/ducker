@@ -101,9 +101,9 @@ When the VPN stops or a subscription fails to update, you see why and what to do
 </div>
 <div class="dk-fan" markdown>
 
-![Home](assets/shots/phone-home.png)
-![Proxy groups](assets/shots/phone-groups.png)
-![Profiles](assets/shots/phone-subscriptions.png)
+![Home](assets/shots/phone-home.png){ loading=lazy }
+![Proxy groups](assets/shots/phone-groups.png){ loading=lazy }
+![Profiles](assets/shots/phone-subscriptions.png){ loading=lazy }
 
 </div>
 </div>
@@ -202,7 +202,7 @@ A dock on the left, a glowing focus frame, and every screen works with the D-pad
 </div>
 <div markdown>
 
-![Android TV: adding a subscription by scanning a QR code with the phone](assets/shots/tv-add.png)
+![Android TV: adding a subscription by scanning a QR code with the phone](assets/shots/tv-add.png){ loading=lazy }
 
 </div>
 </div>
@@ -232,8 +232,8 @@ Your name, logo, announcement and renewal link reach the app through response he
 </div>
 <div markdown>
 
-![Home with a provider's name, logo and announcement](assets/shots/brand-light.png){ .dk-brand .dk-only-light }
-![Home with a provider's name, logo and announcement](assets/shots/brand-dark.png){ .dk-brand .dk-only-dark }
+![Home with a provider's name, logo and announcement](assets/shots/brand-light.png){ .dk-brand .dk-only-light loading=lazy }
+![Home with a provider's name, logo and announcement](assets/shots/brand-dark.png){ .dk-brand .dk-only-dark loading=lazy }
 
 </div>
 </div>

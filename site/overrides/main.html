@@ -1,0 +1,24 @@
+{#- Link previews in Telegram and other messengers: the page's title and description and a card in the site's look. -#}
+{% extends "base.html" %}
+{% block extrahead %}
+  {%- set lang = config.theme.language -%}
+  {#- The home page is the one with its own template; it is simply DUCKER. -#}
+  {%- set home = page and page.meta and page.meta.template == "home.html" -%}
+  {%- if home -%}
+    {%- set og_title = "DUCKER" -%}
+  {%- elif page and page.title -%}
+    {%- set og_title = page.title ~ " · DUCKER" -%}
+  {%- else -%}
+    {%- set og_title = "DUCKER" -%}
+  {%- endif %}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="DUCKER">
+  <meta property="og:title" content="{{ og_title }}">
+  <meta property="og:description" content="{{ config.site_description }}">
+  {% if page and page.canonical_url %}<meta property="og:url" content="{{ page.canonical_url }}">{% endif %}
+  <meta property="og:image" content="{{ config.site_url }}assets/og-{{ lang }}.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="{{ 'ru_RU' if lang == 'ru' else 'en_US' }}">
+  <meta name="twitter:card" content="summary_large_image">
+{% endblock %}

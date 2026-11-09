@@ -101,9 +101,9 @@ template: home.html
 </div>
 <div class="dk-fan" markdown>
 
-![Главная](assets/shots/phone-home.png)
-![Группы прокси](assets/shots/phone-groups.png)
-![Подписки](assets/shots/phone-subscriptions.png)
+![Главная](assets/shots/phone-home.png){ loading=lazy }
+![Группы прокси](assets/shots/phone-groups.png){ loading=lazy }
+![Подписки](assets/shots/phone-subscriptions.png){ loading=lazy }
 
 </div>
 </div>
@@ -202,7 +202,7 @@ template: home.html
 </div>
 <div markdown>
 
-![Android TV: подписка добавляется сканированием QR-кода телефоном](assets/shots/tv-add.png)
+![Android TV: подписка добавляется сканированием QR-кода телефоном](assets/shots/tv-add.png){ loading=lazy }
 
 </div>
 </div>
@@ -232,8 +232,8 @@ ducker работает с обычной подпиской mihomo. Он зап
 </div>
 <div markdown>
 
-![Главная с названием, логотипом и объявлением провайдера](assets/shots/brand-light.png){ .dk-brand .dk-only-light }
-![Главная с названием, логотипом и объявлением провайдера](assets/shots/brand-dark.png){ .dk-brand .dk-only-dark }
+![Главная с названием, логотипом и объявлением провайдера](assets/shots/brand-light.png){ .dk-brand .dk-only-light loading=lazy }
+![Главная с названием, логотипом и объявлением провайдера](assets/shots/brand-dark.png){ .dk-brand .dk-only-dark loading=lazy }
 
 </div>
 </div>
