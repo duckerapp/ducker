@@ -99,6 +99,7 @@ nav:
   - Home: index.md
   - Users:
       - Installation: users/install.md
+      - Installing on a TV: users/tv.md
       - Questions and answers: users/faq.md
       - Privacy: users/privacy.md
   - Providers:

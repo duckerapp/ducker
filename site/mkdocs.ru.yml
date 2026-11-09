@@ -40,6 +40,7 @@ nav:
   - Главная: index.md
   - Пользователям:
       - Установка: users/install.md
+      - Установка на телевизор: users/tv.md
       - Вопросы и ответы: users/faq.md
       - Приватность: users/privacy.md
   - Провайдерам:

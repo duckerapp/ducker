@@ -28,6 +28,8 @@ press **+** on the TV to show a QR code. Scan it in ducker on your phone
 (**Profiles → Add → Scan QR**) and confirm sending. The subscription is sent to the TV
 encrypted over the home network. The phone and TV must be on the same home network.
 
+How to get the APK onto the TV in the first place, step by step: [Installing on a TV](tv.md).
+
 ## Updates
 
 - **ducker checks by itself** twice a day and when you open it. A new version shows up on Home

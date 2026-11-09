@@ -877,3 +877,9 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover),
     clip-path: circle(150vmax at var(--dk-wave-x, 100%) var(--dk-wave-y, 0));
   }
 }
+
+/* Screenshots in the docs: rounded like the site's slabs, with a hairline in case they meet a like ground. */
+.md-typeset img[src*="assets/shots/"] {
+  border-radius: 14px;
+  border: 1px solid var(--dk-line);
+}

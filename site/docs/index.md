@@ -194,6 +194,8 @@ Every feature in detail: [the README](https://github.com/duckerapp/ducker#featur
 
 The same APK runs on Android TV and Google TV. The TV shows a QR code; scan it in ducker on your phone, and the subscription arrives over your home network, encrypted with a one-time key that exists only inside that code.
 
+[How to install ducker on a TV, step by step](users/tv.md)
+
 A dock on the left, a glowing focus frame, and every screen works with the D-pad.
 { .dk-quiet }
 
