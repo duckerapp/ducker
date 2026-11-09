@@ -83,13 +83,13 @@ else
 
   for remote in origin gitlab; do
     if ! git remote get-url "$remote" >/dev/null 2>&1; then
-      echo "Нет адреса '$remote'. Зеркало: git remote add gitlab git@gitlab.com:duckerx/ducker.git"
+      echo "Нет адреса '$remote'. Зеркало: git remote add gitlab git@gitlab-duckerx:duckerx/ducker.git"
       exit 1
     fi
   done
 
   if [ -z "${GITLAB_TOKEN:-}" ]; then
-    echo "Нужен GITLAB_TOKEN — ключ доступа GitLab с правом api: без него файлы на зеркало не положить."
+    echo "Нужен GITLAB_TOKEN — deploy token проекта с правом write_package_registry: без него файлы на зеркало не положить."
     exit 1
   fi
 fi
@@ -186,7 +186,7 @@ else
   fi
 
   for file in "$OUT"/*.apk "$OUT"/SHA256SUMS; do
-    curl --fail --silent --show-error --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+    curl --fail --silent --show-error --header "DEPLOY-TOKEN: $GITLAB_TOKEN" \
       --upload-file "$file" "$GITLAB_FILES/$(basename "$file")" >/dev/null
   done
 
