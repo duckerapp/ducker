@@ -4,6 +4,22 @@ ducker works with a standard mihomo subscription: if your panel already serves c
 Clash Meta or FlClash, nothing needs changing for ducker. Below is what the app sends,
 what it accepts, and how to give it a separate response.
 
+## Which panels work
+
+| Panel | ducker gets the mihomo config | Name, traffic, term | Announcement | Device limit | ducker's own headers |
+|---|---|---|---|---|---|
+| Remnawave | by default | yes | yes | yes | custom response headers |
+| PasarGuard | by default | yes | yes | yes | custom response headers |
+| Marzban | by default | yes | — | — | — |
+| Marzneshin | add a rule `^mihomo` → `clash-meta` above the last one, or give users the `…/clash-meta` link | yes | — | — | — |
+| 3x-ui | turn on the Clash subscription and its auto-detect, or give users the `/mihomo/<subid>` link | yes | yes | yes | — |
+| Hiddify | give users the `…/clashmeta/` link | yes | — | — | — |
+
+Checked against the panels' code in November 2026: Remnawave 3.4.8, PasarGuard 5.6.0,
+Marzban 0.8.4, Hiddify 14.2.0. Hiddify shows an unlimited plan as a date far ahead.
+Where a panel gives a plain list of links instead, ducker still connects: it places the nodes
+into its [built-in template](template.md).
+
 ## What comes from the app
 
 Subscription requests carry this header:
@@ -39,14 +55,18 @@ that the user can forward to you.
 
 **A config error in a new subscription.** The user has no working config yet, so the app
 does not simply reject it. If the file is readable and has a `proxies` section, ducker
-takes its nodes, inserts them into the built-in template, and shows a Home card saying
-“Error in the provider config”, with a **Copy error** button so the user can send it to you.
+takes its nodes, inserts them into the built-in template, and shows a Home card saying that
+the provider's config has an error, with a **Copy the error** button so the user can send it to you.
 A node that the core cannot construct is skipped. Routing comes from the template, not
 your config. Once you fix the config, the next update applies it and removes the card.
 Nodes from `proxy-providers` are not extracted this way; if no nodes can be obtained,
 the subscription is not added.
 
 The URL may redirect to another address; the app follows up to ten redirects.
+
+**Encrypted subscriptions.** Remnawave can encrypt a subscription with age in its response
+rules. When ducker downloads one, the add window explains it and shows a **Decryption key**
+field for the key that starts with `AGE-SECRET-KEY-`. Give users the key separately from the link.
 
 While the VPN is enabled, subscription updates follow the profile's rules, usually through
 a node. If nodes are unavailable, an update through that route cannot succeed; with the

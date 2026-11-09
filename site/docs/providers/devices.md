@@ -40,7 +40,9 @@ The panel signals rejection with a response header:
 | `x-hwid-max-devices-reached: true` | “Device limit reached” |
 | `x-hwid-not-supported: true` | “The provider rejected this device ID” |
 
-Remnawave adds these when device tracking is enabled. In that case, ducker:
+Remnawave adds these when device tracking is enabled. PasarGuard refuses with HTTP 403 and
+`Device limit reached` or `HWID header required` in its JSON answer; ducker reads them as the
+first and the second header. In either case, ducker:
 
 - does not overwrite the previous profile with the returned placeholder;
 - prevents connecting while the rejection remains in effect, so the limit is enforced;
