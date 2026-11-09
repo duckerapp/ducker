@@ -24,7 +24,7 @@
 [![Android](https://img.shields.io/badge/Android-10%2B-2b2b2b?style=flat-square&labelColor=000)](#安装)
 [![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
 
-[安装](#安装) · [截图](#截图) · [功能](#功能) · [Android TV](#android-tv) · [给服务商](#给服务商) · [常见问题](FAQ.md) · [社区](#社区)
+[安装](#安装) · [截图](#截图) · [功能](#功能) · [Android TV](#android-tv) · [给服务商](#给服务商) · [后续计划](#后续计划) · [常见问题](FAQ.md) · [社区](#社区)
 
 <br>
 
@@ -35,8 +35,8 @@
 
 </div>
 
-> 本译文由 AI 助手翻译，应用界面目前只有英文和俄文。欢迎母语使用者在
-> [Issues](https://github.com/duckerapp/ducker/issues) 中指正。
+> 本页和应用的中文界面均由 AI 助手翻译。欢迎母语使用者在
+> [Issues](https://github.com/duckerapp/ducker/issues) 中指正。截图为英文界面。
 
 ## 这是什么
 
@@ -50,13 +50,17 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
 ## 截图
 
 <p align="center">
-  <a href="images/en/phone-home.png"><img src="images/en/phone-home.png" width="24%" alt="主页：电源按钮、当前节点、订阅期限和流量"></a>
-  <a href="images/en/phone-proxies.png"><img src="images/en/phone-proxies.png" width="24%" alt="Proxies：带延迟的节点分组"></a>
-  <a href="images/en/phone-subscriptions.png"><img src="images/en/phone-subscriptions.png" width="24%" alt="Subscriptions：显示期限和流量的订阅卡片"></a>
-  <a href="images/en/phone-settings.png"><img src="images/en/phone-settings.png" width="24%" alt="Settings：后台运行、应用、快捷设置磁贴、自动启动"></a>
+  <a href="images/en/phone-home.png"><img src="images/en/phone-home.png" width="32%" alt="首页：电源按钮、当前节点及其延迟、订阅期限和流量，以及“更多功能”"></a>
+  <a href="images/en/phone-groups.png"><img src="images/en/phone-groups.png" width="32%" alt="代理：配置中的分组，每个分组都有自己的图标"></a>
+  <a href="images/en/phone-subscriptions.png"><img src="images/en/phone-subscriptions.png" width="32%" alt="订阅：当前订阅及其规则和备用地址，另有两个订阅"></a>
+</p>
+<p align="center">
+  <a href="images/en/phone-proxies.png"><img src="images/en/phone-proxies.png" width="32%" alt="代理：展开的分组，节点的延迟和收藏"></a>
+  <a href="images/en/phone-features.png"><img src="images/en/phone-features.png" width="32%" alt="更多功能：移动网络、连接和 Wi-Fi 共享"></a>
+  <a href="images/en/phone-settings.png"><img src="images/en/phone-settings.png" width="32%" alt="设置：界面、VPN、帮助、更新和测试版"></a>
 </p>
 
-<p align="center"><sub>Home · Proxies · Subscriptions · Settings。截图中的服务商及其服务器均为虚构。</sub></p>
+<p align="center"><sub>首页 · 分组 · 订阅 · 节点 · 更多功能 · 设置。截图中的订阅和服务器均为虚构。</sub></p>
 
 <p align="center">
   <img src="images/en/theme-wave.gif" width="240" alt="在主页切换主题：深色主题从按钮处像波纹一样扩散，随后切回浅色主题">
@@ -72,13 +76,21 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
   滑动一下就能看到。
 - **如实的状态。** 隧道建立后，ducker 会立即检查流量是否真的经过节点。如果没有，会出现一张卡片
   说明情况，并建议切换到最快的节点。
-- **看得懂的错误提示。** VPN 停止或订阅更新失败时，你看到的是原因和解决办法，而不是错误代码。
+- **看得懂的错误提示。** VPN 停止或订阅更新失败时，你看到的是原因和解决办法，而不是错误代码——
+  包括手机系统在后台关闭了 ducker 的情况。
 - **多种方式添加订阅。** 链接、二维码或文件均可。完整的 mihomo 配置按原样使用；由 `vless://`、
   `vmess://`、`ss://`、`trojan://` 等链接组成的普通列表会放入内置配置，其分流规则面向俄罗斯：
-  被封锁的网站走节点，俄罗斯本地网站直连。
-- **节点。** 配置中的分组、延迟检测、收藏、搜索、按延迟排序，以及显示丢包率和最小、平均、最大
-  延迟的节点测试。
+  被封锁的网站走节点，俄罗斯本地网站直连。加密的订阅用服务商提供的密钥打开。
+- **节点。** 配置中的分组及其图标、延迟检测、收藏、搜索、按延迟排序，以及显示丢包率和最小、
+  平均、最大延迟的节点测试。
+- **自动更新。** 新版本在主页上点一下即可安装，也可以让它在夜里自己安装。见[更新](#更新)。
 - **浅色与深色。** 两种主题都是黑白风格；切换主题时会有波纹在屏幕上扩散。
+
+**更多功能**——主页订阅卡片下方的页面：
+
+- **移动网络。** 手机离开 Wi-Fi 时使用单独的订阅和服务器；回到 Wi-Fi 后一切照旧。
+- **连接。** 实时查看哪些应用连接到哪里：应用、网站、规则、节点、速度。
+- **Wi-Fi 共享。** 通过局域网中的代理，把 VPN 的网络分享给笔记本或另一部手机。
 
 **需要更多时**
 
@@ -91,8 +103,11 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
   [由 Tasker 等应用控制](#由其他应用控制)。
 - **保持运行。** 重启或应用更新后自动启动，并针对小米、三星、华为、OPPO、vivo 和传音等喜欢
   杀后台的手机提供分步指引。
-- **隐私选项。** 可将 ducker 从最近任务中隐藏，或把图标伪装成计算器。
-- **语言。** 英文和俄文；计划支持简体中文和波斯文。
+- **隐私选项。** 可将 ducker 从最近任务中隐藏、把图标伪装成计算器，或用指纹、PIN 码保护订阅
+  链接、它的二维码和配置编辑器。
+- **服务商消息。** 服务商的公告显示在主页上；最近十天的公告在“订阅”页的铃铛图标下。
+- **语言。** 英文、俄文、简体中文、波斯文、阿拉伯文、西班牙文、法文、印尼文、葡萄牙文（巴西）、
+  土耳其文和越南文；波斯文和阿拉伯文采用从右到左的布局。
 
 **技术细节**
 
@@ -109,16 +124,15 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
 
 同一个 APK 可在 Android TV 和 Google TV 上运行。
 
-- **为遥控器设计。** 左侧是导航栏，当前焦点周围有发光边框；主要页面——Home、Proxies、
-  Profiles——可用方向键操作。
-- **不用遥控器输入链接。** 电视显示二维码；在手机上的 ducker 中扫描它（Profiles → **+** →
-  Scan QR），订阅就会通过家庭网络发送到电视。链接经过加密（AES-256-GCM），一次性密钥只存在于
-  这个二维码中，而且电视只在二维码显示期间监听网络。
-- **仍在完善。** 电视支持是新功能。从设置打开的部分页面用遥控器操作还不够方便，目前主要在
-  模拟器中测试——非常欢迎来自真实电视的反馈。
+- **为遥控器设计。** 左侧是导航栏，当前焦点周围有发光边框；各个页面都可用方向键操作——包括配置
+  编辑器和日志。
+- **不用遥控器输入链接。** 电视显示二维码；在手机上的 ducker 中扫描它（订阅 → 添加 → 扫码），
+  订阅就会通过家庭网络发送到电视。链接经过加密（AES-256-GCM），一次性密钥只存在于这个二维码中，
+  而且电视只在二维码显示期间监听网络。
+- **已在真实电视上检验。** 欢迎反馈其他型号电视上的使用情况。
 
 <p align="center">
-  <a href="images/en/tv-proxies.png"><img src="images/en/tv-proxies.png" width="49%" alt="Android TV：Proxies 页面，焦点框在某个节点上"></a>
+  <a href="images/en/tv-proxies.png"><img src="images/en/tv-proxies.png" width="49%" alt="Android TV：代理页面，焦点框在某个节点上"></a>
   <a href="images/en/tv-add.png"><img src="images/en/tv-add.png" width="49%" alt="Android TV：用手机扫描二维码添加订阅"></a>
 </p>
 
@@ -128,18 +142,63 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
    - `arm64-v8a` —— 2017 年以后的几乎所有手机；
    - `armeabi-v7a` —— 较旧的手机和许多电视；第一个装不上时选它。
 2. 打开文件。Android 会要求允许从此来源安装——对 Google Play 之外的应用来说这是正常的。
-3. 添加订阅：**Profiles → + →** 粘贴服务商给的链接、扫描二维码或选择文件。形如
+3. 添加订阅：**订阅 → 添加 →** 粘贴服务商给的链接、扫描二维码或选择文件。形如
    `ducker://install-config?url=…` 的链接可以直接从聊天或邮件中打开同一个窗口。
-4. 在 **Home** 上按下电源按钮，并允许 Android 的 VPN 请求。
+4. 在**首页**按下电源按钮，并允许 Android 的 VPN 请求。
 
-需要 Android 10 或更高版本。每个发布版本都附带 APK 的 `SHA256SUMS` 校验文件。
+需要 Android 10 或更高版本。遇到问题？请看[常见问题](FAQ.md)（英文）：如何添加订阅、VPN 自动断开
+或没有网络时怎么办、如何发送日志。
 
-遇到问题？请看[常见问题](FAQ.md)（英文）：如何添加订阅、VPN 自动断开或没有网络时怎么办、如何发送日志。
+### 更新
+
+ducker 只需手动安装一次，之后会自己更新。
+
+- **自动检查**：每天两次，以及每次打开时。新版本会连同更新内容显示在主页和通知中；点一下即可
+  下载安装，VPN 会自动重新连接。
+- **“自动更新”**（设置）：新版本通过 Wi-Fi 下载，在屏幕关闭时安装，通常在夜里。你同意之前一直
+  关闭。需要 Android 12 或更高版本；在 Android 10–11 上，系统每次都会要求确认。
+- **“测试版 (Beta)”**（设置）：比其他人早几天获得新版本。表现良好的测试版之后会以同一个文件
+  推送给所有人。
+- **来源。** 版本列表来自 GitHub；GitHub 无响应时改用 [GitLab 镜像](https://gitlab.com/duckerx/ducker)
+  或 jsDelivr。安装前 ducker 会核对文件的校验和，并确认它与已安装的应用使用同一密钥签名：其他人
+  的文件不会被安装。
+
+### 检查文件
+
+- 每个发布版本都附带 `SHA256SUMS`，即其中 APK 的校验和。
+- 每个发布版本的说明中都有每个 APK 的 [VirusTotal](https://www.virustotal.com) 报告链接：数十款
+  杀毒引擎检查过的正是这个文件。你也可以自己上传手上的文件进行对比。
+- APK 中的一切都由本仓库构建；自己构建的方法见[构建](#构建)。
+
+### Google 的开发者验证
+
+从 2027 年起，经过认证的 Android 手机和电视只有在开发者已向 Google 注册时，才会安装 Google Play
+之外的应用；巴西、印度尼西亚、新加坡和泰国从 2026 年就已开始。ducker 没有注册。在这类设备上，
+Android 会要求你一次性允许来自未验证开发者的应用：需要输入 PIN 码、重启并等待 24 小时。之后
+ducker 的安装和更新照常进行；如果再次关闭该设置，ducker 将无法更新。通过 `adb` 安装不受影响。
+详见[常见问题](FAQ.md#android-asks-to-allow-apps-from-unverified-developers)（英文）。
 
 ## 给服务商
 
-ducker 可使用任何普通的 mihomo 订阅。此外，服务商可以通过订阅请求的响应头让应用带上自己的品牌。
-在 [Remnawave](https://github.com/remnawave/panel) 中，它们在订阅响应设置
+ducker 可使用任何普通的 mihomo 订阅。它请求订阅时使用的 User-Agent 是
+`mihomo/<内核版本> ducker/<应用版本> (android)`，因此会向 mihomo 客户端提供配置的面板，也会向
+ducker 提供：
+
+| 面板 | ducker 能否获得 mihomo 配置 | 名称、流量、期限 | 公告 | 设备数量限制 | ducker 专用响应头 |
+|---|---|---|---|---|---|
+| Remnawave | 默认即可 | 是 | 是 | 是 | 自定义响应头 |
+| PasarGuard | 默认即可 | 是 | 是 | 是 | 自定义响应头 |
+| Marzban | 默认即可 | 是 | — | — | — |
+| Marzneshin | 在最后一条规则之上添加规则 `^mihomo` → `clash-meta`，或给用户 `…/clash-meta` 链接 | 是 | — | — | — |
+| 3x-ui | 打开 Clash 订阅及其自动识别，或给用户 `/mihomo/<subid>` 链接 | 是 | 是 | 是 | — |
+| Hiddify | 给用户 `…/clashmeta/` 链接 | 是 | — | — | — |
+
+<sub>2026 年 11 月对照面板代码核实：Remnawave 3.4.8、PasarGuard 5.6.0、Marzban 0.8.4、Hiddify 14.2.0。Hiddify 将不限量套餐显示为很远的日期。</sub>
+
+如果面板只返回普通的链接列表，ducker 仍能连接：它会把节点放入内置配置。
+
+此外，服务商可以通过订阅请求的响应头让应用带上自己的品牌。在
+[Remnawave](https://github.com/remnawave/panel) 中，它们在订阅响应设置
 （`customResponseHeaders`）里配置，无需修改面板代码。
 
 <p align="center">
@@ -154,11 +213,11 @@ ducker 可使用任何普通的 mihomo 订阅。此外，服务商可以通过�
 - **`ducker-brand-logo: <图片>`** —— 主页名称旁和订阅卡片上的标志。可以是 `https://…` 链接，也可以
   是 `data:…;base64,…` 形式的图片本身；支持 PNG、JPEG、WebP 和 SVG。加载失败时显示 ducker 图标。
 - **`ducker-buy-url: <链接>`** —— 当剩余不足三天、剩余流量不足 10 % 或已到期时，订阅卡片上出现
-  **Renew** 按钮。到期提醒通知也使用这个链接。没有此响应头时使用 `profile-web-page-url`。
-- **`ducker-global: off`** —— 隐藏 Proxies 页面上的 Global/Rules 开关；模式保持配置中的设定。
+  **续费**按钮。到期提醒通知也使用这个链接。没有此响应头时使用 `profile-web-page-url`。
+- **`ducker-global: off`** —— 隐藏“代理”页面上的 Global/Rules 开关；模式保持配置中的设定。
 - **`ducker-local-proxy: off`** —— 隧道启动时关闭配置中的本地端口（`mixed-port`、`port`、
   `socks-port`、`redir-port`、`tproxy-port`）并忽略 `listeners`，手机上的其他应用因此无法在
-  `127.0.0.1` 上发现代理。配置本身不会被改写。响应头不能打开端口。
+  `127.0.0.1` 上发现代理。配置本身不会被改写。响应头不能打开端口。它还会让“Wi-Fi 共享”保持关闭。
 - **`ducker-override-user: on | off`** —— 为服务商通过响应头下发的设置预留。应用会读取它，但目前
   没有任何效果。
 
@@ -166,8 +225,10 @@ ducker 可使用任何普通的 mihomo 订阅。此外，服务商可以通过�
 
 - 响应头名称不区分大小写。
 - 含非 ASCII 字符或换行的文本以 `base64:<…>`（UTF-8）传递，与 Remnawave 发送 `announce` 的方式
-  相同。
+  相同；在 Remnawave 中可用 `rwEncodeBase64:` 自动完成。
 - 单个短横线 `-` 表示“未设置”：面板不允许保存空的响应头，用短横线可以取消自己的设置。
+- **没有响应头时**（静态托管，或 PasarGuard 把响应头放在正文中）—— 任何响应头都可以写成订阅文件
+  开头或结尾的 `#名称: 值` 行，例如 `#fallback-url: <链接>`。真正的响应头优先于这些行。
 - 响应头只能改变上面列出的外观和行为，无法触及任何与安全相关的内容：内核 API 密钥、日志或应用
   更新地址。
 
@@ -183,8 +244,6 @@ ducker 还支持常见的订阅响应头：`profile-title`、`profile-update-int
 - **`fallback-url: <链接>`** —— Happ 的备用链接；ducker 也会读取，作为又一个镜像。
 - **`new-url: <链接>`** 或 **`new-domain: <域名>`** —— 永久迁移，与 Happ 相同。只有当新地址返回了
   可用的订阅后，ducker 才会更换已保存的链接；在此之前继续从旧链接更新。
-- **没有响应头时**（静态托管）—— 把同样的值写成订阅文件开头的 `#fallback-url: <链接>` 行，放在链接之前，
-  与 Happ 的读法相同。
 
 镜像必须能打开同一个链接：把它的域名指向同一个订阅页面、另一台服务器上的订阅页面副本，或面板本身——只要
 该路径能返回订阅即可。如果备用服务器以不同的路径提供订阅，请把该镜像写成完整链接。
@@ -195,7 +254,12 @@ ducker 从一次成功的更新中获知镜像，因此请在被封锁之前、�
 
 **设备数量限制。** 每次请求订阅时，ducker 会在 `x-hwid` 中发送稳定的设备 ID，同时发送
 `x-device-os`、`x-ver-os` 和 `x-device-model`，面板可以据此统计设备。用户可以在
-**Settings → Privacy → Device ID** 中看到这个 ID 并将其关闭。设备 ID 只通过 HTTPS 发送。
+**设置 → 隐私 → 设备 ID** 中看到这个 ID 并将其关闭。设备 ID 只通过 HTTPS 发送。带有 `x-hwid-*`
+响应头的拒绝，或 PasarGuard 的“Device limit reached”，会以设备数量上限页面呈现给用户，而不是错误。
+
+**加密订阅。** Remnawave 可以在响应规则中用 age 加密订阅。ducker 下载到这样的订阅时，会在添加窗口中
+说明情况，并显示 **解密密钥** 输入框，用于填写以 `AGE-SECRET-KEY-` 开头的密钥。请把密钥与链接分开
+交给用户。
 
 **一键导入。** `ducker://install-config?url=<订阅链接>` 会打开已填好链接的添加订阅窗口；用户确认
 之前不会下载任何内容。
@@ -203,8 +267,8 @@ ducker 从一次成功的更新中获知镜像，因此请在被封锁之前、�
 ## 隐私与安全
 
 - **不收集任何数据。** 没有统计，没有广告，也不会向开发者发送崩溃报告。项目没有自己的服务器。
-- **会发往网络的内容：** 向服务商发出的订阅请求、订阅中引用的图片，以及经由服务商服务器的流量。
-  完整列表见[隐私政策](../PRIVACY_POLICY.md)。
+- **会发往网络的内容：** 向服务商发出的订阅请求、订阅中引用的图片、ducker 新版本检查，以及经由
+  服务商服务器的流量。完整列表见[隐私政策](../PRIVACY_POLICY.md)。
 - **内核 API** 只监听 `127.0.0.1`，并由安装时生成的随机密钥保护。
 - **日志留在设备上，** 除非你自己导出。导出前会先移除节点地址、密钥和设备 ID。
 - **只信任系统证书。** 手动安装到手机上的证书无法替换服务商的图片或更新应答。
@@ -217,15 +281,15 @@ ducker 从一次成功的更新中获知镜像，因此请在被封锁之前、�
 ducker 由一个人和 AI 助手共同开发。代码由 Anthropic 的 AI 模型 Claude 编写；做什么由项目所有者
 决定。每项改动在发布前都会经过构建、测试，并在真实设备上检查；任何人都可以用本仓库重复构建。
 
-加密和协议不是我们写的：它们来自 mihomo 内核。我们对内核的改动是在 v1.19.33 之上的 23 个提交，
+加密和协议不是我们写的：它们来自 mihomo 内核。我们对内核的改动是在 v1.19.33 之上的 24 个提交，
 其中 13 个是社区为 Xray 兼容的多路复用和 REALITY 编写的补丁。它们公开在
-[duckerapp/mihomo](https://github.com/duckerapp/mihomo) 分支仓库的 `ducker` 分支中；另有五个提交位于两个较小的
+[duckerapp/mihomo](https://github.com/duckerapp/mihomo) 分支仓库的 `ducker` 分支中；另有几处修复位于两个较小的
 分支仓库 [duckerapp/utls](https://github.com/duckerapp/utls) 和
 [duckerapp/sing-mux](https://github.com/duckerapp/sing-mux)。
 
 ## 由其他应用控制
 
-适用于 Tasker、快捷方式等工具。请先打开 **Settings → Privacy → Control from other apps**：它默认关闭，
+适用于 Tasker、快捷方式等工具。请先打开 **设置 → 隐私 → 允许其他应用控制**：它默认关闭，
 已安装的应用更新后也是如此。该权限对所有能够发送这些命令的应用生效。ducker 自己的小组件、磁贴
 和快捷方式不需要它。
 
@@ -238,10 +302,11 @@ ducker 由一个人和 AI 助手共同开发。代码由 Anthropic 的 AI 模型
 
 ## 后续计划
 
-- Android TV：让其余页面适配遥控器，并增加带二维码的首次启动页面。
-- 简体中文和波斯文，包括从右到左的布局。
-- 应用内的新版本通知。
-- Linux 和 Windows 客户端计划作为独立项目开发，暂无时间表。
+- **桌面客户端**，支持 Windows、Linux 和 macOS。
+- **玻璃风格：** 半透明面板，作为界面的另一种风格。
+- **“仅通过 VPN”：** VPN 关闭时，选定的应用完全无法联网。
+
+暂无时间表。不计划推出 iOS 版本：iOS 需要从零开始的另一个应用。
 
 各版本已完成的内容见[更新日志](../CHANGELOG.md)（英文）。
 
@@ -279,7 +344,7 @@ cd ducker
 - [CONTRIBUTING.md](../CONTRIBUTING.md) —— 如何报告错误、构建应用和提交改动。
 
 项目由一个人维护，所以每一份帮助都很重要：错误报告、在你的手机或电视上测试，以及翻译——尤其
-欢迎中文和波斯文母语使用者。
+欢迎上述各语言的母语使用者。
 
 ## 许可证
 

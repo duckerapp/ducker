@@ -24,7 +24,7 @@ One button, honest status, nothing extra on the screen.
 [![Android](https://img.shields.io/badge/Android-10%2B-2b2b2b?style=flat-square&labelColor=000)](#install)
 [![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
 
-[Install](#install) · [Screenshots](#screenshots) · [Features](#features) · [Android TV](#android-tv) · [For providers](#for-providers) · [FAQ](docs/FAQ.md) · [Community](#community)
+[Install](#install) · [Screenshots](#screenshots) · [Features](#features) · [Android TV](#android-tv) · [For providers](#for-providers) · [Roadmap](#roadmap) · [FAQ](docs/FAQ.md) · [Community](#community)
 
 <br>
 
@@ -47,13 +47,17 @@ Compose. Free, no ads, no analytics, GPL-3.0.
 ## Screenshots
 
 <p align="center">
-  <a href="docs/images/en/phone-home.png"><img src="docs/images/en/phone-home.png" width="24%" alt="Home: the power button, the current node, the subscription term and traffic"></a>
-  <a href="docs/images/en/phone-proxies.png"><img src="docs/images/en/phone-proxies.png" width="24%" alt="Proxies: a group of nodes with delays"></a>
-  <a href="docs/images/en/phone-subscriptions.png"><img src="docs/images/en/phone-subscriptions.png" width="24%" alt="Subscriptions: a subscription card with its term and traffic"></a>
-  <a href="docs/images/en/phone-settings.png"><img src="docs/images/en/phone-settings.png" width="24%" alt="Settings: background work, apps, Quick Settings tile, autostart"></a>
+  <a href="docs/images/en/phone-home.png"><img src="docs/images/en/phone-home.png" width="32%" alt="Home: the power button, the current node with its delay, the subscription term and traffic, and Features"></a>
+  <a href="docs/images/en/phone-groups.png"><img src="docs/images/en/phone-groups.png" width="32%" alt="Proxies: the config's groups, each with its own icon"></a>
+  <a href="docs/images/en/phone-subscriptions.png"><img src="docs/images/en/phone-subscriptions.png" width="32%" alt="Profiles: the active subscription with its rules and backup addresses, and two more subscriptions"></a>
+</p>
+<p align="center">
+  <a href="docs/images/en/phone-proxies.png"><img src="docs/images/en/phone-proxies.png" width="32%" alt="Proxies: an open group, its nodes with delays and favorites"></a>
+  <a href="docs/images/en/phone-features.png"><img src="docs/images/en/phone-features.png" width="32%" alt="Features: Mobile network, Connections and Wi-Fi sharing"></a>
+  <a href="docs/images/en/phone-settings.png"><img src="docs/images/en/phone-settings.png" width="32%" alt="Settings: interface, VPN, help, updates and beta versions"></a>
 </p>
 
-<p align="center"><sub>Home · Proxies · Subscriptions · Settings. The provider and its servers on the screenshots are made up.</sub></p>
+<p align="center"><sub>Home · Groups · Profiles · Nodes · Features · Settings. The subscriptions and servers on the screenshots are made up.</sub></p>
 
 <p align="center">
   <img src="docs/images/en/theme-wave.gif" width="240" alt="Switching the theme on Home: the dark theme spreads from the button as a wave, then the light one comes back">
@@ -70,15 +74,25 @@ Compose. Free, no ads, no analytics, GPL-3.0.
 - **Honest status.** Right after the tunnel comes up ducker checks that traffic really goes
   through the node. If it doesn't, a card says so and offers to switch to the fastest node.
 - **Errors in plain words.** When the VPN stops or a subscription fails to update, you see why and
-  what to do, not an error code.
+  what to do, not an error code — including when the phone itself closed ducker in the background.
 - **Subscriptions your way.** A link, a QR code or a file. Full mihomo configs work as they are;
   plain lists of `vless://`, `vmess://`, `ss://`, `trojan://` and similar links are placed into a
   built-in profile with routing for Russia: blocked sites go through the node, Russian ones go
-  directly.
-- **Nodes.** Groups from your config, delay check, favorites, search, sorting by delay, and a
-  node test that shows loss, minimum, average and maximum delay.
+  directly. Encrypted subscriptions open with the key from your provider.
+- **Nodes.** Groups from your config with their icons, delay check, favorites, search, sorting by
+  delay, and a node test that shows loss, minimum, average and maximum delay.
+- **Updates itself.** A new version is one tap from Home; or let it install by itself at night.
+  See [Updates](#updates).
 - **Light and dark.** A black-and-white look in both themes; switching runs as a wave across the
   screen.
+
+**Features** — a page under the subscription card on Home:
+
+- **Mobile network.** A subscription and servers of its own for when the phone leaves Wi-Fi; back
+  on Wi-Fi everything is as usual.
+- **Connections.** Which apps connect where, live: the app, the site, the rule, the node, the speed.
+- **Wi-Fi sharing.** The VPN's internet for a laptop or another phone, through a proxy on your
+  network.
 
 **When you need more**
 
@@ -91,8 +105,13 @@ Compose. Free, no ads, no analytics, GPL-3.0.
   [control from Tasker and similar apps](#control-from-other-apps).
 - **Stays up.** Autostart after a reboot or an app update, and step-by-step help with the battery
   savers of Xiaomi, Samsung, Huawei, OPPO, vivo and Tecno phones that like to kill VPN apps.
-- **Privacy extras.** Hide ducker from recent apps or disguise its icon as a calculator.
-- **Languages.** English and Russian; Simplified Chinese and Persian are planned.
+- **Privacy extras.** Hide ducker from recent apps, disguise its icon as a calculator, or put the
+  subscription link, its QR code and the config editor behind your fingerprint or PIN.
+- **Provider news.** Announcements from your provider on Home and, for the last ten days, under
+  the bell on Profiles.
+- **Languages.** English, Russian, Chinese (Simplified), Persian, Arabic, Spanish, French,
+  Indonesian, Portuguese (Brazil), Turkish and Vietnamese; Persian and Arabic are laid out right to
+  left.
 
 **Under the hood**
 
@@ -110,15 +129,13 @@ Compose. Free, no ads, no analytics, GPL-3.0.
 
 The same APK runs on Android TV and Google TV.
 
-- **Made for the remote.** A dock on the left, a glowing frame around the focused element, the
-  main screens — Home, Proxies, Profiles — work with the D-pad.
+- **Made for the remote.** A dock on the left, a glowing frame around the focused element, and
+  the screens work with the D-pad — down to the config editor and the log.
 - **No typing a link with the remote.** The TV shows a QR code; scan it in ducker on your phone
-  (Profiles → **+** → Scan QR) and the subscription is sent to the TV over your home network.
+  (Profiles → **Add** → Scan QR) and the subscription is sent to the TV over your home network.
   The link travels encrypted (AES-256-GCM) with a one-time key that exists only inside that QR
   code, and the TV listens only while the code is on the screen.
-- **Still in progress.** TV support is new. Some screens opened from Settings are not yet
-  comfortable with a remote, and so far it has been tested mostly in the emulator — reports from
-  real TVs are very welcome.
+- **Checked on real TVs.** Reports from other TV models are welcome.
 
 <p align="center">
   <a href="docs/images/en/tv-proxies.png"><img src="docs/images/en/tv-proxies.png" width="49%" alt="Android TV: the Proxies screen with the focus frame on a node"></a>
@@ -132,22 +149,71 @@ The same APK runs on Android TV and Google TV.
    - `armeabi-v7a` — older phones and many TVs; take it if the first one does not install.
 2. Open the file. Android will ask to allow installation from this source — that is normal for
    apps from outside Google Play.
-3. Add a subscription: **Profiles → + →** paste the link from your provider, scan its QR code
+3. Add a subscription: **Profiles → Add →** paste the link from your provider, scan its QR code
    or pick a file. A link like `ducker://install-config?url=…` opens the same dialog straight from
    a chat or an email.
 4. Press the power button on **Home** and allow Android's VPN request.
 
-Android 10 or newer. Each release comes with `SHA256SUMS` for the APK files.
+Android 10 or newer. Something does not work? [Questions and answers](docs/FAQ.md): how to add a
+subscription, what to do if the VPN turns itself off or there is no internet, how to send a log.
 
-Something does not work? [Questions and answers](docs/FAQ.md): how to add a subscription, what to
-do if the VPN turns itself off or there is no internet, how to send a log.
+### Updates
+
+You install ducker by hand once; after that it updates itself.
+
+- **It checks by itself** twice a day and when you open it. A new version shows up on Home and in
+  a notification, with what's new; one tap downloads and installs it, and the VPN comes back by
+  itself.
+- **Update automatically** (Settings): new versions download over Wi-Fi and install while the
+  screen is off, usually at night. Off until you say yes. Android 12 and newer; on Android 10–11
+  Android asks for a confirmation each time.
+- **Beta versions** (Settings): new versions a few days before everyone else. A beta that goes well
+  is then given to everyone as the very same file.
+- **Where from.** The list of versions comes from GitHub, or from the
+  [GitLab mirror](https://gitlab.com/duckerx/ducker) or jsDelivr when GitHub does not answer. Before
+  installing, ducker checks the file's checksum and that it is signed with the same key as the
+  installed app: a file from anyone else is not installed.
+
+### Checking the file
+
+- Each release comes with `SHA256SUMS`, the checksums of its APK files.
+- Each release's notes link a [VirusTotal](https://www.virustotal.com) report for every APK: dozens
+  of antivirus engines have looked at that exact file. You can upload your copy there yourself and
+  compare.
+- Everything in the APK is built from this repository; see [Build](#build) to do it yourself.
+
+### Google's developer verification
+
+From 2027, certified Android phones and TVs install apps from outside Google Play only if their
+developer is registered with Google; in Brazil, Indonesia, Singapore and Thailand this started in
+2026. ducker is not registered. On such devices Android will ask once to allow apps from
+unverified developers: the setting needs your PIN, a restart and a 24-hour wait. After that ducker
+installs and updates as before; turning the setting off again stops its updates. Installing over
+`adb` is not affected. More in the [FAQ](docs/FAQ.md#android-asks-to-allow-apps-from-unverified-developers).
 
 ## For providers
 
-ducker works with any regular mihomo subscription. On top of that, a provider can make the app
-look like its own with response headers of the subscription request. In
-[Remnawave](https://github.com/remnawave/panel) they are set in the subscription response settings
-(`customResponseHeaders`); the panel code does not need changes.
+ducker works with any regular mihomo subscription. It asks for one with the User-Agent
+`mihomo/<core version> ducker/<app version> (android)`, so panels that give mihomo clients a
+config give it to ducker too:
+
+| Panel | ducker gets the mihomo config | Name, traffic, term | Announcement | Device limit | ducker's own headers |
+|---|---|---|---|---|---|
+| Remnawave | by default | yes | yes | yes | custom response headers |
+| PasarGuard | by default | yes | yes | yes | custom response headers |
+| Marzban | by default | yes | — | — | — |
+| Marzneshin | add a rule `^mihomo` → `clash-meta` above the last one, or give users the `…/clash-meta` link | yes | — | — | — |
+| 3x-ui | turn on the Clash subscription and its auto-detect, or give users the `/mihomo/<subid>` link | yes | yes | yes | — |
+| Hiddify | give users the `…/clashmeta/` link | yes | — | — | — |
+
+<sub>Checked against the panels' code in November 2026: Remnawave 3.4.8, PasarGuard 5.6.0, Marzban 0.8.4, Hiddify 14.2.0. Hiddify shows an unlimited plan as a date far ahead.</sub>
+
+Where the panel gives a plain list of links instead, ducker still connects: it places the nodes
+into its built-in profile.
+
+On top of that, a provider can make the app look like its own with response headers of the
+subscription request. In [Remnawave](https://github.com/remnawave/panel) they are set in the
+subscription response settings (`customResponseHeaders`); the panel code does not need changes.
 
 <p align="center">
   <picture>
@@ -177,9 +243,12 @@ General rules:
 
 - Header names are case-insensitive.
 - Text with non-ASCII characters or line breaks is passed as `base64:<…>` (UTF-8), the way
-  Remnawave sends `announce`.
+  Remnawave sends `announce`; in Remnawave, `rwEncodeBase64:` does it for you.
 - A single dash `-` means "not set": the panel does not allow saving an empty header, and a dash
   lets you remove your own.
+- **Without headers** (static hosting, or PasarGuard with headers placed in the body) — any header
+  can be a `#name: value` line at the top or the end of the subscription file, such as
+  `#fallback-url: <link>`. A real header wins over a line.
 - Headers change only the look and behavior listed above. They have no access to anything
   security-related: the core API secret, logs or the app update address.
 
@@ -198,8 +267,6 @@ tries other addresses on its own, and the user notices nothing:
 - **`new-url: <link>`** or **`new-domain: <domain>`** — Happ's permanent move. ducker switches the
   stored link only after the new address has given a working subscription; until then it keeps
   updating from the old one.
-- **Without headers** (static hosting) — the same values as `#fallback-url: <link>` lines at the
-  top of the subscription file, before the links, as Happ reads them.
 
 A mirror must open the same link: point its domain at the same subscription page, at a copy of it
 on another server, or at the panel itself — wherever this path gives the subscription. If a backup
@@ -214,7 +281,12 @@ the subscription's own node.
 **Device limit.** With each subscription request ducker sends a stable device ID in `x-hwid`
 together with `x-device-os`, `x-ver-os` and `x-device-model`, so a panel can count devices. The
 user sees this ID in **Settings → Privacy → Device ID** and can turn it off. The ID is sent over HTTPS
-only.
+only. A refusal with `x-hwid-*` headers, or PasarGuard's "Device limit reached", shows the user a
+screen about the device limit instead of an error.
+
+**Encrypted subscriptions.** Remnawave can encrypt a subscription with age in its response rules.
+When ducker downloads one, the add sheet explains it and shows a **Decryption key** field for the
+key that starts with `AGE-SECRET-KEY-`. Give users the key separately from the link.
 
 **One-tap install.** `ducker://install-config?url=<subscription link>` opens the Add subscription
 dialog with the link filled in; the user confirms before anything is downloaded.
@@ -224,8 +296,8 @@ dialog with the link filled in; the user confirms before anything is downloaded.
 - **Nothing is collected.** No analytics, no ads, no crash reports sent to the developer. The
   project has no server of its own.
 - **What goes to the network:** the subscription request to your provider, images the
-  subscription refers to, and your traffic through the provider's servers. The full list is in
-  the [privacy policy](PRIVACY_POLICY.md).
+  subscription refers to, the check for a new ducker version, and your traffic through the
+  provider's servers. The full list is in the [privacy policy](PRIVACY_POLICY.md).
 - **The core API** listens only on `127.0.0.1` and is protected by a random secret created at
   install time.
 - **Logs stay on the device** until you export them yourself. Node addresses, keys and the device
@@ -243,11 +315,11 @@ Claude, an AI model made by Anthropic; the owner decides what to build. Every ch
 tested and checked on real devices before it is released, and anyone can repeat the build from
 this repository.
 
-Encryption and protocols are not ours: they come from the mihomo core. Our changes to it are 23
+Encryption and protocols are not ours: they come from the mihomo core. Our changes to it are 24
 commits on top of v1.19.33, 13 of them community patches for the Xray-compatible mux and REALITY.
 They are public in the [duckerapp/mihomo](https://github.com/duckerapp/mihomo) fork, branch `ducker`;
 two smaller forks, [duckerapp/utls](https://github.com/duckerapp/utls) and
-[duckerapp/sing-mux](https://github.com/duckerapp/sing-mux), carry five more commits.
+[duckerapp/sing-mux](https://github.com/duckerapp/sing-mux), carry a few more fixes.
 
 ## Control from other apps
 
@@ -262,12 +334,13 @@ app that is able to send these commands. ducker's own widgets, tile and shortcut
 | toggle | `am start -a app.ducker.android.action.TOGGLE_CLASH` |
 | add a subscription | `ducker://install-config?url=<link>` |
 
-## What's next
+## Roadmap
 
-- Android TV: the remaining screens for the remote and a first-run screen with a QR code.
-- Simplified Chinese and Persian, including a right-to-left layout.
-- A notification about a new version inside the app.
-- Linux and Windows clients are planned as a separate project; there are no dates yet.
+- **A desktop client** for Windows, Linux and macOS.
+- **A glass look:** translucent panels as an alternative style of the interface.
+- **"Only through VPN":** chosen apps get no internet at all while the VPN is off.
+
+No dates yet. An iOS version is not planned: iOS needs a different app from scratch.
 
 What has already been done, version by version, is in the [changelog](CHANGELOG.md).
 
@@ -308,7 +381,7 @@ Details are in [CONTRIBUTING.md](CONTRIBUTING.md); where things live in the code
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to report a bug, build the app and send a change.
 
 The project is run by one person, so help matters: bug reports, testing on your phone or TV,
-and translations — especially from native speakers of Chinese and Persian.
+and translations — especially from native speakers of the languages above.
 
 ## License
 
