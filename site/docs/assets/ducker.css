@@ -256,13 +256,15 @@ html {
 /* Side navigation: the current page is the app's selected dock pill. Every link carries the pill's radius,
    not only the active one: the theme fades the background out over 0.25s, and a radius dropped at once left a
    fading rectangle while the contents' highlight moved on scroll. */
+/* The radius is half a one-line item's height: a pill on one line, a rounded block when the label wraps, so
+   a long label never runs into a rounded end. */
 .md-sidebar .md-nav__link {
-  border-radius: 999px;
+  border-radius: 1rem;
 }
 .md-sidebar .md-nav__link.md-nav__link--active {
   background-color: var(--dk-ink) !important;
   color: var(--dk-paper) !important;
-  border-radius: 999px;
+  border-radius: 1rem;
   font-weight: 700;
 }
 .md-nav__title {
