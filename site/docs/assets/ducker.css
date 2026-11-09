@@ -867,7 +867,7 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover),
   mix-blend-mode: normal;
 }
 ::view-transition-new(root) {
-  animation: dk-wave 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: dk-wave 0.84s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes dk-wave {
   from {
