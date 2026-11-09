@@ -67,7 +67,7 @@ Done: press the power button on Home.
 
 ![ducker's Home on a TV after the subscription is added](../assets/shots/tv-guide-home.png){ loading=lazy }
 
-After that, LocalSend is no longer needed: ducker installs its new versions by itself. Uncheck
+After that, LocalSend is no longer needed: new versions of ducker come to the app itself. Uncheck
 **Automatically accept requests** or uninstall LocalSend.
 
 ## No phone at hand

@@ -261,7 +261,7 @@ Nothing is collected. The project has no server of its own.
 </div>
 <div markdown>
 
-**Open source.** GPL-3.0. Everything in the APK is built from the repository, and anyone can repeat the build.
+**Open source.** GPL-3.0. The app is built from the repository, and anyone can repeat the build.
 
 </div>
 </div>

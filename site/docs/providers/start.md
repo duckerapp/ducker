@@ -69,8 +69,9 @@ rules. When ducker downloads one, the add window explains it and shows a **Decry
 field for the key that starts with `AGE-SECRET-KEY-`. Give users the key separately from the link.
 
 While the VPN is enabled, subscription updates follow the profile's rules, usually through
-a node. If nodes are unavailable, an update through that route cannot succeed; with the
-VPN disabled, the request goes directly.
+a node; with the VPN disabled, the request goes directly. If no address of the subscription
+answers, ducker tries once more directly and through the subscription's own node
+(see [Subscription mirrors](headers.md#subscription-mirrors)).
 
 ## Response headers
 

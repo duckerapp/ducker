@@ -180,7 +180,8 @@ You install ducker by hand once; after that it updates itself.
 - Each release's notes link a [VirusTotal](https://www.virustotal.com) report for every APK: dozens
   of antivirus engines have looked at that exact file. You can upload your copy there yourself and
   compare.
-- Everything in the APK is built from this repository; see [Build](#build) to do it yourself.
+- The app is built from this repository; the build also downloads the zashboard panel's release (checked by its
+  SHA-256) and the country and site databases of MetaCubeX/meta-rules-dat. See [Build](#build) to do it yourself.
 
 ### Google's developer verification
 

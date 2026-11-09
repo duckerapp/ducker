@@ -51,8 +51,9 @@ How to get the APK onto the TV in the first place, step by step: [Installing on 
 - Each release's notes link a [VirusTotal](https://www.virustotal.com) report for every APK:
   dozens of antivirus engines have looked at that exact file. You can upload your copy there
   yourself and compare.
-- Everything in the APK is built from the
-  [repository](https://github.com/duckerapp/ducker#build); you can repeat the build yourself.
+- The app is built from the [repository](https://github.com/duckerapp/ducker#build); the build also downloads
+  the zashboard panel's release (checked by its SHA-256) and the country and site databases of
+  MetaCubeX/meta-rules-dat. You can repeat the build yourself.
 
 ## Google's developer verification
 
