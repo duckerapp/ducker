@@ -81,10 +81,10 @@ published by `.github/workflows/pages.yaml`.
     link with its mirrors, as the install link, the shared QR and the TV transfer carry it;
   - `settings`; `config` — the YAML editor; `rules` — My rules; `apps` — per-app access;
     `logs`; `probe` — the node test; `update` — the app update sheet;
-  - `features` — the Features page behind the pill on Home and its Connections page (the core's open
-    connections, read once a second while the page is open; the closed ones stay dimmed, and the core keeps those
-    that closed while the app was hidden for five minutes after the page last asked); the Wi-Fi sharing card
-    (`ShareViewModel`).
+  - `features` — the Features page behind the pill on Home (on a TV, the third button under the dock) and its
+    Connections page (the core's open connections, read once a second while the page is open; the closed ones
+    stay dimmed, and the core keeps those that closed while the app was hidden for five minutes after the page
+    last asked); the Wi-Fi sharing card (`ShareViewModel`).
 - **`ui/components/SensitiveLock.kt`** — the fingerprint, face or screen-lock check before the
   subscription link and the config, and `SecureWindow` (no screenshots of those screens).
 - **`ui/components/`** — `DuckerScaffold` (the tab dock), `Tv` (the TV layout, the focus frame and

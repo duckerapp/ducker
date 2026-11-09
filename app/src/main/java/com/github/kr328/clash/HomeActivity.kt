@@ -26,6 +26,7 @@ import androidx.annotation.StringRes
 import com.github.kr328.clash.ui.components.ScreenFrame
 import com.github.kr328.clash.ui.components.TvFocus
 import com.github.kr328.clash.ui.components.TvSplash
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import com.github.kr328.clash.ui.home.ThemeButton
 import com.github.kr328.clash.ui.home.BrandTitle
@@ -785,8 +786,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // Вкладка, к которой едет лента на телевизоре.
                 var tvTarget by remember { mutableIntStateOf(0) }
                 var paging by remember { mutableStateOf<Job?>(null) }
-                // Настройки открыты шестерёнкой под доком, а не со страницы.
-                var fromGear by remember { mutableStateOf(false) }
+                // Настройки или «Возможности» открыты кнопкой под доком, а не со страницы: focus returns to it.
+                var fromTool by remember { mutableStateOf<FocusRequester?>(null) }
                 // A TV asks before Back closes the app.
                 var exitAsk by remember { mutableStateOf(false) }
 
@@ -875,9 +876,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             covered = false
 
                             // Настройки открывали шестерёнкой под доком — на неё и возвращаемся (D-161).
-                            if (fromGear) {
-                                fromGear = false
-                                tvFocus.gear.requestFocus()
+                            val tool = fromTool
+                            if (tool != null) {
+                                fromTool = null
+                                tool.requestFocus()
                             } else {
                                 tvFocus.enter(pagerState.settledPage)
                             }
@@ -1016,11 +1018,25 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             icon = Symbols.Settings,
                             description = stringResource(R.string.settings),
                             onClick = {
-                                fromGear = true
+                                fromTool = tvFocus?.gear
                                 showSettings = true
                             },
                             modifier = if (tvFocus != null) Modifier.focusRequester(tvFocus.gear) else Modifier,
                         )
+
+                        // On a TV «Возможности» lives here, not under the subscription card: Home is 540 tall and the
+                        // pill went under its bottom edge (D-446). Only with a subscription, as the pill.
+                        if (state.profile != null) {
+                            TvTool(
+                                icon = Symbols.Widgets,
+                                description = stringResource(R.string.features),
+                                onClick = {
+                                    fromTool = tvFocus?.features
+                                    showFeatures = true
+                                },
+                                modifier = if (tvFocus != null) Modifier.focusRequester(tvFocus.features) else Modifier,
+                            )
+                        }
                     },
                 ) { tabs, overlayInsets ->
                     // На телевизоре док слева (этап 6): лента встаёт справа от него целиком, а

@@ -170,6 +170,9 @@ class TvFocus {
     /** Шестерёнка под доком: настройки закрылись — фокус обратно на неё. */
     val gear = FocusRequester()
 
+    /** «Возможности» под доком, beside the gear: the screen closed — focus back on the button. */
+    val features = FocusRequester()
+
     /**
      * The screen over the tabs that has the remote now, see [BackLayer]. Focus lost on it (the element under
      * the frame disappeared) returns to it: otherwise the next key put the frame on the tab under the screen.
@@ -1301,6 +1304,8 @@ internal fun TvScaffold(
     content: @Composable (tabs: PaddingValues, overlays: PaddingValues) -> Unit,
 ) {
     var dockWidth by remember { mutableIntStateOf(0) }
+    // Three tools are wider than a dock with short labels: the page starts past the wider of the two.
+    var toolsWidth by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
     // The dock stands at the start: on the right in a right-to-left language, and the page is to its left.
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -1354,7 +1359,7 @@ internal fun TvScaffold(
             color = MaterialTheme.colorScheme.background,
         ) {
             Box(Modifier.fillMaxSize()) {
-                val reserved = with(density) { dockWidth.toDp() }
+                val reserved = with(density) { maxOf(dockWidth, toolsWidth).toDp() }
 
                 content(
                     PaddingValues(start = TV_EDGE + reserved + TV_GAP, top = TV_TOP, end = TV_GAP, bottom = TV_TOP),
@@ -1439,6 +1444,7 @@ internal fun TvScaffold(
                         // Вправо с последней кнопки — в экран, как с вкладки: иначе поиск находил
                         // «плюс», он правее и выше.
                         modifier = Modifier
+                            .onSizeChanged { toolsWidth = it.width }
                             .focusProperties {
                                 onExit = {
                                     if (requestedFocusDirection == inward) {

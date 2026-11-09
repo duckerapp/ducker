@@ -613,7 +613,8 @@ private fun HomeRegular(
             }
 
             // Under the subscription card («До …»), or under the power card when a config of one's own has no subscription card.
-            if (profile != null) {
+            // A TV has it under the dock instead (`HomeActivity`, `tvTools`).
+            if (profile != null && !tv) {
                 FeaturesPill(onFeatures, Modifier.align(Alignment.CenterHorizontally))
             }
 
