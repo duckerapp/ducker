@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * The app's icons: Google's Material Symbols, Rounded, weight 500, as vectors (D-323). Apache License 2.0,
- * see `assets/licenses/Material-Symbols-LICENSE.txt`. [androidx.compose.material3.Icon] tints them, so the
+ * see `assets/licenses/Apache-2.0.txt`. [androidx.compose.material3.Icon] tints them, so the
  * color here does not matter.
  */
 object Symbols {

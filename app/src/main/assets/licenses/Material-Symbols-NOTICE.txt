@@ -8,4 +8,4 @@ stored as Android vectors in app/src/main/java/com/github/kr328/clash/ui/compone
 written by scripts/material-symbols.py.
 
 Licensed under the Apache License, Version 2.0; the complete license accompanies this file as
-Material-Symbols-LICENSE.txt.
+Apache-2.0.txt.

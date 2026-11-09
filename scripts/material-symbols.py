@@ -6,7 +6,7 @@
 Style Rounded, weight WEIGHT, grade 0, optical size 24; outlined unless a row asks for the filled
 form. To add an icon, add a row to ICONS and run the script again; the SVGs come from the npm
 package @material-symbols/svg-<WEIGHT> at the pinned version, through jsDelivr. Licence: Apache 2.0,
-app/src/main/assets/licenses/Material-Symbols-LICENSE.txt.
+app/src/main/assets/licenses/Apache-2.0.txt.
 """
 import re
 import urllib.request
@@ -148,7 +148,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * The app's icons: Google's Material Symbols, Rounded, weight %d, as vectors (D-323). Apache License 2.0,
- * see `assets/licenses/Material-Symbols-LICENSE.txt`. [androidx.compose.material3.Icon] tints them, so the
+ * see `assets/licenses/Apache-2.0.txt`. [androidx.compose.material3.Icon] tints them, so the
  * color here does not matter.
  */
 object Symbols {

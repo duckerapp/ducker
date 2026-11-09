@@ -26,7 +26,9 @@ repository README.
 Under their own licences, unmodified: AndroidX, Jetpack Compose and Kotlin's libraries (Google,
 JetBrains; Apache 2.0); **Coil** with OkHttp (Apache 2.0) — images; **zxing-cpp** (Apache 2.0) —
 the QR scanner; **QR Code generator** by Project Nayuki (MIT) — QR codes; **sora-editor** by Rosemoe
-(LGPL 2.1) — the config editor; **SnakeYAML** (Apache 2.0).
+(LGPL 2.1) — the config editor; **SnakeYAML** (Apache 2.0); libyuv (BSD 3-Clause) inside CameraX.
+Their licences ship inside the app, in `app/src/main/assets/licenses/`: `libraries.txt` for these,
+`core.txt` for Go and every Go module of the core (written by `scripts/core-licenses.py`).
 
 ## Font and icons
 
