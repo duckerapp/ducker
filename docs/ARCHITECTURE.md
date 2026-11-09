@@ -3,7 +3,7 @@
 Where things live, so that you do not have to search the tree. Only the stable parts are listed:
 modules, packages and entry points.
 
-Code comments are in Russian. Marks like `D-45` and `F-49` in them are explained in
+New code comments are in English; older ones are still in Russian. Marks like `D-45` and `F-49` in them are explained in
 [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 Path shortcuts used below:

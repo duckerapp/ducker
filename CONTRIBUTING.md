@@ -72,7 +72,8 @@ entry: its SHA-256 is that of `aapt2-<version>-osx.jar` from `dl.google.com/dl/a
 ## How the project is organised
 
 Where things live is described in the [code map](docs/ARCHITECTURE.md): processes, modules, the
-main call chains and how the core is updated. Code comments are in Russian.
+main call chains and how the core is updated. Write new code comments in English; older ones
+are still in Russian.
 
 Marks like `D-45` and `F-49` in comments are entry numbers in the working journal of decisions and
 facts. The journal itself is not published: if you need the reason why something is done the way
