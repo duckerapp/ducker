@@ -118,16 +118,20 @@ class StartupProfile {
         }
 
         // «Прокси»: прокрутка, замер задержек и выбор узла.
-        reach(By.desc("Check")) { nextTab() }
+        // The tab starts its own check when it opens (D-401): the button reads «Checking…» until it ends.
+        reach(By.desc(Pattern.compile("Check.*"))) { nextTab() }
+        device.wait(Until.gone(By.desc(CHECKING)), 20_000)
         scroll()
         tap(By.desc("Check"))
         device.wait(Until.hasObject(By.desc(CHECKING)), 2_000)
         check(device.wait(Until.gone(By.desc(CHECKING)), 20_000)) { "Замер задержек не закончился. ${seen()}" }
         // Имя выбранного узла стоит на экране дважды — на карточке и в шапке группы. Берём
         // невыбранный: от прошлого прохода выбор остаётся, а нажатие на шапку группу сворачивает.
-        val node = NODES.first { device.findObjects(By.text(it)).size == 1 }
-        tap(By.text(node))
-        check(device.wait(Condition<UiDevice, Boolean> { it.findObjects(By.text(node)).size > 1 }, 10_000)) {
+        val node = checkNotNull(NODES.map(::named).firstOrNull { device.findObjects(it).size == 1 }) {
+            "Нет невыбранного узла. ${seen()}"
+        }
+        tap(node)
+        check(device.wait(Condition<UiDevice, Boolean> { it.findObjects(node).size > 1 }, 10_000)) {
             "Узел не выбрался. ${seen()}"
         }
 
@@ -142,7 +146,7 @@ class StartupProfile {
 
         // Quick node selection: the sheet opens from the node row on Home, which shows the node
         // chosen above. Only up the list: a pull down at its top would drag the sheet closed.
-        reach(By.text("All nodes")) { tap(By.text(node)) }
+        reach(By.text("All nodes")) { tap(node) }
         device.swipe(width / 2, middle + middle / 2, width / 2, middle, 8)
         tap(By.text("Close"))
         need(By.desc("Settings"))
@@ -206,6 +210,10 @@ private val CHECKING = Pattern.compile("Checking.*")
 
 private val NODES = listOf("🇩🇪 Frankfurt", "🇳🇱 Amsterdam", "🇫🇮 Helsinki", "🇺🇸 New York")
     .flatMap { city -> (1..3).map { "$city $it" } }
+
+/** A node's name on screen: the app wraps names in direction isolates (`String.isolated()`), not everywhere. */
+private fun named(name: String): BySelector =
+    By.text(Pattern.compile("⁨?" + Pattern.quote(name) + "⁩?"))
 
 /**
  * Проверочная подписка. Узлы типа `direct`: ни чужих адресов, ни секретов, а VPN и замер
