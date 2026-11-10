@@ -80,8 +80,6 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 // обновлении он остаётся, а у другой подписки действует её `mode` (D-143).
                 val switched = current != loaded
 
-                loaded = current
-
                 val active = ImportedDao().queryByUUID(current)
                     ?: throw NullPointerException(Failure.NO_PROFILE)
 
@@ -137,6 +135,10 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
                         continue
                     }
+
+                    // Marked only once in the core: after a failed load the core keeps the previous
+                    // subscription, and the next good load of this one is still a switch (D-461).
+                    loaded = current
 
                     val remove = SelectionDao().querySelections(active.uuid)
                         .filterNot { Clash.patchSelector(it.proxy, it.selected) }
