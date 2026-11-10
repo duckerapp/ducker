@@ -31,17 +31,28 @@ import com.github.kr328.clash.R
  *
  * The duck is the system splash's own image, drawn at its 288 dp canvas, so every density gets its bitmap pixel for
  * pixel — 1152 px at 4K; it is tinted, as its colour is flat and its shape is in the alpha (D-342).
+ *
+ * The duck and «ducker» fade first, the backing after them: faded together, the white mark stayed over Home after the
+ * black was gone on a real TV, whose frames stall as Home starts drawing.
  */
 @Composable
 internal fun TvSplash(visible: Boolean) {
-    AnimatedVisibility(visible = visible, enter = EnterTransition.None, exit = fadeOut(tween(FADE_MS))) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = EnterTransition.None,
+        exit = fadeOut(tween(BACKING_FADE_MS, delayMillis = MARK_FADE_MS)),
+    ) {
         Box(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center,
         ) {
             val color = MaterialTheme.colorScheme.onBackground
 
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+            Row(
+                modifier = Modifier.animateEnterExit(exit = fadeOut(tween(MARK_FADE_MS))),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+            ) {
                 // The duck's own bounds; its canvas spills over them, transparent.
                 Box(Modifier.size(width = 124.dp, height = 132.dp), contentAlignment = Alignment.Center) {
                     Image(
@@ -64,4 +75,5 @@ internal fun TvSplash(visible: Boolean) {
     }
 }
 
-private const val FADE_MS = 300
+private const val MARK_FADE_MS = 150
+private const val BACKING_FADE_MS = 250
