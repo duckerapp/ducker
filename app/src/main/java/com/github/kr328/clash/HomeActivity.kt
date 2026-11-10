@@ -129,6 +129,7 @@ import com.github.kr328.clash.ui.apps.AppsViewModel
 import com.github.kr328.clash.ui.probe.ProbeScreen
 import com.github.kr328.clash.ui.features.ConnectionsScreen
 import com.github.kr328.clash.ui.features.ConnectionsViewModel
+import com.github.kr328.clash.ui.features.ShareScreen
 import com.github.kr328.clash.ui.features.ShareViewModel
 import com.github.kr328.clash.ui.features.MobileScreen
 import com.github.kr328.clash.ui.features.MobileViewModel
@@ -394,6 +395,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 var showConnections by rememberSaveable { mutableStateOf(false) }
                 // «Мобильная сеть» (D-423), over «Возможности» as «Подключения» is.
                 var showMobile by rememberSaveable { mutableStateOf(false) }
+                // «Раздача по Wi-Fi» (D-465), over «Возможности» as «Мобильная сеть» is.
+                var showShare by rememberSaveable { mutableStateOf(false) }
                 // Ducker Bird: the question after six taps on Home's title, then the game over everything.
                 var birdAsk by remember { mutableStateOf(false) }
                 var showBird by rememberSaveable { mutableStateOf(false) }
@@ -465,6 +468,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     mobileViewModel.stop()
                 }
+                val closeShare = { showShare = false }
                 val closeFeatures = { showFeatures = false }
                 val closeBird = { showBird = false }
 
@@ -478,7 +482,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     // обрывала жест прямо под пальцем.
                     // На телевизоре «назад» ведёт по доку, см. ниже.
                     enabled = !tv && !showSettings && !showProbe && !showApps && !showLogs && !showRules && !showConfig &&
-                        !showFeatures && !showConnections && !showMobile && pagerState.settledPage != 0,
+                        !showFeatures && !showConnections && !showMobile && !showShare && pagerState.settledPage != 0,
                 ) { events ->
                     val from = pagerState.settledPage
 
@@ -514,7 +518,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 val connectionsState by connectionsViewModel.state.collectAsState()
                 val shareState by shareViewModel.state.collectAsState()
 
-                // «Раздача по Wi-Fi» goes off by itself when the network changes: its card asks while the page is open.
+                // «Раздача по Wi-Fi» goes off by itself when the network changes: its row and its page over «Возможности»
+                // ask while «Возможности» is open.
                 LaunchedEffect(showFeatures) {
                     if (showFeatures) shareViewModel.start() else shareViewModel.stop()
 
@@ -768,6 +773,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     showProbe -> "probe"
                     showConnections -> "connections"
                     showMobile -> "mobile"
+                    showShare -> "share"
                     showFeatures -> "features"
                     showBird -> "bird"
                     showSettings -> "settings"
@@ -950,6 +956,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         showSettings = false
                         showProbe = false
                         showFeatures = false
+                        showShare = false
 
                         if (showConnections) closeConnections()
                         if (showMobile) closeMobile()
@@ -1495,7 +1502,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showFeatures,
                         onBack = closeFeatures,
-                        enabled = !showConnections && !showMobile,
+                        enabled = !showConnections && !showMobile && !showShare,
                     ) {
                         FeaturesScreen(
                             share = shareState,
@@ -1510,9 +1517,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                                 connectionsViewModel.start(this@HomeActivity)
                             },
-                            onShare = { shareViewModel.turn(it) },
-                            onSharePassword = { shareViewModel.password(it) },
-                            onNewSharePassword = { shareViewModel.newPassword() },
+                            onShare = { showShare = true },
                             onBack = closeFeatures,
                             modifier = layerModifier(listInsets),
                         )
@@ -1547,6 +1552,20 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onMove = { from, to -> mobileViewModel.move(from, to) },
                             onMoved = { mobileViewModel.dropped() },
                             onBack = closeMobile,
+                            modifier = layerModifier(listInsets),
+                        )
+                    }
+
+                    BackLayer(
+                        visible = showShare,
+                        onBack = closeShare,
+                    ) {
+                        ShareScreen(
+                            state = shareState,
+                            onTurn = { shareViewModel.turn(it) },
+                            onPassword = { shareViewModel.password(it) },
+                            onNewPassword = { shareViewModel.newPassword() },
+                            onBack = closeShare,
                             modifier = layerModifier(listInsets),
                         )
                     }

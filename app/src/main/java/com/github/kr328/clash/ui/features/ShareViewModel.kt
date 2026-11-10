@@ -14,8 +14,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
- * «Раздача по Wi-Fi» for its card on «Возможности» (D-419–D-421). The service turns it off by itself when the network
- * changes, and the VPN can stop from the shade, so the card asks again every couple of seconds while the page is open.
+ * «Раздача по Wi-Fi» for its row on «Возможности» and its page (D-419–D-421, D-465). The service turns it off by itself
+ * when the network changes, and the VPN can stop from the shade, so they ask again every couple of seconds while
+ * «Возможности» is open.
  */
 class ShareViewModel : ViewModel() {
     private val _state = MutableStateFlow(ShareState())
