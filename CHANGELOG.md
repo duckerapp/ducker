@@ -12,6 +12,9 @@ repository was closed; they are listed here for history. APK files are on the
 
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
+
+## 0.4.48 — 2026-11-11
+
 - Encrypted subscriptions: when a provider encrypts its subscription, the add sheet says so and shows a “Decryption
   key” field for the key the provider gives you. Editing the subscription keeps the key.
 - The subscription request names the platform: `mihomo/<core> ducker/<app> (android)`.
