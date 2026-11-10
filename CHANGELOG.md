@@ -30,6 +30,9 @@ repository was closed; they are listed here for history. APK files are on the
   the next connect. Open connections reconnect once at that moment.
 - Turning the VPN off while it is still connecting, or while the subscription reloads, no longer leaves the
   subscription running with the VPN off: its local ports open, its node checks and updates going out directly.
+- The built-in template no longer opens a DNS server on `127.0.0.1:1053`: apps kept out of the VPN could find ducker
+  through it and send queries through the server. A subscription from a list of links drops it at its next update.
+  For providers: the `ducker-local-proxy: off` header closes a config's DNS server (`dns.listen`) too.
 
 ## 0.4.47 — 2026-11-09
 
