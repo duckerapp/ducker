@@ -234,8 +234,9 @@ subscription response settings (`customResponseHeaders`); the panel code does no
 - **`ducker-global: off`** — hides the Global/Rules switch on the Proxies tab; the mode stays as
   set in the config.
 - **`ducker-local-proxy: off`** — the tunnel starts with the config's local ports closed
-  (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`) and without `listeners`, so
-  other apps on the phone cannot find a proxy on `127.0.0.1`. The config itself is not rewritten.
+  (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`), without `listeners` and without
+  the DNS server of `dns.listen`, so other apps on the phone cannot find a proxy or a DNS server on
+  `127.0.0.1`. The config itself is not rewritten.
   A header cannot open a port. It also keeps "Wi-Fi sharing" closed.
 - **`ducker-override-user: on | off`** — reserved for settings that the provider sets with
   headers. The app reads it, but it has no effect yet.

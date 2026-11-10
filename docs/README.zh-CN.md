@@ -217,8 +217,8 @@ ducker 提供：
   **续费**按钮。到期提醒通知也使用这个链接。没有此响应头时使用 `profile-web-page-url`。
 - **`ducker-global: off`** —— 隐藏“代理”页面上的 Global/Rules 开关；模式保持配置中的设定。
 - **`ducker-local-proxy: off`** —— 隧道启动时关闭配置中的本地端口（`mixed-port`、`port`、
-  `socks-port`、`redir-port`、`tproxy-port`）并忽略 `listeners`，手机上的其他应用因此无法在
-  `127.0.0.1` 上发现代理。配置本身不会被改写。响应头不能打开端口。它还会让“Wi-Fi 共享”保持关闭。
+  `socks-port`、`redir-port`、`tproxy-port`），忽略 `listeners`，也不启动 `dns.listen` 的 DNS
+  服务器，手机上的其他应用因此无法在 `127.0.0.1` 上发现代理或 DNS 服务器。配置本身不会被改写。响应头不能打开端口。它还会让“Wi-Fi 共享”保持关闭。
 - **`ducker-override-user: on | off`** —— 为服务商通过响应头下发的设置预留。应用会读取它，但目前
   没有任何效果。
 

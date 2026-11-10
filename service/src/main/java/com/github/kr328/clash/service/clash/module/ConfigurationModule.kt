@@ -107,7 +107,8 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                         override.tproxyPort = port
                         override.listeners = if (provider.localProxyOff) emptyList() else null
                         override.allowLan = null
-                        override.dns.listen = null
+                        // The header closes the config's DNS server too (D-462): "" leaves it without an address.
+                        override.dns.listen = if (provider.localProxyOff) "" else null
                         if (switched) override.mode = null
 
                         Clash.patchOverride(Clash.OverrideSlot.Session, override)
