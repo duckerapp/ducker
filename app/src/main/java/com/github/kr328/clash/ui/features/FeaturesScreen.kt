@@ -58,6 +58,7 @@ fun FeaturesScreen(
     onConnections: () -> Unit,
     onShare: (Boolean) -> Unit,
     onSharePassword: (Boolean) -> Unit,
+    onNewSharePassword: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -101,7 +102,7 @@ fun FeaturesScreen(
             )
         }
 
-        item { ShareCard(share, onShare, onSharePassword) }
+        item { ShareCard(share, onShare, onSharePassword, onNewSharePassword) }
     }
 }
 
@@ -110,7 +111,12 @@ fun FeaturesScreen(
  * each. The password's switch shows only on a Wi-Fi that is not the phone's own: there it never asks one.
  */
 @Composable
-private fun ShareCard(state: ShareState, onTurn: (Boolean) -> Unit, onPassword: (Boolean) -> Unit) {
+private fun ShareCard(
+    state: ShareState,
+    onTurn: (Boolean) -> Unit,
+    onPassword: (Boolean) -> Unit,
+    onNewPassword: () -> Unit,
+) {
     val usable = state.running && !state.closed
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -168,6 +174,22 @@ private fun ShareCard(state: ShareState, onTurn: (Boolean) -> Unit, onPassword: 
             if (state.locked) {
                 CopyRow(stringResource(R.string.share_login), state.login)
                 CopyRow(stringResource(R.string.share_secret), state.secret)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                        .clickable(role = Role.Button, onClick = onNewPassword)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.share_new_password),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Icon(Symbols.Refresh, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
 
             Text(

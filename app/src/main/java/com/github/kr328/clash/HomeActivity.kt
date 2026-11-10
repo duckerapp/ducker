@@ -1512,6 +1512,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             },
                             onShare = { shareViewModel.turn(it) },
                             onSharePassword = { shareViewModel.password(it) },
+                            onNewSharePassword = { shareViewModel.newPassword() },
                             onBack = closeFeatures,
                             modifier = layerModifier(listInsets),
                         )

@@ -238,6 +238,7 @@
     <string name="share_port">Port</string>
     <string name="share_login">Kullanıcı adı</string>
     <string name="share_secret">Parola</string>
+    <string name="share_new_password">Yeni parola</string>
     <string name="share_password">Parolayla giriş</string>
     <string name="share_password_hint">Olmadan bağlantı noktası bu ağdaki herkese açık olur</string>
     <string name="share_password_off">Bağlantı noktası bu Wi-Fi ağındaki herkese açık</string>

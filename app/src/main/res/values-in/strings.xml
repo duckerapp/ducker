@@ -237,6 +237,7 @@
     <string name="share_port">Port</string>
     <string name="share_login">Nama pengguna</string>
     <string name="share_secret">Kata sandi</string>
+    <string name="share_new_password">Kata sandi baru</string>
     <string name="share_password">Masuk dengan kata sandi</string>
     <string name="share_password_hint">Tanpa ini, port terbuka untuk semua orang di jaringan ini</string>
     <string name="share_password_off">Port terbuka untuk semua orang di Wi-Fi ini</string>

@@ -265,6 +265,7 @@
     <string name="share_port">Port</string>
     <string name="share_login">Login</string>
     <string name="share_secret">Password</string>
+    <string name="share_new_password">New password</string>
     <string name="share_password">Password sign-in</string>
     <string name="share_password_hint">Without it the port is open to everyone on this network</string>
     <string name="share_password_off">The port is open to everyone on this Wi-Fi</string>

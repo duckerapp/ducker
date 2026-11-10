@@ -238,6 +238,7 @@
     <string name="share_port">درگاه</string>
     <string name="share_login">نام کاربری</string>
     <string name="share_secret">گذرواژه</string>
+    <string name="share_new_password">گذرواژهٔ تازه</string>
     <string name="share_password">ورود با گذرواژه</string>
     <string name="share_password_hint">بدون آن، درگاه برای همهٔ این شبکه باز است</string>
     <string name="share_password_off">درگاه برای همهٔ این Wi-Fi باز است</string>

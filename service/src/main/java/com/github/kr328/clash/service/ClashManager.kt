@@ -282,6 +282,8 @@ class ClashManager(private val context: Context) : IClashManager,
         return queryShare()
     }
 
+    override suspend fun newSharePassword(): ShareState = ShareModule.active?.renew() ?: queryShare()
+
     override suspend fun queryMobile(): MobileState = MobileModule.state(context)
 
     override suspend fun setMobile(on: Boolean, profile: String, nodes: List<String>): MobileState {

@@ -117,6 +117,9 @@ interface IClashManager {
     /** The «Пароль» switch for a Wi-Fi that is not the phone's own, remembered (D-421). */
     suspend fun setSharePassword(on: Boolean): ShareState
 
+    /** «Новый пароль» (D-464): another random password; an open port reopens with it. */
+    suspend fun newSharePassword(): ShareState
+
     /** «Мобильная сеть» (D-423, D-424) for its page: the settings, the network now, the subscription Wi-Fi has. */
     suspend fun queryMobile(): MobileState
 

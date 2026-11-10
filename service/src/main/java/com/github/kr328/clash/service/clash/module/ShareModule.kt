@@ -142,6 +142,15 @@ class ShareModule(service: Service) : Module<Unit>(service) {
         state
     }
 
+    /** «Новый пароль» (D-464): reopened on the same port, so whoever came in with the old one is let go. */
+    suspend fun renew(): ShareState = lock.withLock {
+        store.shareSecret = ""
+
+        open?.let(::start)
+
+        state
+    }
+
     /** Something changed: the network the port is open on, or the subscription's provider. */
     private fun check() {
         val spot = open
@@ -208,7 +217,7 @@ class ShareModule(service: Service) : Module<Unit>(service) {
             ?.firstOrNull { it.address.isPrivateV4() }
             ?.let { "${it.address.hostAddress}/${it.networkPrefixLength}" }
 
-    /** Made once and kept: no 0, o, 1, l or i to misread on a TV. */
+    /** Made once and kept until «Новый пароль»: no 0, o, 1, l or i to misread on a TV. */
     private fun secret(): String = store.shareSecret.ifEmpty {
         val random = SecureRandom()
 

@@ -239,6 +239,7 @@
     <string name="share_port">Port</string>
     <string name="share_login">Identifiant</string>
     <string name="share_secret">Mot de passe</string>
+    <string name="share_new_password">Nouveau mot de passe</string>
     <string name="share_password">Connexion par mot de passe</string>
     <string name="share_password_hint">Sans elle, le port est ouvert à tous sur ce réseau</string>
     <string name="share_password_off">Le port est ouvert à tous sur ce Wi-Fi</string>

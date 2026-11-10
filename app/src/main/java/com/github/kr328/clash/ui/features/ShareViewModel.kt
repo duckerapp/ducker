@@ -49,6 +49,8 @@ class ShareViewModel : ViewModel() {
 
     fun password(on: Boolean) = act { setSharePassword(on) }
 
+    fun newPassword() = act { newSharePassword() }
+
     private fun act(call: suspend IClashManager.() -> ShareState) {
         epoch++
 

@@ -242,6 +242,7 @@
     <string name="share_port">المنفذ</string>
     <string name="share_login">اسم المستخدم</string>
     <string name="share_secret">كلمة المرور</string>
+    <string name="share_new_password">كلمة مرور جديدة</string>
     <string name="share_password">الدخول بكلمة مرور</string>
     <string name="share_password_hint">من دونه يكون المنفذ مفتوحًا للجميع على هذه الشبكة</string>
     <string name="share_password_off">المنفذ مفتوح للجميع على شبكة Wi-Fi هذه</string>
