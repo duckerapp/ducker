@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import com.github.kr328.clash.ui.components.BackFollow
 import com.github.kr328.clash.ui.components.BackLayer
 import com.github.kr328.clash.ui.components.SensitiveLock
 import androidx.annotation.StringRes
@@ -175,7 +176,11 @@ import com.github.kr328.clash.util.backgroundAllowed
 import com.github.kr328.clash.util.Vendor
 import com.github.kr328.clash.store.TipsStore
 import com.github.kr328.clash.store.AppStore
+import androidx.compose.animation.core.Animatable
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -473,7 +478,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 val closeBird = { showBird = false }
 
                 // С дальних вкладок «назад» — это свайп на соседнюю вкладку: лента едет
-                // ровно за пальцем, отпустил — доезжает (D-91). С главной — выход из
+                // за пальцем, отпустил — доезжает (D-91). С главной — выход из
                 // приложения, его рисует система. Экраны поверх вкладок ловят «назад»
                 // сами, в `BackLayer`.
                 PredictiveBackHandler(
@@ -485,19 +490,28 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         !showFeatures && !showConnections && !showMobile && !showShare && pagerState.settledPage != 0,
                 ) { events ->
                     val from = pagerState.settledPage
+                    // The finger's way, caught up by a spring as a screen's card is: by a curved edge it leapt (BackFollow).
+                    val way = Animatable(0f)
 
                     try {
                         var start = Float.NaN
                         var moved = 0f
 
                         pagerState.scroll {
-                            events.collect { event ->
-                                if (start.isNaN()) start = event.touchX
+                            coroutineScope {
+                                launch { snapshotFlow { way.value }.collect { moved -= scrollBy(-(it - moved)) } }
 
-                                val target = abs(event.touchX - start)
-                                    .coerceAtMost(pagerState.layoutInfo.pageSize.toFloat())
+                                events.collect { event ->
+                                    if (start.isNaN()) start = event.touchX
 
-                                moved -= scrollBy(-(target - moved))
+                                    val target = abs(event.touchX - start)
+                                        .coerceAtMost(pagerState.layoutInfo.pageSize.toFloat())
+
+                                    launch(start = CoroutineStart.UNDISPATCHED) { way.animateTo(target, BackFollow) }
+                                }
+
+                                // Released: the page goes on by itself from where it is.
+                                coroutineContext.cancelChildren()
                             }
                         }
 

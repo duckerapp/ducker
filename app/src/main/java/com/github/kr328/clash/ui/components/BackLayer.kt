@@ -5,7 +5,10 @@ import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -38,6 +41,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
 /**
@@ -77,7 +81,7 @@ fun BackLayer(
     // Ход жеста: 0 — экран на месте, 1 — палец дотянут до конца. От него — уменьшение,
     // углы и тень: по ним видно, что экран стал карточкой.
     val progress = remember { Animatable(0f) }
-    // Сдвиг карточки, пиксели: едет за пальцем один в один, как лента на вкладках.
+    // Сдвиг карточки, пиксели: догоняет палец пружиной [BackFollow].
     val offset = remember { Animatable(0f) }
     // Карточка уже уезжает — второй жест поверх неё не ловим.
     var leaving by remember { mutableStateOf(false) }
@@ -93,7 +97,10 @@ fun BackLayer(
                 fromLeft = it.swipeEdge == BackEventCompat.EDGE_LEFT
 
                 progress.snapTo(it.progress)
-                offset.snapTo((it.touchX - start).coerceIn(-width, width))
+
+                // Undispatched: the newest chase takes the offset at once, and the leave below takes it from the last.
+                val target = (it.touchX - start).coerceIn(-width, width)
+                scope.launch(start = CoroutineStart.UNDISPATCHED) { offset.animateTo(target, BackFollow) }
             }
 
             // Отпустил — карточка уезжает за край туда, куда её тянули, и только потом
@@ -216,6 +223,14 @@ private const val SHRINK = 0.08f
 private const val SCRIM = 0.2f
 private val ELEVATION = 16.dp
 private val CORNER = 32.dp
+
+/**
+ * How a card or the tabs follow the finger of a back gesture: by a spring, as the system already eases the gesture's
+ * progress, so the move and the shrink go together. One to one, the card leapt: by a curved edge (the OnePlus 12) the
+ * gesture starts at x 6 px and the finger is reported at 90 px 30 ms later, while the progress grew smoothly from 0 —
+ * a jump and a gap beside the card on a slow pull (F-457).
+ */
+internal val BackFollow: AnimationSpec<Float> = spring(stiffness = Spring.StiffnessMedium)
 
 /** Отпущенная карточка уезжает на ширину экрана с запасом — чтобы и тень ушла за край. */
 private const val LEAVE_DISTANCE = 1.15f
