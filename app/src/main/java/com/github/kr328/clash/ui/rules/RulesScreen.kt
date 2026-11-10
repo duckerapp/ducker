@@ -611,6 +611,8 @@ private fun KindPills(selected: UserRule.Type, onSelect: (UserRule.Type) -> Unit
  * Выбор приложения поиском: приложений сотни, листать все не хочется. Идущие мимо туннеля — с
  * замком и причиной: правило на них не сработает. У приложения с правилом видно, какое оно, —
  * новое его заменит (D-135).
+ *
+ * System apps show only with «Системные» beside the search, as on «Приложения».
  */
 @Composable
 private fun AppPicker(
@@ -630,16 +632,30 @@ private fun AppPicker(
         }
     }
     var query by remember { mutableStateOf("") }
+    var system by remember { mutableStateOf(false) }
     // «Готово» on a TV takes the frame to the first app found (D-377).
     val first = remember { FocusRequester() }
 
-    SheetField(
-        value = query,
-        onValue = { query = it },
-        placeholder = stringResource(R.string.rule_find_app),
-        enabled = true,
-        next = first,
-    )
+    // In the search's row: a row of its own would make the sheet taller, and «Добавить» went under its edge once.
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(KIND_PILL_GAP)) {
+        Box(Modifier.weight(1f)) {
+            SheetField(
+                value = query,
+                onValue = { query = it },
+                placeholder = stringResource(R.string.rule_find_app),
+                enabled = true,
+                next = first,
+            )
+        }
+
+        Pill(
+            text = stringResource(R.string.apps_system_short),
+            onClick = { system = !system },
+            selected = system,
+            role = Role.Switch,
+            fit = true,
+        )
+    }
 
     Box(Modifier.fillMaxWidth().height(PICKER_HEIGHT), contentAlignment = Alignment.Center) {
         val shown = apps
@@ -648,9 +664,11 @@ private fun AppPicker(
             CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
         } else {
             val needle = query.trim()
-            val filtered = remember(shown, needle) {
-                if (needle.isEmpty()) shown
-                else shown.filter { it.label.contains(needle, true) || it.packageName.contains(needle, true) }
+            val filtered = remember(shown, needle, system) {
+                shown.filter {
+                    (system || !it.system) &&
+                        (needle.isEmpty() || it.label.contains(needle, true) || it.packageName.contains(needle, true))
+                }
             }
 
             // A gap between the rows, or several marked one after another merge into one black block (D-326).
