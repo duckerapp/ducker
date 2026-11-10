@@ -192,12 +192,25 @@ private fun ShareCard(
                 }
             }
 
-            Text(
-                text = stringResource(R.string.share_how),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Column(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.share_how),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                // Android's proxy settings hold only an address and a port; apps give up on the login (D-463).
+                if (state.locked) {
+                    Text(
+                        text = stringResource(R.string.share_browser_only),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }

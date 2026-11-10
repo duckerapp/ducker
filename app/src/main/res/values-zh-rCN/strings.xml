@@ -238,6 +238,7 @@
     <string name="share_login">用户名</string>
     <string name="share_secret">密码</string>
     <string name="share_new_password">新密码</string>
+    <string name="share_browser_only">只有浏览器会询问密码：Android、电视和 Windows 没有填写密码的地方</string>
     <string name="share_password">密码验证</string>
     <string name="share_password_hint">关闭后，此网络中的任何人都能使用该端口</string>
     <string name="share_password_off">此 Wi-Fi 中的任何人都能使用该端口</string>

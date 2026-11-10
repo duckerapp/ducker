@@ -257,6 +257,7 @@
     <string name="share_login">Логин</string>
     <string name="share_secret">Пароль</string>
     <string name="share_new_password">Новый пароль</string>
+    <string name="share_browser_only">Пароль спросит только браузер: на Android, ТВ и Windows поля для него нет</string>
     <string name="share_password">Вход по паролю</string>
     <string name="share_password_hint">Без него порт открыт для всех в этой сети</string>
     <string name="share_password_off">Порт открыт для всех в этой сети Wi-Fi</string>

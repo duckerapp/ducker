@@ -238,6 +238,7 @@
     <string name="share_login">Tên đăng nhập</string>
     <string name="share_secret">Mật khẩu</string>
     <string name="share_new_password">Mật khẩu mới</string>
+    <string name="share_browser_only">Chỉ trình duyệt hỏi mật khẩu: Android, TV và Windows không có ô để nhập</string>
     <string name="share_password">Đăng nhập bằng mật khẩu</string>
     <string name="share_password_hint">Không có nó, cổng mở cho mọi người trong mạng này</string>
     <string name="share_password_off">Cổng đang mở cho mọi người trong Wi-Fi này</string>

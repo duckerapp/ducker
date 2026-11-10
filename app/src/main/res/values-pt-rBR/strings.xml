@@ -240,6 +240,7 @@
     <string name="share_login">Usuário</string>
     <string name="share_secret">Senha</string>
     <string name="share_new_password">Nova senha</string>
+    <string name="share_browser_only">Só um navegador pede a senha: Android, TVs e Windows não têm campo para ela</string>
     <string name="share_password">Acesso com senha</string>
     <string name="share_password_hint">Sem ele, a porta fica aberta para todos nesta rede</string>
     <string name="share_password_off">A porta está aberta para todos neste Wi-Fi</string>
