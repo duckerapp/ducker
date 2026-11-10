@@ -33,9 +33,14 @@ repository was closed; they are listed here for history. APK files are on the
 - The built-in template no longer opens a DNS server on `127.0.0.1:1053`: apps kept out of the VPN could find ducker
   through it and send queries through the server. A subscription from a list of links drops it at its next update.
   For providers: the `ducker-local-proxy: off` header closes a config's DNS server (`dns.listen`) too.
-- “Wi-Fi sharing”: “New password” makes another password at once, and devices with the old one are let go. With the
-  password on, the card says that only a browser asks for it. The card says the second device joins on the same
-  Wi-Fi or on the phone's hotspot, and turning sharing on or off no longer moves the icon and the switch.
+- “Wi-Fi sharing” has a page of its own, opened from “Features” like “Mobile network”. “New password” makes another
+  password at once, and devices with the old one are let go. With the password on, the page says that only a browser
+  asks for it. It says the second device joins on the same Wi-Fi or on the phone's hotspot.
+- On phones with curved screen edges a slow back gesture no longer makes the screen jump at its start: the screen and
+  the tabs follow the finger smoothly.
+- “My rules” → “App”: system apps are hidden behind a “System” pill, as in “Apps”.
+- The last group on “Proxies” and the last subscription stop at the same distance above the tab bar.
+- TV: the splash's duck and name fade before its background, so they no longer stay over Home for a moment.
 
 ## 0.4.47 — 2026-11-09
 

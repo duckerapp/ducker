@@ -301,7 +301,7 @@ instead: Home → "Features" → "Wi-Fi sharing".
 
 1. Connect the VPN.
 2. Connect the second device to the phone's hotspot, or put both on the same Wi-Fi.
-3. Turn on "Wi-Fi sharing". The card shows the IP and the port; a tap copies them.
+3. Turn on "Wi-Fi sharing" on its page. The page shows the IP and the port; a tap copies them.
 4. On the second device, set a manual proxy with that IP and port in the Wi-Fi network's settings:
    - Android: Wi-Fi → the network's settings → "Proxy" → "Manual" (sometimes under "Advanced options");
    - iPhone and iPad: Settings → Wi-Fi → ⓘ next to the network → "Configure Proxy" → "Manual";
@@ -309,7 +309,7 @@ instead: Home → "Features" → "Wi-Fi sharing".
    - macOS: System Settings → "Network" → Wi-Fi → "Details" → "Proxies".
 
 On the phone's own hotspot no password is asked: only people you told the hotspot's password can join it. On any
-other Wi-Fi the card also shows a login and a password, and "Password sign-in" is on, so that neighbours on a café's
+other Wi-Fi the page also shows a login and a password, and "Password sign-in" is on, so that neighbours on a café's
 Wi-Fi cannot use your VPN. The proxy settings of Android phones, TVs and Windows have no fields for a password, and
 only a browser asks for it. Connect such a device to the phone's hotspot, or turn "Password sign-in" off: the port is
 then open to everyone on that Wi-Fi.
