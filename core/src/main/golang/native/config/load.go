@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"net/netip"
@@ -10,6 +11,8 @@ import (
 	P "path"
 	"runtime"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"cfa/native/app"
 
@@ -230,7 +233,35 @@ func fakeIPCount(first, top netip.Addr) uint64 {
 	return binary.BigEndian.Uint64(b[8:]) - binary.BigEndian.Uint64(a[8:]) + 1
 }
 
+// A reset voids a load in flight (D-460). The stop resets the core without waiting for a load, and
+// parsing holds no lock: a config parsed across the reset would land over the default one and keep
+// its ports and timers with the VPN off. `hub.ApplyConfig` takes the executor's mux only for
+// itself, so the check before it needs a lock of its own.
+var (
+	applyLock sync.Mutex
+	resets    atomic.Uint64
+)
+
+var errReset = errors.New("a reset came during the load, the config is not applied")
+
+// applyUnlessReset applies cfg unless a reset came after generation was read.
+func applyUnlessReset(cfg *config.Config, generation uint64) bool {
+	applyLock.Lock()
+	defer applyLock.Unlock()
+
+	if resets.Load() != generation {
+		return false
+	}
+
+	// like hub.Parse()
+	hub.ApplyConfig(cfg)
+
+	return true
+}
+
 func Load(path string) error {
+	generation := resets.Load()
+
 	rawCfg, err := UnmarshalAndPatch(path)
 	if err != nil {
 		log.Errorln("Load %s: %s", path, err.Error())
@@ -249,8 +280,11 @@ func Load(path string) error {
 		return err
 	}
 
-	// like hub.Parse()
-	hub.ApplyConfig(cfg)
+	if !applyUnlessReset(cfg, generation) {
+		log.Warnln("Load %s: %s", path, errReset.Error())
+
+		return errReset
+	}
 
 	app.ApplySubtitlePattern(rawCfg.ClashForAndroid.UiSubtitlePattern)
 
@@ -265,5 +299,9 @@ func LoadDefault() {
 		panic(err.Error())
 	}
 
+	applyLock.Lock()
+	defer applyLock.Unlock()
+
+	resets.Add(1)
 	hub.ApplyConfig(cfg)
 }
