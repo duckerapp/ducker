@@ -939,9 +939,9 @@ dns:
   # nameserver-policy и правила, а не сравнение ответов. При пустом fallback
   # блок fallback-filter инертен, поэтому его здесь и нет.
   fallback: []
-  # 127.0.0.1, а не 0.0.0.0: при TUN внешняя привязка не нужна,
-  # а на публичном Wi-Fi открытый резолвер видно сканированием.
-  listen: 127.0.0.1:1053
+  # No `listen` on purpose (D-462): the tunnel's DNS hijack answers through the core's resolver, not
+  # through this server. An open 127.0.0.1:1053 would show the apps kept out of the VPN a mihomo client
+  # (ordinary names answered with 198.18.x.x) and let them query through the node.
   prefer-h3: false
   fake-ip-range: 198.18.0.1/16
   # respect-rules НЕ включаем (config/config.go, parseDNS -> parseNameServer).
