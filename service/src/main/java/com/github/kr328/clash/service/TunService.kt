@@ -144,6 +144,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                     // An app the filter names was installed with the tunnel up: the interface was built without
                     // it, so it is on the wrong side until rebuilt (D-454). Open connections break once.
                     installs.onEvent { installed ->
+                        val now = isLockdownEnabled
+
                         val rebuilt = synchronized(openLock) {
                             val named = installed.namedBy(
                                 PackageFilter.decide(
@@ -151,15 +153,29 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                                 )
                             )
 
-                            if (named.isNotEmpty()) {
-                                Log.i("An app the filter names was installed: rebuilding the interface")
+                            when {
+                                named.isEmpty() -> false
 
-                                installedLate += named
+                                // While Android swaps the old network for the new one, no rule sends the apps
+                                // into a tunnel for tens of milliseconds, and what they send then leaves with the
+                                // phone's own address (F-446). Its lockdown drops those packets instead, so only
+                                // under it is the rebuild done; otherwise the app waits for the next connect.
+                                !now -> {
+                                    Log.i("An app the filter names was installed: no lockdown, it waits for the next connect")
 
-                                tun.open(lockdownApplied)
+                                    false
+                                }
+
+                                else -> {
+                                    Log.i("An app the filter names was installed: rebuilding the interface")
+
+                                    installedLate += named
+
+                                    tun.open(now)
+
+                                    true
+                                }
                             }
-
-                            named.isNotEmpty()
                         }
 
                         if (rebuilt) sendClashStarted()

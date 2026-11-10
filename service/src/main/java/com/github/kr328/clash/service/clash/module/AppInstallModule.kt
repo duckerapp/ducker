@@ -12,7 +12,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * Android works out who goes through the tunnel when the interface is built, so an app the filter names — a bank
  * from the provider's exclusions — went through the tunnel until the next connect. This module only reports the new
  * packages Android tells of, joined when they come in a row; whether the interface is rebuilt for them, the service
- * decides with [namedBy].
+ * decides with [namedBy] — and only under Android's lockdown, where the rebuild cannot let packets past the tunnel.
  */
 class AppInstallModule(service: Service) : Module<Set<String>>(service) {
     override suspend fun run() {
