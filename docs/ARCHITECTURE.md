@@ -114,7 +114,8 @@ published by `.github/workflows/pages.yaml`.
 - **Binder implementations:** `ClashManager` (the core) and `ProfileManager` (profiles).
   `ProfileProcessor` downloads, validates and commits a profile.
 - **`clash/ClashRuntime.kt`** with `clash/module/*Module.kt`: `Tun`, `Configuration`,
-  `NetworkObserve`, `AppListCache`, `StaticNotification`, `DynamicNotification`, `Lockdown`,
+  `NetworkObserve`, `AppListCache`, `AppInstall` (an app the filter names, installed while the tunnel is up: the
+  interface is rebuilt for it), `StaticNotification`, `DynamicNotification`, `Lockdown`,
   `Suspend`, `TimeZone`, `Close`, `Share` (Wi-Fi sharing: the phone's address on its hotspot or Wi-Fi, off when
   that network changes).
 - **`data/`** — Room: `Imported`, `Pending`, `Selection` with DAOs and `migrations/`.

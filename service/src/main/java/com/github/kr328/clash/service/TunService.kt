@@ -44,6 +44,14 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     /** `elapsedRealtime` of [onCreate]: the connect's timing line counts from it (D-454). */
     private var createdAt = 0L
 
+    /**
+     * Apps the filter names that were installed while this tunnel is up, once for each install; [openLock] guards it.
+     * Android works out the tunnel's uid ranges anew only when `establish()` is given another list of names than the
+     * last time: the same names are a seamless handover that keeps the old ranges, so the new app stayed on the wrong
+     * side (F-445). Naming these once more makes the list differ.
+     */
+    private val installedLate = ArrayList<String>()
+
     private val runtime = clashRuntime {
         val store = ServiceStore(self)
 
@@ -92,6 +100,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         try {
             synchronized(openLock) { tun.open(resetMs = resetMs) }
 
+            // After the first build: it has every app installed before it, only a later install matters (D-454).
+            val installs = install(AppInstallModule(self))
+
             tunOpened.set(true)
 
             // В самописец: «постоянный VPN» и блокировка без VPN меняют маршруты (F-110).
@@ -127,6 +138,31 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                             // предупреждение о приложениях без сети.
                             sendClashStarted()
                         }
+
+                        false
+                    }
+                    // An app the filter names was installed with the tunnel up: the interface was built without
+                    // it, so it is on the wrong side until rebuilt (D-454). Open connections break once.
+                    installs.onEvent { installed ->
+                        val rebuilt = synchronized(openLock) {
+                            val named = installed.namedBy(
+                                PackageFilter.decide(
+                                    store.accessControlMode, store.accessControlPackages, builtWith ?: ProfileNetwork()
+                                )
+                            )
+
+                            if (named.isNotEmpty()) {
+                                Log.i("An app the filter names was installed: rebuilding the interface")
+
+                                installedLate += named
+
+                                tun.open(lockdownApplied)
+                            }
+
+                            named.isNotEmpty()
+                        }
+
+                        if (rebuilt) sendClashStarted()
 
                         false
                     }
@@ -234,12 +270,11 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         if (allowed != null) {
             val asked = allowed + packageName
+            val accepted = asked.count { runCatching { builder.addAllowedApplication(it) }.isSuccess }
 
-            return Filtered(
-                asked.count { runCatching { builder.addAllowedApplication(it) }.isSuccess },
-                asked.size,
-                outside = true,
-            )
+            installedLate.forEach { if (it in asked) runCatching { builder.addAllowedApplication(it) } }
+
+            return Filtered(accepted, asked.size, outside = true)
         }
 
         // В списке провайдера сотни пакетов, а стоит из них горстка: считаем только те,
@@ -247,6 +282,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         // The Builder takes a name that is not installed as well (F-445), so the count is every name asked.
         val asked = decision.denied - packageName
         val accepted = asked.count { runCatching { builder.addDisallowedApplication(it) }.isSuccess }
+
+        installedLate.forEach { if (it in asked) runCatching { builder.addDisallowedApplication(it) } }
 
         return Filtered(accepted, asked.size, outside = accepted > 0)
     }
