@@ -114,25 +114,26 @@ private fun ShareCard(state: ShareState, onTurn: (Boolean) -> Unit, onPassword: 
     val usable = state.running && !state.closed
 
     Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth()
                 .toggleable(value = state.on, enabled = usable, role = Role.Switch, onValueChange = onTurn)
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            ToolIcon(Symbols.WifiTethering)
+            // The status changes its length with the state; under the row it moves neither the icon nor the switch (D-464).
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ToolIcon(Symbols.WifiTethering)
 
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.share), style = MaterialTheme.typography.titleSmall)
-                Text(
-                    text = stringResource(shareStatus(state)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (state.stopped != null && !state.on) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text(stringResource(R.string.share), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+
+                Switch(checked = state.on, onCheckedChange = null, enabled = usable)
             }
 
-            Switch(checked = state.on, onCheckedChange = null, enabled = usable)
+            Text(
+                text = stringResource(shareStatus(state)),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (state.stopped != null && !state.on) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 36.dp),
+            )
         }
 
         if (!state.on) return@Card
