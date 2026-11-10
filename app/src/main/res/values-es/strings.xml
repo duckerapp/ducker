@@ -227,7 +227,7 @@
     <string name="connections_unknown_app">Aplicación desconocida</string>
     <string name="connections_shared">Compartir · %1$s</string>
     <string name="share">Compartir por Wi-Fi</string>
-    <string name="share_hint">Internet por la VPN para un portátil y otros dispositivos</string>
+    <string name="share_hint">Internet por la VPN para dispositivos en la misma Wi-Fi o en el punto de acceso de este teléfono</string>
     <string name="share_needs_vpn">Funciona mientras la VPN está activada</string>
     <string name="share_closed">El proveedor de la suscripción desactivó el uso compartido</string>
     <string name="share_network_changed">Se desactivó: cambió la red</string>

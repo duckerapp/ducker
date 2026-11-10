@@ -225,7 +225,7 @@
     <string name="connections_unknown_app">Ứng dụng không xác định</string>
     <string name="connections_shared">Chia sẻ · %1$s</string>
     <string name="share">Chia sẻ qua Wi-Fi</string>
-    <string name="share_hint">Internet qua VPN cho laptop và thiết bị khác</string>
+    <string name="share_hint">Internet qua VPN cho thiết bị trong cùng mạng Wi-Fi hoặc trên điểm phát sóng của điện thoại này</string>
     <string name="share_needs_vpn">Hoạt động khi VPN đang bật</string>
     <string name="share_closed">Nhà cung cấp gói đã tắt chia sẻ</string>
     <string name="share_network_changed">Đã tắt: mạng đã thay đổi</string>

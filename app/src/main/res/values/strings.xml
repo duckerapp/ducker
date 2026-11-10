@@ -253,7 +253,7 @@
     <string name="connections_unknown_app">Unknown app</string>
     <string name="connections_shared">Sharing · %1$s</string>
     <string name="share">Wi-Fi sharing</string>
-    <string name="share_hint">VPN internet for a laptop and other devices</string>
+    <string name="share_hint">VPN internet for devices on the same Wi-Fi or on this phone\'s hotspot</string>
     <string name="share_needs_vpn">Works while the VPN is on</string>
     <string name="share_closed">The subscription\'s provider turned sharing off</string>
     <string name="share_network_changed">Turned off: the network changed</string>

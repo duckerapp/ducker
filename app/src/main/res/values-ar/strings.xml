@@ -230,7 +230,7 @@
     <string name="connections_unknown_app">تطبيق غير معروف</string>
     <string name="connections_shared">مشاركة · %1$s</string>
     <string name="share">المشاركة عبر Wi-Fi</string>
-    <string name="share_hint">إنترنت عبر VPN للحاسوب المحمول والأجهزة الأخرى</string>
+    <string name="share_hint">إنترنت عبر VPN للأجهزة على شبكة Wi-Fi نفسها أو على نقطة اتصال هذا الهاتف</string>
     <string name="share_needs_vpn">يعمل ما دامت VPN مفعّلة</string>
     <string name="share_closed">أوقف مزوّد الاشتراك المشاركة</string>
     <string name="share_network_changed">توقّفت: تغيّرت الشبكة</string>

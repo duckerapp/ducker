@@ -225,7 +225,7 @@
     <string name="connections_unknown_app">Aplikasi tidak dikenal</string>
     <string name="connections_shared">Berbagi · %1$s</string>
     <string name="share">Berbagi lewat Wi-Fi</string>
-    <string name="share_hint">Internet lewat VPN untuk laptop dan perangkat lain</string>
+    <string name="share_hint">Internet lewat VPN untuk perangkat di Wi-Fi yang sama atau di hotspot ponsel ini</string>
     <string name="share_needs_vpn">Berfungsi selama VPN aktif</string>
     <string name="share_closed">Penyedia langganan menonaktifkan berbagi</string>
     <string name="share_network_changed">Dimatikan: jaringan berubah</string>

@@ -225,7 +225,7 @@
     <string name="connections_unknown_app">未知应用</string>
     <string name="connections_shared">共享 · %1$s</string>
     <string name="share">Wi-Fi 共享</string>
-    <string name="share_hint">让笔记本和其他设备通过 VPN 上网</string>
+    <string name="share_hint">让同一 Wi-Fi 或本机热点上的设备通过 VPN 上网</string>
     <string name="share_needs_vpn">VPN 开启时可用</string>
     <string name="share_closed">订阅提供商已关闭共享</string>
     <string name="share_network_changed">已关闭：网络已变化</string>
