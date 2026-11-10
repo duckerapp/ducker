@@ -199,7 +199,10 @@ fun ProxyScreen(
     // стоит на нём; ушло за край — выезжает при прокрутке вверх и уезжает при прокрутке вниз.
     val density = LocalDensity.current
     var viewportHeight by remember { mutableIntStateOf(0) }
-    val bottomPaddingPx = with(density) { (16.dp + contentPadding.calculateBottomPadding()).roundToPx() }
+    // 16 dp to the dock, as on «Подписки», whose last card carries its own 12 dp gap: the dock floats 12 dp above
+    // the room the scaffold keeps for it (`DuckerScaffold`), and 16 alone left 4 dp.
+    val bottomPadding = 28.dp + contentPadding.calculateBottomPadding()
+    val bottomPaddingPx = with(density) { bottomPadding.roundToPx() }
     val search = remember(density) { FloatingSearch(with(density) { 8.dp.toPx() }) }
     var searchHeight by remember { mutableFloatStateOf(with(density) { 48.dp.toPx() }) }
     // Анимация читается только при раскладке и отрисовке строки: смена «показать/спрятать»
@@ -254,7 +257,7 @@ fun ProxyScreen(
                     start = start,
                     end = end,
                     top = 16.dp + contentPadding.calculateTopPadding(),
-                    bottom = 16.dp + contentPadding.calculateBottomPadding(),
+                    bottom = bottomPadding,
                 ),
             ) {
                 item {
