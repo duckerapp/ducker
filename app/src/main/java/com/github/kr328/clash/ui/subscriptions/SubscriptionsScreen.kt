@@ -327,7 +327,9 @@ fun SubscriptionsScreen(
                 start = start,
                 end = end,
                 top = 16.dp + contentPadding.calculateTopPadding(),
-                bottom = 16.dp + contentPadding.calculateBottomPadding(),
+                // 16 dp to the dock, as on «Прокси»: the dock floats 12 dp above the room the scaffold keeps for it
+                // (`DuckerScaffold`), and the last row brings its own [ROW_GAP].
+                bottom = 28.dp - ROW_GAP + contentPadding.calculateBottomPadding(),
             ),
         ) {
             item(key = HEADER_KEY) {
