@@ -25,9 +25,9 @@ repository was closed; they are listed here for history. APK files are on the
   very first download, so a provider's token in them works at once.
 - A phone or TV whose model name contains unusual characters no longer fails every subscription request.
 - TV: “Features” is a round button under the dock, so it always fits on the screen.
-- An app from the provider's exclusion list or from your choice in “Apps”, installed while the VPN is on, takes its
-  place at once — past the tunnel or through it — instead of at the next connect. Open connections reconnect once
-  at that moment.
+- With Android's “Block connections without VPN” on, an app from the provider's exclusion list or from your choice
+  in “Apps”, installed while the VPN is on, takes its place at once — past the tunnel or through it — instead of at
+  the next connect. Open connections reconnect once at that moment.
 
 ## 0.4.47 — 2026-11-09
 
