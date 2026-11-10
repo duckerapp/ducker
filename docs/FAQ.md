@@ -301,7 +301,7 @@ instead: Home → "Features" → "Wi-Fi sharing".
 
 1. Connect the VPN.
 2. Connect the second device to the phone's hotspot, or put both on the same Wi-Fi.
-3. Turn on "Wi-Fi sharing" on its page. The page shows the IP and the port; a tap copies them.
+3. On its page, tap "Turn on sharing". The IP and the port appear; a tap copies them.
 4. On the second device, set a manual proxy with that IP and port in the Wi-Fi network's settings:
    - Android: Wi-Fi → the network's settings → "Proxy" → "Manual" (sometimes under "Advanced options");
    - iPhone and iPad: Settings → Wi-Fi → ⓘ next to the network → "Configure Proxy" → "Manual";
