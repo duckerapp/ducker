@@ -319,7 +319,8 @@ connection of their own go past it — straight through the phone's internet, wi
 a VPN client on the second device that sends all its traffic to this port as a SOCKS5 proxy; UDP goes through too.
 
 The sharing turns itself off when its network changes — the Wi-Fi is lost or another one is joined, the hotspot is
-turned off — and when the VPN stops. One tap turns it on again; the port and the password stay the same. A provider
+turned off — and when the VPN stops. One tap turns it on again; the port and the password stay the same. "New
+password" on the card makes another one at once, and a device with the old one has to be set up again. A provider
 can turn sharing off for its subscription, and the card then says so.
 
 <!-- Sources: the strings share_*; the card — ui/features/FeaturesScreen.kt (ShareCard); when it goes off —

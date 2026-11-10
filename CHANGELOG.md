@@ -33,6 +33,9 @@ repository was closed; they are listed here for history. APK files are on the
 - The built-in template no longer opens a DNS server on `127.0.0.1:1053`: apps kept out of the VPN could find ducker
   through it and send queries through the server. A subscription from a list of links drops it at its next update.
   For providers: the `ducker-local-proxy: off` header closes a config's DNS server (`dns.listen`) too.
+- “Wi-Fi sharing”: “New password” makes another password at once, and devices with the old one are let go. With the
+  password on, the card says that only a browser asks for it. The card says the second device joins on the same
+  Wi-Fi or on the phone's hotspot, and turning sharing on or off no longer moves the icon and the switch.
 
 ## 0.4.47 — 2026-11-09
 
