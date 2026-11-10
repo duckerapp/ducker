@@ -4,6 +4,8 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.net.ProxyInfo
 import android.net.VpnService
+import android.os.ParcelFileDescriptor
+import android.os.SystemClock
 import com.github.kr328.clash.common.compat.pendingIntentFlags
 import com.github.kr328.clash.common.constants.Components
 import com.github.kr328.clash.common.log.Log
@@ -24,6 +26,7 @@ import com.github.kr328.clash.service.util.sendClashStopped
 import kotlinx.coroutines.*
 import kotlinx.coroutines.selects.select
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.measureTime
 
 class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.Default) {
     private val self: TunService
@@ -37,6 +40,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     /** The subscription's `tun` values the interface was built with; [openLock] guards both. */
     private var builtWith: ProfileNetwork? = null
     private val openLock = Any()
+
+    /** `elapsedRealtime` of [onCreate]: the connect's timing line counts from it (D-454). */
+    private var createdAt = 0L
 
     private val runtime = clashRuntime {
         val store = ServiceStore(self)
@@ -84,7 +90,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         install(MobileModule(self) { config.ready })
 
         try {
-            synchronized(openLock) { tun.open() }
+            synchronized(openLock) { tun.open(resetMs = resetMs) }
 
             tunOpened.set(true)
 
@@ -148,6 +154,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             return stopSelf()
 
         StatusProvider.serviceRunning = true
+        createdAt = SystemClock.elapsedRealtime()
 
         // Причина прошлой остановки к новому подъёму не относится (D-227).
         StopNotice.clear(this)
@@ -218,25 +225,34 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
      * отменяет его: список провайдера нужен, чтобы банковские и госприложения видели сеть
      * без VPN, и молча его терять нельзя.
      *
-     * Возвращает, осталось ли хоть одно приложение мимо туннеля.
+     * Returns what the system took of the list.
      */
-    private fun applyPackageFilter(builder: Builder, store: ServiceStore, profile: ProfileNetwork): Boolean {
+    private fun applyPackageFilter(builder: Builder, store: ServiceStore, profile: ProfileNetwork): Filtered {
         val decision = PackageFilter.decide(store.accessControlMode, store.accessControlPackages, profile)
 
         val allowed = decision.allowed
 
         if (allowed != null) {
-            (allowed + packageName).forEach { runCatching { builder.addAllowedApplication(it) } }
+            val asked = allowed + packageName
 
-            return true
+            return Filtered(
+                asked.count { runCatching { builder.addAllowedApplication(it) }.isSuccess },
+                asked.size,
+                outside = true,
+            )
         }
 
         // В списке провайдера сотни пакетов, а стоит из них горстка: считаем только те,
         // что система приняла.
-        return (decision.denied - packageName).count {
-            runCatching { builder.addDisallowedApplication(it) }.isSuccess
-        } > 0
+        // The Builder takes a name that is not installed as well (F-445), so the count is every name asked.
+        val asked = decision.denied - packageName
+        val accepted = asked.count { runCatching { builder.addDisallowedApplication(it) }.isSuccess }
+
+        return Filtered(accepted, asked.size, outside = accepted > 0)
     }
+
+    /** How many of the [asked] names the system [accepted]; [outside] — some app is left past the tunnel. */
+    private class Filtered(val accepted: Int, val asked: Int, val outside: Boolean)
 
     /**
      * The interface takes the subscription's `tun` values — app lists, excluded routes, stack, DNS (F-69) — and a
@@ -261,14 +277,19 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         sendClashStarted()
     }
 
-    private fun TunModule.open(lockdown: Boolean = false) {
+    /** [resetMs] — the core's reset before a connect; null for a rebuild of a running tunnel. */
+    private fun TunModule.open(lockdown: Boolean = false, resetMs: Long? = null) {
+        val started = SystemClock.elapsedRealtime()
         val store = ServiceStore(self)
 
         // Раздел `tun:` профиля ядро на Android не применяет — интерфейс создаём мы,
         // поэтому списки пакетов и признак отключённого DNS читаем сами (F-69).
-        val profile = store.activeProfile
-            ?.let { Clash.queryProfileNetwork(self.importedDir.resolve(it.toString()).absolutePath) }
-            ?: ProfileNetwork()
+        val profile: ProfileNetwork
+        val profileMs = measureTime {
+            profile = store.activeProfile
+                ?.let { Clash.queryProfileNetwork(self.importedDir.resolve(it.toString()).absolutePath) }
+                ?: ProfileNetwork()
+        }.inWholeMilliseconds
 
         // В режиме «Блокировать соединения без VPN» система режет всё, что идёт мимо
         // туннеля (F-110): исключённые из маршрутов адреса — и домашняя сеть в первую
@@ -277,6 +298,10 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         // есть, а сокеты ядра блокировка не трогает.
         lockdownApplied = lockdown
         builtWith = profile.tunValues()
+
+        val filtered: Filtered
+        val filterMs: Long
+        val establishMs: Long
 
         val device = with(Builder()) {
             // Interface address
@@ -328,7 +353,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             }
 
             // Access Control
-            store.lockdownOffline = applyPackageFilter(this, store, profile) && lockdown
+            filterMs = measureTime { filtered = applyPackageFilter(this, store, profile) }.inWholeMilliseconds
+            store.lockdownOffline = filtered.outside && lockdown
 
             // Blocking
             setBlocking(false)
@@ -381,8 +407,11 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                 allowBypass()
             }
 
+            val descriptor: ParcelFileDescriptor?
+            establishMs = measureTime { descriptor = establish() }.inWholeMilliseconds
+
             TunModule.TunDevice(
-                fd = establish()?.detachFd()
+                fd = descriptor?.detachFd()
                     ?: throw NullPointerException(Failure.VPN_REJECTED),
                 // Пока человек не выбрал стек, решает `tun.stack` провайдера (D-56);
                 // выбрал — его выбор главнее, иначе настройка была бы декоративной (D-86).
@@ -403,7 +432,17 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             )
         }
 
-        attach(device)
+        val coreMs = measureTime { attach(device) }.inWholeMilliseconds
+
+        // Where a connect's time goes (D-454). The total of a connect counts from the service's creation, so what the
+        // parts leave out shows as the difference. Numbers only: no addresses, no package names (invariant 4).
+        val total = SystemClock.elapsedRealtime() - if (resetMs != null) createdAt else started
+
+        Log.i(
+            (if (resetMs != null) "Connect $total ms: reset $resetMs, " else "Rebuild $total ms: ") +
+                    "profile $profileMs, apps $filterMs (accepted ${filtered.accepted} of ${filtered.asked}), " +
+                    "establish $establishMs, core $coreMs"
+        )
 
         // Про блокировку система отвечает только тому, у кого туннель уже поднят: до
         // establish() ответ всегда «нет». Поэтому поднимаемся как обычно и, если режим

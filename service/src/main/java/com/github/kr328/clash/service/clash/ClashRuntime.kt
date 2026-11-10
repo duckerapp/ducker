@@ -6,10 +6,14 @@ import com.github.kr328.clash.service.clash.module.Module
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.time.measureTime
 
 private val globalLock = Mutex()
 
 interface ClashRuntimeScope {
+    /** How long the core's reset before this start took: part of the connect's timing line (D-454). */
+    val resetMs: Long
+
     fun <E, T : Module<E>> install(module: T): T
 }
 
@@ -26,10 +30,12 @@ fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): Cl
                     Log.d("ClashRuntime: initialize")
 
                     try {
-                        Clash.reset()
+                        val reset = measureTime { Clash.reset() }.inWholeMilliseconds
                         Clash.clearOverride(Clash.OverrideSlot.Session)
 
                         val scope = object : ClashRuntimeScope {
+                            override val resetMs = reset
+
                             override fun <E, T : Module<E>> install(module: T): T {
                                 // Each module runs in a coroutine of its own, on several threads at
                                 // once: nothing may be shared here without a guard. A plain list of
