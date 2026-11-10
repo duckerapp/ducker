@@ -226,6 +226,7 @@
     <string name="connections_unknown_app">Bilinmeyen uygulama</string>
     <string name="connections_shared">Paylaşım · %1$s</string>
     <string name="share">Wi-Fi ile paylaşım</string>
+    <string name="share_switch">Paylaşımı aç</string>
     <string name="share_hint">Aynı Wi-Fi ağındaki veya bu telefonun erişim noktasındaki cihazlar için VPN üzerinden internet</string>
     <string name="share_needs_vpn">VPN açıkken çalışır</string>
     <string name="share_closed">Abonelik sağlayıcısı paylaşımı kapattı</string>

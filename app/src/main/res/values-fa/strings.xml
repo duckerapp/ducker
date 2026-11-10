@@ -226,6 +226,7 @@
     <string name="connections_unknown_app">برنامهٔ ناشناخته</string>
     <string name="connections_shared">اشتراک · %1$s</string>
     <string name="share">اشتراک‌گذاری با Wi-Fi</string>
+    <string name="share_switch">روشن کردن اشتراک‌گذاری</string>
     <string name="share_hint">اینترنت از راه VPN برای دستگاه‌های روی همین Wi-Fi یا هات‌اسپات این گوشی</string>
     <string name="share_needs_vpn">تا وقتی VPN روشن است کار می‌کند</string>
     <string name="share_closed">ارائه‌دهندهٔ اشتراک، اشتراک‌گذاری را بسته است</string>

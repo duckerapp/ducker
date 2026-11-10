@@ -244,6 +244,7 @@
     <string name="connections_unknown_app">Неизвестное приложение</string>
     <string name="connections_shared">Раздача · %1$s</string>
     <string name="share">Раздача по Wi-Fi</string>
+    <string name="share_switch">Включить раздачу</string>
     <string name="share_hint">Интернет через VPN для устройств в той же Wi-Fi или на точке доступа телефона</string>
     <string name="share_needs_vpn">Работает, пока включён VPN</string>
     <string name="share_closed">Провайдер подписки закрыл раздачу</string>

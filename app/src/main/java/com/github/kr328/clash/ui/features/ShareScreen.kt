@@ -66,30 +66,47 @@ fun ShareScreen(
     ) {
         item { ScreenHeader(stringResource(R.string.share), onBack = onBack) }
 
+        // One line, so the status under it moves nothing in the card (D-464).
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
                     .toggleable(value = state.on, enabled = usable, role = Role.Switch, onValueChange = onTurn),
             ) {
-                Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    // The status changes its length with the state; under the row it moves neither the icon nor the
-                    // switch (D-464).
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(Symbols.WifiTethering, contentDescription = null, modifier = Modifier.size(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Symbols.WifiTethering, contentDescription = null, modifier = Modifier.size(24.dp))
 
-                        Text(stringResource(R.string.share), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.share_switch), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
 
-                        Switch(checked = state.on, onCheckedChange = null, enabled = usable)
-                    }
-
-                    Text(
-                        text = stringResource(shareStatus(state)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (state.stopped != null && !state.on) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 36.dp),
-                    )
+                    Switch(checked = state.on, onCheckedChange = null, enabled = usable)
                 }
+            }
+        }
+
+        // Under the card, not in it (D-467): why the switch is grey or sharing stopped, and once on, what it gives.
+        // Off and ready, nothing — the row on «Возможности» has just said it.
+        val note = when {
+            !state.running -> R.string.share_needs_vpn
+            state.closed -> R.string.share_closed
+            state.on -> R.string.share_hint
+            state.stopped == ShareState.Stop.NetworkChanged -> R.string.share_network_changed
+            state.stopped == ShareState.Stop.NoNetwork -> R.string.share_no_network
+            state.stopped == ShareState.Stop.Failed -> R.string.share_failed
+            else -> null
+        }
+
+        if (note != null) {
+            item {
+                Text(
+                    text = stringResource(note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (state.stopped != null && !state.on) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
             }
         }
 
@@ -167,7 +184,7 @@ fun ShareScreen(
     }
 }
 
-/** The state in a few words: under the page's switch and in the row on «Возможности». */
+/** The state in a few words, for the row on «Возможности». */
 internal fun shareStatus(state: ShareState): Int = when {
     !state.running -> R.string.share_needs_vpn
     state.closed -> R.string.share_closed
