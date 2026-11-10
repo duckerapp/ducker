@@ -28,6 +28,8 @@ repository was closed; they are listed here for history. APK files are on the
 - With Android's “Block connections without VPN” on, an app from the provider's exclusion list or from your choice
   in “Apps”, installed while the VPN is on, takes its place at once — past the tunnel or through it — instead of at
   the next connect. Open connections reconnect once at that moment.
+- Turning the VPN off while it is still connecting, or while the subscription reloads, no longer leaves the
+  subscription running with the VPN off: its local ports open, its node checks and updates going out directly.
 
 ## 0.4.47 — 2026-11-09
 
