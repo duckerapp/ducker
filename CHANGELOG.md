@@ -12,6 +12,11 @@ repository was closed; they are listed here for history. APK files are on the
 
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
+
+## 0.4.49 — 2026-11-11
+
+- TV: any phone's camera can send a subscription, with or without ducker on the phone. The code on the TV opens a
+  page in the phone's browser: paste the link, and it goes to the TV encrypted.
 - Android 8 and 9 are supported, so ducker runs on older TVs and boxes too. There the wallpaper colours need Android
   8.1, and “System proxy” is not offered: Android lets a VPN set one from Android 10.
 - With “Protect subscription” on, the QR code can be screenshotted once your fingerprint, face or PIN has opened it.
@@ -25,6 +30,8 @@ repository was closed; they are listed here for history. APK files are on the
   they read “Provider's choice” or “Changed by you”, and a second tap returns the provider's choice. In My rules such
   an app can take a rule, which brings it into the VPN; removing the rule returns the provider's choice. Providers
   keep them locked with `ducker-override-user: on`, and an update that brings it drops the user's changes.
+- A phone turned sideways keeps the navigation dock at the side, and on Android 10–14 the window reaches the camera
+  cutout and the status bar changes colour with the theme.
 
 ## 0.4.48 — 2026-11-11
 
