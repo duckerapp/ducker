@@ -38,6 +38,8 @@ data class ConnectionRow(
     val start: Long,
     /** Gone from the core: it stays on the page, dimmed, so a short one can still be read and tapped. */
     val closed: Boolean = false,
+    /** Marked on the card: most are TCP, so only UDP — calls, games, QUIC — is named. */
+    val udp: Boolean = false,
 )
 
 data class ConnectionsState(

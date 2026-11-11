@@ -207,12 +207,28 @@ private fun ConnectionCard(row: ConnectionRow, onClick: () -> Unit, modifier: Mo
                     )
                 }
 
-                Text(
-                    text = if (row.port == 443 || row.port == 80 || row.port == 0) row.site else "${row.site}:${row.port}",
-                    style = MaterialTheme.typography.bodyMedium.machine(),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = if (row.port == 443 || row.port == 80 || row.port == 0) row.site else "${row.site}:${row.port}",
+                        style = MaterialTheme.typography.bodyMedium.machine(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+
+                    if (row.udp) {
+                        Text(
+                            text = "UDP",
+                            style = MaterialTheme.typography.labelSmall.machine(),
+                            color = scheme.onSurfaceVariant,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(scheme.surfaceVariant)
+                                .padding(horizontal = 6.dp, vertical = 1.dp),
+                        )
+                    }
+                }
 
                 if (row.route.isNotEmpty()) {
                     Text(
