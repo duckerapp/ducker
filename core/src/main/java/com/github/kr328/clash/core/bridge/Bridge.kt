@@ -29,6 +29,7 @@ object Bridge {
     external fun nativeStopShare()
     external fun nativeQueryConnections(): String
     external fun nativeCloseAllConnections()
+    external fun nativeCloseConnections(ids: String)
     external fun nativeHealthCheckAuto()
     external fun nativeResetMux()
     external fun nativeProbeMux()

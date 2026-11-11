@@ -203,6 +203,16 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeCloseAllConnections(JNIEnv 
 }
 
 JNIEXPORT void JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeCloseConnections(JNIEnv *env, jobject thiz,
+                                                                     jstring ids) {
+    TRACE_METHOD();
+
+    scoped_string _ids = get_string(ids);
+
+    closeConnections(_ids);
+}
+
+JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeHealthCheckAuto(JNIEnv *env, jobject thiz) {
     TRACE_METHOD();
 

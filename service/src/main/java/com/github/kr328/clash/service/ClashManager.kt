@@ -269,6 +269,10 @@ class ClashManager(private val context: Context) : IClashManager,
         Clash.closeAllConnections()
     }
 
+    override fun closeConnections(ids: List<String>) {
+        Clash.closeConnections(ids)
+    }
+
     override fun queryShare(): ShareState =
         ShareModule.active?.state ?: ShareState(closed = ShareModule.providerClosed, password = store.sharePassword)
 

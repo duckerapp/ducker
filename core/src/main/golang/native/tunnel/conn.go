@@ -12,6 +12,15 @@ func CloseAllConnections() {
 	})
 }
 
+// CloseConnections closes the ones of these ids still open: «Сбросить» on a narrowed «Подключения».
+func CloseConnections(ids []string) {
+	for _, id := range ids {
+		if c := statistic.DefaultManager.Get(id); c != nil {
+			_ = c.Close()
+		}
+	}
+}
+
 func closeMatch(filter func(conn C.Connection) bool) {
 	statistic.DefaultManager.Range(func(c statistic.Tracker) bool {
 		if filter(c) {

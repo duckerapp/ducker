@@ -5,6 +5,7 @@ import "C"
 
 import (
 	"cfa/native/panicguard"
+	"strings"
 	"unsafe"
 
 	"cfa/native/app"
@@ -123,6 +124,14 @@ func queryConnections() *C.char {
 func closeAllConnections() {
 	defer panicguard.Recover("closeAllConnections", failExport)
 	tunnel.CloseAllConnections()
+}
+
+// ids: one per line.
+//
+//export closeConnections
+func closeConnections(ids C.c_string) {
+	defer panicguard.Recover("closeConnections", failExport)
+	tunnel.CloseConnections(strings.Split(C.GoString(ids), "\n"))
 }
 
 // Сессии мультиплекса — не соединения туннеля, closeAllConnections их не видит (D-105).

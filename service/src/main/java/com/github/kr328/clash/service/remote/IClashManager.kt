@@ -108,6 +108,9 @@ interface IClashManager {
     /** «Сбросить все» on «Подключения»: every connection is closed, apps open new ones by the current rules. */
     fun closeAllConnections()
 
+    /** «Сбросить» on a narrowed «Подключения»: only the connections shown. */
+    fun closeConnections(ids: List<String>)
+
     /** «Раздача по Wi-Fi» (D-419–D-421) for its card on «Возможности». */
     fun queryShare(): ShareState
 

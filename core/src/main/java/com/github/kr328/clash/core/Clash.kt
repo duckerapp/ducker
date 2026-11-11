@@ -229,6 +229,11 @@ object Clash {
         Bridge.nativeCloseAllConnections()
     }
 
+    /** These connections only, by id: «Сбросить» on «Подключения» narrowed to an app, a site or a search. */
+    fun closeConnections(ids: List<String>) {
+        if (ids.isNotEmpty()) Bridge.nativeCloseConnections(ids.joinToString("\n"))
+    }
+
     /** The open connections for «Подключения» (stage 15), with the app that opened each where Android knows it. */
     fun queryConnections(): List<Connection> =
         CoreJson.decodeFromString(ListSerializer(Connection.serializer()), Bridge.nativeQueryConnections())
