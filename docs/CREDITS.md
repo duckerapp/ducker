@@ -9,7 +9,7 @@ repository README.
 ## Foundation
 
 - **Clash Meta for Android (CMFA)** — MetaCubeX, GPL-3.0.
-  Ducker is a CMFA fork. The network layer, VPN service, core wrapper, and core build are their work.
+  ducker started as a CMFA fork. The base of the VPN service, the core wrapper, and the core build are their work.
 - **mihomo** — MetaCubeX, GPL-3.0. The core.
 - **zashboard** — Zephyruso, MIT. The diagnostics dashboard under **Help and diagnostics**: the
   release `v3.29.1` (`dist-no-fonts.zip`, checked by its SHA-256), downloaded during the build.
@@ -49,13 +49,10 @@ it is an idea or code.
 
 | What | Source | Idea or code |
 |-----|----------|--------------|
-| Storing provider headers in a file in the profile directory and exposing them as `Profile` fields | Prizrak-Box-android, branch `prizrak`, commit `5237799` (`service/.../ProfileProcessor.kt:1427-1543`, `ProfileManager.kt:268-320`) | idea |
+| Provider headers kept in a file in the profile directory; HWID from `ANDROID_ID` without hashing, with the accompanying device headers, and its screen in settings | Prizrak-Box-android, branch `prizrak`, commit `5237799` (`ProfileProcessor.kt:216-234`, `:1427-1543`, `ProfileManager.kt:268-320`, HWID dialogs); for the device headers also FlClashX, commit `dc77f6f`, `lib/utils/device_info_service.dart:112-151` | idea |
 | A single Go export for “links + template → config.yaml” | same source, `core/src/main/golang/native/convert.go:19-88` | idea; our implementation, built on `ConvertsV2Ray` |
-| HWID from `ANDROID_ID` without hashing, and the accompanying device headers | same source, `ProfileProcessor.kt:216-234`; FlClashX, commit `dc77f6f`, `lib/utils/device_info_service.dart:112-151` | idea |
-| Opening external links on a TV through QR codes instead of a browser | Prizrak-Box-android, `app/.../util/UrlOpening.kt:33-48` | idea, not in the app now: links open in the browser |
 | Receiving a subscription on a TV over the home network | same source, `app/.../tv/TvImportServer.kt`, `app/src/main/assets/tv_import_web.html` (a local web page) | idea; ducker sends it from ducker on the phone, encrypted, by a QR code |
-| Applying provider settings “only when adding / on every update” | FlClashX, `lib/controller.dart:302-319` | idea, for `ducker-override-user`: the app reads the header but does not apply it yet |
-| HWID screen in settings | Prizrak-Box-android, HWID dialogs | idea |
+| Applying provider settings “only when adding / on every update” | FlClashX, `lib/controller.dart:302-319` | idea, for `ducker-override-user`: ducker applies it on every update |
 | Xray multiplexing (mux.cool) with UDP and XUDP; Xray-compatible REALITY (ML-KEM, ML-DSA-65) | jesus (Jolymmiles), via legiz-ru/Prizrak-Core, branch `v1-19-31`: 13 commits from `2197a3ca` to `9090c2c0`; upstream: MetaCubeX/mihomo#2980 | code, in our `ducker` core branch with the original authors |
 | Skipping a broken node in a provider rather than rejecting the entire provider | legiz-ru/Prizrak-Core `e265e713` (ported from Medium1992/mihomo-proxy-ros) | code |
 | ML-DSA-65 signatures for REALITY in uTLS | jesus, via legiz-ru/prizrak-utls `80ad7038` | code, in our `duckerapp/utls` fork, branch `ducker`, with the original author |

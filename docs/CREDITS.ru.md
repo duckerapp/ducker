@@ -7,7 +7,7 @@
 
 ## Основа
 - **Clash Meta for Android (CMFA)** — MetaCubeX, GPL-3.0.
-  Ducker — форк CMFA. Сетевой слой, служба VPN, обёртка ядра и сборка ядра — их работа.
+  ducker начинался как форк CMFA. Основа службы VPN, обёртка ядра и его сборка — их работа.
 - **mihomo** — MetaCubeX, GPL-3.0. Ядро.
 - **zashboard** — Zephyruso, MIT. Панель диагностики в разделе «Помощь и диагностика»: выпуск
   `v3.29.1` (`dist-no-fonts.zip`, сверяется по SHA-256), скачивается при сборке.
@@ -46,13 +46,10 @@ Apache 2.0); **Coil** с OkHttp (Apache 2.0) — картинки; **zxing-cpp**
 
 | Что | Источник | Идея или код |
 |-----|----------|--------------|
-| Хранение заголовков провайдера файлом в каталоге профиля и подмешивание их полями в `Profile` | Prizrak-Box-android, ветка `prizrak`, коммит `5237799` (`service/.../ProfileProcessor.kt:1427-1543`, `ProfileManager.kt:268-320`) | идея |
+| Заголовки провайдера файлом в каталоге профиля; HWID из `ANDROID_ID` без хеширования с сопутствующими заголовками устройства и его экран в настройках | Prizrak-Box-android, ветка `prizrak`, коммит `5237799` (`ProfileProcessor.kt:216-234`, `:1427-1543`, `ProfileManager.kt:268-320`, диалоги HWID); для заголовков устройства также FlClashX, коммит `dc77f6f`, `lib/utils/device_info_service.dart:112-151` | идея |
 | Форма решения «ссылки + шаблон → config.yaml» одним экспортом в Go | там же, `core/src/main/golang/native/convert.go:19-88` | идея, код свой, поверх `ConvertsV2Ray` |
-| HWID из `ANDROID_ID` без хеширования и набор сопутствующих заголовков устройства | там же, `ProfileProcessor.kt:216-234`; FlClashX, коммит `dc77f6f`, `lib/utils/device_info_service.dart:112-151` | идея |
-| Открытие внешних ссылок на телевизоре через QR вместо браузера | Prizrak-Box-android, `app/.../util/UrlOpening.kt:33-48` | идея, сейчас в приложении нет: ссылки открываются в браузере |
 | Приём подписки на телевизоре по домашней сети | там же, `app/.../tv/TvImportServer.kt`, `app/src/main/assets/tv_import_web.html` (локальная веб-страница) | идея; ducker отправляет её из ducker на телефоне, зашифрованной, по QR-коду |
-| Режим применения настроек от провайдера «только при добавлении / при каждом обновлении» | FlClashX, `lib/controller.dart:302-319` | идея, для `ducker-override-user`: приложение читает заголовок, но пока его не применяет |
-| Экран HWID в настройках | Prizrak-Box-android, диалоги HWID | идея |
+| Режим применения настроек от провайдера «только при добавлении / при каждом обновлении» | FlClashX, `lib/controller.dart:302-319` | идея, для `ducker-override-user`: ducker применяет его при каждом обновлении |
 | Мультиплекс Xray (mux.cool) с UDP и XUDP; REALITY, совместимый с Xray (ML-KEM, ML-DSA-65) | jesus (Jolymmiles), через legiz-ru/Prizrak-Core, ветка `v1-19-31`: 13 коммитов от `2197a3ca` до `9090c2c0`; в апстриме — MetaCubeX/mihomo#2980 | код, в нашей ветке ядра `ducker` с исходными авторами |
 | Пропуск битого узла в провайдере вместо отказа всего провайдера | legiz-ru/Prizrak-Core `e265e713` (порт из Medium1992/mihomo-proxy-ros) | код |
 | Подпись ML-DSA-65 для REALITY в uTLS | jesus, через legiz-ru/prizrak-utls `80ad7038` | код, в нашем форке `duckerapp/utls`, ветка `ducker`, с исходным автором |
