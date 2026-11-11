@@ -40,9 +40,11 @@ One button, honest status, nothing extra on the screen.
 ducker connects your phone or TV to a VPN through the [mihomo](https://github.com/MetaCubeX/mihomo)
 core. You add a subscription from your provider, press one button and, if you want, pick a server.
 
-It is a fork of [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid): the VPN
-service and the core bindings come from there, the interface is written from scratch in Jetpack
-Compose. Free, no ads, no analytics, GPL-3.0.
+ducker started as a fork of [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) and has
+since been rewritten almost entirely: about 52,000 lines of code added and about 10,000 removed,
+and only about a third of CMFA's files are left unchanged. The Jetpack Compose interface,
+subscription handling, updates, the TV version and much of the VPN service are our own; the base
+of the service and the core bindings come from CMFA. Free, no ads, no analytics, GPL-3.0.
 
 ## Screenshots
 
@@ -93,6 +95,8 @@ Compose. Free, no ads, no analytics, GPL-3.0.
 - **Connections.** Which apps connect where, live: the app, the site, the rule, the node, the speed.
 - **Wi-Fi sharing.** The VPN's internet for a laptop or another phone, through a proxy on your
   network.
+
+New features will keep arriving here in future versions.
 
 **When you need more**
 
@@ -230,14 +234,15 @@ subscription response settings (`customResponseHeaders`); the panel code does no
   it fails to load, the ducker icon is shown.
 - **`ducker-buy-url: <link>`** — the **Renew** button on the subscription card when less than
   three days or 10 % of traffic are left, or the term is over. The same link is used in the
-  expiry notification. Without the header, `profile-web-page-url` is used.
+  expiry notification. Without the header, `support-url` is used, then
+  `profile-web-page-url`.
 - **`ducker-global: off`** — hides the Global/Rules switch on the Proxies tab; the mode stays as
   set in the config.
 - **`ducker-local-proxy: off`** — the tunnel starts with the config's local ports closed
   (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`), without `listeners` and without
   the DNS server of `dns.listen`, so other apps on the phone cannot find a proxy or a DNS server on
   `127.0.0.1`. The config itself is not rewritten.
-  A header cannot open a port.
+  Any other value changes nothing: the ports stay as in the config.
 - **`ducker-share: off`** — keeps "Wi-Fi sharing" closed: the card says the provider turned it
   off, and sharing that is on goes off at the next update that brings the header. The config's
   ports are not affected; `ducker-local-proxy` closes those.
@@ -269,7 +274,8 @@ tries other addresses on its own, and the user notices nothing:
 - **`ducker-mirrors: <host or link>, …`** — up to five backup addresses. A bare host
   (`sub2.example.com`) means the same link on another domain, with its path and token, so one
   value in the panel serves every user. A full `https://…` link is used as is; in Remnawave,
-  `{{SHORT_UUID}}` fills in the user's part.
+  `{{SHORT_UUID}}` fills in the user's part. Addresses go in one header, separated by
+  commas: `ducker-mirrors: sub2.example.com, sub3.example.net`.
 - **`fallback-url: <link>`** — Happ's backup link; ducker reads it too, as one more mirror.
 - **`new-url: <link>`** or **`new-domain: <domain>`** — Happ's permanent move. ducker switches the
   stored link only after the new address has given a working subscription; until then it keeps
@@ -317,8 +323,7 @@ Found a vulnerability? Please report it privately: [SECURITY.md](SECURITY.md).
 
 ## How the project is made
 
-ducker is made by one person together with an AI assistant. The code is written by
-Claude, an AI model made by Anthropic; the owner decides what to build. Every change is built,
+ducker is made by one person together with an AI agent; the owner decides what to build. Every change is built,
 tested and checked on real devices before it is released, and anyone can repeat the build from
 this repository.
 
@@ -347,7 +352,7 @@ app that is able to send these commands. ducker's own widgets, tile and shortcut
 - **A glass look:** translucent panels as an alternative style of the interface.
 - **"Only through VPN":** chosen apps get no internet at all while the VPN is off.
 
-No dates yet. An iOS version is not planned: iOS needs a different app from scratch.
+No dates yet. An iOS version is not planned for now.
 
 What has already been done, version by version, is in the [changelog](CHANGELOG.md).
 
@@ -373,8 +378,8 @@ Details are in [CONTRIBUTING.md](CONTRIBUTING.md); where things live in the code
 ## Credits
 
 - [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo) — the core;
-- [MetaCubeX/ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid) — the VPN
-  service, the build and everything under the interface;
+- [MetaCubeX/ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid) — the base of the VPN
+  service and the build that ducker started from;
 - [Zephyruso/zashboard](https://github.com/Zephyruso/zashboard) — the built-in web panel;
 - the authors of the community core patches and of the ideas we borrowed — all named in
   [docs/CREDITS.md](docs/CREDITS.md).

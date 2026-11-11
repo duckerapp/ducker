@@ -43,9 +43,10 @@
 ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或电视连接到 VPN。
 添加服务商提供的订阅，按下一个按钮，需要时再选择服务器即可。
 
-它是 [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) 的分支：VPN
-服务和内核绑定来自上游，界面用 Jetpack Compose 重新编写。免费，无广告，无统计，采用 GPL-3.0
-许可证。
+ducker 最初是 [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) 的分支，此后几乎被
+完全重写：新增约 5.2 万行代码、删除约 1 万行，CMFA 的文件只有约三分之一保持原样。Jetpack Compose
+界面、订阅处理、更新、电视版以及 VPN 服务中的许多部分都是我们自己写的；服务的基础和内核绑定来自
+CMFA。免费，无广告，无统计，采用 GPL-3.0 许可证。
 
 ## 截图
 
@@ -91,6 +92,8 @@ ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或�
 - **移动网络。** 手机离开 Wi-Fi 时使用单独的订阅和服务器；回到 Wi-Fi 后一切照旧。
 - **连接。** 实时查看哪些应用连接到哪里：应用、网站、规则、节点、速度。
 - **Wi-Fi 共享。** 通过局域网中的代理，把 VPN 的网络分享给笔记本或另一部手机。
+
+后续版本还会在这里加入新功能。
 
 **需要更多时**
 
@@ -214,11 +217,12 @@ ducker 提供：
 - **`ducker-brand-logo: <图片>`** —— 主页名称旁和订阅卡片上的标志。可以是 `https://…` 链接，也可以
   是 `data:…;base64,…` 形式的图片本身；支持 PNG、JPEG、WebP 和 SVG。加载失败时显示 ducker 图标。
 - **`ducker-buy-url: <链接>`** —— 当剩余不足三天、剩余流量不足 10 % 或已到期时，订阅卡片上出现
-  **续费**按钮。到期提醒通知也使用这个链接。没有此响应头时使用 `profile-web-page-url`。
+  **续费**按钮。到期提醒通知也使用这个链接。没有此响应头时使用 `support-url`，再没有则使用
+  `profile-web-page-url`。
 - **`ducker-global: off`** —— 隐藏“代理”页面上的 Global/Rules 开关；模式保持配置中的设定。
 - **`ducker-local-proxy: off`** —— 隧道启动时关闭配置中的本地端口（`mixed-port`、`port`、
   `socks-port`、`redir-port`、`tproxy-port`），忽略 `listeners`，也不启动 `dns.listen` 的 DNS
-  服务器，手机上的其他应用因此无法在 `127.0.0.1` 上发现代理或 DNS 服务器。配置本身不会被改写。响应头不能打开端口。
+  服务器，手机上的其他应用因此无法在 `127.0.0.1` 上发现代理或 DNS 服务器。配置本身不会被改写。其他取值不会改变任何东西：端口保持配置中的设定。
 - **`ducker-share: off`** —— 让“Wi-Fi 共享”保持关闭：卡片会说明服务商已关闭共享，已开启的共享会在带有
   该响应头的下一次更新时关闭。它不影响配置中的端口，那些由 `ducker-local-proxy` 关闭。
 - **`ducker-override-user: on`** —— 锁定配置中 `tun.exclude-package` 和 `tun.include-package` 的应用：
@@ -244,7 +248,8 @@ ducker 还支持常见的订阅响应头：`profile-title`、`profile-update-int
 
 - **`ducker-mirrors: <域名或链接>, …`** —— 最多五个备用地址。单独的域名（`sub2.example.com`）表示
   换一个域名的同一链接，保留原路径和令牌，因此面板中一个值即可适用于所有用户。完整的 `https://…`
-  链接按原样使用；在 Remnawave 中，用户专属部分由 `{{SHORT_UUID}}` 填入。
+  链接按原样使用；在 Remnawave 中，用户专属部分由 `{{SHORT_UUID}}` 填入。多个地址写在同一个响应头中，用逗号
+  分隔：`ducker-mirrors: sub2.example.com, sub3.example.net`。
 - **`fallback-url: <链接>`** —— Happ 的备用链接；ducker 也会读取，作为又一个镜像。
 - **`new-url: <链接>`** 或 **`new-domain: <域名>`** —— 永久迁移，与 Happ 相同。只有当新地址返回了
   可用的订阅后，ducker 才会更换已保存的链接；在此之前继续从旧链接更新。
@@ -282,8 +287,7 @@ ducker 从一次成功的更新中获知镜像，因此请在被封锁之前、�
 
 ## 项目是如何开发的
 
-ducker 由一个人和 AI 助手共同开发。代码由 Anthropic 的 AI 模型 Claude 编写；做什么由项目所有者
-决定。每项改动在发布前都会经过构建、测试，并在真实设备上检查；任何人都可以用本仓库重复构建。
+ducker 由一个人和 AI 智能体共同开发；做什么由项目所有者决定。每项改动在发布前都会经过构建、测试，并在真实设备上检查；任何人都可以用本仓库重复构建。
 
 加密和协议不是我们写的：它们来自 mihomo 内核。我们对内核的改动是在 v1.19.33 之上的 24 个提交，
 其中 13 个是社区为 Xray 兼容的多路复用和 REALITY 编写的补丁。它们公开在
@@ -310,7 +314,7 @@ ducker 由一个人和 AI 助手共同开发。代码由 Anthropic 的 AI 模型
 - **玻璃风格：** 半透明面板，作为界面的另一种风格。
 - **“仅通过 VPN”：** VPN 关闭时，选定的应用完全无法联网。
 
-暂无时间表。不计划推出 iOS 版本：iOS 需要从零开始的另一个应用。
+暂无时间表。目前暂不计划推出 iOS 版本。
 
 各版本已完成的内容见[更新日志](../CHANGELOG.md)（英文）。
 
@@ -334,8 +338,8 @@ cd ducker
 ## 致谢
 
 - [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo) —— 内核；
-- [MetaCubeX/ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid) —— VPN 服务、
-  构建以及界面之下的一切；
+- [MetaCubeX/ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid) —— ducker 起步时所用的 VPN
+  服务和构建基础；
 - [Zephyruso/zashboard](https://github.com/Zephyruso/zashboard) —— 内置的 Web 面板；
 - 内核社区补丁的作者，以及我们借鉴过的想法的作者——全部列在 [CREDITS.md](CREDITS.md) 中。
 
