@@ -143,7 +143,9 @@ button() { # file, image, width, alt
   echo
   changes CHANGELOG.md
   echo
+  # GitHub puts a spoiler's first line right under its title; a <br> gives it a line of room.
   echo "<details><summary>По-русски</summary>"
+  echo "<br>"
   echo
   echo "**Какой файл скачать.** Телефон — большая кнопка, \`arm64-v8a\`. Старый телефон — \`armeabi-v7a\`." \
     "Телевизор или приставка: \`armeabi-v7a\` ставится почти на любой телевизор, современному телевизору или" \
@@ -161,6 +163,7 @@ button() { # file, image, width, alt
   echo "</details>"
   echo
   echo "<details><summary>Verify the files</summary>"
+  echo "<br>"
   echo
   # The report's address is the file's SHA-256; the report exists once the file is uploaded there.
   ( cd "$OUT" && sha256sum ./*.apk | sed 's|^\([0-9a-f]*\)  \./\(.*\)$|- `\2`: [VirusTotal](https://www.virustotal.com/gui/file/\1)|' )
