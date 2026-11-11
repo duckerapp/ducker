@@ -44,7 +44,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import kotlin.math.roundToInt
-import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.activity.compose.LocalActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -1204,9 +1204,10 @@ private const val MAX_TEXT = 22f
  * Окно ниже 480dp (граница компактной высоты у Material) — телефон боком или половина экрана.
  * Планшет таким не бывает и боком. Редактору конфига тогда нужна каждая строка (D-145).
  */
+// From the configuration, not `LocalWindowInfo.containerSize`: on Android 12 (MIUI) that lags one turn
+// behind — upright again, it still gave the sideways size, and the editor hid the status bar (D-478).
 @Composable
-internal fun lowWindow(): Boolean =
-    with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } < 480.dp
+internal fun lowWindow(): Boolean = LocalConfiguration.current.screenHeightDp < 480
 
 private const val RESULT_MS = 4000L
 

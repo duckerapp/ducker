@@ -36,7 +36,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalInputModeManager
-import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import kotlin.coroutines.cancellation.CancellationException
@@ -76,7 +77,8 @@ fun BackLayer(
     content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val width = LocalWindowInfo.current.containerSize.width.toFloat()
+    // Not `LocalWindowInfo.containerSize`: it can lag a turn of the phone behind (D-478).
+    val width = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
 
     // Ход жеста: 0 — экран на месте, 1 — палец дотянут до конца. От него — уменьшение,
     // углы и тень: по ним видно, что экран стал карточкой.
