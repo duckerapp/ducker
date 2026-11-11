@@ -303,13 +303,17 @@ internal fun navigationRoom(): Dp =
 /** The TV's round button under its dock (D-97). */
 val ACTION_SIZE = 56.dp
 
+/** The dock's padding around its tabs. */
+private val DOCK_PAD = 4.dp
+
 /**
- * The side dock: its gap to the start edge, its width and a tab's height. At 84 dp «Подписки» touched the highlight's
- * rounded ends; at 108 it has room on both sides.
+ * The side dock: its gap to the start edge, its width, a tab's height and the highlight's corner. Narrow and tall:
+ * 108 dp wide looked a blob beside the cards.
  */
 private val RAIL_EDGE = 12.dp
-private val RAIL_WIDTH = 108.dp
-private val RAIL_TAB = 60.dp
+private val RAIL_WIDTH = 88.dp
+private val RAIL_TAB = 72.dp
+private val RAIL_CORNER = 20.dp
 
 /**
  * Ряд вкладок рисуется дважды: снизу в тусклом цвете, сверху в цвете «на подсветке»,
@@ -334,7 +338,9 @@ private fun FloatingDock(
     vertical: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(percent = 50)
+    // Upright, the dock and its highlight round their corners as the TV's side dock does: as pills, nearly square
+    // tabs became circles, and the dock's round ends cut the highlight's.
+    val shape = if (vertical) RoundedCornerShape(RAIL_CORNER + DOCK_PAD) else RoundedCornerShape(percent = 50)
     val pill = MaterialTheme.colorScheme.primaryContainer
     val onPill = MaterialTheme.colorScheme.onPrimaryContainer
 
@@ -445,13 +451,13 @@ private fun FloatingDock(
         shape = shape,
         color = MaterialTheme.colorScheme.surface,
     ) {
-        Box(Modifier.fillMaxWidth().padding(4.dp)) {
+        Box(Modifier.fillMaxWidth().padding(DOCK_PAD)) {
             // Подсветка — своим слоем под обеими копиями вкладок: при слиянии она растёт,
             // а вкладки гаснут, и гасить её вместе с ними нельзя.
             Box(
                 Modifier.matchParentSize().drawBehind {
                     val rect = pill()
-                    val corner = CornerRadius(rect.minDimension / 2f)
+                    val corner = CornerRadius(if (vertical) RAIL_CORNER.toPx() else rect.minDimension / 2f)
 
                     drawRoundRect(
                         color = pill,
@@ -647,7 +653,7 @@ private fun DockTabs(
 
         Column(
             modifier = slot
-                .clip(RoundedCornerShape(percent = 50))
+                .clip(if (vertical) RoundedCornerShape(RAIL_CORNER) else RoundedCornerShape(percent = 50))
                 .then(
                     if (onSelect != null) {
                         // What `selectable` is, plus a click label: turned into «+ Добавить», the tab keeps
