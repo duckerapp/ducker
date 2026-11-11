@@ -517,6 +517,8 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
     var anchor: RingAnchorNode? = null
     /** Скругление элемента в фокусе, если он его назвал. */
     var corner: RingCornerNode? = null
+    /** The focused element's ink below Android 10, if it named one ([ringInk]). */
+    var ink: RingInkNode? = null
     private var holds = 0
     // Размытие рисует сама Android: у Compose своей размытой линии нет. Кисть — одна на узел.
     private val blur = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
@@ -726,7 +728,7 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
         }
 
         val difference = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
-        val ink = if (difference) Color.White else currentValueOf(LocalRingInk)
+        val ink = if (difference) Color.White else this@FocusRingNode.ink?.color ?: currentValueOf(LocalRingInk)
 
         // Размытие — только наружу (`OUTER`), от внешнего края контура: на элемент оно не заходит.
         drawIntoCanvas {
@@ -850,6 +852,50 @@ internal class RingCornerNode(var corner: Dp) : Modifier.Node(), FocusEventModif
             if (focusState.isFocused) ring.corner = this else if (ring.corner === this) ring.corner = null
             false
         }
+    }
+}
+
+/**
+ * The ring's colour below Android 10 while the focus is anywhere inside a surface of the opposite colour — the power
+ * card, which turns over when connected: there [LocalRingInk] would be the card's own colour (D-483). From 10 the
+ * difference blend finds the contrast by itself and this is not read. Placed on the surface.
+ */
+internal fun Modifier.ringInk(color: Color): Modifier = this then RingInkElement(color)
+
+private data class RingInkElement(val color: Color) : ModifierNodeElement<RingInkNode>() {
+    override fun create() = RingInkNode(color)
+
+    override fun update(node: RingInkNode) {
+        node.color = color
+        node.ring?.invalidateDraw()
+    }
+}
+
+private class RingInkNode(var color: Color) : Modifier.Node(), FocusEventModifierNode {
+    /** The ring this element is focused under, so a change of colour while focused is drawn at once. */
+    var ring: FocusRingNode? = null
+
+    override fun onFocusEvent(focusState: FocusState) {
+        if (!isAttached) return
+
+        traverseAncestors(RingKey) {
+            val ring = it as FocusRingNode
+
+            if (focusState.hasFocus) {
+                ring.ink = this
+                this.ring = ring
+            } else if (ring.ink === this) {
+                ring.ink = null
+                this.ring = null
+            }
+            ring.invalidateDraw()
+            false
+        }
+    }
+
+    override fun onDetach() {
+        ring?.let { if (it.ink === this) it.ink = null }
+        ring = null
     }
 }
 

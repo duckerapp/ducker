@@ -20,6 +20,7 @@ import com.github.kr328.clash.ui.components.TvKeyScroll
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import com.github.kr328.clash.ui.components.ringCorner
+import com.github.kr328.clash.ui.components.ringInk
 import com.github.kr328.clash.ui.components.ringHold
 import com.github.kr328.clash.ui.components.tvKeys
 import com.github.kr328.clash.ui.components.tvEdge
@@ -1203,10 +1204,13 @@ private fun HeroFace(
 ) {
     val scheme = MaterialTheme.colorScheme
     val fill = if (running) scheme.primaryContainer else scheme.surface
+    val ink = if (running) scheme.onPrimaryContainer else scheme.onSurface
 
-    CompositionLocalProvider(LocalContentColor provides if (running) scheme.onPrimaryContainer else scheme.onSurface) {
+    CompositionLocalProvider(LocalContentColor provides ink) {
         Column(
             modifier = modifier.fillMaxWidth()
+                // The card turns over when connected: below Android 10 the ring inside it takes the card's ink.
+                .then(if (LocalTv.current) Modifier.ringInk(ink) else Modifier)
                 .background(fill)
                 .padding(horizontal = 20.dp, vertical = if (tight) 12.dp else if (compact) 16.dp else 22.dp),
             verticalArrangement = Arrangement.spacedBy(if (tight) 8.dp else if (compact) 12.dp else 16.dp),
