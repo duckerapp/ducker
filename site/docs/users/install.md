@@ -10,7 +10,7 @@ Which file to choose:
 - `arm64-v8a`: almost any phone newer than 2017;
 - `armeabi-v7a`: older phones and many TVs; use it if the first APK will not install.
 
-Android 10 or later is required. You install ducker by hand once; after that it
+Android 8 or later is required. You install ducker by hand once; after that it
 [updates itself](#updates).
 
 ## Your first subscription
@@ -36,7 +36,7 @@ How to get the APK onto the TV in the first place, step by step: [Installing on 
   and in a notification, with what's new; one tap downloads and installs it, and the VPN comes
   back by itself.
 - **Update automatically** (Settings): new versions download over Wi-Fi and install while the
-  screen is off, usually at night. Off until you say yes. Android 12 and newer; on Android 10–11
+  screen is off, usually at night. Off until you say yes. Android 12 and newer; on Android 8–11
   Android asks for a confirmation each time.
 - **Beta versions** (Settings): new versions a few days before everyone else. A beta that goes
   well is then given to everyone as the very same file.

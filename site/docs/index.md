@@ -278,7 +278,7 @@ The full list: [privacy policy](users/privacy.md) · [security](help/security.md
 
 ## Install ducker
 
-Android 10 or newer · phones and TVs · free
+Android 8 or newer · phones and TVs · free
 { .dk-quiet }
 
 [Install](users/install.md){ .dk-btn .dk-btn--solid } [Telegram channel](https://t.me/ducker_mihomo){ .dk-btn } [GitHub](https://github.com/duckerapp/ducker){ .dk-btn }

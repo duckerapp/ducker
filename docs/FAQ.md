@@ -338,7 +338,7 @@ ducker updates itself: there is no need to download each new version by hand.
   update continues by itself.
 - Without tapping anything: ⚙ Settings → "Update automatically". New versions then download over
   Wi-Fi and install while the screen is off, usually at night. This needs Android 12 or newer; on
-  Android 10–11 Android asks to confirm each update.
+  Android 8–11 Android asks to confirm each update.
 - To check right now: ⚙ Settings → "Check for updates".
 - "Beta versions" in the same place gives you new versions a few days early.
 

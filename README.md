@@ -158,7 +158,7 @@ The same APK runs on Android TV and Google TV.
    a chat or an email.
 4. Press the power button on **Home** and allow Android's VPN request.
 
-Android 10 or newer. Something does not work? [Questions and answers](docs/FAQ.md): how to add a
+Android 8 or newer. Something does not work? [Questions and answers](docs/FAQ.md): how to add a
 subscription, what to do if the VPN turns itself off or there is no internet, how to send a log.
 
 ### Updates
@@ -169,7 +169,7 @@ You install ducker by hand once; after that it updates itself.
   a notification, with what's new; one tap downloads and installs it, and the VPN comes back by
   itself.
 - **Update automatically** (Settings): new versions download over Wi-Fi and install while the
-  screen is off, usually at night. Off until you say yes. Android 12 and newer; on Android 10–11
+  screen is off, usually at night. Off until you say yes. Android 12 and newer; on Android 8–11
   Android asks for a confirmation each time.
 - **Beta versions** (Settings): new versions a few days before everyone else. A beta that goes well
   is then given to everyone as the very same file.
