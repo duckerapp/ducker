@@ -126,7 +126,7 @@ button() { # file, image, width, alt
 {
   echo "<p>"
   button "ducker-$VERSION-arm64-v8a.apk" android 360 "Download for Android: arm64-v8a"
-  button "ducker-$VERSION-armeabi-v7a.apk" android-v7a 300 "Older phones and TVs: armeabi-v7a"
+  button "ducker-$VERSION-armeabi-v7a.apk" android-v7a 360 "Older phones and TVs: armeabi-v7a"
   echo "</p>"
   echo
   echo "**On a TV or a box:** \`armeabi-v7a\` installs on almost any TV; a current TV or box needs \`arm64-v8a\`." \
