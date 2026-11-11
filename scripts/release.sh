@@ -38,6 +38,18 @@ if git rev-parse "v$VERSION" >/dev/null 2>&1; then
   exit 1
 fi
 
+# The version's entry of a changelog as markdown, without its HTML comments; the release page shows it.
+changes() {
+  awk -v h="## $VERSION" 'index($0, h) == 1 && (length($0) == length(h) || substr($0, length(h) + 1, 1) == " ") {f = 1; next}
+    /^## / {f = 0} f' "$1" | awk '/<!--/ {c = 1} !c; /-->/ {c = 0}' | sed '/./,$!d'
+}
+for log in CHANGELOG.md docs/CHANGELOG.ru.md; do
+  if [ -z "$(changes "$log")" ]; then
+    echo "В $log нет записи «## $VERSION» — её покажут страница выпуска и «Что нового» в приложении."
+    exit 1
+  fi
+done
+
 # The APK ships the licences of every Go module in the core; a dependency change needs a new list.
 python3 scripts/core-licenses.py --check || exit 1
 
@@ -98,36 +110,67 @@ done
 
 ( cd "$OUT" && sha256sum ./*.apk > SHA256SUMS )
 
-# Заготовка описания: коммиты с прошлого тега, без служебных.
-LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+# Описание выпуска для страницы на GitHub: кнопки скачивания, «что нового» из обоих списков изменений.
+# Picture URLs are absolute: a release body has no repository to resolve relative paths against.
+# The buttons come from docs/images/release/ on main (notes/brand/build-release-buttons.py makes them).
+REPO=https://github.com/duckerapp/ducker
+IMG=$REPO/raw/main/docs/images/release
+DL=$REPO/releases/download/v$VERSION
+SITE=https://duckerapp.github.io/ducker
+button() { # file, image, width, alt
+  echo "<a href=\"$DL/$1\"><picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"$IMG/$2-dark.svg\"><img src=\"$IMG/$2-light.svg\" width=\"$3\" alt=\"$4\"></picture></a>"
+}
 {
-  echo "# ducker $VERSION"
+  echo "<p>"
+  button "ducker-$VERSION-arm64-v8a.apk" android 360 "Download for Android: arm64-v8a"
+  button "ducker-$VERSION-armeabi-v7a.apk" android-v7a 300 "Older phones and TVs: armeabi-v7a"
+  echo "</p>"
   echo
-  if [ -n "$LAST_TAG" ]; then
-    echo "Изменения с $LAST_TAG:"
-    echo
-    git log --pretty='- %s' "$LAST_TAG..HEAD" | grep -v '^- docs:' || true
-  else
-    echo "Первый релиз."
-  fi
+  echo "**On a TV or a box:** \`armeabi-v7a\` installs on almost any TV; a current TV or box needs \`arm64-v8a\`." \
+    "If one file does not install, take the other. Android 10 or later."
   echo
-  echo "## Какой файл скачивать"
+  echo "[How to install]($SITE/users/install/) · [Installing on a TV]($SITE/users/tv/) · [Documentation]($SITE/)"
   echo
-  echo "- \`ducker-$VERSION-arm64-v8a.apk\` — любой телефон свежее 2017 года;"
-  echo "- \`ducker-$VERSION-armeabi-v7a.apk\` — старый телефон, если первый не ставится."
+  echo "Telegram: [channel](https://t.me/ducker_mihomo) for releases and news ·" \
+    "[chat](https://t.me/ducker_community) for questions and discussion"
   echo
-  echo "Минимальная версия Android — 10."
+  echo "[![Downloads](https://img.shields.io/github/downloads/duckerapp/ducker/v$VERSION/total?style=flat-square&label=downloads&labelColor=000&color=2b2b2b)]($REPO/releases/tag/v$VERSION)"
+  echo
+  echo "## What's new"
+  echo
+  changes CHANGELOG.md
+  echo
+  echo "<details><summary>По-русски</summary>"
+  echo
+  echo "**Какой файл скачать.** Телефон — большая кнопка, \`arm64-v8a\`. Старый телефон — \`armeabi-v7a\`." \
+    "Телевизор или приставка: \`armeabi-v7a\` ставится почти на любой телевизор, современному телевизору или" \
+    "приставке нужен \`arm64-v8a\`. Если файл не установился, возьмите другой. Нужен Android 10 или новее."
+  echo
+  echo "[Как установить]($SITE/ru/users/install/) · [Установка на телевизор]($SITE/ru/users/tv/) · [Документация]($SITE/ru/)"
+  echo
+  echo "Telegram: [канал](https://t.me/ducker_mihomo) — выпуски и новости ·" \
+    "[чат](https://t.me/ducker_community) — вопросы и обсуждение"
+  echo
+  echo "### Что нового"
+  echo
+  changes docs/CHANGELOG.ru.md
+  echo
+  echo "</details>"
+  echo
+  echo "<details><summary>Verify the files</summary>"
   echo
   # The report's address is the file's SHA-256; the report exists once the file is uploaded there.
-  echo "## Проверка файла"
-  echo
   ( cd "$OUT" && sha256sum ./*.apk | sed 's|^\([0-9a-f]*\)  \./\(.*\)$|- `\2`: [VirusTotal](https://www.virustotal.com/gui/file/\1)|' )
+  echo
+  echo "SHA-256 of both files: \`SHA256SUMS\` below."
   echo
   # meta-rules-dat publishes only a daily `latest`, so the hashes say which databases this file has;
   # placed in app/src/main/assets/, they are not downloaded again and a rebuild matches.
-  echo "Базы стран и сайтов — MetaCubeX/meta-rules-dat \`latest\` на $(date +%d.%m.%Y), SHA-256:"
+  echo "Country and site databases, MetaCubeX/meta-rules-dat \`latest\` of $(date +%d.%m.%Y), SHA-256:"
   echo
   ( cd app/src/main/assets && sha256sum geoip.metadb geosite.dat | sed 's/^\([0-9a-f]*\)  \(.*\)$/- `\2`: `\1`/' )
+  echo
+  echo "</details>"
 } > "$OUT/release-notes.md"
 
 echo
