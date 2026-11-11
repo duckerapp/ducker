@@ -114,7 +114,7 @@ CMFA。免费，无广告，无统计，采用 GPL-3.0 许可证。
 
 **技术细节**
 
-- **mihomo v1.19.33**，从源码构建，带有最新的 uTLS 指纹。
+- **mihomo v1.19.34**，从源码构建，带有最新的 uTLS 指纹。
 - **社区对内核的补丁：** 与 Xray 兼容的多路复用（支持 UDP 和 XUDP 的 mux.cool）、与 Xray 同步的
   REALITY（ML-KEM、ML-DSA-65，并对旧服务器回退），以及遇到损坏的节点时跳过它而不是让整个
   provider 失败。作者和来源见 [CREDITS.md](CREDITS.md)。
@@ -289,7 +289,7 @@ ducker 从一次成功的更新中获知镜像，因此请在被封锁之前、�
 
 ducker 由一个人和 AI 智能体共同开发；做什么由项目所有者决定。每项改动在发布前都会经过构建、测试，并在真实设备上检查；任何人都可以用本仓库重复构建。
 
-加密和协议不是我们写的：它们来自 mihomo 内核。我们对内核的改动是在 v1.19.33 之上的 24 个提交，
+加密和协议不是我们写的：它们来自 mihomo 内核。我们对内核的改动是在 v1.19.34 之上的 24 个提交，
 其中 13 个是社区为 Xray 兼容的多路复用和 REALITY 编写的补丁。它们公开在
 [duckerapp/mihomo](https://github.com/duckerapp/mihomo) 分支仓库的 `ducker` 分支中；另有几处修复位于两个较小的
 分支仓库 [duckerapp/utls](https://github.com/duckerapp/utls) 和

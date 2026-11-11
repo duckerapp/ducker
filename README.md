@@ -119,7 +119,7 @@ New features will keep arriving here in future versions.
 
 **Under the hood**
 
-- **mihomo v1.19.33**, built from source with current uTLS fingerprints.
+- **mihomo v1.19.34**, built from source with current uTLS fingerprints.
 - **Community patches for the core:** an Xray-compatible mux (mux.cool with UDP and XUDP), REALITY
   in step with Xray (ML-KEM, ML-DSA-65) with a fallback for older servers, and a provider that
   skips a broken node instead of failing completely. Authors and sources are listed in
@@ -328,7 +328,7 @@ tested and checked on real devices before it is released, and anyone can repeat 
 this repository.
 
 Encryption and protocols are not ours: they come from the mihomo core. Our changes to it are 24
-commits on top of v1.19.33, 13 of them community patches for the Xray-compatible mux and REALITY.
+commits on top of v1.19.34, 13 of them community patches for the Xray-compatible mux and REALITY.
 They are public in the [duckerapp/mihomo](https://github.com/duckerapp/mihomo) fork, branch `ducker`;
 two smaller forks, [duckerapp/utls](https://github.com/duckerapp/utls) and
 [duckerapp/sing-mux](https://github.com/duckerapp/sing-mux), carry a few more fixes.
