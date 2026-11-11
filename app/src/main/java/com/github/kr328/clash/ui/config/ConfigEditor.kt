@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.RippleDrawable
+import android.os.Build
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View.MeasureSpec
@@ -263,7 +264,9 @@ internal class EditorMenu(private val editor: CodeEditor) : EditorTextActionWind
     private fun button(label: Int, keep: Boolean = false, action: () -> Unit) = TextView(editor.context).apply {
         text = context.getString(label)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-        typeface = Typeface.create(Typeface.DEFAULT, 500, false)
+        // A weight is Android 9+; before it the medium family is the same face.
+        typeface = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Typeface.create(Typeface.DEFAULT, 500, false)
+        else Typeface.create("sans-serif-medium", Typeface.NORMAL)
         gravity = Gravity.CENTER
         setPadding((10 * dp).toInt(), 0, (10 * dp).toInt(), 0)
         setOnClickListener {

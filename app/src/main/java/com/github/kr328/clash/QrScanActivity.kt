@@ -7,8 +7,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.annotation.StringRes
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Size
 import android.widget.Toast
@@ -258,12 +260,28 @@ class QrScanActivity : AppCompatActivity() {
      * Картинка в памяти, как её ждёт распознаватель: программная, не больше [MAX_IMAGE] по длинной
      * стороне — фото с камеры в 50 Мп разбиралось бы секундами, а скриншоту хватает и так.
      */
-    private fun decode(uri: Uri): Bitmap =
-        ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri)) { decoder, info, _ ->
+    private fun decode(uri: Uri): Bitmap {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return decodeLegacy(uri)
+
+        return ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri)) { decoder, info, _ ->
             decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
             val side = max(info.size.width, info.size.height)
             if (side > MAX_IMAGE) decoder.setTargetSampleSize((side + MAX_IMAGE - 1) / MAX_IMAGE)
         }
+    }
+
+    /** Android 8 has no [ImageDecoder]: the size first, then the pixels at that sample size; software by default. */
+    private fun decodeLegacy(uri: Uri): Bitmap {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+
+        val side = max(bounds.outWidth, bounds.outHeight)
+        val options = BitmapFactory.Options().apply {
+            if (side > MAX_IMAGE) inSampleSize = (side + MAX_IMAGE - 1) / MAX_IMAGE
+        }
+
+        return checkNotNull(contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) })
+    }
 
     private fun List<BarcodeReader.Result>.firstText(): String? =
         firstNotNullOfOrNull { result -> result.text?.takeIf { it.isNotBlank() } }

@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.settings
 
+import android.os.Build
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.smoothResource
@@ -347,7 +348,8 @@ fun SettingsScreen(
                             )
                         }
 
-                        item {
+                        // The wallpaper gives its colour from Android 8.1.
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) item {
                             SwitchRow(
                                 title = stringResource(R.string.dynamic_color),
                                 subtitle = stringResource(R.string.dynamic_color_hint),
@@ -492,7 +494,8 @@ fun SettingsScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
 
-                                InnerSwitch(
+                                // A VPN sets the system proxy from Android 10.
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) InnerSwitch(
                                     title = stringResource(R.string.system_proxy),
                                     subtitle = stringResource(R.string.system_proxy_hint),
                                     checked = state.systemProxy,

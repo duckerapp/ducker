@@ -26,7 +26,7 @@ dependencies {
     implementation(project(":common"))
 
     // Кладёт baseline profile в ART на первом запуске; на Android 12+ это делает система,
-    // но у нас minSdk 29.
+    // но у нас minSdk 26.
     implementation(libs.androidx.profileinstaller)
     // Редактор конфига (D-124): рисует только видимые строки, большие конфиги не тормозят.
     implementation(libs.sora.editor)

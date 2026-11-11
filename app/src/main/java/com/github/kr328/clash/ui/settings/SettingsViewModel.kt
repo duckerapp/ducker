@@ -287,4 +287,5 @@ class SettingsViewModel : ViewModel() {
  * `always_on_vpn_app` на Android 16 приложению не прочесть. Туннель выключен — не знаем,
  * строка остаётся подсказкой.
  */
-private fun alwaysOnVpn(): Boolean = runCatching { VpnService().isAlwaysOn }.getOrDefault(false)
+private fun alwaysOnVpn(): Boolean = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q &&
+    runCatching { VpnService().isAlwaysOn }.getOrDefault(false)

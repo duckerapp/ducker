@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.components
 
 import androidx.compose.runtime.derivedStateOf
+import android.os.Build
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.compose.animation.core.Easing
@@ -228,7 +229,7 @@ internal fun DuckerSheet(
                 statusBarColor = android.graphics.Color.TRANSPARENT
                 @Suppress("DEPRECATION")
                 navigationBarColor = android.graphics.Color.TRANSPARENT
-                isNavigationBarContrastEnforced = false
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) isNavigationBarContrastEnforced = false
 
                 WindowCompat.getInsetsController(this, decorView).apply {
                     isAppearanceLightStatusBars = light

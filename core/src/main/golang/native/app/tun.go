@@ -4,6 +4,8 @@ import (
 	"net"
 	"sync/atomic"
 	"syscall"
+
+	"cfa/native/platform"
 )
 
 // tunContext is swapped whole at every start and stop of the tunnel while dialing goroutines read it: plain
@@ -41,6 +43,11 @@ func QuerySocketUid(source, target net.Addr) int {
 		protocol = syscall.IPPROTO_TCP
 	default:
 		return -1
+	}
+
+	// getConnectionOwnerUid is Android 10+; before it /proc/net is still readable (D-482).
+	if PlatformVersion() < 29 {
+		return platform.QuerySocketUidFromProcFs(source, target)
 	}
 
 	return tunCallbacks.Load().querySocketUid(protocol, source.String(), target.String())

@@ -4,12 +4,16 @@ import android.app.Activity
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
 import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricPrompt
 import android.os.Build
 import android.os.CancellationSignal
 import android.view.Window
 import android.view.WindowManager
+import androidx.activity.ComponentActivity
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -26,7 +30,7 @@ import java.util.WeakHashMap
  * One unlock holds while the app stays on screen; [relock] when it leaves. A phone without a screen lock has nothing to
  * check against, and the action goes ahead: the setting says so.
  */
-class SensitiveLock(private val activity: Activity) {
+class SensitiveLock(private val activity: ComponentActivity) {
     private var unlocked = false
     private var asking = false
 
@@ -34,6 +38,7 @@ class SensitiveLock(private val activity: Activity) {
     fun guard(on: Boolean, @StringRes reason: Int, action: () -> Unit) {
         if (!on || unlocked || !available(activity)) return action()
         if (asking) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return confirmCredential(reason, action)
 
         val builder = BiometricPrompt.Builder(activity)
             .setTitle(activity.getString(R.string.lock_prompt_title))
@@ -66,6 +71,31 @@ class SensitiveLock(private val activity: Activity) {
     }
 
     /**
+     * Android 8–9 (D-482): the system dialog cannot fall back to the screen lock there, so the screen lock itself asks.
+     * Registered without a lifecycle: an answer that comes back to a recreated activity is lost, and the person taps
+     * again.
+     */
+    private fun confirmCredential(@StringRes reason: Int, action: () -> Unit) {
+        @Suppress("DEPRECATION")
+        val intent = activity.getSystemService(KeyguardManager::class.java)
+            ?.createConfirmDeviceCredentialIntent(activity.getString(R.string.lock_prompt_title), activity.getString(reason))
+            ?: return action()
+
+        asking = true
+
+        var launcher: ActivityResultLauncher<Intent>? = null
+        launcher = activity.activityResultRegistry.register(CONFIRM_KEY, ActivityResultContracts.StartActivityForResult()) {
+            launcher?.unregister()
+            asking = false
+            if (it.resultCode == Activity.RESULT_OK) {
+                unlocked = true
+                action()
+            }
+        }
+        launcher.launch(intent)
+    }
+
+    /**
      * The app left the screen: the next sensitive action asks again. Not while the dialog is up — on Android 10 the
      * screen-lock check is an activity of its own and stops ours.
      */
@@ -74,6 +104,8 @@ class SensitiveLock(private val activity: Activity) {
     }
 
     companion object {
+        private const val CONFIRM_KEY = "sensitive-lock"
+
         /** A screen lock is set: the system dialog has something to check. */
         fun available(context: Context): Boolean =
             context.getSystemService(KeyguardManager::class.java)?.isDeviceSecure == true

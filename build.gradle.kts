@@ -87,7 +87,7 @@ subprojects {
         ndkVersion = "29.0.14206865"
 
         defaultConfig.apply {
-            minSdk = 29
+            minSdk = 26
 
             // The app's ABIs come from `splits` below: AGP rejects both settings together
             // unless a universal APK is built as well.

@@ -53,11 +53,16 @@ class LogcatFilter(output: Writer, private val context: Context) : BufferedWrite
         val activity = context.getSystemService<ActivityManager>()
         val usage = context.getSystemService<UsageStatsManager>()
 
+        // Both are Android 9+.
+        val p = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+        val bucket = if (p) usage?.appStandbyBucket?.let(::bucketOf) else null
+        val restricted = if (p) activity?.isBackgroundRestricted else null
+
         appendLine(
             "# Background: battery exemption=${context.backgroundAllowed()}" +
                 ", power saver=${power?.isPowerSaveMode}" +
-                ", standby bucket=${usage?.appStandbyBucket?.let(::bucketOf)}" +
-                ", restricted by user=${activity?.isBackgroundRestricted}",
+                ", standby bucket=$bucket" +
+                ", restricted by user=$restricted",
         )
 
         val connectivity = context.getSystemService<ConnectivityManager>()

@@ -98,7 +98,7 @@ dependencies {
 // регистрации задачи обращение к `android.sdkComponents` заставляет AGP собрать свою
 // внутреннюю реализацию раньше времени и падает.
 val ndkDirectory = androidComponents.sdkComponents.ndkDirectory.map { it.asFile.absolutePath }
-val androidMinSdk = 29
+val androidMinSdk = 26
 
 androidComponents.onVariants { variant ->
     val cmakeName = if (variant.buildType == "debug") "Debug" else "RelWithDebInfo"

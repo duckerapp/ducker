@@ -8,6 +8,8 @@ import (
 
 // Dialing goroutines read the callbacks while the tunnel starts and stops: under -race the plain variables failed this.
 func TestTunCallbacksSwapWhileRead(t *testing.T) {
+	// Android 10+: below it the lookup reads /proc and never reaches the callbacks.
+	ApplyPlatformVersion(29)
 	stop := make(chan struct{})
 	var wg sync.WaitGroup
 

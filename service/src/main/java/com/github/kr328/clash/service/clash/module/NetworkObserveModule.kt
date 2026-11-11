@@ -23,7 +23,10 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
     private val request = NetworkRequest.Builder().apply {
         addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
         addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
+        // Android 9+: older systems reject the unknown capability with an exception.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
+        }
         addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
     }.build()
 

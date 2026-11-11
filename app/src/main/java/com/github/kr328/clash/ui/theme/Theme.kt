@@ -1,9 +1,11 @@
 package com.github.kr328.clash.ui.theme
 
+import com.github.kr328.clash.ui.components.LocalRingInk
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.runtime.CompositionLocalProvider
 import android.app.Activity
 import android.app.WallpaperManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -24,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.annotation.RequiresApi
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowCompat
 import kotlin.math.min
@@ -176,6 +179,7 @@ private fun wallpaperTinted(base: ColorScheme, wallpaper: Int, dark: Boolean): C
  * The home screen wallpaper's main color, and again whenever it changes; `null` when the wallpaper
  * gives none (a live one may not) — then the palette stays black and white. API 27, no permission.
  */
+@RequiresApi(Build.VERSION_CODES.O_MR1)
 @Composable
 private fun rememberWallpaperColor(): Int? {
     val context = LocalContext.current
@@ -223,7 +227,7 @@ fun DuckerTheme(
     content: @Composable () -> Unit,
 ) {
     val base = if (dark) DarkColors else LightColors
-    val wallpaper = if (dynamicColor) rememberWallpaperColor() else null
+    val wallpaper = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) rememberWallpaperColor() else null
     val palette = if (wallpaper != null) wallpaperTinted(base, wallpaper, dark) else base
     // OLED применяется и к системной палитре: это две независимые настройки.
     val colors = if (dark && oled) {
@@ -237,7 +241,7 @@ fun DuckerTheme(
             // The bars stay transparent (themes.xml) and the app draws under them (HomeActivity): a colour set
             // here would switch at once, ahead of the theme wave (D-66). No dark scrim behind the three-button
             // bar either; the list fades out there instead (DuckerScaffold).
-            window.isNavigationBarContrastEnforced = false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
             WindowCompat.getInsetsController(window, view).apply {
                 isAppearanceLightStatusBars = !dark
                 isAppearanceLightNavigationBars = !dark
@@ -246,7 +250,7 @@ fun DuckerTheme(
     }
 
     MaterialTheme(colorScheme = colors, shapes = DuckerShapes, typography = DuckerTypography) {
-        CompositionLocalProvider(LocalTv provides tv) {
+        CompositionLocalProvider(LocalTv provides tv, LocalRingInk provides colors.onBackground) {
             if (onToggleDark == null) content()
             else ThemeReveal(onToggle = onToggleDark, content = content)
         }

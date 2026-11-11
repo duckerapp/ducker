@@ -70,6 +70,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -223,6 +224,13 @@ val LocalTv = staticCompositionLocalOf { false }
 /** Телевизор, и его сейчас ведут пультом, а не указкой. Вне телевизора — всегда нет. */
 @Composable
 internal fun tvKeys(): Boolean = LocalTv.current && LocalInputModeManager.current.inputMode == InputMode.Keyboard
+
+/**
+ * The theme's text colour, for the focus ring below Android 10 (D-482): the platform has no difference blend there and
+ * Compose draws `Difference` as plain paint, so white would vanish on the light theme. Ink is what the inversion gives
+ * on the plain background — dark on light, light on dark.
+ */
+val LocalRingInk = compositionLocalOf { Color.White }
 
 /** The remote's focus of the tab layout; `null` off a TV. */
 val LocalTvFocus = staticCompositionLocalOf<TvFocus?> { null }
@@ -717,6 +725,9 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
             neonFilter = BlurMaskFilter(NEON_BLUR.toPx(), BlurMaskFilter.Blur.OUTER)
         }
 
+        val difference = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
+        val ink = if (difference) Color.White else currentValueOf(LocalRingInk)
+
         // Размытие — только наружу (`OUTER`), от внешнего края контура: на элемент оно не заходит.
         drawIntoCanvas {
             val outer = r.inflate(gap + stroke)
@@ -724,15 +735,15 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
 
             blur.style = android.graphics.Paint.Style.FILL
             blur.maskFilter = neonFilter
-            blur.color = Color.White.copy(alpha = NEON_ALPHA * alpha).toArgb()
-            blur.blendMode = android.graphics.BlendMode.DIFFERENCE
+            blur.color = ink.copy(alpha = NEON_ALPHA * alpha).toArgb()
+            if (difference) blur.blendMode = android.graphics.BlendMode.DIFFERENCE
             it.nativeCanvas.drawRoundRect(outer.left, outer.top, outer.right, outer.bottom, radius, radius, blur)
         }
 
         val line = r.inflate(gap + stroke / 2)
 
         drawRoundRect(
-            color = Color.White,
+            color = ink,
             topLeft = line.topLeft,
             size = line.size,
             cornerRadius = CornerRadius(own + gap + stroke / 2),

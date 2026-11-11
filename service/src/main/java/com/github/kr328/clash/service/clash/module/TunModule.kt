@@ -2,6 +2,7 @@ package com.github.kr328.clash.service.clash.module
 
 import android.net.ConnectivityManager
 import android.net.VpnService
+import android.os.Build
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.util.parseInetSocketAddress
@@ -29,6 +30,8 @@ class TunModule(private val vpn: VpnService) : Module<Unit>(vpn) {
         source: InetSocketAddress,
         target: InetSocketAddress,
     ): Int {
+        // Below Android 10 the core reads /proc/net itself and never asks (D-482).
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return -1
         return runCatching { connectivity.getConnectionOwnerUid(protocol, source, target) }
             .getOrElse { -1 }
     }

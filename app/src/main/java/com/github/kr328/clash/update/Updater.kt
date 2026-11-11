@@ -10,6 +10,7 @@ import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
+import androidx.core.content.pm.PackageInfoCompat
 import android.os.PowerManager
 import androidx.core.content.IntentCompat
 import com.github.kr328.clash.BuildConfig
@@ -432,20 +433,22 @@ object Updater {
         val mine = manager.getPackageInfo(context.packageName, SIGNERS)
         val theirs = manager.getPackageArchiveInfo(file.path, SIGNERS) ?: return false
 
-        theirs.packageName == context.packageName && theirs.longVersionCode > mine.longVersionCode &&
+        theirs.packageName == context.packageName && PackageInfoCompat.getLongVersionCode(theirs) > PackageInfoCompat.getLongVersionCode(mine) &&
             mine.signers().isNotEmpty() && theirs.signers() == mine.signers()
     }.getOrDefault(false)
 
     @Suppress("DEPRECATION")
     private fun PackageInfo.signers(): Set<String> =
-        (signingInfo?.apkContentsSigners ?: signatures).orEmpty().map { it.toCharsString() }.toSet()
+        ((if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) signingInfo?.apkContentsSigners else null) ?: signatures).orEmpty().map { it.toCharsString() }.toSet()
 
     /**
      * Оба флага сразу: Android 10 читает подпись файла на диске только по устаревшему, а по
-     * новому молча не отдаёт ничего — свой же выпуск выходил «чужим».
+     * новому молча не отдаёт ничего — свой же выпуск выходил «чужим». The new flag is Android 9+ (D-482).
      */
     @Suppress("DEPRECATION")
-    private const val SIGNERS = PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_SIGNATURES
+    private val SIGNERS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_SIGNATURES
+    } else PackageManager.GET_SIGNATURES
 
     private fun commit(file: File, code: Long) {
         val installer = context.packageManager.packageInstaller

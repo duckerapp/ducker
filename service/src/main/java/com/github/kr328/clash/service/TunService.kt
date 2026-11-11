@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.net.ProxyInfo
 import android.net.VpnService
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import com.github.kr328.clash.common.compat.pendingIntentFlags
@@ -37,6 +38,12 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     /** С каким режимом блокировки собран текущий туннель. */
     private var lockdownApplied = false
+
+    // Android 10+: an older system does not tell the app whether it is always-on or locked down (D-482).
+    private val lockdownOn: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && isLockdownEnabled
+    private val alwaysOn: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && isAlwaysOn
 
     /** The subscription's `tun` values the interface was built with; [openLock] guards both. */
     private var builtWith: ProfileNetwork? = null
@@ -109,7 +116,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             tunOpened.set(true)
 
             // В самописец: «постоянный VPN» и блокировка без VPN меняют маршруты (F-110).
-            Log.i("Tunnel up: always-on=$isAlwaysOn, lockdown=$isLockdownEnabled")
+            Log.i("Tunnel up: always-on=$alwaysOn, lockdown=$lockdownOn")
 
             if (config.ready) recheck()
 
@@ -123,16 +130,17 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
                         true
                     }
-                    // Ветку с setUnderlyingNetworks сняли вместе с подъёмом minSdk до 29
-                    // (D-13): она работала только на 22..28. Событие всё равно вычитываем —
-                    // иначе очередь модуля некому разбирать.
+                    // Android 8–9 as CMFA did it (D-482); from 10 the system follows the default network itself.
+                    // The event is read on every version, or nothing drains the module's queue.
                     network.onEvent {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) setUnderlyingNetworks(arrayOf(it))
+
                         false
                     }
                     // Блокировку включили или выключили — пересобираем туннель на месте:
                     // ядро само подменит старый интерфейс новым.
                     lockdown.onEvent {
-                        val now = isLockdownEnabled
+                        val now = lockdownOn
 
                         if (now != lockdownApplied) {
                             synchronized(openLock) { tun.open(now) }
@@ -147,7 +155,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                     // An app the filter names was installed with the tunnel up: the interface was built without
                     // it, so it is on the wrong side until rebuilt (D-454). Open connections break once.
                     installs.onEvent { installed ->
-                        val now = isLockdownEnabled
+                        val now = lockdownOn
 
                         val rebuilt = synchronized(openLock) {
                             val named = installed.namedBy(
@@ -449,10 +457,10 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             )
 
             // Metered
-            setMetered(false)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) setMetered(false)
 
-            // System Proxy
-            if (store.systemProxy) {
+            // System Proxy: a VPN can set one from Android 10.
+            if (store.systemProxy && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 listenHttp()?.let {
                     setHttpProxy(
                         ProxyInfo.buildDirectProxy(
@@ -508,7 +516,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         // Про блокировку система отвечает только тому, у кого туннель уже поднят: до
         // establish() ответ всегда «нет». Поэтому поднимаемся как обычно и, если режим
         // не совпал, сразу пересобираемся — ядро подменит интерфейс на месте.
-        if (isLockdownEnabled != lockdown) open(!lockdown)
+        if (lockdownOn != lockdown) open(!lockdown)
     }
 
     companion object {

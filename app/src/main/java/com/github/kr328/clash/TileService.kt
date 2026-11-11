@@ -103,7 +103,8 @@ class TileService : TileService() {
         val tile = qsTile ?: return
 
         tile.state = if (active) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        tile.subtitle = getText(subtitle)
+        // A tile's subtitle is Android 10+.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) tile.subtitle = getText(subtitle)
 
         tile.updateTile()
     }
@@ -122,7 +123,7 @@ class TileService : TileService() {
             currentProfile
 
         // Подпись «подключение…» снимаем: пришло настоящее состояние.
-        tile.subtitle = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) tile.subtitle = null
 
         tile.icon = Icon.createWithResource(this, R.drawable.ic_logo_service)
 
