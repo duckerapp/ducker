@@ -733,7 +733,9 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
         val ink = if (difference) Color.White else named?.color ?: currentValueOf(LocalRingInk)
 
         // Размытие — только наружу (`OUTER`), от внешнего края контура: на элемент оно не заходит.
-        drawIntoCanvas {
+        // Android 9+: before it a hardware canvas ignores the mask filter, and the glow was a flat grey veil over the
+        // focused element (D-483). There the ring is the line alone.
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) drawIntoCanvas {
             val outer = r.inflate(gap + stroke)
             val radius = own + gap + stroke
 
