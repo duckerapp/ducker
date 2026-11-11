@@ -30,6 +30,8 @@ data class ProviderInfo(
     val globalHidden: Boolean = false,
     /** `ducker-local-proxy: off` — поднять туннель с закрытыми портами конфига (D-218). */
     val localProxyOff: Boolean = false,
+    /** `ducker-share: off` — keep «Раздача по Wi-Fi» closed (D-471). */
+    val shareOff: Boolean = false,
     val updateIntervalHours: Int = 0,
     /** `subscription-refill-date` — когда обнулится счётчик трафика, unix-секунды. */
     val refillAt: Long = 0,
@@ -103,6 +105,7 @@ data class ProviderInfo(
                 overrideUser = h["ducker-override-user"]?.trim()?.equals("on", true) == true,
                 globalHidden = h["ducker-global"]?.trim()?.equals("off", true) == true,
                 localProxyOff = h["ducker-local-proxy"]?.trim()?.equals("off", true) == true,
+                shareOff = h["ducker-share"]?.trim()?.equals("off", true) == true,
                 updateIntervalHours = h["profile-update-interval"]?.trim()?.toIntOrNull()
                     ?.takeIf { it > 0 } ?: 0,
                 refillAt = h["subscription-refill-date"]?.trim()?.toLongOrNull() ?: 0,

@@ -231,7 +231,7 @@ class ShareModule(service: Service) : Module<Unit>(service) {
         var active: ShareModule? = null
             private set
 
-        /** The active subscription's `ducker-local-proxy: off` (D-218), written at every load of its config. */
+        /** The active subscription's `ducker-share: off` (D-471), written at every load of its config. */
         @Volatile
         var providerClosed = false
             set(value) {

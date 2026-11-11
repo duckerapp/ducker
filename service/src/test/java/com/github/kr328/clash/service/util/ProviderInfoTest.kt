@@ -76,6 +76,15 @@ class ProviderInfoTest {
         assertFalse(ProviderInfo.of(emptyMap()).localProxyOff)
     }
 
+    @Test
+    fun `sharing closes only on ducker-share off, apart from the local ports (D-471)`() {
+        assertTrue(ProviderInfo.of(mapOf("Ducker-Share" to " Off ")).shareOff)
+        assertFalse(ProviderInfo.of(mapOf("Ducker-Share" to " Off ")).localProxyOff)
+        assertFalse(ProviderInfo.of(mapOf("ducker-share" to "on")).shareOff)
+        assertFalse(ProviderInfo.of(mapOf("ducker-local-proxy" to "off")).shareOff)
+        assertFalse(ProviderInfo.of(emptyMap()).shareOff)
+    }
+
     private val link = "https://sub.example.com/sub/TOKEN"
     private val mirror = "https://sub2.example.net/sub/TOKEN"
 
