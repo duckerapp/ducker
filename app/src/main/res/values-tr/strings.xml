@@ -189,6 +189,7 @@
     <string name="apps_profile_exclude_open">Sağlayıcınızın yapılandırması %1$d uygulamayı VPN dışında tutuyor (%2$d tanesi bu cihazda yüklü). Bunlar genellikle bankacılık ve kamu hizmeti uygulamalarıdır; böylece VPN açıkken de çalışırlar. Sağlayıcının kararını her biri için değiştirebilirsiniz</string>
     <string name="apps_provider_choice">Sağlayıcının kararı</string>
     <string name="apps_changed_by_you">Sizin tarafınızdan değiştirildi</string>
+    <string name="apps_ruled">Kuralınız belirler</string>
     <string name="allow_bypass">VPN dışı bağlantıya izin ver</string>
     <string name="allow_bypass_hint">Uygulamalar VPN dışında bağlanmayı kendileri seçebilir. Kapalıyken buna uygulamalar değil, yapılandırma karar verir</string>
     <string name="dns_hijack">DNS sorgularını yönlendir</string>
@@ -468,9 +469,9 @@
     <string name="rule_unsaved">Kural eklenmedi</string>
     <string name="rule_unsaved_hint">Bu paneli kapatırsanız girdikleriniz kaybolur</string>
     <string name="rule_discard">Vazgeç</string>
-    <string name="rule_app_provider">Sağlayıcınızın yapılandırmasına göre VPN dışında</string>
-    <string name="rule_app_provider_open">Sağlayıcının kararı: VPN dışında. Bir kural bunu değiştirir</string>
-    <string name="rule_app_access">VPN dışında; “Uygulamalar” bölümünde seçildi</string>
+    <string name="rule_app_provider">Sağlayıcı: VPN dışında</string>
+    <string name="rule_app_provider_open">Sağlayıcının kararı: VPN dışında</string>
+    <string name="rule_app_access">“Uygulamalar”: VPN dışında</string>
     <string name="rule_app_exists">Zaten bir kuralı var · %1$s</string>
     <string name="config_open">Yapılandırma</string>
     <string name="config_undo">Geri al</string>

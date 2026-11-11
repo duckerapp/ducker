@@ -236,6 +236,7 @@ private fun AppItem(app: AppRow, checked: Boolean, onToggle: () -> Unit, modifie
                 )
                 Text(
                     text = when {
+                        app.ruled -> stringResource(R.string.apps_ruled)
                         app.changed -> stringResource(R.string.apps_changed_by_you)
                         app.provider -> stringResource(R.string.apps_provider_choice)
                         else -> app.packageName

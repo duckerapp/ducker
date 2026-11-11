@@ -12,9 +12,8 @@ import com.github.kr328.clash.service.model.AccessControlMode
  * показать одно, а сделать другое.
  *
  * Правило сложения: галочка человека список провайдера не отменяет. Он нужен, чтобы банк и
- * госуслуги видели сеть без VPN, и терять его из-за галочки нельзя. The config's own rows are reversed only one by
- * one and on purpose, per subscription ([reversed], D-471), unless the provider locks them with
- * `ducker-override-user: on` — then the set is empty.
+ * госуслуги видели сеть без VPN, и терять его из-за галочки нельзя. The config's own rows change only one by one and
+ * on purpose, per subscription ([Changes], D-472), unless the provider locks them with `ducker-override-user: on`.
  */
 object PackageFilter {
     /**
@@ -23,18 +22,25 @@ object PackageFilter {
      */
     data class Decision(val allowed: Set<String>?, val denied: Set<String>)
 
-    /** [reversed] — the config's apps whose provider decision the person turned the other way (D-471). */
+    /**
+     * What the person changed of a subscription's config apps (D-472, D-473): the rows [reversed] in «Приложения»,
+     * and the apps [ruled] by «Мои правила» — those go into the tunnel, where a rule works, for as long as the rule is
+     * there. Empty under `ducker-override-user: on`. The rule is not copied into [reversed]: two records drifted apart
+     * when the provider's lock came and went.
+     */
+    data class Changes(val reversed: Set<String> = emptySet(), val ruled: Set<String> = emptySet())
+
     fun decide(
         mode: AccessControlMode,
         chosen: Set<String>,
         profile: ProfileNetwork,
-        reversed: Set<String> = emptySet(),
+        changes: Changes = Changes(),
     ): Decision =
         // «Через VPN» без единой отметки — «ещё не выбрал», а не «ни одного приложения»:
         // иначе касание по режиму оставляло в туннеле один ducker (D-139).
         (if (mode == AccessControlMode.AcceptSelected && chosen.isEmpty()) literal(AccessControlMode.DenySelected, chosen, profile)
         else literal(mode, chosen, profile))
-            .reverse(profile, reversed)
+            .withChanges(profile, changes)
 
     /** The config's own rows: its `include-package` and `exclude-package`. */
     fun listed(profile: ProfileNetwork): Set<String> = profile.includePackage.toSet() + profile.excludePackage
@@ -43,12 +49,15 @@ object PackageFilter {
     fun providerInTunnel(packageName: String, profile: ProfileNetwork): Boolean =
         packageName !in profile.excludePackage && packageName in profile.includePackage
 
-    private fun Decision.reverse(profile: ProfileNetwork, reversed: Set<String>): Decision {
-        val flipped = reversed.intersect(listed(profile))
+    private fun Decision.withChanges(profile: ProfileNetwork, changes: Changes): Decision {
+        val listed = listed(profile)
+        val flipped = changes.reversed.intersect(listed)
+        val ruled = changes.ruled.intersect(listed)
 
-        if (flipped.isEmpty()) return this
+        if (flipped.isEmpty() && ruled.isEmpty()) return this
 
-        val into = flipped.filterTo(HashSet()) { !providerInTunnel(it, profile) }
+        // A rule wins over a reversal that took its app out.
+        val into = flipped.filterTo(HashSet()) { !providerInTunnel(it, profile) } + ruled
         val out = flipped - into
 
         return if (allowed != null) Decision(allowed + into - out, denied)

@@ -296,22 +296,26 @@ private fun typeIcon(type: UserRule.Type) = when (type) {
 
 /**
  * Кто при подписке идёт мимо туннеля — своё правило на такое приложение не сработает (D-135).
- * Считает тот же [PackageFilter], что и туннель: по конфигу провайдера с тем, что человек в нём изменил ([reversed]),
- * и с выбором в «Приложениях» ([mode], [chosen]). [reversible] — строки конфига, которые человек может изменить;
- * пусто под `ducker-override-user: on` (D-471).
+ * Считает тот же [PackageFilter], что и туннель: по конфигу провайдера с тем, что человек в нём изменил ([reversed],
+ * [ruled]), и с выбором в «Приложениях» ([mode], [chosen]). [locked] — `ducker-override-user: on`: строки конфига не
+ * меняются ни отметкой, ни правилом (D-472, D-473).
  */
 data class Bypass(
     val network: ProfileNetwork,
     val mode: AccessControlMode,
     val chosen: Set<String>,
-    val reversible: Set<String>,
+    val locked: Boolean,
     val reversed: Set<String>,
+    /** The apps this subscription's rules name: a config's app among them goes into the tunnel. */
+    val ruled: Set<String>,
 ) {
-    /** [Reversible]: past the tunnel by the provider, and a rule on it takes it back in (D-471). */
+    /** [Reversible]: past the tunnel by the provider, and a rule on it takes it in (D-473). */
     enum class Reason { Provider, Reversible, Access }
 
-    private val provider = PackageFilter.decide(AccessControlMode.AcceptAll, emptySet(), network, reversed)
-    private val all = PackageFilter.decide(mode, chosen, network, reversed)
+    private val changes = if (locked) PackageFilter.Changes() else PackageFilter.Changes(reversed, ruled)
+    private val provider = PackageFilter.decide(AccessControlMode.AcceptAll, emptySet(), network, changes)
+    private val all = PackageFilter.decide(mode, chosen, network, changes)
+    private val reversible = if (locked) emptySet() else PackageFilter.listed(network)
 
     fun reason(packageName: String): Reason? = when {
         !PackageFilter.inTunnel(packageName, provider) ->
@@ -322,10 +326,6 @@ data class Bypass(
 
     /** A rule may be made for it: it is in the tunnel, or the rule takes it there. */
     fun pickable(packageName: String) = reason(packageName).let { it == null || it == Reason.Reversible }
-
-    /** The reversals once rules for [added] apps are made: those past the tunnel by the provider go into it. */
-    fun takenOver(added: Collection<String>): Set<String> = added.filter { reason(it) == Reason.Reversible }
-        .fold(reversed) { set, app -> if (app in set) set - app else set + app }
 }
 
 private fun typeLabel(type: UserRule.Type) = when (type) {
@@ -705,7 +705,7 @@ private fun AppPicker(
                         outside == Bypass.Reason.Access -> stringResource(R.string.rule_app_access)
                         reason == Bypass.Reason.Reversible -> stringResource(R.string.rule_app_provider_open)
                         rule != null -> stringResource(R.string.rule_app_exists, stringResource(targetLabel(rule)))
-                        bypass != null && app.packageName in bypass.reversed -> stringResource(R.string.apps_changed_by_you)
+                        bypass != null && !bypass.locked && app.packageName in bypass.reversed -> stringResource(R.string.apps_changed_by_you)
                         else -> null
                     }
 

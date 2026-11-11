@@ -13,7 +13,6 @@ import com.github.kr328.clash.service.store.ConfigAppsStore
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.PackageFilter
 import com.github.kr328.clash.util.withClash
-import com.github.kr328.clash.util.withProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +32,8 @@ data class AppRow(
     val provider: Boolean = false,
     /** The person turned the provider's decision for it the other way. */
     val changed: Boolean = false,
+    /** A rule in «Мои правила» takes it into the tunnel (D-473): changed there, not here. */
+    val ruled: Boolean = false,
     /** Фактический исход при текущем режиме и выборе. */
     val inTunnel: Boolean = false,
 )
@@ -78,6 +79,8 @@ class AppsViewModel : ViewModel() {
     private var savedReversed: Set<String> = emptySet()
     /** The config's rows the person may reverse; empty under the provider's lock. */
     private var reversible: Set<String> = emptySet()
+    /** The config's apps this subscription's rules take into the tunnel. */
+    private var ruled: Set<String> = emptySet()
 
     /** Кого решает конфиг, а не галочка. Зависит от режима и профиля, но не от отметок. */
     private var locked: Set<String> = emptySet()
@@ -111,16 +114,17 @@ class AppsViewModel : ViewModel() {
             // покажет только выбор человека.
             profile = runCatching { withClash { queryProfileNetwork(null) } }
                 .getOrDefault(ProfileNetwork())
-            // Unknown counts as locked: a row that cannot be changed is shown as before.
-            val providerLock = uuid == null ||
-                runCatching { withProfile { queryByUUID(uuid) }?.overrideUser != false }.getOrDefault(true)
-            val reversed = uuid?.takeUnless { providerLock }
-                ?.let { withContext(Dispatchers.IO) { ConfigAppsStore(context).read(it) } }
-                .orEmpty()
+            // The same reading as the service's (D-473): the lock from the last download, the reversals, the rules.
+            val (providerLock, changes) = withContext(Dispatchers.IO) {
+                uuid?.let { ConfigAppsStore(context).let { store -> store.locked(it) to store.changes(it) } }
+                    ?: (true to PackageFilter.Changes())
+            }
+            val reversed = changes.reversed
 
             subscription = uuid
             savedReversed = reversed
-            reversible = if (providerLock) emptySet() else PackageFilter.listed(profile)
+            ruled = changes.ruled.intersect(PackageFilter.listed(profile))
+            reversible = if (providerLock) emptySet() else PackageFilter.listed(profile) - ruled
             lockedFor = null
 
             _state.update {
@@ -233,7 +237,7 @@ class AppsViewModel : ViewModel() {
         val current = _state.value
         val mode = current.mode ?: return
         val query = current.query.trim()
-        val decision = PackageFilter.decide(mode, current.selected, profile, current.reversed)
+        val decision = PackageFilter.decide(mode, current.selected, profile, PackageFilter.Changes(current.reversed, ruled))
 
         if (lockedFor != mode) {
             locked = PackageFilter.lockedByProfile(all.map(AppRow::packageName), mode, profile) - reversible
@@ -253,6 +257,7 @@ class AppsViewModel : ViewModel() {
                     locked = it.packageName in locked,
                     provider = it.packageName in reversible,
                     changed = it.packageName in current.reversed,
+                    ruled = it.packageName in ruled,
                     inTunnel = PackageFilter.inTunnel(it.packageName, decision),
                 )
             }

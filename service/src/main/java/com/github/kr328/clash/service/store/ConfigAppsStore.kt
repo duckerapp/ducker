@@ -1,18 +1,28 @@
 package com.github.kr328.clash.service.store
 
 import android.content.Context
+import com.github.kr328.clash.service.model.UserRule
+import com.github.kr328.clash.service.util.PackageFilter
 import com.github.kr328.clash.service.util.ProviderInfo
+import com.github.kr328.clash.service.util.importedDir
 import java.io.File
 import java.util.UUID
 
 /**
  * The config's apps whose provider decision the person reversed, per subscription (D-471): a file per subscription,
  * one package per line, beside the person's rules and for the same reason — the profile's directory is rebuilt at
- * every update. Written by «Приложения» and «Мои правила» in the app's process, read by the service at every build
- * of the interface.
+ * every update. Written by «Приложения» in the app's process, read by the service at every build of the interface.
  */
-class ConfigAppsStore(context: Context) {
+class ConfigAppsStore(private val context: Context) {
     private val dir = context.filesDir.resolve("config-apps")
+
+    /** `ducker-override-user: on` in the subscription's last download: its config apps stay as the provider set them. */
+    fun locked(uuid: UUID): Boolean = ProviderInfo.read(context.importedDir.resolve(uuid.toString())).overrideUser
+
+    /** What the tunnel and both screens apply for [uuid] (D-473): the reversals and the apps with rules, none if locked. */
+    fun changes(uuid: UUID): PackageFilter.Changes =
+        if (locked(uuid)) PackageFilter.Changes()
+        else PackageFilter.Changes(read(uuid), UserRulesStore(context).read(uuid).ruledApps())
 
     fun read(uuid: UUID): Set<String> = runCatching {
         file(uuid).readLines().filterTo(HashSet()) { it.isNotBlank() }
@@ -49,3 +59,6 @@ class ConfigAppsStore(context: Context) {
 
     private fun file(uuid: UUID) = File(dir, uuid.toString())
 }
+
+/** The apps the person's rules name. */
+fun List<UserRule>.ruledApps(): Set<String> = filter { it.type == UserRule.Type.App }.mapTo(HashSet()) { it.value }

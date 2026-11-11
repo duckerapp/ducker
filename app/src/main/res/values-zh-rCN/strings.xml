@@ -189,6 +189,7 @@
     <string name="apps_profile_exclude_open">服务商的配置指定了 %1$d 个应用不走 VPN（本机安装了 %2$d 个），通常是银行和政务应用，以便开启 VPN 时也能正常使用。你可以逐个更改服务商的决定</string>
     <string name="apps_provider_choice">服务商的决定</string>
     <string name="apps_changed_by_you">已由你更改</string>
+    <string name="apps_ruled">由你的规则决定</string>
     <string name="allow_bypass">允许绕过 VPN</string>
     <string name="allow_bypass_hint">允许应用自行选择不走 VPN。关闭后由配置决定，而非应用自行决定</string>
     <string name="dns_hijack">拦截 DNS</string>
@@ -465,9 +466,9 @@
     <string name="rule_unsaved">规则未添加</string>
     <string name="rule_unsaved_hint">关闭此面板后，已输入的内容将会丢失</string>
     <string name="rule_discard">放弃</string>
-    <string name="rule_app_provider">根据服务商配置不走 VPN</string>
-    <string name="rule_app_provider_open">服务商的决定：不走 VPN。添加规则会改变这一点</string>
-    <string name="rule_app_access">不走 VPN — 已在“应用”中设置</string>
+    <string name="rule_app_provider">服务商：不走 VPN</string>
+    <string name="rule_app_provider_open">服务商的决定：不走 VPN</string>
+    <string name="rule_app_access">已在“应用”中设为不走 VPN</string>
     <string name="rule_app_exists">已有规则 · %1$s</string>
     <string name="config_open">配置</string>
     <string name="config_undo">撤销</string>

@@ -189,6 +189,7 @@
     <string name="apps_profile_exclude_open">La configuration du fournisseur exclut certaines applications du VPN : %1$d au total (installées ici : %2$d). Ce sont souvent des applications bancaires et de services publics, pour qu\'elles fonctionnent avec le VPN activé. Vous pouvez modifier le choix du fournisseur pour chacune</string>
     <string name="apps_provider_choice">Choix du fournisseur</string>
     <string name="apps_changed_by_you">Modifié par vous</string>
+    <string name="apps_ruled">Votre règle décide</string>
     <string name="allow_bypass">Autoriser l’accès sans VPN</string>
     <string name="allow_bypass_hint">Les applications peuvent choisir de contourner le VPN. Si cette option est désactivée, c’est la configuration qui décide</string>
     <string name="dns_hijack">Intercepter le DNS</string>
@@ -471,9 +472,9 @@
     <string name="rule_unsaved">Règle non ajoutée</string>
     <string name="rule_unsaved_hint">Si vous fermez ce panneau, votre saisie sera perdue</string>
     <string name="rule_discard">Abandonner</string>
-    <string name="rule_app_provider">Contourne le VPN selon la configuration du fournisseur</string>
-    <string name="rule_app_provider_open">Choix du fournisseur : sans VPN. Une règle change cela</string>
-    <string name="rule_app_access">Contourne le VPN : défini dans Applications</string>
+    <string name="rule_app_provider">Fournisseur : sans VPN</string>
+    <string name="rule_app_provider_open">Choix du fournisseur : sans VPN</string>
+    <string name="rule_app_access">Sans VPN dans Applications</string>
     <string name="rule_app_exists">Règle déjà définie · %1$s</string>
     <string name="config_open">Configuration</string>
     <string name="config_undo">Annuler</string>

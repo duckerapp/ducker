@@ -69,7 +69,8 @@ class PackageFilterTest {
         val only = ProfileNetwork(includePackage = listOf(browser), excludePackage = listOf(bank))
 
         for (mode in AccessControlMode.entries) for (chosen in listOf(emptySet(), setOf(bank, browser))) {
-            fun decided(lists: ProfileNetwork, reversed: Set<String>) = PackageFilter.decide(mode, chosen, lists, reversed)
+            fun decided(lists: ProfileNetwork, reversed: Set<String>) =
+                PackageFilter.decide(mode, chosen, lists, PackageFilter.Changes(reversed = reversed))
 
             assertTrue(PackageFilter.inTunnel(bank, decided(profile, setOf(bank))), "$mode, $chosen")
             assertFalse(PackageFilter.inTunnel(gov, decided(profile, setOf(bank))), "$mode, $chosen")
@@ -80,8 +81,26 @@ class PackageFilterTest {
             assertFalse(PackageFilter.inTunnel("com.other", decided(only, setOf("com.other"))), "$mode, $chosen")
         }
 
-        assertTrue(PackageFilter.decide(AccessControlMode.AcceptAll, emptySet(), ProfileNetwork(), setOf(browser)) ==
-            PackageFilter.decide(AccessControlMode.AcceptAll, emptySet(), ProfileNetwork()))
+        assertTrue(
+            PackageFilter.decide(AccessControlMode.AcceptAll, emptySet(), ProfileNetwork(), PackageFilter.Changes(setOf(browser))) ==
+                PackageFilter.decide(AccessControlMode.AcceptAll, emptySet(), ProfileNetwork())
+        )
+    }
+
+    @Test
+    fun `a rule takes the config's app into the tunnel, over a reversal, and only a listed one`() {
+        val only = ProfileNetwork(includePackage = listOf(browser), excludePackage = listOf(bank))
+
+        for (mode in AccessControlMode.entries) {
+            fun inside(app: String, lists: ProfileNetwork, changes: PackageFilter.Changes) =
+                PackageFilter.inTunnel(app, PackageFilter.decide(mode, setOf(gov), lists, changes))
+
+            assertTrue(inside(bank, profile, PackageFilter.Changes(ruled = setOf(bank))), "$mode")
+            // Reversed into the tunnel and ruled: still in it, not flipped twice.
+            assertTrue(inside(bank, profile, PackageFilter.Changes(setOf(bank), setOf(bank))), "$mode")
+            assertTrue(inside(browser, only, PackageFilter.Changes(setOf(browser), setOf(browser))), "$mode")
+            assertFalse(inside("com.other", only, PackageFilter.Changes(ruled = setOf("com.other"))), "$mode")
+        }
     }
 
     @Test

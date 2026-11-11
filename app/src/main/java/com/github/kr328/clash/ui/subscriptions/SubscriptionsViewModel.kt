@@ -23,6 +23,7 @@ import com.github.kr328.clash.service.util.pendingDir
 import com.github.kr328.clash.service.util.sendOverrideChanged
 import com.github.kr328.clash.service.store.UserRulesStore
 import com.github.kr328.clash.service.store.ConfigAppsStore
+import com.github.kr328.clash.service.store.ruledApps
 import com.github.kr328.clash.service.model.UserRule
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.store.Announcement
@@ -34,7 +35,6 @@ import com.github.kr328.clash.ui.settings.SettingsStore
 import com.github.kr328.clash.util.stopClashService
 import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.util.withProfile
-import com.github.kr328.clash.service.util.PackageFilter
 import com.github.kr328.clash.ui.rules.Bypass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -934,24 +934,21 @@ class SubscriptionsViewModel : ViewModel() {
 
             // Списки провайдера читает служба — файл профиля разбирает ядро; выбор человека в
             // «Приложениях» — тот же, что у туннеля (PackageFilter). The config's rows are open to a rule unless the
-            // provider locks them (D-471); unknown counts as locked.
+            // provider locks them, read as the service reads it (D-473).
             val bypass = runCatching {
                 val network = withClash { queryProfileNetwork(uuid) }
                 val (mode, chosen) = withContext(Dispatchers.IO) {
                     ServiceStore(context).let { it.accessControlMode to it.accessControlPackages.toSet() }
                 }
-                val open = profile?.overrideUser == false
+                val (locked, reversed) = withContext(Dispatchers.IO) {
+                    ConfigAppsStore(context).let { it.locked(uuid) to it.read(uuid) }
+                }
 
-                Bypass(
-                    network = network,
-                    mode = mode,
-                    chosen = chosen,
-                    reversible = if (open) PackageFilter.listed(network) else emptySet(),
-                    reversed = if (open) withContext(Dispatchers.IO) { ConfigAppsStore(context).read(uuid) } else emptySet(),
-                )
+                Bypass(network, mode, chosen, locked, reversed, ruled = rules.ruledApps())
             }.getOrNull()
 
-            _state.update { if (it.rulesFor == uuid) it.copy(rulesBypass = bypass) else it }
+            // The rules as they are now: one may have been added while the service answered.
+            _state.update { if (it.rulesFor == uuid) it.copy(rulesBypass = bypass?.copy(ruled = it.rules.ruledApps())) else it }
         }
     }
 
@@ -962,11 +959,7 @@ class SubscriptionsViewModel : ViewModel() {
      * второе ядро всё равно не увидело бы — решает первое совпадение (D-135). Several at once (apps picked
      * together, D-326) are saved once, so the core reloads once.
      */
-    fun addRules(context: Context, added: List<UserRule>) = saveRules(
-        context,
-        // A rule on an app the provider sends past the tunnel takes it in, for this subscription (D-471).
-        reverse = { it.takenOver(added.filter { rule -> rule.type == UserRule.Type.App }.map(UserRule::value)) },
-    ) { rules ->
+    fun addRules(context: Context, added: List<UserRule>) = saveRules(context) { rules ->
         added.fold(rules) { all, rule ->
             val same = all.indexOfFirst { it.type == rule.type && it.value == rule.value }
 
@@ -974,41 +967,27 @@ class SubscriptionsViewModel : ViewModel() {
         }
     }
 
-    /** Without the rule a config's app goes back to the provider's choice (D-471). */
-    fun removeRule(context: Context, rule: UserRule) = saveRules(
-        context,
-        reverse = { if (rule.type == UserRule.Type.App) it.reversed - rule.value else it.reversed },
-    ) { it - rule }
+    fun removeRule(context: Context, rule: UserRule) = saveRules(context) { it - rule }
 
     /**
      * Правила — в файл подписки, а если она в работе — служба перечитывает профиль с ними
      * (D-123). У неактивной подписки правила вступят в силу, когда её выберут.
      */
-    private fun saveRules(
-        context: Context,
-        reverse: (Bypass) -> Set<String> = Bypass::reversed,
-        change: (List<UserRule>) -> List<UserRule>,
-    ) {
+    private fun saveRules(context: Context, change: (List<UserRule>) -> List<UserRule>) {
         val uuid = _state.value.rulesFor ?: return
         val rules = change(_state.value.rules)
-        val bypass = _state.value.rulesBypass
-        // The config's apps this subscription's rules took over or let go; null when nothing changes.
-        val reversed = bypass?.let(reverse)?.takeIf { it != bypass.reversed }
 
+        // A rule on a config's app takes it into the tunnel, its removal gives it back to the provider (D-473).
         _state.update {
             it.copy(
                 rules = rules,
                 ruleCounts = it.ruleCounts + (uuid to rules.size),
-                rulesBypass = reversed?.let { r -> bypass?.copy(reversed = r) } ?: it.rulesBypass,
+                rulesBypass = it.rulesBypass?.copy(ruled = rules.ruledApps()),
             )
         }
 
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                // Before the rules: their reload rebuilds the interface with the reversals it reads then.
-                if (reversed != null) ConfigAppsStore(context).write(uuid, reversed)
-                UserRulesStore(context).write(uuid, rules)
-            }
+            withContext(Dispatchers.IO) { UserRulesStore(context).write(uuid, rules) }
 
             val active = _state.value.profiles.firstOrNull { it.uuid == uuid }?.active == true
 

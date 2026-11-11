@@ -189,6 +189,7 @@
     <string name="apps_profile_exclude_open">Cấu hình của nhà cung cấp cho %1$d ứng dụng không qua VPN (%2$d ứng dụng có trên thiết bị này), thường là ứng dụng ngân hàng và dịch vụ công, để chúng vẫn hoạt động khi bật VPN. Bạn có thể thay đổi quyết định của nhà cung cấp cho từng ứng dụng</string>
     <string name="apps_provider_choice">Quyết định của nhà cung cấp</string>
     <string name="apps_changed_by_you">Bạn đã thay đổi</string>
+    <string name="apps_ruled">Quy tắc của bạn quyết định</string>
     <string name="allow_bypass">Cho phép bỏ qua VPN</string>
     <string name="allow_bypass_hint">Ứng dụng có thể tự chọn kết nối không qua VPN. Khi tắt, cấu hình quyết định thay cho ứng dụng</string>
     <string name="dns_hijack">Chuyển hướng DNS</string>
@@ -465,9 +466,9 @@
     <string name="rule_unsaved">Chưa thêm quy tắc</string>
     <string name="rule_unsaved_hint">Nếu đóng bảng này, nội dung đã nhập sẽ mất</string>
     <string name="rule_discard">Bỏ thay đổi</string>
-    <string name="rule_app_provider">Không qua VPN theo cấu hình nhà cung cấp</string>
-    <string name="rule_app_provider_open">Quyết định của nhà cung cấp: không qua VPN. Quy tắc sẽ thay đổi điều này</string>
-    <string name="rule_app_access">Không qua VPN; đã đặt trong “Ứng dụng”</string>
+    <string name="rule_app_provider">Nhà cung cấp: không qua VPN</string>
+    <string name="rule_app_provider_open">Nhà cung cấp chọn: không qua VPN</string>
+    <string name="rule_app_access">“Ứng dụng”: không qua VPN</string>
     <string name="rule_app_exists">Đã có quy tắc · %1$s</string>
     <string name="config_open">Cấu hình</string>
     <string name="config_undo">Hoàn tác</string>
