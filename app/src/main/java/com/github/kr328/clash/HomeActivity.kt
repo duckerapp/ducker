@@ -339,6 +339,13 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         // Edge to edge before Android 15 too, as 15 enforces it: otherwise the system paints the status bar itself,
         // and the theme wave (D-66) cannot cover it — the bar switched colour at once, ahead of the wave.
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // And into the camera cutout, as 15 does: sideways the default left a black strip of its width at one side
+        // (D-479). The screens keep clear of it through their `displayCutout` insets.
+        window.attributes = window.attributes.apply {
+            layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            } else WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
         // On a TV the keyboard lies over the app (D-377): before the window was drawn edge to edge, `adjustResize`
         // shrank the whole app on Android 14 — the dock included — whenever Gboard reported its height (F-362).
         if (tv) window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
