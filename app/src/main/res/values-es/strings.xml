@@ -219,6 +219,7 @@
         <item quantity="other">%1$s conexiones</item>
     </plurals>
     <string name="connections_reset">Restablecer todas</string>
+    <string name="connections_reset_shown">Restablecer estas</string>
     <string name="connections_off_title">La VPN está desactivada</string>
     <string name="connections_off">Activa la VPN para ver adónde se conectan las aplicaciones</string>
     <string name="connections_empty">No hay conexiones ahora</string>

@@ -217,6 +217,7 @@
         <item quantity="other">%1$s kết nối</item>
     </plurals>
     <string name="connections_reset">Đặt lại tất cả</string>
+    <string name="connections_reset_shown">Đặt lại các mục này</string>
     <string name="connections_off_title">VPN đang tắt</string>
     <string name="connections_off">Bật VPN để xem các ứng dụng kết nối đến đâu</string>
     <string name="connections_empty">Hiện không có kết nối</string>

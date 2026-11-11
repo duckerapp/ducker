@@ -236,6 +236,7 @@
         <item quantity="other">%1$s подключения</item>
     </plurals>
     <string name="connections_reset">Сбросить все</string>
+    <string name="connections_reset_shown">Сбросить эти</string>
     <string name="connections_off_title">VPN выключен</string>
     <string name="connections_off">Включите VPN, и здесь будет видно, куда подключаются приложения</string>
     <string name="connections_empty">Сейчас подключений нет</string>

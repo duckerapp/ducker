@@ -222,6 +222,7 @@
         <item quantity="other">%1$s اتصال</item>
     </plurals>
     <string name="connections_reset">إعادة ضبط الكل</string>
+    <string name="connections_reset_shown">إعادة ضبط هذه</string>
     <string name="connections_off_title">VPN متوقف</string>
     <string name="connections_off">شغّل VPN لترى إلى أين تتصل التطبيقات</string>
     <string name="connections_empty">لا اتصالات الآن</string>

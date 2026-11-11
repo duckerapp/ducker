@@ -55,7 +55,10 @@ data class ConnectionsState(
     val site: String? = null,
     /** The search: an app, a site, a rule or a node. */
     val query: String = "",
-)
+) {
+    /** A tap or the search narrowed the list: «Сбросить» closes only what it shows. */
+    val narrowed: Boolean get() = app != null || site != null || query.isNotBlank()
+}
 
 /**
  * «Подключения» (stage 15): the core's open connections, read about once a second while the page is open and never in
@@ -72,6 +75,8 @@ class ConnectionsViewModel : ViewModel() {
     private var epoch = 0
     /** When «Сбросить все» was pressed: what it closed comes back from the core as closed, and is not shown. */
     private var resetAt = 0L
+    /** The same for a reset of a narrowed list, by id: the others keep their closed rows. */
+    private var dropped: Set<String> = emptySet()
     private val apps = HashMap<String, ConnectionApp>()
     private var last: Map<String, Long> = emptyMap()
     private var lastAt = 0L
@@ -83,6 +88,7 @@ class ConnectionsViewModel : ViewModel() {
 
         // A fresh page each time, without the old filter; the closing page keeps its rows while it slides away.
         all = emptyMap()
+        dropped = emptySet()
         last = emptyMap()
         apps.clear()
         _state.value = ConnectionsState()
@@ -116,16 +122,30 @@ class ConnectionsViewModel : ViewModel() {
 
     fun search(query: String) = filter { it.copy(query = query) }
 
-    /** «Сбросить все»: apps open new connections by the current rules at once. */
+    /**
+     * «Сбросить все»: apps open new connections by the current rules at once. On a list narrowed to an app, a site or a
+     * search, only the connections it shows: one app stuck, the others left alone.
+     */
     fun closeAll(context: Context) {
         val app = context.applicationContext
+        val shown = _state.value.takeIf(ConnectionsState::narrowed)?.rows
 
         viewModelScope.launch {
-            runCatching { withClash { closeAllConnections() } }
+            runCatching {
+                withClash { if (shown == null) closeAllConnections() else closeConnections(shown.filterNot(ConnectionRow::closed).map(ConnectionRow::id)) }
+            }
             // The page starts over: what was closed is not kept, unlike a connection an app closes itself.
             epoch++
-            all = emptyMap()
-            resetAt = System.currentTimeMillis()
+            if (shown == null) {
+                all = emptyMap()
+                dropped = emptySet()
+                resetAt = System.currentTimeMillis()
+            } else {
+                val ids = shown.mapTo(HashSet(), ConnectionRow::id)
+
+                all = all - ids
+                dropped = dropped + ids
+            }
             read(app)
         }
     }
@@ -140,7 +160,7 @@ class ConnectionsViewModel : ViewModel() {
         val now = SystemClock.elapsedRealtime()
         val seconds = ((now - lastAt) / 1000.0).takeIf { lastAt != 0L && it > 0 }
         val rows = withContext(Dispatchers.IO) {
-            connections.filter { !it.closed || it.start >= resetAt }.map { it.row(appOf(context, it), last[it.id], seconds) }
+            connections.filter { !it.closed || (it.start >= resetAt && it.id !in dropped) }.map { it.row(appOf(context, it), last[it.id], seconds) }
         }
 
         if (began != epoch) return
@@ -215,6 +235,7 @@ internal fun Connection.row(app: ConnectionApp, before: Long?, seconds: Double?)
         total = total,
         start = start,
         closed = closed,
+        udp = network == "udp",
     )
 }
 

@@ -218,6 +218,7 @@
         <item quantity="other">%1$s اتصال</item>
     </plurals>
     <string name="connections_reset">بازنشانی همه</string>
+    <string name="connections_reset_shown">بازنشانی این‌ها</string>
     <string name="connections_off_title">VPN خاموش است</string>
     <string name="connections_off">VPN را روشن کنید تا ببینید برنامه‌ها به کجا وصل می‌شوند</string>
     <string name="connections_empty">اکنون اتصالی نیست</string>

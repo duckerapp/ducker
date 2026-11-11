@@ -217,6 +217,7 @@
         <item quantity="other">%1$s koneksi</item>
     </plurals>
     <string name="connections_reset">Reset semua</string>
+    <string name="connections_reset_shown">Reset yang ini</string>
     <string name="connections_off_title">VPN mati</string>
     <string name="connections_off">Nyalakan VPN untuk melihat ke mana aplikasi terhubung</string>
     <string name="connections_empty">Tidak ada koneksi saat ini</string>

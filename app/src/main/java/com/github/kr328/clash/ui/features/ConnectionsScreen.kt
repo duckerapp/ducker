@@ -55,7 +55,7 @@ import com.github.kr328.clash.ui.components.DuckerCard as Card
 
 /**
  * «Подключения» (stage 15): which app goes where, by which rule and node, live. A tap narrows the list — to the app, then
- * to the site; «Сбросить все» closes them, and apps open new ones by the current rules.
+ * to the site; «Сбросить все» closes them, and apps open new ones by the current rules — narrowed, only those shown.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -119,10 +119,10 @@ fun ConnectionsScreen(
                 },
                 pills = {
                     Pill(
-                        text = stringResource(R.string.connections_reset),
+                        text = stringResource(if (state.narrowed) R.string.connections_reset_shown else R.string.connections_reset),
                         onClick = onCloseAll,
                         icon = Symbols.RestartAlt,
-                        enabled = state.count > 0,
+                        enabled = if (state.narrowed) state.rows.any { !it.closed } else state.count > 0,
                     )
                 },
             )

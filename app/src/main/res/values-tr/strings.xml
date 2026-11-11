@@ -218,6 +218,7 @@
         <item quantity="other">%1$s bağlantı</item>
     </plurals>
     <string name="connections_reset">Tümünü sıfırla</string>
+    <string name="connections_reset_shown">Bunları sıfırla</string>
     <string name="connections_off_title">VPN kapalı</string>
     <string name="connections_off">Uygulamaların nereye bağlandığını görmek için VPN\'i açın</string>
     <string name="connections_empty">Şu anda bağlantı yok</string>

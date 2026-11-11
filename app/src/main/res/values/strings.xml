@@ -245,6 +245,7 @@
         <item quantity="other">%1$s connections</item>
     </plurals>
     <string name="connections_reset">Reset all</string>
+    <string name="connections_reset_shown">Reset these</string>
     <string name="connections_off_title">VPN is off</string>
     <string name="connections_off">Connect the VPN to see where apps connect</string>
     <string name="connections_empty">No connections right now</string>

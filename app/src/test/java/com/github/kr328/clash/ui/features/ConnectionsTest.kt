@@ -27,6 +27,18 @@ class ConnectionsTest {
         assertEquals(0L, c.row(app, before = 9_000, seconds = 1.0).speed)
         assertEquals(true to 0L, c.copy(closed = true).row(app, before = 1_000, seconds = 2.0).let { it.closed to it.speed })
         assertEquals("Match → Node", c.copy(rule = "Match", rulePayload = "", chain = listOf("Node", "Proxy")).row(app, null, null).route)
+        // Only UDP is marked: the core names it "udp", TCP is the rest.
+        assertEquals(true to false, c.copy(network = "udp").row(app, null, null).udp to c.copy(network = "tcp").row(app, null, null).udp)
+    }
+
+    @Test
+    fun `a tap or a search narrows what «Сбросить» closes`() {
+        val app = ConnectionApp("a", ConnectionApp.Kind.App, "A")
+
+        assertEquals(false, ConnectionsState().narrowed)
+        assertEquals(false, ConnectionsState(query = "  ").narrowed)
+        assertEquals(true, ConnectionsState(query = "udp").narrowed)
+        assertEquals(true, ConnectionsState(app = app).narrowed)
     }
 
     @Test
