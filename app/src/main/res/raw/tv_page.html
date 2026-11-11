@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="{{lang}}" dir="{{dir}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{{title}}</title>
+<style>
+/* The site's look (D-450, "the duck over the edge"): black and white, a M44.83,28.06 C43.56,28.68 44.79,31.55 46.93,32.90 C47.85,33.50 47.85,33.52 46.64,34.34 C41.29,37.98 38.81,44.40 40.61,50.02 C41.13,51.69 42.57,54.04 44.21,55.91 C44.68,56.44 44.69,56.47 44.51,56.65 C44.33,56.83 44.25,56.82 42.60,56.38 C36.97,54.85 31.09,54.24 29.28,55.00 C28.70,55.24 28.23,55.74 28.02,56.35 C27.73,57.16 27.76,60.53 28.08,62.23 C29.43,69.76 33.84,76.03 39.98,79.17 C41.28,79.85 41.50,79.92 43.37,80.49 C48.58,82.07 55.84,82.38 61.81,81.27 C69.98,79.74 75.15,75.44 76.03,69.46 C76.22,68.15 76.09,65.89 75.77,64.55 C74.92,61.12 73.32,58.60 69.47,54.64 C67.40,52.52 67.38,52.62 69.93,52.59 C71.93,52.56 72.80,52.41 74.34,51.88 C77.41,50.79 79.34,48.51 78.21,47.30 C77.89,46.97 77.63,46.86 76.55,46.68 C74.33,46.33 72.80,45.64 71.35,44.36 L70.45,43.57 L70.45,43.01 C70.45,42.15 70.17,40.17 69.88,39.05 C68.52,33.67 64.50,30.34 58.78,29.84 C58.06,29.77 56.20,29.73 54.63,29.74 C50.95,29.75 49.08,29.47 46.88,28.55 C45.29,27.89 45.22,27.87 44.83,28.06 Z M62.99,41.86 C63.85,42.29 64.19,43.51 63.69,44.38 C63.09,45.44 61.54,45.58 60.75,44.66 C60.11,43.89 60.12,43.01 60.80,42.28 C61.39,41.63 62.22,41.48 62.99,41.86 ZER wordmark, an ink slab with the
+   icon's duck standing on its edge; in the dark theme the slab inverts to mist. */
+:root { --bg: #f2f2f2; --ink: #0a0a0a; --slab: #0a0a0a; --on-slab: #f2f2f2; --muted: #a8a8a8; --line: rgba(242, 242, 242, .28); --bad: #f2b8b5; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0a0a0a; --ink: #f2f2f2; --slab: #f2f2f2; --on-slab: #0a0a0a; --muted: #555; --line: rgba(10, 10, 10, .24); --bad: #b3261e; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 28px 16px 40px; background: var(--bg); color: var(--ink); font: 17px/1.45 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 30rem; margin: 0 auto; }
+.mark { display: block; width: 100%; height: auto; margin-bottom: 64px; color: var(--ink); }
+.slab { position: relative; padding: 28px 20px 24px; border-radius: 32px; background: var(--slab); color: var(--on-slab); }
+.duck { position: absolute; right: 14%; bottom: calc(100% - 1px); width: 68px; height: auto; color: var(--slab); }
+h1 { margin: 0 0 8px; font-size: 26px; line-height: 1.2; letter-spacing: -.01em; }
+p { margin: 0 0 22px; color: var(--muted); }
+label { display: block; margin-bottom: 8px; font-weight: 600; }
+textarea { display: block; width: 100%; min-height: 112px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 18px; background: transparent; color: var(--on-slab); font: 16px/1.4 ui-monospace, Menlo, monospace; word-break: break-all; resize: vertical; }
+textarea::placeholder { color: var(--muted); }
+textarea:focus { outline: 2px solid var(--on-slab); outline-offset: 1px; }
+button { display: block; width: 100%; margin-top: 14px; padding: 16px; border: 0; border-radius: 999px; background: var(--on-slab); color: var(--slab); font: inherit; font-weight: 700; }
+button:disabled, textarea:disabled { opacity: .45; }
+#status { min-height: 1.45em; margin: 16px 0 0; color: var(--on-slab); }
+#status.bad { color: var(--bad); }
+</style>
+</head>
+<body>
+<main>
+<svg class="mark" viewBox="20 990 9133 1517" role="img" aria-label="ducker"><path fill="currentColor" d="M513 2477H190L192 2207H513Q613 2207 682 2159Q752 2111 788 2016Q825 1920 825 1780V1717Q825 1612 804 1532Q784 1453 744 1400Q704 1346 644 1319Q585 1292 508 1292H184V1021H508Q656 1021 780 1072Q903 1122 994 1216Q1084 1309 1134 1436Q1183 1564 1183 1719V1780Q1183 1934 1134 2062Q1084 2190 994 2283Q904 2376 782 2426Q659 2477 513 2477ZM391 1021V2477H40V1021ZM2442 1021H2793V1972Q2793 2142 2722 2260Q2651 2377 2523 2437Q2395 2497 2222 2497Q2051 2497 1921 2437Q1792 2377 1719 2260Q1647 2142 1647 1972V1021H1999V1972Q1999 2062 2025 2118Q2051 2175 2101 2201Q2151 2227 2222 2227Q2294 2227 2343 2201Q2392 2175 2417 2118Q2442 2062 2442 1972ZM4127 1984H4477Q4470 2136 4395 2252Q4320 2368 4188 2432Q4055 2497 3875 2497Q3729 2497 3615 2448Q3500 2399 3421 2307Q3341 2215 3300 2084Q3258 1953 3258 1789V1710Q3258 1546 3302 1414Q3345 1283 3426 1190Q3506 1098 3619 1049Q3732 1000 3870 1000Q4060 1000 4191 1068Q4322 1136 4394 1254Q4466 1373 4479 1524H4129Q4127 1442 4101 1386Q4075 1331 4019 1303Q3963 1275 3870 1275Q3805 1275 3757 1299Q3709 1323 3677 1375Q3645 1427 3630 1510Q3614 1592 3614 1708V1789Q3614 1905 3628 1987Q3642 2069 3673 2121Q3704 2173 3754 2198Q3803 2222 3875 2222Q3955 2222 4010 2196Q4065 2171 4095 2118Q4125 2066 4127 1984ZM5281 1021V2477H4930V1021ZM6150 1021 5586 1759 5256 2120 5192 1798 5403 1478 5717 1021ZM5735 2477 5359 1821 5632 1620 6150 2477ZM7529 2207V2477H6753V2207ZM6878 1021V2477H6527V1021ZM7429 1599V1860H6753V1599ZM7532 1021V1292H6753V1021ZM7960 1021H8533Q8701 1021 8825 1071Q8949 1121 9016 1219Q9084 1317 9084 1461Q9084 1586 9045 1670Q9006 1754 8936 1808Q8867 1863 8775 1898L8660 1963H8179L8177 1692H8533Q8600 1692 8644 1668Q8688 1644 8710 1600Q8733 1555 8733 1493Q8733 1430 8710 1385Q8687 1340 8642 1316Q8598 1292 8533 1292H8311V2477H7960ZM8757 2477 8435 1833 8807 1831 9133 2462V2477Z"/></svg>
+<section class="slab">
+<svg class="duck" viewBox="27.2 27.4 52.6 42.1" aria-hidden="true"><path fill="currentColor" d="M44.83,28.06 C43.56,28.68 44.79,31.55 46.93,32.90 C47.85,33.50 47.85,33.52 46.64,34.34 C41.29,37.98 38.81,44.40 40.61,50.02 C41.13,51.69 42.57,54.04 44.21,55.91 C44.68,56.44 44.69,56.47 44.51,56.65 C44.33,56.83 44.25,56.82 42.60,56.38 C36.97,54.85 31.09,54.24 29.28,55.00 C28.70,55.24 28.23,55.74 28.02,56.35 C27.73,57.16 27.76,60.53 28.08,62.23 C29.43,69.76 33.84,76.03 39.98,79.17 C41.28,79.85 41.50,79.92 43.37,80.49 C48.58,82.07 55.84,82.38 61.81,81.27 C69.98,79.74 75.15,75.44 76.03,69.46 C76.22,68.15 76.09,65.89 75.77,64.55 C74.92,61.12 73.32,58.60 69.47,54.64 C67.40,52.52 67.38,52.62 69.93,52.59 C71.93,52.56 72.80,52.41 74.34,51.88 C77.41,50.79 79.34,48.51 78.21,47.30 C77.89,46.97 77.63,46.86 76.55,46.68 C74.33,46.33 72.80,45.64 71.35,44.36 L70.45,43.57 L70.45,43.01 C70.45,42.15 70.17,40.17 69.88,39.05 C68.52,33.67 64.50,30.34 58.78,29.84 C58.06,29.77 56.20,29.73 54.63,29.74 C50.95,29.75 49.08,29.47 46.88,28.55 C45.29,27.89 45.22,27.87 44.83,28.06 Z M62.99,41.86 C63.85,42.29 64.19,43.51 63.69,44.38 C63.09,45.44 61.54,45.58 60.75,44.66 C60.11,43.89 60.12,43.01 60.80,42.28 C61.39,41.63 62.22,41.48 62.99,41.86 Z"/></svg>
+<h1>{{title}}</h1>
+<p>{{hint}}</p>
+<form id="form" novalidate>
+<label for="link">{{field}}</label>
+<textarea id="link" rows="4" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://…"></textarea>
+<button id="send" type="submit">{{send}}</button>
+</form>
+<p id="status" role="status" aria-live="polite" data-sending="{{sending}}" data-sent="{{sent}}" data-not-link="{{not_link}}" data-refused="{{refused}}" data-no-answer="{{no_answer}}" data-no-key="{{no_key}}"></p>
+</section>
+</main>
+<script>
+// AES-256-GCM sealing as the TV's unseal() expects: nonce, then ciphertext with its 16-byte tag (D-163).
+// Its own code because a page without https has no crypto.subtle; getRandomValues works without it.
+var S = (function () {
+  var s = new Uint8Array(256), p = 1, q = 1, x;
+  function rot(b, n) { return ((b << n) | (b >> (8 - n))) & 0xff; }
+  do {
+    p = (p ^ (p << 1) ^ (p & 0x80 ? 0x1b : 0)) & 0xff;
+    q = (q ^ (q << 1)) & 0xff; q = (q ^ (q << 2)) & 0xff; q = (q ^ (q << 4)) & 0xff;
+    if (q & 0x80) q ^= 0x09;
+    x = q ^ rot(q, 1) ^ rot(q, 2) ^ rot(q, 3) ^ rot(q, 4);
+    s[p] = x ^ 0x63;
+  } while (p !== 1);
+  s[0] = 0x63;
+  return s;
+})();
+
+function xtime(b) { return ((b << 1) ^ (b & 0x80 ? 0x1b : 0)) & 0xff; }
+
+function expand(key) {
+  var w = new Uint8Array(240), rcon = 1, i, j, t;
+  w.set(key);
+  for (i = 32; i < 240; i += 4) {
+    t = [w[i - 4], w[i - 3], w[i - 2], w[i - 1]];
+    if (i % 32 === 0) { t = [S[t[1]] ^ rcon, S[t[2]], S[t[3]], S[t[0]]]; rcon = xtime(rcon); }
+    else if (i % 32 === 16) t = [S[t[0]], S[t[1]], S[t[2]], S[t[3]]];
+    for (j = 0; j < 4; j++) w[i + j] = w[i - 32 + j] ^ t[j];
+  }
+  return w;
+}
+
+function encrypt(w, block) {
+  var s = new Uint8Array(16), t = new Uint8Array(16), r, c, j, a0, a1, a2, a3;
+  for (j = 0; j < 16; j++) s[j] = block[j] ^ w[j];
+  for (r = 1; r <= 14; r++) {
+    for (c = 0; c < 4; c++) for (j = 0; j < 4; j++) t[4 * c + j] = S[s[4 * ((c + j) % 4) + j]];
+    if (r < 14) for (c = 0; c < 16; c += 4) {
+      a0 = t[c]; a1 = t[c + 1]; a2 = t[c + 2]; a3 = t[c + 3];
+      t[c] = xtime(a0) ^ xtime(a1) ^ a1 ^ a2 ^ a3;
+      t[c + 1] = a0 ^ xtime(a1) ^ xtime(a2) ^ a2 ^ a3;
+      t[c + 2] = a0 ^ a1 ^ xtime(a2) ^ xtime(a3) ^ a3;
+      t[c + 3] = xtime(a0) ^ a0 ^ a1 ^ a2 ^ xtime(a3);
+    }
+    for (j = 0; j < 16; j++) s[j] = t[j] ^ w[16 * r + j];
+  }
+  return s;
+}
+
+function gmul(x, h) {
+  var z = new Uint8Array(16), v = new Uint8Array(h), i, j, low;
+  for (i = 0; i < 128; i++) {
+    if (x[i >> 3] & (0x80 >> (i & 7))) for (j = 0; j < 16; j++) z[j] ^= v[j];
+    low = v[15] & 1;
+    for (j = 15; j > 0; j--) v[j] = (v[j] >> 1) | ((v[j - 1] & 1) << 7);
+    v[0] >>= 1;
+    if (low) v[0] ^= 0xe1;
+  }
+  return z;
+}
+
+function seal(key, nonce, plain) {
+  var w = expand(key), h = encrypt(w, new Uint8Array(16)), counter = new Uint8Array(16), x = new Uint8Array(16);
+  var out = new Uint8Array(12 + plain.length + 16), i, j, n, pad, tag, bits = plain.length * 8;
+  counter.set(nonce); counter[15] = 1;
+  var first = encrypt(w, counter);
+  out.set(nonce);
+  for (i = 0; i < plain.length; i += 16) {
+    for (j = 15; j >= 12 && ++counter[j] === 256; j--) counter[j] = 0;
+    pad = encrypt(w, counter);
+    n = Math.min(16, plain.length - i);
+    for (j = 0; j < n; j++) out[12 + i + j] = plain[i + j] ^ pad[j];
+    for (j = 0; j < n; j++) x[j] ^= out[12 + i + j];
+    x = gmul(x, h);
+  }
+  for (j = 0; j < 4; j++) x[15 - j] ^= (bits >>> (8 * j)) & 0xff;
+  tag = gmul(x, h);
+  for (j = 0; j < 16; j++) out[12 + plain.length + j] = tag[j] ^ first[j];
+  return out;
+}
+</script>
+<script>
+(function () {
+  var form = document.getElementById('form'), field = document.getElementById('link');
+  var button = document.getElementById('send'), status = document.getElementById('status');
+  var key = decode(location.hash.slice(1));
+
+  function say(name, bad) {
+    status.textContent = status.getAttribute('data-' + name);
+    status.className = bad ? 'bad' : '';
+  }
+
+  // The key travels after "#" and never reaches the network: base64url, 32 bytes.
+  function decode(text) {
+    if (!/^[\w-]{43}$/.test(text)) return null;
+    var raw = atob(text.replace(/-/g, '+').replace(/_/g, '/') + '='), bytes = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    return bytes.length === 32 ? bytes : null;
+  }
+
+  if (!key) {
+    field.disabled = button.disabled = true;
+    return say('no-key', true);
+  }
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var link = field.value.trim();
+    if (!/^(https?|ducker|clash|clashmeta):\/\/\S+$/i.test(link)) return say('not-link', true);
+
+    button.disabled = true;
+    say('sending');
+    var body = seal(key, crypto.getRandomValues(new Uint8Array(12)), new TextEncoder().encode(link));
+    fetch(location.pathname, { method: 'POST', body: body, cache: 'no-store' }).then(function (response) {
+      if (response.ok) {
+        field.disabled = true;
+        return say('sent');
+      }
+      button.disabled = false;
+      say('refused', true);
+    }, function () {
+      button.disabled = false;
+      say('no-answer', true);
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -546,6 +546,7 @@ class SubscriptionsViewModel : ViewModel() {
      */
     fun startReceive(context: Context) {
         val app = context.applicationContext
+        val page = transferPage(context)
 
         _state.update { it.copy(toPower = null) }
 
@@ -554,7 +555,7 @@ class SubscriptionsViewModel : ViewModel() {
             val link = channelFlow<InstallLink?> {
                 homeAddress(app).collectLatest { address ->
                     if (address != null) {
-                        return@collectLatest send(receive(address) { code ->
+                        return@collectLatest send(receive(address, page) { code ->
                             _state.update { it.copy(receive = Receive.Waiting(code.toString())) }
                         })
                     }

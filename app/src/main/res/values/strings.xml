@@ -84,12 +84,22 @@
     <string name="share_qr_hint">On the other device, open ducker:\nProfiles → “Add” → “Scan QR”</string>
     <string name="share_qr_warning">This code gives access to your subscription.\nShow it only to your own devices.</string>
     <!-- Передача подписки с телефона на телевизор (D-162) -->
-    <string name="receive_hint">Scan the code with your phone: ducker → Profiles → “Add” → “Scan QR”. Or enter the link here.</string>
+    <string name="receive_hint">Point your phone’s camera at the code and paste the link on the page that opens. With ducker: Profiles → “Add” → “Scan QR”. Or enter the link here.</string>
     <string name="receive_code">QR code for sending a subscription from your phone</string>
     <string name="receive_received">Received. Loading the subscription…</string>
     <string name="receive_no_network">The TV is not connected to a home network</string>
     <string name="receive_expired">The code is no longer valid</string>
     <string name="receive_again">Show a new code</string>
+    <string name="tv_page_title">Send a subscription to the TV</string>
+    <string name="tv_page_hint">Paste the subscription link from your provider and tap “Send”. It reaches the TV encrypted.</string>
+    <string name="tv_page_field">Subscription link</string>
+    <string name="tv_page_send">Send</string>
+    <string name="tv_page_sending">Sending…</string>
+    <string name="tv_page_sent">Sent. The TV is loading the subscription.</string>
+    <string name="tv_page_not_link">This is not a subscription link: it starts with https://</string>
+    <string name="tv_page_refused">The TV did not accept the link. Check it, or show a new code on the TV and scan it again.</string>
+    <string name="tv_page_no_answer">The TV is not answering. If its code has expired, show a new one and scan it again. The phone and the TV must be on the same Wi-Fi.</string>
+    <string name="tv_page_no_key">Open this page by pointing your camera at the code on the TV.</string>
     <string name="send_tv_title">Send to TV</string>
     <string name="send_tv_hint">The TV gets the subscription link and loads it itself. The link is sent encrypted and only over your home network.</string>
     <string name="send_tv_empty">No subscriptions with a link here — nothing to send.</string>

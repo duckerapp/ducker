@@ -76,12 +76,22 @@
     <string name="share_qr_hint">На другом устройстве откройте ducker:\n«Подписки» → «Добавить» → «Сканировать QR»</string>
     <string name="share_qr_warning">Этот код даёт доступ к подписке.\nПоказывайте его только своим устройствам.</string>
     <!-- Передача подписки с телефона на телевизор (D-162) -->
-    <string name="receive_hint">Отсканируйте код телефоном: ducker → «Подписки» → «Добавить» → «Сканировать QR». Или введите ссылку здесь.</string>
+    <string name="receive_hint">Наведите камеру телефона на код и вставьте ссылку на открывшейся странице. В ducker: «Подписки» → «Добавить» → «Сканировать QR». Или введите ссылку здесь.</string>
     <string name="receive_code">QR-код для передачи подписки с телефона</string>
     <string name="receive_received">Получено. Загружаю подписку…</string>
     <string name="receive_no_network">Телевизор не подключён к домашней сети</string>
     <string name="receive_expired">Код больше не действует</string>
     <string name="receive_again">Показать новый код</string>
+    <string name="tv_page_title">Подписка на телевизор</string>
+    <string name="tv_page_hint">Вставьте ссылку подписки от вашего провайдера и нажмите «Отправить». Она уйдёт на телевизор зашифрованной.</string>
+    <string name="tv_page_field">Ссылка подписки</string>
+    <string name="tv_page_send">Отправить</string>
+    <string name="tv_page_sending">Отправляю…</string>
+    <string name="tv_page_sent">Отправлено. Телевизор загружает подписку.</string>
+    <string name="tv_page_not_link">Это не ссылка подписки: она начинается с https://</string>
+    <string name="tv_page_refused">Телевизор не принял ссылку. Проверьте её или покажите на телевизоре новый код и отсканируйте его снова.</string>
+    <string name="tv_page_no_answer">Телевизор не отвечает. Если код на нём больше не действует, покажите новый и отсканируйте снова. Телефон и телевизор должны быть в одной сети Wi-Fi.</string>
+    <string name="tv_page_no_key">Откройте эту страницу камерой телефона по коду на экране телевизора.</string>
     <string name="send_tv_title">Отправить на телевизор</string>
     <string name="send_tv_hint">Телевизор получит ссылку подписки и загрузит её сам. Ссылка уходит зашифрованной и только по домашней сети.</string>
     <string name="send_tv_empty">Здесь нет подписок со ссылкой — отправлять нечего.</string>

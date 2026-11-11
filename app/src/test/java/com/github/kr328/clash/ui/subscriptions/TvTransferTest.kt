@@ -1,8 +1,12 @@
 package com.github.kr328.clash.ui.subscriptions
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.io.IOException
 import java.net.InetAddress
 import java.net.Socket
@@ -97,8 +101,8 @@ class TvTransferTest {
         assertFalse(send(TvLink(to.host, to.port, to.session, ByteArray(32)), link))
         assertFalse(send(TvLink(to.host, to.port, "other", to.key), link))
         assertFalse(send(to, "ducker://install-config?url=file%3A%2F%2F%2Fdata&mirror=sub2.example.com"))
-        // Не тот запрос и сообщение больше разрешённого.
-        assertEquals("HTTP/1.1 403 Forbidden", raw(to, "GET /d/${to.session} HTTP/1.1\r\n\r\n"))
+        // A message with no length, and one over the limit.
+        assertEquals("HTTP/1.1 403 Forbidden", raw(to, "POST /d/${to.session} HTTP/1.1\r\n\r\n"))
         assertFalse(tv.isCompleted)
         assertEquals("HTTP/1.1 403 Forbidden", raw(to, "POST /d/${to.session} HTTP/1.1\r\nContent-Length: ${MAX_MESSAGE + 1}\r\n\r\n"))
 
@@ -106,6 +110,49 @@ class TvTransferTest {
         assertFailsWith<IOException> { send(to, link) }
 
         Unit
+    }
+
+    @Test
+    fun `a camera gets the page, and no request but a message counts as a strike`() = runBlocking {
+        val shown = CompletableDeferred<TvLink>()
+        val page = "<!doctype html><p>форма</p>".toByteArray()
+        val tv = async { receive(loopback, page) { shown.complete(it) } }
+        val to = shown.await()
+
+        val reply = Socket(to.host, to.port).use { socket ->
+            socket.getOutputStream().write("GET /d/${to.session} HTTP/1.1\r\nHost: tv\r\n\r\n".toByteArray())
+            socket.getInputStream().readBytes()
+        }
+        assertTrue(String(reply).startsWith("HTTP/1.1 200 OK\r\n"))
+        assertTrue(String(reply).contains("Content-Type: text/html; charset=utf-8\r\n"))
+        assertTrue(reply.takeLast(page.size).toByteArray().contentEquals(page))
+
+        // A browser's spare requests and connections: none of them counts, and none holds the session up.
+        val silent = List(STRIKES + 1) { Socket(to.host, to.port) }
+        repeat(STRIKES + 1) {
+            assertEquals("HTTP/1.1 404 Not Found", raw(to, "GET /favicon.ico HTTP/1.1\r\n\r\n"))
+            Socket(to.host, to.port).close()
+        }
+        assertTrue(send(to, link))
+        assertEquals(InstallLink(link), tv.await())
+        // The closed session leaves nothing open: the TV has hung up on the silent ones too.
+        silent.forEach { assertEquals(-1, it.getInputStream().read()) }
+        silent.forEach(Socket::close)
+
+        Unit
+    }
+
+    @Test
+    fun `the sheet closed — the port and every connection close with it`() = runBlocking {
+        val shown = CompletableDeferred<TvLink>()
+        val tv = launch(Dispatchers.Default) { receive(loopback) { shown.complete(it) } }
+        val to = shown.await()
+        val silent = Socket(to.host, to.port)
+
+        withTimeout(2000) { tv.cancelAndJoin() }
+        assertFailsWith<IOException> { send(to, link) }
+        assertEquals(-1, silent.getInputStream().read())
+        silent.close()
     }
 
     @Test
