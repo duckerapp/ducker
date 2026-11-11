@@ -212,6 +212,9 @@
     <string name="apps_profile_include">Your provider\'s config sends only %1$d apps through the VPN (%2$d installed here). The rest bypass it</string>
     <string name="apps_locked_tunnel">via VPN</string>
     <string name="apps_locked_direct">no VPN</string>
+    <string name="apps_profile_exclude_open">Your provider\'s config keeps %1$d apps off the VPN (%2$d installed here), usually banking and government apps, so they work with the VPN on. You can change the provider\'s choice for each one</string>
+    <string name="apps_provider_choice">Provider\'s choice</string>
+    <string name="apps_changed_by_you">Changed by you</string>
     <!-- Advanced settings (stage 8.3) -->
     <string name="allow_bypass">Allow VPN bypass</string>
     <string name="allow_bypass_hint">Apps may choose to go around the VPN. When off, the config decides, not the apps</string>
@@ -501,6 +504,7 @@
     <string name="rule_unsaved_hint">If you close this panel, what you entered is lost</string>
     <string name="rule_discard">Discard</string>
     <string name="rule_app_provider">Bypasses VPN per your provider\'s config</string>
+    <string name="rule_app_provider_open">Provider\'s choice: bypasses VPN. A rule changes that</string>
     <string name="rule_app_access">Bypasses VPN — set in Apps</string>
     <string name="rule_app_exists">Already has a rule · %1$s</string>
     <string name="config_open">Config</string>

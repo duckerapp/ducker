@@ -18,6 +18,7 @@ import com.github.kr328.clash.service.util.Cidr
 import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.service.util.PackageFilter
 import com.github.kr328.clash.service.util.importedDir
+import com.github.kr328.clash.service.store.ConfigAppsStore
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.cancelAndJoinBlocking
 import com.github.kr328.clash.service.util.parseCIDR
@@ -39,6 +40,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     /** The subscription's `tun` values the interface was built with; [openLock] guards both. */
     private var builtWith: ProfileNetwork? = null
+    /** The config's apps the person reversed for that subscription (D-471), as the interface was built with them. */
+    private var builtReversed: Set<String> = emptySet()
     private val openLock = Any()
 
     /** `elapsedRealtime` of [onCreate]: the connect's timing line counts from it (D-454). */
@@ -149,7 +152,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                         val rebuilt = synchronized(openLock) {
                             val named = installed.namedBy(
                                 PackageFilter.decide(
-                                    store.accessControlMode, store.accessControlPackages, builtWith ?: ProfileNetwork()
+                                    store.accessControlMode, store.accessControlPackages, builtWith ?: ProfileNetwork(),
+                                    builtReversed,
                                 )
                             )
 
@@ -279,8 +283,10 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
      *
      * Returns what the system took of the list.
      */
-    private fun applyPackageFilter(builder: Builder, store: ServiceStore, profile: ProfileNetwork): Filtered {
-        val decision = PackageFilter.decide(store.accessControlMode, store.accessControlPackages, profile)
+    private fun applyPackageFilter(
+        builder: Builder, store: ServiceStore, profile: ProfileNetwork, reversed: Set<String>,
+    ): Filtered {
+        val decision = PackageFilter.decide(store.accessControlMode, store.accessControlPackages, profile, reversed)
 
         val allowed = decision.allowed
 
@@ -319,7 +325,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             val active = ServiceStore(self).activeProfile ?: return
             val now = Clash.queryProfileNetwork(self.importedDir.resolve(active.toString()).absolutePath)
 
-            if (now.tunValues() == builtWith) return
+            // The person's reversals change with their rules or with a provider's lock that arrived (D-471).
+            if (now.tunValues() == builtWith && ConfigAppsStore(self).read(active) == builtReversed) return
 
             Log.i("Another subscription's tun values: rebuilding the interface")
 
@@ -351,6 +358,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         // есть, а сокеты ядра блокировка не трогает.
         lockdownApplied = lockdown
         builtWith = profile.tunValues()
+        builtReversed = store.activeProfile?.let { ConfigAppsStore(self).read(it) }.orEmpty()
 
         val filtered: Filtered
         val filterMs: Long
@@ -406,7 +414,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             }
 
             // Access Control
-            filterMs = measureTime { filtered = applyPackageFilter(this, store, profile) }.inWholeMilliseconds
+            filterMs = measureTime { filtered = applyPackageFilter(this, store, profile, builtReversed) }.inWholeMilliseconds
             store.lockdownOffline = filtered.outside && lockdown
 
             // Blocking

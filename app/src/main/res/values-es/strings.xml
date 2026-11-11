@@ -186,6 +186,9 @@
     <string name="apps_profile_include">La configuración del proveedor limita el uso de la VPN a una lista de aplicaciones: %1$d en total (instaladas aquí: %2$d). Las demás no pasan por la VPN</string>
     <string name="apps_locked_tunnel">por la VPN</string>
     <string name="apps_locked_direct">sin VPN</string>
+    <string name="apps_profile_exclude_open">La configuración del proveedor deja aplicaciones fuera de la VPN: %1$d en total (instaladas aquí: %2$d). Suelen ser bancarias y de servicios públicos, para que funcionen con la VPN activada. Puedes cambiar la decisión del proveedor en cada una</string>
+    <string name="apps_provider_choice">Decisión del proveedor</string>
+    <string name="apps_changed_by_you">Cambiado por ti</string>
     <string name="allow_bypass">Permitir conexiones sin VPN</string>
     <string name="allow_bypass_hint">Las aplicaciones pueden elegir conectarse sin la VPN. Si está desactivado, lo decide la configuración, no las aplicaciones</string>
     <string name="dns_hijack">Interceptar DNS</string>
@@ -469,6 +472,7 @@
     <string name="rule_unsaved_hint">Si cierras este panel, se perderá lo que escribiste</string>
     <string name="rule_discard">Descartar</string>
     <string name="rule_app_provider">No pasa por la VPN según la configuración del proveedor</string>
+    <string name="rule_app_provider_open">Decisión del proveedor: sin VPN. Una regla lo cambia</string>
     <string name="rule_app_access">No pasa por la VPN: definido en Aplicaciones</string>
     <string name="rule_app_exists">Ya tiene una regla · %1$s</string>
     <string name="config_open">Configuración</string>

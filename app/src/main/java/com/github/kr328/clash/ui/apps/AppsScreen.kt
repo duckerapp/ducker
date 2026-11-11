@@ -122,7 +122,7 @@ fun AppsScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Icon(
-                            imageVector = Symbols.Lock,
+                            imageVector = if (state.providerLock) Symbols.Lock else Symbols.Info,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                         )
@@ -134,7 +134,7 @@ fun AppsScreen(
                                 )
                             } else {
                                 stringResource(
-                                    R.string.apps_profile_exclude,
+                                    if (state.providerLock) R.string.apps_profile_exclude else R.string.apps_profile_exclude_open,
                                     state.profileExcluded, state.profileInstalled,
                                 )
                             },
@@ -154,7 +154,7 @@ fun AppsScreen(
             // The count and two pills on one line instead of a card with a switch and two text buttons
             // (D-326). One pill for both bulk actions: it clears while anything shown is marked.
             item {
-                val marked = state.apps.any { !it.locked && it.packageName in state.selected }
+                val marked = state.apps.any { !it.locked && !it.provider && it.packageName in state.selected }
 
                 CountBesidePills(
                     modifier = Modifier.padding(start = 4.dp),
@@ -197,7 +197,10 @@ fun AppsScreen(
             items(state.apps, key = AppRow::packageName) { app ->
                 AppItem(
                     app = app,
-                    checked = app.packageName in state.selected,
+                    // A config row's mark tells where it goes, in the mode's sense: «Через VPN» marks those in the
+                    // tunnel, «Без VPN» those past it (D-471).
+                    checked = if (app.provider) app.inTunnel == (state.mode == AccessControlMode.AcceptSelected)
+                    else app.packageName in state.selected,
                     onToggle = { onToggle(app.packageName) },
                     modifier = if (app === state.apps.first()) Modifier.focusRequester(firstApp) else Modifier,
                 )
@@ -232,9 +235,13 @@ private fun AppItem(app: AppRow, checked: Boolean, onToggle: () -> Unit, modifie
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = app.packageName,
+                    text = when {
+                        app.changed -> stringResource(R.string.apps_changed_by_you)
+                        app.provider -> stringResource(R.string.apps_provider_choice)
+                        else -> app.packageName
+                    },
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (app.changed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

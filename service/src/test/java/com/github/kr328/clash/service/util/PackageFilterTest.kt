@@ -59,8 +59,29 @@ class PackageFilterTest {
 
         assertTrue(inTunnel(browser, AccessControlMode.AcceptAll, emptySet(), only))
         assertFalse(inTunnel("com.other", AccessControlMode.AcceptAll, emptySet(), only))
-        // Пересечение с выбором человека: он может сузить список, но не расширить.
-        assertFalse(inTunnel(browser, AccessControlMode.AcceptSelected, setOf("com.other"), only))
+        // The marks neither narrow nor widen it: its rows are reversed one by one (D-471).
+        assertTrue(inTunnel(browser, AccessControlMode.AcceptSelected, setOf("com.other"), only))
+        assertFalse(inTunnel("com.other", AccessControlMode.AcceptSelected, setOf("com.other"), only))
+    }
+
+    @Test
+    fun `a reversed row goes the other way than the provider put it, in every mode`() {
+        val only = ProfileNetwork(includePackage = listOf(browser), excludePackage = listOf(bank))
+
+        for (mode in AccessControlMode.entries) for (chosen in listOf(emptySet(), setOf(bank, browser))) {
+            fun decided(lists: ProfileNetwork, reversed: Set<String>) = PackageFilter.decide(mode, chosen, lists, reversed)
+
+            assertTrue(PackageFilter.inTunnel(bank, decided(profile, setOf(bank))), "$mode, $chosen")
+            assertFalse(PackageFilter.inTunnel(gov, decided(profile, setOf(bank))), "$mode, $chosen")
+
+            assertFalse(PackageFilter.inTunnel(browser, decided(only, setOf(browser))), "$mode, $chosen")
+            assertTrue(PackageFilter.inTunnel(bank, decided(only, setOf(bank))), "$mode, $chosen")
+            // Only the config's rows are reversed: a stale name, or an app the allowlist leaves out, stays put.
+            assertFalse(PackageFilter.inTunnel("com.other", decided(only, setOf("com.other"))), "$mode, $chosen")
+        }
+
+        assertTrue(PackageFilter.decide(AccessControlMode.AcceptAll, emptySet(), ProfileNetwork(), setOf(browser)) ==
+            PackageFilter.decide(AccessControlMode.AcceptAll, emptySet(), ProfileNetwork()))
     }
 
     @Test

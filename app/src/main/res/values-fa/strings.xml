@@ -186,6 +186,9 @@
     <string name="apps_profile_include">کانفیگ ارائه‌دهنده فقط %1$d برنامه را از طریق VPN می‌فرستد (%2$d مورد در اینجا نصب است). بقیه بدون VPN وصل می‌شوند</string>
     <string name="apps_locked_tunnel">از طریق VPN</string>
     <string name="apps_locked_direct">بدون VPN</string>
+    <string name="apps_profile_exclude_open">کانفیگ ارائه‌دهنده %1$d برنامه را بدون VPN نگه می‌دارد (%2$d مورد در اینجا نصب است)؛ معمولاً برنامه‌های بانکی و دولتی، تا با VPN روشن کار کنند. تصمیم ارائه‌دهنده را می‌توانید برای هر برنامه تغییر دهید</string>
+    <string name="apps_provider_choice">تصمیم ارائه‌دهنده</string>
+    <string name="apps_changed_by_you">تغییر داده‌شده توسط شما</string>
     <string name="allow_bypass">اجازه عبور بدون VPN</string>
     <string name="allow_bypass_hint">برنامه‌ها می‌توانند خودشان انتخاب کنند که بدون VPN وصل شوند. وقتی خاموش باشد، کانفیگ تصمیم می‌گیرد، نه برنامه‌ها</string>
     <string name="dns_hijack">تغییر مسیر DNS</string>
@@ -466,6 +469,7 @@
     <string name="rule_unsaved_hint">اگر این پنل را ببندید، آنچه وارد کرده‌اید از دست می‌رود</string>
     <string name="rule_discard">صرف‌نظر</string>
     <string name="rule_app_provider">بدون VPN طبق کانفیگ ارائه‌دهنده</string>
+    <string name="rule_app_provider_open">تصمیم ارائه‌دهنده: بدون VPN. قانون این را تغییر می‌دهد</string>
     <string name="rule_app_access">بدون VPN — تنظیم‌شده در «برنامه‌ها»</string>
     <string name="rule_app_exists">از قبل قانون دارد · %1$s</string>
     <string name="config_open">کانفیگ</string>

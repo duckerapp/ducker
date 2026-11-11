@@ -186,6 +186,9 @@
     <string name="apps_profile_include">يوجّه ملف إعدادات مزوّد الخدمة عبر VPN تطبيقات محددة فقط (العدد الإجمالي: %1$d، المثبت منها هنا: %2$d). تتصل بقية التطبيقات دون VPN</string>
     <string name="apps_locked_tunnel">عبر VPN</string>
     <string name="apps_locked_direct">دون VPN</string>
+    <string name="apps_profile_exclude_open">يستثني ملف إعدادات مزوّد الخدمة تطبيقات محددة من VPN (العدد الإجمالي: %1$d، المثبت منها هنا: %2$d)، وهي عادةً تطبيقات البنوك والخدمات الحكومية، لتعمل مع تشغيل VPN. يمكنك تغيير قرار مزوّد الخدمة لكل تطبيق</string>
+    <string name="apps_provider_choice">قرار مزوّد الخدمة</string>
+    <string name="apps_changed_by_you">غيّرته أنت</string>
     <string name="allow_bypass">السماح بالاتصال دون VPN</string>
     <string name="allow_bypass_hint">تتمكن التطبيقات من اختيار الاتصال دون VPN بنفسها. عند إيقافه، يحدد ملف الإعدادات ذلك بدلًا من التطبيقات</string>
     <string name="dns_hijack">إعادة توجيه DNS</string>
@@ -478,6 +481,7 @@
     <string name="rule_unsaved_hint">إذا أغلقت هذه اللوحة، فستفقد ما أدخلته</string>
     <string name="rule_discard">تجاهل</string>
     <string name="rule_app_provider">يتصل دون VPN وفق ملف إعدادات مزوّد الخدمة</string>
+    <string name="rule_app_provider_open">قرار مزوّد الخدمة: دون VPN. القاعدة تغيّر ذلك</string>
     <string name="rule_app_access">يتصل دون VPN، كما هو محدد في «التطبيقات»</string>
     <string name="rule_app_exists">لديه قاعدة بالفعل · %1$s</string>
     <string name="config_open">ملف الإعدادات</string>

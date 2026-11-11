@@ -60,6 +60,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
+import com.github.kr328.clash.core.model.ProfileNetwork
+import com.github.kr328.clash.service.model.AccessControlMode
 import com.github.kr328.clash.service.model.UserRule
 import com.github.kr328.clash.service.util.PackageFilter
 import com.github.kr328.clash.ui.apps.AppIcon
@@ -261,8 +263,8 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
                     )
                     Text(
                         stringResource(
-                            if (outside == Bypass.Reason.Provider) R.string.rule_app_provider
-                            else R.string.rule_app_access
+                            if (outside == Bypass.Reason.Access) R.string.rule_app_access
+                            else R.string.rule_app_provider
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -294,17 +296,36 @@ private fun typeIcon(type: UserRule.Type) = when (type) {
 
 /**
  * Кто при подписке идёт мимо туннеля — своё правило на такое приложение не сработает (D-135).
- * [provider] — только конфиг провайдера, [all] — он же с выбором в «Приложениях»; считает тот же
- * [PackageFilter], что и туннель.
+ * Считает тот же [PackageFilter], что и туннель: по конфигу провайдера с тем, что человек в нём изменил ([reversed]),
+ * и с выбором в «Приложениях» ([mode], [chosen]). [reversible] — строки конфига, которые человек может изменить;
+ * пусто под `ducker-override-user: on` (D-471).
  */
-data class Bypass(val provider: PackageFilter.Decision, val all: PackageFilter.Decision) {
-    enum class Reason { Provider, Access }
+data class Bypass(
+    val network: ProfileNetwork,
+    val mode: AccessControlMode,
+    val chosen: Set<String>,
+    val reversible: Set<String>,
+    val reversed: Set<String>,
+) {
+    /** [Reversible]: past the tunnel by the provider, and a rule on it takes it back in (D-471). */
+    enum class Reason { Provider, Reversible, Access }
+
+    private val provider = PackageFilter.decide(AccessControlMode.AcceptAll, emptySet(), network, reversed)
+    private val all = PackageFilter.decide(mode, chosen, network, reversed)
 
     fun reason(packageName: String): Reason? = when {
-        !PackageFilter.inTunnel(packageName, provider) -> Reason.Provider
+        !PackageFilter.inTunnel(packageName, provider) ->
+            if (packageName in reversible) Reason.Reversible else Reason.Provider
         !PackageFilter.inTunnel(packageName, all) -> Reason.Access
         else -> null
     }
+
+    /** A rule may be made for it: it is in the tunnel, or the rule takes it there. */
+    fun pickable(packageName: String) = reason(packageName).let { it == null || it == Reason.Reversible }
+
+    /** The reversals once rules for [added] apps are made: those past the tunnel by the provider go into it. */
+    fun takenOver(added: Collection<String>): Set<String> = added.filter { reason(it) == Reason.Reversible }
+        .fold(reversed) { set, app -> if (app in set) set - app else set + app }
 }
 
 private fun typeLabel(type: UserRule.Type) = when (type) {
@@ -396,7 +417,7 @@ private fun AddRuleSheet(
 
     // Приложение, выбранное до ответа службы, могло оказаться под замком. Категория без списка не
     // проходит: неизвестную ядро молча пропустит (D-126), и правило с опечаткой просто не сработает.
-    val picked = apps.filter { bypass?.reason(it) == null }
+    val picked = apps.filter { bypass?.pickable(it) ?: true }
     val value = if (type == UserRule.Type.App) picked.firstOrNull()
     else ruleValue(type, input)?.takeIf { type != UserRule.Type.Geosite || categories?.contains(it) == true }
 
@@ -675,12 +696,16 @@ private fun AppPicker(
             LazyColumn(Modifier.fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 items(filtered, key = { it.packageName }) { app ->
                     val chosen = app.packageName in selected
-                    val outside = bypass?.reason(app.packageName)
+                    val reason = bypass?.reason(app.packageName)
+                    // The provider's rows open for a rule stand as any other, with their note (D-471).
+                    val outside = reason?.takeIf { it != Bypass.Reason.Reversible }
                     val rule = existing[app.packageName]
                     val note = when {
                         outside == Bypass.Reason.Provider -> stringResource(R.string.rule_app_provider)
                         outside == Bypass.Reason.Access -> stringResource(R.string.rule_app_access)
+                        reason == Bypass.Reason.Reversible -> stringResource(R.string.rule_app_provider_open)
                         rule != null -> stringResource(R.string.rule_app_exists, stringResource(targetLabel(rule)))
+                        bypass != null && app.packageName in bypass.reversed -> stringResource(R.string.apps_changed_by_you)
                         else -> null
                     }
 

@@ -201,6 +201,9 @@
     <string name="apps_profile_include">Конфиг провайдера пускает через VPN только %1$d приложений, у вас установлено %2$d. Остальные идут мимо</string>
     <string name="apps_locked_tunnel">через VPN</string>
     <string name="apps_locked_direct">без VPN</string>
+    <string name="apps_profile_exclude_open">Конфиг провайдера выводит мимо VPN %1$d приложений, у вас установлено %2$d. Обычно это банки и госуслуги: так они работают при включённом VPN. Решение провайдера можно изменить для каждого</string>
+    <string name="apps_provider_choice">Решение провайдера</string>
+    <string name="apps_changed_by_you">Изменено вами</string>
     <!-- Расширенные настройки (этап 8.3) -->
     <string name="allow_bypass">Разрешить обход VPN</string>
     <string name="allow_bypass_hint">Приложения смогут сами уходить мимо VPN. Выключено — решает конфиг, а не приложения</string>
@@ -494,6 +497,7 @@
     <string name="rule_unsaved_hint">Если закрыть панель, введённое пропадёт</string>
     <string name="rule_discard">Не добавлять</string>
     <string name="rule_app_provider">Мимо VPN по конфигу провайдера</string>
+    <string name="rule_app_provider_open">Решение провайдера: мимо VPN. Правило это изменит</string>
     <string name="rule_app_access">Мимо VPN — так выбрано в «Приложениях»</string>
     <string name="rule_app_exists">Правило уже есть · %1$s</string>
     <string name="config_open">Конфиг</string>

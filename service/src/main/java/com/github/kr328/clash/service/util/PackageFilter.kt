@@ -8,11 +8,13 @@ import com.github.kr328.clash.service.model.AccessControlMode
  *
  * Живёт отдельно от `TunService`, потому что тот же ответ нужен экрану «Приложения»:
  * человек должен видеть, что часть приложений уже выведена конфигом провайдера, и что
- * снять их галочкой нельзя. Считать это в двух местах разными формулами — верный способ
+ * общие отметки их не меняют. Считать это в двух местах разными формулами — верный способ
  * показать одно, а сделать другое.
  *
- * Правило сложения: список провайдера не отменяется никогда. Он нужен, чтобы банк и
- * госуслуги видели сеть без VPN, и терять его из-за галочки нельзя.
+ * Правило сложения: галочка человека список провайдера не отменяет. Он нужен, чтобы банк и
+ * госуслуги видели сеть без VPN, и терять его из-за галочки нельзя. The config's own rows are reversed only one by
+ * one and on purpose, per subscription ([reversed], D-471), unless the provider locks them with
+ * `ducker-override-user: on` — then the set is empty.
  */
 object PackageFilter {
     /**
@@ -21,15 +23,37 @@ object PackageFilter {
      */
     data class Decision(val allowed: Set<String>?, val denied: Set<String>)
 
+    /** [reversed] — the config's apps whose provider decision the person turned the other way (D-471). */
     fun decide(
         mode: AccessControlMode,
         chosen: Set<String>,
         profile: ProfileNetwork,
+        reversed: Set<String> = emptySet(),
     ): Decision =
         // «Через VPN» без единой отметки — «ещё не выбрал», а не «ни одного приложения»:
         // иначе касание по режиму оставляло в туннеле один ducker (D-139).
-        if (mode == AccessControlMode.AcceptSelected && chosen.isEmpty()) literal(AccessControlMode.DenySelected, chosen, profile)
-        else literal(mode, chosen, profile)
+        (if (mode == AccessControlMode.AcceptSelected && chosen.isEmpty()) literal(AccessControlMode.DenySelected, chosen, profile)
+        else literal(mode, chosen, profile))
+            .reverse(profile, reversed)
+
+    /** The config's own rows: its `include-package` and `exclude-package`. */
+    fun listed(profile: ProfileNetwork): Set<String> = profile.includePackage.toSet() + profile.excludePackage
+
+    /** Where the provider alone puts a [listed] app: an excluded one past the tunnel, an included one into it. */
+    fun providerInTunnel(packageName: String, profile: ProfileNetwork): Boolean =
+        packageName !in profile.excludePackage && packageName in profile.includePackage
+
+    private fun Decision.reverse(profile: ProfileNetwork, reversed: Set<String>): Decision {
+        val flipped = reversed.intersect(listed(profile))
+
+        if (flipped.isEmpty()) return this
+
+        val into = flipped.filterTo(HashSet()) { !providerInTunnel(it, profile) }
+        val out = flipped - into
+
+        return if (allowed != null) Decision(allowed + into - out, denied)
+        else Decision(null, denied - into + out)
+    }
 
     private fun literal(
         mode: AccessControlMode,
@@ -40,9 +64,8 @@ object PackageFilter {
         val exclude = profile.excludePackage.toSet()
 
         val allowed = when {
-            include.isNotEmpty() && mode == AccessControlMode.AcceptSelected ->
-                include.intersect(chosen) - exclude
-
+            // The config's rows follow the provider and the person's reversals, not the marks (D-471): with a list
+            // of its own the marks used to narrow it, now each of its rows is reversed by itself.
             include.isNotEmpty() -> include - exclude
 
             mode == AccessControlMode.AcceptSelected -> chosen - exclude

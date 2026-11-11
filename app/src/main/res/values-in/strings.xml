@@ -186,6 +186,9 @@
     <string name="apps_profile_include">Konfigurasi penyedia hanya mengarahkan %1$d aplikasi melalui VPN (%2$d terpasang di perangkat ini). Aplikasi lainnya tidak melalui VPN</string>
     <string name="apps_locked_tunnel">melalui VPN</string>
     <string name="apps_locked_direct">tanpa VPN</string>
+    <string name="apps_profile_exclude_open">Konfigurasi penyedia mengecualikan %1$d aplikasi dari VPN (%2$d terpasang di perangkat ini), biasanya aplikasi perbankan dan layanan pemerintah, agar tetap berfungsi saat VPN aktif. Keputusan penyedia bisa diubah untuk tiap aplikasi</string>
+    <string name="apps_provider_choice">Keputusan penyedia</string>
+    <string name="apps_changed_by_you">Diubah oleh Anda</string>
     <string name="allow_bypass">Izinkan koneksi tanpa VPN</string>
     <string name="allow_bypass_hint">Aplikasi boleh memilih sendiri untuk terhubung tanpa VPN. Jika nonaktif, konfigurasi yang menentukan, bukan aplikasi</string>
     <string name="dns_hijack">Alihkan kueri DNS</string>
@@ -463,6 +466,7 @@
     <string name="rule_unsaved_hint">Jika panel ini ditutup, isian Anda akan hilang</string>
     <string name="rule_discard">Abaikan</string>
     <string name="rule_app_provider">Tanpa VPN sesuai konfigurasi penyedia</string>
+    <string name="rule_app_provider_open">Keputusan penyedia: tanpa VPN. Aturan akan mengubahnya</string>
     <string name="rule_app_access">Tanpa VPN, diatur di “Aplikasi”</string>
     <string name="rule_app_exists">Sudah memiliki aturan · %1$s</string>
     <string name="config_open">Konfigurasi</string>

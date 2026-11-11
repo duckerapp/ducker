@@ -1,6 +1,7 @@
 package com.github.kr328.clash.service
 
 import com.github.kr328.clash.service.clash.module.MobileModule
+import com.github.kr328.clash.service.store.ConfigAppsStore
 import com.github.kr328.clash.service.store.UserRulesStore
 import android.content.Context
 import com.github.kr328.clash.common.util.backgroundScope
@@ -192,8 +193,9 @@ class ProfileManager(private val context: Context) : IProfileManager,
 
         ProfileProcessor.delete(context, uuid)
 
-        // Свои правила уходят вместе с подпиской (D-123).
+        // Свои правила уходят вместе с подпиской (D-123), и изменённые приложения конфига тоже (D-471).
         UserRulesStore(context).delete(uuid)
+        ConfigAppsStore(context).delete(uuid)
     }
 
     override suspend fun queryByUUID(uuid: UUID): Profile? {

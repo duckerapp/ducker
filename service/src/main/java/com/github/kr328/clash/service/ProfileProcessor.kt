@@ -15,6 +15,7 @@ import com.github.kr328.clash.service.remote.IFetchObserver
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.service.store.AnnouncementStore
+import com.github.kr328.clash.service.store.ConfigAppsStore
 import com.github.kr328.clash.service.util.ProviderInfo
 import com.github.kr328.clash.service.util.SubscriptionHeaders
 import com.github.kr328.clash.service.util.SubscriptionMirrors
@@ -104,6 +105,7 @@ object ProfileProcessor {
                         val shown = announcements(context, snapshot.uuid)
 
                         context.importedDir.resolve(snapshot.uuid.toString()).replaceWithCopyOf(context.processingDir)
+                        ConfigAppsStore(context).dropIfLocked(snapshot.uuid, context.importedDir.resolve(snapshot.uuid.toString()))
                         AnnouncementStore.record(context, snapshot.uuid, shown.second, shown.first)
 
                         val old = ImportedDao().queryByUUID(snapshot.uuid)
@@ -196,6 +198,7 @@ object ProfileProcessor {
                             ProviderInfo.read(context.processingDir).copy(updateEndedAt = System.currentTimeMillis(), updateFailure = ""),
                         )
                         context.importedDir.resolve(snapshot.uuid.toString()).replaceWithCopyOf(context.processingDir)
+                        ConfigAppsStore(context).dropIfLocked(snapshot.uuid, context.importedDir.resolve(snapshot.uuid.toString()))
                         AnnouncementStore.record(context, snapshot.uuid, shown.second, shown.first)
 
                         val upload = subscriptionInfo?.subUpload
@@ -261,6 +264,7 @@ object ProfileProcessor {
             )
 
             dir.replaceWithCopyOf(context.processingDir)
+            ConfigAppsStore(context).dropIfLocked(uuid, dir)
 
             // A name that is the old link's domain was given at adding, not by the person (D-117): it follows the
             // link, or it would read as the person's own and hide the provider's title.
