@@ -1148,6 +1148,8 @@ private fun HeroCard(
                             onOpenProxies()
                         },
                         modifier = Modifier.matchParentSize()
+                            // Drawn over the card, not inside it: the ring takes the panel's ink itself (D-483).
+                            .then(if (tv) Modifier.ringInk(if (active) scheme.onPrimaryContainer else scheme.onSurface) else Modifier)
                             .then(
                                 if (tv) {
                                     // Вверх с верхнего узла и вниз со строки «Все узлы» — закрыть панель, фокус

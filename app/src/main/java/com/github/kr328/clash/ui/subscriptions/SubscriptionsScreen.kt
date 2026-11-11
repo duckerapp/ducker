@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.ringInk
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.isolated
@@ -486,6 +487,8 @@ private fun ActiveCard(
         // не берёт — Compose не водит стрелками внутрь элемента, который сам в фокусе, а
         // нужны её кнопки.
         modifier = Modifier.fillMaxWidth()
+            // Its buttons lie on the card's fill: below Android 10 the ring around them takes the card's ink (D-483).
+            .then(if (tv) Modifier.ringInk(content) else Modifier)
             .tabEntry()
             .focusProperties { if (tv) canFocus = false }
             .selectable(selected = true, role = Role.RadioButton, onClick = {})

@@ -728,7 +728,9 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
         }
 
         val difference = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
-        val ink = if (difference) Color.White else this@FocusRingNode.ink?.color ?: currentValueOf(LocalRingInk)
+        // A surface's ink is for the ring around what is focused inside it; parked on the dock, the ring is not there.
+        val named = this@FocusRingNode.ink?.takeIf { anchor?.forced != true }
+        val ink = if (difference) Color.White else named?.color ?: currentValueOf(LocalRingInk)
 
         // Размытие — только наружу (`OUTER`), от внешнего края контура: на элемент оно не заходит.
         drawIntoCanvas {
