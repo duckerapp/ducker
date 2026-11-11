@@ -83,8 +83,8 @@ ducker interprets standard subscription headers as follows:
 | `profile-update-interval` | Subscription update interval, in hours. |
 | `subscription-userinfo` | Used traffic, limit, and expiry on Home and the subscription card. |
 | `subscription-refill-date` | When the traffic counter resets, as Unix time in seconds. |
-| `support-url` | **Support** button. |
-| `profile-web-page-url` | Provider page; also the **Renew** button if `ducker-buy-url` is absent. |
+| `support-url` | **Support** button; also the **Renew** button if `ducker-buy-url` is absent. |
+| `profile-web-page-url` | Provider page; also the **Renew** button if neither `ducker-buy-url` nor `support-url` is set. |
 | `announce` | Announcement on Home. |
 
 Text containing Cyrillic characters is sent as `base64:<…>` in UTF-8.
