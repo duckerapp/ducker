@@ -596,7 +596,7 @@ private val HEADER_GAP = 8.dp
 /**
  * Окно ниже 480dp (граница компактной высоты у Material) — телефон боком или половина экрана.
  * Планшет таким не бывает и боком. Редактору конфига тогда нужна каждая строка (D-145).
- * The dock stands at the side then, Home splits into two columns and the status bar hides (D-480).
+ * The dock stands at the side then and the status bar hides (D-480).
  */
 // From the configuration, not `LocalWindowInfo.containerSize`: on Android 12 (MIUI) that lags one turn
 // behind — upright again, it still gave the sideways size, and the editor hid the status bar (D-478).

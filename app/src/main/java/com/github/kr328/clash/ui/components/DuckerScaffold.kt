@@ -173,7 +173,7 @@ fun DuckerScaffold(
     val density = LocalDensity.current
     val direction = LocalLayoutDirection.current
     // A low window — a phone on its side: the dock stands at the start edge, as on a TV, and the screens keep the
-    // whole height. At the bottom it took 93 of 360 dp, and Home's power card no longer fitted above it.
+    // whole height. At the bottom it took 93 of 360 dp of a phone on its side.
     val rail = lowWindow()
 
     // Уезжает с разгоном, возвращается с торможением: так уходят и приходят на экран
@@ -303,10 +303,13 @@ internal fun navigationRoom(): Dp =
 /** The TV's round button under its dock (D-97). */
 val ACTION_SIZE = 56.dp
 
-/** The side dock: its gap to the start edge, its width (room for «Подписки» on one line) and a tab's height. */
+/**
+ * The side dock: its gap to the start edge, its width and a tab's height. At 84 dp «Подписки» touched the highlight's
+ * rounded ends; at 108 it has room on both sides.
+ */
 private val RAIL_EDGE = 12.dp
-private val RAIL_WIDTH = 84.dp
-private val RAIL_TAB = 56.dp
+private val RAIL_WIDTH = 108.dp
+private val RAIL_TAB = 60.dp
 
 /**
  * Ряд вкладок рисуется дважды: снизу в тусклом цвете, сверху в цвете «на подсветке»,
