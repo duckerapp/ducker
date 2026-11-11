@@ -41,7 +41,10 @@ fi
 # The version's entry of a changelog as markdown, without its HTML comments; the release page shows it.
 changes() {
   awk -v h="## $VERSION" 'index($0, h) == 1 && (length($0) == length(h) || substr($0, length(h) + 1, 1) == " ") {f = 1; next}
-    /^## / {f = 0} f' "$1" | awk '/<!--/ {c = 1} !c; /-->/ {c = 0}' | sed '/./,$!d'
+    /^## / {f = 0} f' "$1" | awk '/<!--/ {c = 1} !c; /-->/ {c = 0}' | sed '/./,$!d' |
+    # A release body shows every line break, so an item's wrapped lines are joined; nested items stay.
+    awk '/^ +[^ ]/ && !/^ +- / && n {sub(/^ +/, ""); line[n] = line[n] " " $0; next} {line[++n] = $0}
+      END {for (i = 1; i <= n; i++) print line[i]}'
 }
 for log in CHANGELOG.md docs/CHANGELOG.ru.md; do
   if [ -z "$(changes "$log")" ]; then
