@@ -241,8 +241,10 @@ subscription response settings (`customResponseHeaders`); the panel code does no
 - **`ducker-share: off`** — keeps "Wi-Fi sharing" closed: the card says the provider turned it
   off, and sharing that is on goes off at the next update that brings the header. The config's
   ports are not affected; `ducker-local-proxy` closes those.
-- **`ducker-override-user: on | off`** — reserved for settings that the provider sets with
-  headers. The app reads it, but it has no effect yet.
+- **`ducker-override-user: on`** — locks the apps of the config's `tun.exclude-package` and
+  `tun.include-package`: "Apps" and "My rules" show them, but the user cannot change them. Without
+  the header the user may change each of them for this subscription; the config file is not
+  rewritten. An update that brings the header drops the user's changes.
 
 General rules:
 

@@ -19,6 +19,10 @@ repository was closed; they are listed here for history. APK files are on the
   search closes only the connections it shows.
 - For providers: “Wi-Fi sharing” is closed by a header of its own, `ducker-share: off`. `ducker-local-proxy: off`
   still closes the config's local ports and DNS server, but no longer the sharing.
+- Apps: the apps the provider's config sends past the VPN or into it can be changed one by one, for each subscription;
+  they read “Provider's choice” or “Changed by you”, and a second tap returns the provider's choice. In My rules such
+  an app can take a rule, which brings it into the VPN; removing the rule returns the provider's choice. Providers
+  keep them locked with `ducker-override-user: on`, and an update that brings it drops the user's changes.
 
 ## 0.4.48 — 2026-11-11
 
