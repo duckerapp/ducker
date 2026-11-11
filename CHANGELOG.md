@@ -17,6 +17,8 @@ repository was closed; they are listed here for history. APK files are on the
 - Connections: system services show their app's name and icon instead of a blank square and a name such as
   `android.uid.system`; connections over UDP carry a “UDP” mark; “Reset” on a list narrowed to an app, a site or a
   search closes only the connections it shows.
+- For providers: “Wi-Fi sharing” is closed by a header of its own, `ducker-share: off`. `ducker-local-proxy: off`
+  still closes the config's local ports and DNS server, but no longer the sharing.
 
 ## 0.4.48 — 2026-11-11
 
