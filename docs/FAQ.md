@@ -87,8 +87,8 @@ has the subscription: the Profiles tab → the QR icon on the subscription card 
 inactive subscription — "⋯" → "Share as QR code"). On the other phone: Profiles → "Add" → "Scan QR". A
 screenshot of the code works too — through "From gallery". Show the code only to your own
 devices: anyone who has it can use your subscription. If "Protect subscription" is on (Settings →
-"Privacy"), ducker first asks for your fingerprint, face or screen-lock PIN, and the code cannot be
-screenshotted: scan it straight from the screen.
+"Privacy"), ducker first asks for your fingerprint, face or screen-lock PIN, then shows the code; a
+screenshot of it works.
 
 ## The VPN turns itself off
 
