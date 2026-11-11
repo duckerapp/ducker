@@ -246,21 +246,10 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
                 maxLines = if (LocalDensity.current.fontScale > 1f) 2 else 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = stringResource(typeLabel(rule.type)) + stringResource(R.string.separator) + stringResource(targetLabel(rule.target)),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (rule.target == UserRule.Target.Block) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
+            // An app the provider or «Приложения» keeps past the tunnel: the reason takes the target's place, as the
+            // target does not apply (the owner, D-474). The lock follows the text.
             if (outside != null) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(
-                        Symbols.Lock,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                     Text(
                         stringResource(
                             if (outside == Bypass.Reason.Access) R.string.rule_app_access
@@ -268,8 +257,22 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Icon(
+                        Symbols.Lock,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            } else {
+                Text(
+                    text = stringResource(typeLabel(rule.type)) + stringResource(R.string.separator) + stringResource(targetLabel(rule.target)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (rule.target == UserRule.Target.Block) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
 
