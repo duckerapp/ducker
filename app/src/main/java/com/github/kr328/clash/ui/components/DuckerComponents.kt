@@ -61,7 +61,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -624,21 +623,26 @@ fun ScreenFrame(wide: Boolean = false, entry: FocusRequester? = null, content: @
 
         val color = MaterialTheme.colorScheme.background
         val bar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        // A soft veil, as the fade at the bottom (D-481): solid under the clock and gone within 12 dp, it drew a hard
+        // band in the background's colour across a dark card on the light theme and a light card on the dark one.
+        val veil = remember(color) {
+            Brush.verticalGradient(*TOP_VEIL.map { (at, alpha) -> at to color.copy(alpha = alpha) }.toTypedArray())
+        }
 
-        Box(
-            Modifier.fillMaxWidth().height(bar + 12.dp).drawBehind {
-                val solid = (bar.toPx() / size.height).coerceIn(0f, 1f)
-
-                drawRect(
-                    Brush.verticalGradient(
-                        0f to color,
-                        solid to color.copy(alpha = 0.9f),
-                        1f to color.copy(alpha = 0f),
-                    ),
-                )
-            },
-        )
+        Box(Modifier.fillMaxWidth().height(bar + TOP_VEIL_RAMP).background(veil))
     }
+}
+
+/**
+ * The top veil's stops, densest at the top: [TOP_VEIL_MAX] at most, so the content still shows faintly under the
+ * clock, easing in and out (smoothstep) so neither end draws a line. Nine stops are smooth enough on any screen.
+ */
+private val TOP_VEIL_MAX = 0.86f
+private val TOP_VEIL_RAMP = 28.dp
+private val TOP_VEIL = List(9) { i ->
+    val t = i / 8f
+
+    t to TOP_VEIL_MAX * (1f - t * t * (3f - 2f * t))
 }
 
 /**
