@@ -174,20 +174,30 @@ private fun resolve(pm: PackageManager, key: String, connection: Connection): Co
     if (connection.inner) return ConnectionApp(key, ConnectionApp.Kind.Core)
     if (connection.shared.isNotEmpty()) return ConnectionApp(key, ConnectionApp.Kind.Shared, connection.shared)
 
-    // One uid can be several packages (a shared uid): the first names it, as Android's own data usage does.
-    val packageName = connection.process.ifEmpty { pm.getPackagesForUid(connection.uid)?.firstOrNull().orEmpty() }
+    // For a shared uid the core names the group («android.uid.system», `AppListCacheModule`), not a package, and gives
+    // no uid with it: then the group's packages; for a connection the core named nobody for, the uid's.
+    val info = connection.process.takeIf { it.isNotEmpty() }?.let { pm.info(it) ?: sharedPackage(pm, it)?.let(pm::info) }
+        ?: uidPackage(pm, connection.uid)?.let(pm::info)
 
-    if (packageName.isNotEmpty()) {
-        val label = runCatching { pm.getApplicationInfo(packageName, 0).loadLabel(pm).toString() }.getOrDefault(packageName)
+    if (info != null) return ConnectionApp(key, ConnectionApp.Kind.App, info.loadLabel(pm).toString(), info.packageName)
 
-        return ConnectionApp(key, ConnectionApp.Kind.App, label, packageName)
-    }
+    // Nothing installed answers to it: the name as the core or Android gave it, with a plain mark.
+    val name = connection.process.ifEmpty { connection.uid.takeIf { it > 0 }?.let { pm.getNameForUid(it) }.orEmpty() }
 
-    // A system service without a package of its own: its uid's name («android.uid.system»).
-    val name = connection.uid.takeIf { it > 0 }?.let { pm.getNameForUid(it) }
-
-    return if (name != null) ConnectionApp(key, ConnectionApp.Kind.App, name) else ConnectionApp(key, ConnectionApp.Kind.Unknown)
+    return if (name.isNotEmpty()) ConnectionApp(key, ConnectionApp.Kind.App, name) else ConnectionApp(key, ConnectionApp.Kind.Unknown)
 }
+
+private fun PackageManager.info(packageName: String) = runCatching { getApplicationInfo(packageName, 0) }.getOrNull()
+
+private fun uidPackage(pm: PackageManager, uid: Int): String? = uid.takeIf { it > 0 }?.let { pm.getPackagesForUid(it) }?.toList()?.named()
+
+// Read once per group: the result is kept with the app for the page's life.
+@Suppress("DEPRECATION")
+private fun sharedPackage(pm: PackageManager, group: String): String? =
+    runCatching { pm.getInstalledPackages(0) }.getOrDefault(emptyList()).filter { it.sharedUserId == group }.map { it.packageName }.named()
+
+/** One uid can be several packages: the system's own is «Android System», as Android's data usage names it; else the first. */
+private fun List<String>.named(): String? = if ("android" in this) "android" else firstOrNull()
 
 internal fun Connection.row(app: ConnectionApp, before: Long?, seconds: Double?): ConnectionRow {
     val total = upload + download
