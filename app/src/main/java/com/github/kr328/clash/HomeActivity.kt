@@ -71,6 +71,7 @@ import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.WindowCompat
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 import kotlinx.coroutines.flow.first
@@ -335,8 +336,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
         // Телевизор (этап 6, D-12): тот же APK, но док слева и управление пультом.
         val tv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
-        // On a TV the keyboard lies over the app (D-377): up to Android 14 the window is not drawn edge to edge, and
-        // `adjustResize` shrank the whole app — the dock included — whenever Gboard reported its height (F-362).
+        // Edge to edge before Android 15 too, as 15 enforces it: otherwise the system paints the status bar itself,
+        // and the theme wave (D-66) cannot cover it — the bar switched colour at once, ahead of the wave.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // On a TV the keyboard lies over the app (D-377): before the window was drawn edge to edge, `adjustResize`
+        // shrank the whole app on Android 14 — the dock included — whenever Gboard reported its height (F-362).
         if (tv) window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
 
         // Whether there is a subscription, known before the service answers: its folder of
