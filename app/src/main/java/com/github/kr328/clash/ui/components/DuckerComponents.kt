@@ -103,6 +103,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.Alignment
@@ -591,6 +592,16 @@ fun ScreenHeader(
 }
 
 private val HEADER_GAP = 8.dp
+
+/**
+ * Окно ниже 480dp (граница компактной высоты у Material) — телефон боком или половина экрана.
+ * Планшет таким не бывает и боком. Редактору конфига тогда нужна каждая строка (D-145).
+ * The dock stands at the side then, Home splits into two columns and the status bar hides (D-480).
+ */
+// From the configuration, not `LocalWindowInfo.containerSize`: on Android 12 (MIUI) that lags one turn
+// behind — upright again, it still gave the sideways size, and the editor hid the status bar (D-478).
+@Composable
+fun lowWindow(): Boolean = LocalConfiguration.current.screenHeightDp < 480
 
 /** Шире этого карточки и строки читать тяжело: планшет, складной, альбомный режим (D-92). */
 val ReadableWidth = 640.dp

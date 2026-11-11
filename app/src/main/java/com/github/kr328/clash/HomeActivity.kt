@@ -72,6 +72,8 @@ import androidx.activity.result.contract.ActivityResultContracts.RequestPermissi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.WindowInsetsCompat
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 import kotlinx.coroutines.flow.first
@@ -116,7 +118,7 @@ import com.github.kr328.clash.ui.home.NodePicker
 import com.github.kr328.clash.ui.rules.RulesScreen
 import com.github.kr328.clash.ui.config.ConfigScreen
 import com.github.kr328.clash.ui.config.ConfigViewModel
-import com.github.kr328.clash.ui.config.lowWindow
+import com.github.kr328.clash.ui.components.lowWindow
 import com.github.kr328.clash.ui.home.HomeViewModel
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.mutableStateOf
@@ -965,6 +967,20 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     }
                 }
 
+                // A low window — a phone on its side — hides the status bar in every screen: 40 of 360 dp. A swipe
+                // from the top brings it back for a moment. Tablets and upright phones never see this (D-145, D-480).
+                val low = lowWindow()
+                DisposableEffect(low) {
+                    val bars = WindowCompat.getInsetsController(window, window.decorView)
+
+                    if (low) {
+                        bars.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        bars.hide(WindowInsetsCompat.Type.statusBars())
+                    }
+
+                    onDispose { if (low) bars.show(WindowInsetsCompat.Type.statusBars()) }
+                }
+
                 DuckerScaffold(
                     // Подсветка вкладки идёт по осевшей странице: по ней же выбирается
                     // плавающая кнопка, а её появление меняет отступы (D-76). На телевизоре — по
@@ -1073,8 +1089,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 ) { tabs, overlayInsets ->
                     // На телевизоре док слева (этап 6): лента встаёт справа от него целиком, а
                     // экранам остаются верх и низ — иначе колонка по центру сжалась бы на ширину дока.
+                    // A phone on its side has its dock at the start edge too (D-480).
                     val direction = LocalLayoutDirection.current
-                    val insets = if (tv) {
+                    val rail = !tv && lowWindow()
+                    val sides = PaddingValues(start = tabs.calculateStartPadding(direction), end = tabs.calculateEndPadding(direction))
+                    val insets = if (tv || rail) {
                         PaddingValues(top = tabs.calculateTopPadding(), bottom = tabs.calculateBottomPadding())
                     } else tabs
                     // A TV's lists take the safe area's top and bottom inside themselves (`tvEdge`) and run to the
@@ -1101,7 +1120,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         .then(if (overlay != null) Modifier.clearAndSetSemantics {} else Modifier)
                         .then(
                             if (tv) {
-                                Modifier.padding(start = tabs.calculateStartPadding(direction), end = tabs.calculateEndPadding(direction))
+                                Modifier.padding(sides)
                                     .onFocusChanged { pageFocused = it.hasFocus }
                                     // Under a screen over the tabs the remote does not enter them. When the element
                                     // under the frame disappeared there (the config editor's full-screen and search
@@ -1112,6 +1131,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         }
                                     }
                                     .focusGroup()
+                            } else if (rail) {
+                                // The sides hold the cutout already: the screens must not step it off again.
+                                Modifier.padding(sides).consumeWindowInsets(sides)
                             } else Modifier,
                         )
 
@@ -1287,7 +1309,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                                             viewModel.nodeChanged(name, delay)
                                         },
-                                        modifier = Modifier.padding(homeInsets).consumeWindowInsets(insets),
+                                        // Inside its scrolling, so the cards pass under the dock and the status bar as the
+                                        // lists of the other tabs do, rather than end in a straight cut above them (D-480).
+                                        contentPadding = homeInsets,
+                                        modifier = Modifier.consumeWindowInsets(insets),
                                     )
                                 }
                             }

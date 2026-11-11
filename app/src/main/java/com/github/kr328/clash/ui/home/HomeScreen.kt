@@ -74,6 +74,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import com.github.kr328.clash.ui.components.lowWindow
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -223,6 +225,8 @@ fun HomeScreen(
     onOpenProxies: () -> Unit,
     onVpnSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Room for the system bars and the dock, inside the scrolling: the cards pass under them. */
+    contentPadding: PaddingValues = PaddingValues(),
     /** Подписки есть, но ни одна не выбрана: кнопка ведёт на «Подписки» (D-213). */
     onChooseSubscription: () -> Unit = {},
     /** Крестик на карточке «VPN не включился» (D-227). */
@@ -285,7 +289,7 @@ fun HomeScreen(
     // мягкая: после первой подписки главная проявляется на месте приветствия.
     Crossfade(targetState = onboarding, animationSpec = tween(ONBOARDING_MS), label = "onboarding") { first ->
         if (first) {
-            Welcome(onSettings, onBird, header, appCards, outOfSpace, modifier)
+            Welcome(onSettings, onBird, header, appCards, outOfSpace, modifier.padding(contentPadding))
         } else {
             HomeRegular(
                 state = state,
@@ -318,6 +322,7 @@ fun HomeScreen(
                 appCards = appCards,
                 onFeatures = onFeatures,
                 onBird = onBird,
+                contentPadding = contentPadding,
                 modifier = modifier,
             )
         }
@@ -428,6 +433,7 @@ private fun HomeRegular(
     appCards: (@Composable () -> Unit)?,
     onFeatures: () -> Unit,
     onBird: (() -> Unit)?,
+    contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
     val profile = state.profile
@@ -470,38 +476,32 @@ private fun HomeRegular(
     // On a TV the column comes all the way to its start near it, as the lazy lists do.
     val bring = remember(scroll) { tvBringIntoView(scroll) }
 
+    // The power card is shown once there is a subscription or a running tunnel.
+    val showHero = profile != null || state.running
+    // A phone on its side (D-480): the power card on the left and the rest beside it. One under the other, the card
+    // alone was taller than the window.
+    val split = !tv && showHero && lowWindow()
+
+    val hero: @Composable () -> Unit = {
+        HeroCard(
+            state = state,
+            metrics = metrics,
+            onToggle = onToggle,
+            onOpenProxies = onOpenProxies,
+            picker = picker,
+            picking = picking,
+            onPicking = { picking = it },
+            onOpenPicker = onOpenPicker,
+            onPickNode = onPickNode,
+            onPreviewNode = onPreviewNode,
+            compact = compact,
+            tight = tight,
+            modifier = Modifier.onGloballyPositioned { heroCard = it },
+        )
+    }
+
     CompositionLocalProvider(LocalBringIntoViewSpec provides if (tv) bring else LocalBringIntoViewSpec.current) {
-        Column(
-            modifier = modifier
-                // Во всю высоту, а не по содержимому: иначе касание в пустое место под
-                // карточками было мимо главной и панель узлов не сворачивало.
-                .fillMaxSize()
-                .screenInsets()
-                // Панель открыта — касание мимо карточки только сворачивает её: как выйти,
-                // человек не гадает, а «Обновить» или шестерёнка под пальцем не срабатывают.
-                .onGloballyPositioned { viewport = it }
-                .pointerInput(picking) {
-                    if (!picking || !tv) return@pointerInput
-
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                        val box = viewport?.takeIf { it.isAttached }
-                        val card = heroCard?.takeIf { it.isAttached }
-
-                        if (box == null || card == null || down.position !in box.localBoundingBoxOf(card)) {
-                            down.consume()
-                            picking = false
-                        }
-                    }
-                }
-                // Прокрутка остаётся страховкой на крупный шрифт и редкие карточки
-                // (лимит устройств, потеря связи), но в обычном состоянии экран должен
-                // помещаться целиком: 12 между карточками вместо 16 — ровно та разница,
-                // из-за которой подписка уезжала под панель.
-                .verticalScroll(scroll, overscrollEffect = overscrollFor(scroll))
-                .padding(horizontal = 16.dp, vertical = (if (tight) 0.dp else 12.dp) + tvEdge()),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+        val cards: @Composable ColumnScope.() -> Unit = {
             if (header) BrandHeader(profile, onSettings, onBird)
 
             if (profile != null && profile.hwidBlocked) {
@@ -589,23 +589,7 @@ private fun HomeRegular(
             // умолчанию решает человек, и напоминание должно быть на виду.
             appCards?.invoke()
 
-            if (profile != null || state.running) {
-                HeroCard(
-                    state = state,
-                    metrics = metrics,
-                    onToggle = onToggle,
-                    onOpenProxies = onOpenProxies,
-                    picker = picker,
-                    picking = picking,
-                    onPicking = { picking = it },
-                    onOpenPicker = onOpenPicker,
-                    onPickNode = onPickNode,
-                    onPreviewNode = onPreviewNode,
-                    compact = compact,
-                    tight = tight,
-                    modifier = Modifier.onGloballyPositioned { heroCard = it },
-                )
-            }
+            if (showHero && !split) hero()
 
             // Свой конфиг — без срока, трафика и обновлений: карточке нечего показать (D-125).
             if (profile != null && !profile.local) {
@@ -618,6 +602,68 @@ private fun HomeRegular(
                 FeaturesPill(onFeatures, Modifier.align(Alignment.CenterHorizontally))
             }
 
+        }
+
+        if (split) {
+            val heroScroll = rememberScrollState()
+
+            Row(
+                modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // Each column scrolls by itself, so the power button stays put while the cards beside it move.
+                Column(
+                    Modifier.weight(1f).fillMaxHeight()
+                        .verticalScroll(heroScroll, overscrollEffect = overscrollFor(heroScroll))
+                        .padding(contentPadding)
+                        .padding(vertical = 12.dp),
+                ) {
+                    hero()
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight()
+                        .verticalScroll(scroll, overscrollEffect = overscrollFor(scroll))
+                        .padding(contentPadding)
+                        .padding(vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    content = cards,
+                )
+            }
+        } else {
+            Column(
+                modifier = modifier
+                    // Во всю высоту, а не по содержимому: иначе касание в пустое место под
+                    // карточками было мимо главной и панель узлов не сворачивало.
+                    .fillMaxSize()
+                    .screenInsets()
+                    // Панель открыта — касание мимо карточки только сворачивает её: как выйти,
+                    // человек не гадает, а «Обновить» или шестерёнка под пальцем не срабатывают.
+                    .onGloballyPositioned { viewport = it }
+                    .pointerInput(picking) {
+                        if (!picking || !tv) return@pointerInput
+
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                            val box = viewport?.takeIf { it.isAttached }
+                            val card = heroCard?.takeIf { it.isAttached }
+
+                            if (box == null || card == null || down.position !in box.localBoundingBoxOf(card)) {
+                                down.consume()
+                                picking = false
+                            }
+                        }
+                    }
+                    // Прокрутка остаётся страховкой на крупный шрифт и редкие карточки
+                    // (лимит устройств, потеря связи), но в обычном состоянии экран должен
+                    // помещаться целиком: 12 между карточками вместо 16 — ровно та разница,
+                    // из-за которой подписка уезжала под панель.
+                    .verticalScroll(scroll, overscrollEffect = overscrollFor(scroll))
+                    .padding(contentPadding)
+                    .padding(horizontal = 16.dp, vertical = (if (tight) 0.dp else 12.dp) + tvEdge()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                content = cards,
+            )
         }
     }
 

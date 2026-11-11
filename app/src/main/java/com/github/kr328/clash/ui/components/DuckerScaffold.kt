@@ -73,6 +73,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -91,6 +92,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -165,10 +167,14 @@ fun DuckerScaffold(
         return
     }
 
-    var dockHeight by remember { mutableIntStateOf(0) }
+    // Across the dock: its height at the bottom, its width at the side.
+    var dockDepth by remember { mutableIntStateOf(0) }
 
     val density = LocalDensity.current
     val direction = LocalLayoutDirection.current
+    // A low window — a phone on its side: the dock stands at the start edge, as on a TV, and the screens keep the
+    // whole height. At the bottom it took 93 of 360 dp, and Home's power card no longer fitted above it.
+    val rail = lowWindow()
 
     // Уезжает с разгоном, возвращается с торможением: так уходят и приходят на экран
     // по Material. Читается только в слое панели — экран под ней не пересобирается.
@@ -186,33 +192,51 @@ fun DuckerScaffold(
         Box(Modifier.fillMaxSize()) {
             // Под панелью резервируем её измеренную высоту: при крупном шрифте она
             // выше, и последний пункт списка не должен уезжать под неё.
-            val reserved = with(density) { dockHeight.toDp() }
+            val reserved = with(density) { dockDepth.toDp() }
+            val rtl = direction == LayoutDirection.Rtl
+            val side = if (rtl) bars.getRight(density, direction) else bars.getLeft(density, direction)
 
             content(
-                PaddingValues(
-                    start = insets.calculateStartPadding(direction),
-                    end = insets.calculateEndPadding(direction),
-                    top = insets.calculateTopPadding(),
-                    // Открыта клавиатура — панель под ней, и отступ нужен только под клавиатуру.
-                    bottom = maxOf(
-                        insets.calculateBottomPadding(),
-                        bars.asPaddingValues().calculateBottomPadding() + reserved,
-                    ),
-                ),
+                if (rail) {
+                    PaddingValues(
+                        start = with(density) { side.toDp() } + RAIL_EDGE + reserved,
+                        end = insets.calculateEndPadding(direction),
+                        top = insets.calculateTopPadding(),
+                        bottom = insets.calculateBottomPadding(),
+                    )
+                } else {
+                    PaddingValues(
+                        start = insets.calculateStartPadding(direction),
+                        end = insets.calculateEndPadding(direction),
+                        top = insets.calculateTopPadding(),
+                        // Открыта клавиатура — панель под ней, и отступ нужен только под клавиатуру.
+                        bottom = maxOf(
+                            insets.calculateBottomPadding(),
+                            bars.asPaddingValues().calculateBottomPadding() + reserved,
+                        ),
+                    )
+                },
                 insets,
             )
 
             NavigationFade()
 
             Box(
-                modifier = Modifier.align(Alignment.BottomCenter)
+                modifier = Modifier.align(if (rail) Alignment.CenterStart else Alignment.BottomCenter)
                     .windowInsetsPadding(
-                        bars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+                        bars.only(
+                            WindowInsetsSides.Horizontal +
+                                if (rail) WindowInsetsSides.Vertical else WindowInsetsSides.Bottom,
+                        ),
                     )
-                    .padding(horizontal = 30.dp, vertical = 12.dp)
+                    .padding(horizontal = if (rail) RAIL_EDGE else 30.dp, vertical = 12.dp)
                     .graphicsLayer {
-                        // Ниже края целиком, вместе с отступом и тенью.
-                        translationY = hidden * (size.height + below + 40.dp.toPx())
+                        // Ниже края целиком, вместе с отступом и тенью; сбоку — за свой край.
+                        if (rail) {
+                            translationX = hidden * (size.width + side + 40.dp.toPx()) * if (rtl) 1f else -1f
+                        } else {
+                            translationY = hidden * (size.height + below + 40.dp.toPx())
+                        }
                     }
                     .then(if (dockShown) Modifier else Modifier.clearAndSetSemantics { }),
             ) {
@@ -224,7 +248,8 @@ fun DuckerScaffold(
                     actionLabel = actionLabel,
                     single = single,
                     onSingle = onSingle,
-                    modifier = Modifier.onSizeChanged { dockHeight = it.height },
+                    vertical = rail,
+                    modifier = Modifier.onSizeChanged { dockDepth = if (rail) it.width else it.height },
                 )
             }
         }
@@ -278,6 +303,11 @@ internal fun navigationRoom(): Dp =
 /** The TV's round button under its dock (D-97). */
 val ACTION_SIZE = 56.dp
 
+/** The side dock: its gap to the start edge, its width (room for «Подписки» on one line) and a tab's height. */
+private val RAIL_EDGE = 12.dp
+private val RAIL_WIDTH = 84.dp
+private val RAIL_TAB = 56.dp
+
 /**
  * Ряд вкладок рисуется дважды: снизу в тусклом цвете, сверху в цвете «на подсветке»,
  * и верхняя копия обрезается ровно по подсветке (D-76).
@@ -297,6 +327,8 @@ private fun FloatingDock(
     actionLabel: String?,
     single: String?,
     onSingle: () -> Unit,
+    /** Standing at the side ([lowWindow]): the tabs go top to bottom, and so does the highlight. */
+    vertical: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(percent = 50)
@@ -390,16 +422,23 @@ private fun FloatingDock(
 
     val current = selected()
 
-    fun DrawScope.pillLeft() = lerp(
-        dockPillOffset(width = size.width, position = position(), rtl = layoutDirection == LayoutDirection.Rtl),
-        0f,
-        merge,
-    )
+    // The highlight along the dock: across its width at the bottom, down its height at the side.
+    fun DrawScope.pill(): Rect {
+        val length = if (vertical) size.height else size.width
+        val start = lerp(
+            dockPillOffset(length, position(), rtl = !vertical && layoutDirection == LayoutDirection.Rtl),
+            0f,
+            merge,
+        )
+        val extent = lerp(dockSlotWidth(length), length, merge)
 
-    fun DrawScope.pillWidth() = lerp(dockSlotWidth(size.width), size.width, merge)
+        return if (vertical) Rect(Offset(0f, start), Size(size.width, extent))
+        else Rect(Offset(start, 0f), Size(extent, size.height))
+    }
 
     Surface(
-        modifier = modifier.widthIn(max = 420.dp).airShadow(shape),
+        modifier = modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.widthIn(max = 420.dp))
+            .airShadow(shape),
         shape = shape,
         color = MaterialTheme.colorScheme.surface,
     ) {
@@ -408,14 +447,13 @@ private fun FloatingDock(
             // а вкладки гаснут, и гасить её вместе с ними нельзя.
             Box(
                 Modifier.matchParentSize().drawBehind {
-                    val left = pillLeft()
-                    val width = pillWidth()
-                    val corner = CornerRadius(size.height / 2f)
+                    val rect = pill()
+                    val corner = CornerRadius(rect.minDimension / 2f)
 
                     drawRoundRect(
                         color = pill,
-                        topLeft = Offset(left, 0f),
-                        size = Size(width, size.height),
+                        topLeft = rect.topLeft,
+                        size = rect.size,
                         cornerRadius = corner,
                     )
 
@@ -423,18 +461,18 @@ private fun FloatingDock(
 
                     if (t > 0f && t < 1f) {
                         // The band is transparent outside itself, so the highlight's own shape clips it.
-                        val band = width * 0.6f
-                        val x = left - band + (width + band * 2f) * t
+                        val band = rect.width * 0.6f
+                        val x = rect.left - band + (rect.width + band * 2f) * t
 
                         drawRoundRect(
                             brush = Brush.linearGradient(
                                 colors = listOf(Color.Transparent, tabShineColor, Color.Transparent),
-                                start = Offset(x - band / 2f, 0f),
+                                start = Offset(x - band / 2f, rect.top),
                                 // A 15° slant, as in the mockup.
-                                end = Offset(x + band / 2f, band * 0.27f),
+                                end = Offset(x + band / 2f, rect.top + band * 0.27f),
                             ),
-                            topLeft = Offset(left, 0f),
-                            size = Size(width, size.height),
+                            topLeft = rect.topLeft,
+                            size = rect.size,
                             cornerRadius = corner,
                         )
                     }
@@ -451,6 +489,7 @@ private fun FloatingDock(
                 },
                 turn = turn,
                 actionLabel = if (added) actionLabel else null,
+                vertical = vertical,
                 modifier = Modifier
                     .then(if (alone) Modifier.clearAndSetSemantics { } else Modifier)
                     .graphicsLayer { alpha = 1f - (merge * 2f).coerceIn(0f, 1f) },
@@ -462,22 +501,22 @@ private fun FloatingDock(
                 onSelect = null,
                 turn = turn,
                 actionLabel = null,
+                vertical = vertical,
                 // Нажатия и озвучка живут в нижней копии: верхняя только перекрашивает,
                 // иначе TalkBack читал бы каждую вкладку дважды.
                 modifier = Modifier.clearAndSetSemantics { }
                     .graphicsLayer { alpha = 1f - (merge * 2f).coerceIn(0f, 1f) }
                     .drawWithContent {
-                        val left = pillLeft()
+                        val rect = pill()
 
-                        clipRect(left, 0f, left + pillWidth(), size.height) {
+                        clipRect(rect.left, rect.top, rect.right, rect.bottom) {
                             this@drawWithContent.drawContent()
                         }
                     },
             )
 
             if (lastLabel.value.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.matchParentSize()
+                val face = Modifier.matchParentSize()
                         .graphicsLayer { alpha = ((merge - 0.5f) * 2f).coerceIn(0f, 1f) }
                         .clip(shape)
                         .then(
@@ -501,21 +540,44 @@ private fun FloatingDock(
                                     ),
                                 )
                             }
-                        },
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Symbols.Add, contentDescription = null, tint = onPill, modifier = Modifier.size(22.dp))
+                        }
 
-                    Spacer(Modifier.width(8.dp))
+                if (vertical) {
+                    // The side dock is narrow: the «+» over the words, which take two lines.
+                    Column(
+                        modifier = face.padding(6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+                    ) {
+                        Icon(Symbols.Add, contentDescription = null, tint = onPill, modifier = Modifier.size(22.dp))
 
-                    Text(
-                        text = single ?: lastLabel.value,
-                        color = onPill,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                    )
+                        Text(
+                            text = single ?: lastLabel.value,
+                            color = onPill,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 3,
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = face,
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Symbols.Add, contentDescription = null, tint = onPill, modifier = Modifier.size(22.dp))
+
+                        Spacer(Modifier.width(8.dp))
+
+                        Text(
+                            text = single ?: lastLabel.value,
+                            color = onPill,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                        )
+                    }
                 }
             }
         }
@@ -564,69 +626,81 @@ private fun DockTabs(
     turn: Transition<Boolean>,
     /** What a tap on «Подписки» does once it reads «+ Добавить», for TalkBack. */
     actionLabel: String?,
+    /** Top to bottom, in the side dock. */
+    vertical: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
     val selectedWord = stringResource(R.string.tab_selected)
 
-    Row(
-        modifier = modifier.fillMaxWidth()
-            .then(if (onSelect != null) Modifier.selectableGroup().focusGroup() else Modifier),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        DockTabItems.forEachIndexed { index, (label, icon) ->
-            val active = selected == index
-            val name = stringResource(label)
+    val group = modifier.fillMaxWidth()
+        .then(if (onSelect != null) Modifier.selectableGroup().focusGroup() else Modifier)
 
-            Column(
-                modifier = Modifier.weight(1f)
-                    .clip(RoundedCornerShape(percent = 50))
-                    .then(
-                        if (onSelect != null) {
-                            // What `selectable` is, plus a click label: turned into «+ Добавить», the tab keeps
-                            // its name and role, and TalkBack says what a tap does (D-390).
-                            Modifier.semantics {
-                                if (index == ACTION_TAB) {
-                                    // Compose takes TalkBack's click away from a selected tab, so this one says
-                                    // its selection in words. Its name is its own: a label at zero alpha is
-                                    // hidden from TalkBack.
-                                    contentDescription = name
-                                    if (active) stateDescription = selectedWord
-                                } else {
-                                    this.selected = active
-                                }
+    // [slot] — the tab's share of the row, or its row in the column.
+    val tab: @Composable (Int, Modifier) -> Unit = { index, slot ->
+        val (label, icon) = DockTabItems[index]
+        val active = selected == index
+        val name = stringResource(label)
+
+        Column(
+            modifier = slot
+                .clip(RoundedCornerShape(percent = 50))
+                .then(
+                    if (onSelect != null) {
+                        // What `selectable` is, plus a click label: turned into «+ Добавить», the tab keeps
+                        // its name and role, and TalkBack says what a tap does (D-390).
+                        Modifier.semantics {
+                            if (index == ACTION_TAB) {
+                                // Compose takes TalkBack's click away from a selected tab, so this one says
+                                // its selection in words. Its name is its own: a label at zero alpha is
+                                // hidden from TalkBack.
+                                contentDescription = name
+                                if (active) stateDescription = selectedWord
+                            } else {
+                                this.selected = active
                             }
-                                .clickable(
-                                    onClickLabel = if (index == ACTION_TAB) actionLabel else null,
-                                    role = Role.Tab,
-                                    onClick = { onSelect(index) },
-                                )
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .heightIn(min = 48.dp)
-                    .padding(horizontal = 6.dp, vertical = 7.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
-            ) {
-                if (index == ACTION_TAB) {
-                    ActionFace(turn, icon, name, style, content)
-                } else {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = content,
-                    )
+                        }
+                            .clickable(
+                                onClickLabel = if (index == ACTION_TAB) actionLabel else null,
+                                role = Role.Tab,
+                                onClick = { onSelect(index) },
+                            )
+                    } else {
+                        Modifier
+                    },
+                )
+                .heightIn(min = 48.dp)
+                .padding(horizontal = 6.dp, vertical = 7.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
+        ) {
+            if (index == ACTION_TAB) {
+                ActionFace(turn, icon, name, style, content)
+            } else {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = content,
+                )
 
-                    FitLabel(
-                        text = name,
-                        style = style,
-                        color = content,
-                    )
-                }
+                FitLabel(
+                    text = name,
+                    style = style,
+                    color = content,
+                )
             }
+        }
+    }
+
+    if (vertical) {
+        Column(group) {
+            // Equal rows, so the highlight's slot (a third of the height) is each tab's.
+            DockTabItems.indices.forEach { tab(it, Modifier.fillMaxWidth().heightIn(min = RAIL_TAB)) }
+        }
+    } else {
+        Row(group, verticalAlignment = Alignment.CenterVertically) {
+            DockTabItems.indices.forEach { tab(it, Modifier.weight(1f)) }
         }
     }
 }

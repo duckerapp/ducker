@@ -7,6 +7,7 @@ import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvKeys
 import com.github.kr328.clash.ui.components.tvKeyboardTop
 import com.github.kr328.clash.ui.components.LocalTv
+import com.github.kr328.clash.ui.components.lowWindow
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
@@ -44,11 +45,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import kotlin.math.roundToInt
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.activity.compose.LocalActivity
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.widthIn
@@ -85,7 +81,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -249,19 +244,7 @@ fun ConfigScreen(
     val compact = lowWindow()
     val bare = full && !compact
 
-    // Там же прячется строка состояния — ещё строка-другая кода; смахнуть сверху — вернётся.
-    // Планшеты и портрет этого не видят: у них окно не низкое.
-    val activity = LocalActivity.current
-    DisposableEffect(compact, activity) {
-        val bars = activity?.window?.let { WindowCompat.getInsetsController(it, it.decorView) }
-
-        if (compact && bars != null) {
-            bars.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            bars.hide(WindowInsetsCompat.Type.statusBars())
-        }
-
-        onDispose { if (compact) bars?.show(WindowInsetsCompat.Type.statusBars()) }
-    }
+    // The status bar hides in a low window for the whole app now (`HomeActivity`), the editor included.
     val onBack = { if (state.dirty) onAskLeave(true) else onClose() }
 
     // Пульт (D-158): код — одна кнопка, как поле ввода. Иначе фокус заходил в редактор, стрелки
@@ -1199,15 +1182,6 @@ private fun SaveOption(icon: ImageVector, title: String, hint: String, onClick: 
 
 private const val MIN_TEXT = 9f
 private const val MAX_TEXT = 22f
-
-/**
- * Окно ниже 480dp (граница компактной высоты у Material) — телефон боком или половина экрана.
- * Планшет таким не бывает и боком. Редактору конфига тогда нужна каждая строка (D-145).
- */
-// From the configuration, not `LocalWindowInfo.containerSize`: on Android 12 (MIUI) that lags one turn
-// behind — upright again, it still gave the sideways size, and the editor hid the status bar (D-478).
-@Composable
-internal fun lowWindow(): Boolean = LocalConfiguration.current.screenHeightDp < 480
 
 private const val RESULT_MS = 4000L
 
