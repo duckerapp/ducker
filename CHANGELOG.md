@@ -12,6 +12,11 @@ repository was closed; they are listed here for history. APK files are on the
 
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
+- With “Protect subscription” on, the QR code can be screenshotted once your fingerprint, face or PIN has opened it.
+  Editing the subscription and the config still allow no screenshots.
+- Connections: system services show their app's name and icon instead of a blank square and a name such as
+  `android.uid.system`; connections over UDP carry a “UDP” mark; “Reset” on a list narrowed to an app, a site or a
+  search closes only the connections it shows.
 
 ## 0.4.48 — 2026-11-11
 
