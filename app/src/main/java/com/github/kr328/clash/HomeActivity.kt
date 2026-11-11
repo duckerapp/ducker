@@ -1179,7 +1179,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                                 qrScanner.launch(true)
                                             }
                                         },
-                                        secure = settingsState.lockSensitive,
                                         guard = ::guard,
                                         onSeeAnnouncements = { subscriptionsViewModel.seeAnnouncements(this@HomeActivity, it) },
                                         modifier = Modifier.consumeWindowInsets(insets),
