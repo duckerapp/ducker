@@ -69,6 +69,9 @@ data class Profile(
     /** When the last update ended, and its raw failure; empty — it succeeded (D-436). */
     val updateEndedAt: Long = 0,
     val updateFailure: String = "",
+    /** The configuration template in effect and the one chosen; they differ — the choice is not applied yet. */
+    val template: String = "",
+    val templateRequested: String = "",
 ) : Parcelable {
     enum class Type {
         File, Url, External

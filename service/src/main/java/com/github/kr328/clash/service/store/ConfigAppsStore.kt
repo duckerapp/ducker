@@ -17,7 +17,7 @@ class ConfigAppsStore(private val context: Context) {
     private val dir = context.filesDir.resolve("config-apps")
 
     /** `ducker-override-user: on` in the subscription's last download: its config apps stay as the provider set them. */
-    fun locked(uuid: UUID): Boolean = ProviderInfo.read(context.importedDir.resolve(uuid.toString())).overrideUser
+    fun locked(uuid: UUID): Boolean = ProviderInfo.read(context.importedDir.resolve(uuid.toString())).appsLocked
 
     /** What the tunnel and both screens apply for [uuid] (D-473): the reversals and the apps with rules, none if locked. */
     fun changes(uuid: UUID): PackageFilter.Changes =
@@ -54,7 +54,7 @@ class ConfigAppsStore(private val context: Context) {
      * subscription is committed into [profileDir].
      */
     fun dropIfLocked(uuid: UUID, profileDir: File) {
-        if (ProviderInfo.read(profileDir).overrideUser) delete(uuid)
+        if (ProviderInfo.read(profileDir).appsLocked) delete(uuid)
     }
 
     private fun file(uuid: UUID) = File(dir, uuid.toString())

@@ -12,6 +12,9 @@ android {
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    // `TemplateSwitchTest` builds configs from the app's bundled template.
+    sourceSets { getByName("androidTest") { assets.directories.add("../app/src/main/assets") } }
 }
 
 dependencies {

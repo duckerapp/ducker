@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application>
+    <!-- TemplateSwitchTest reads the fixture server over plain HTTP, as the core does. -->
+    <application android:usesCleartextTraffic="true">
         <!-- The far side of BinderExchangeTest: a second process of the test package. -->
         <service
             android:name="com.github.kr328.kaidl.test.ExchangeService"

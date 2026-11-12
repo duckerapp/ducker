@@ -53,6 +53,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
         }
 
         var loaded: UUID? = null
+        var loadedTemplate = ""
 
         reload.trySend(Unit)
 
@@ -76,15 +77,16 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 if (current == loaded && changed != null && changed != loaded)
                     continue
 
-                // Режим, выбранный кнопкой на «Прокси», — выбор для этой подписки: при
-                // обновлении он остаётся, а у другой подписки действует её `mode` (D-143).
-                val switched = current != loaded
-
                 val active = ImportedDao().queryByUUID(current)
                     ?: throw NullPointerException(Failure.NO_PROFILE)
 
                 // Сведения провайдера лежат файлом в каталоге профиля, а не в базе (D-32).
                 val provider = ProviderInfo.read(service.importedDir.resolve(active.uuid.toString()))
+
+                // Режим, выбранный кнопкой на «Прокси», — выбор для этой подписки: при
+                // обновлении он остаётся, а у другой подписки действует её `mode` (D-143).
+                // Another configuration template of the same subscription is another config as well (D-493).
+                val switched = current != loaded || provider.template != loadedTemplate
 
                 // `ducker-local-proxy: off` — провайдер просит туннель без входов локального
                 // прокси (D-218): порты и `listeners` закрываем оверрайдом, файл конфига не трогаем.
@@ -141,10 +143,14 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                     // Marked only once in the core: after a failed load the core keeps the previous
                     // subscription, and the next good load of this one is still a switch (D-461).
                     loaded = current
+                    loadedTemplate = provider.template
 
+                    // Only a group of this config that refuses the pick: the other template mode's groups keep theirs.
+                    val groups = Clash.queryGroupNames(false).toSet()
                     val remove = SelectionDao().querySelections(active.uuid)
                         .filterNot { Clash.patchSelector(it.proxy, it.selected) }
                         .map { it.proxy }
+                        .filter { it in groups }
 
                     SelectionDao().removeSelections(active.uuid, remove)
 

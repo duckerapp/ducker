@@ -16,6 +16,10 @@ import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.service.store.AnnouncementStore
 import com.github.kr328.clash.service.store.ConfigAppsStore
+import com.github.kr328.clash.service.store.ConfigTemplate
+import com.github.kr328.clash.service.store.ConfigTemplateStore
+import com.github.kr328.clash.service.store.SOURCE_FILE
+import com.github.kr328.clash.service.store.localSource
 import com.github.kr328.clash.service.util.ProviderInfo
 import com.github.kr328.clash.service.util.SubscriptionHeaders
 import com.github.kr328.clash.service.util.SubscriptionMirrors
@@ -97,8 +101,9 @@ object ProfileProcessor {
                 Clash.setAgeSecretKey(snapshot.ageSecretKey?.takeIf { it.isNotBlank() })
 
                 val force = snapshot.type != Profile.Type.File
+                val template = templateOf(snapshot.type, ConfigTemplateStore(context).read(snapshot.uuid))
                 val subscriptionInfo =
-                    fetchProfile(context, snapshot.source, force, callback, brokenConfigAllowed(context, snapshot.uuid, snapshot.type))
+                    fetchProfile(context, snapshot.source, force, callback, brokenConfigAllowed(context, snapshot.uuid, snapshot.type), template)
 
                 profileLock.withLock {
                     if (PendingDao().queryByUUID(snapshot.uuid) == snapshot) {
@@ -149,7 +154,12 @@ object ProfileProcessor {
         }
     }
 
-    suspend fun update(context: Context, uuid: UUID, callback: IFetchObserver?) {
+    /**
+     * @param switchTo a template to switch to ("" — the subscription's own config), or null to keep the chosen one.
+     * A switch rebuilds from the kept download where there is one ([localSource]); the choice is stored only
+     * with the config it built, after the swap.
+     */
+    suspend fun update(context: Context, uuid: UUID, callback: IFetchObserver?, switchTo: String? = null) {
         withContext(NonCancellable) {
             withProcessingLock(context) {
                 val snapshot = profileLock.withLock {
@@ -169,8 +179,15 @@ object ProfileProcessor {
 
                 var tries = emptyList<FetchStatus.Try>()
 
+                val chosen = switchTo ?: ConfigTemplateStore(context).read(snapshot.uuid)
+                val local = switchTo != null && localSource(context.processingDir, chosen)?.also {
+                    if (it.name == SOURCE_FILE) it.renameTo(context.processingDir.resolve("config.yaml"))
+                } != null
+
                 val subscriptionInfo = try {
-                    fetchProfile(context, snapshot.source, true, callback, brokenConfigAllowed(context, snapshot.uuid, snapshot.type)) {
+                    val template = templateOf(snapshot.type, chosen)
+
+                    fetchProfile(context, snapshot.source, !local, callback, brokenConfigAllowed(context, snapshot.uuid, snapshot.type), template) {
                         tries = it
                     }
                 } catch (e: HwidBlockedException) {
@@ -198,6 +215,7 @@ object ProfileProcessor {
                             ProviderInfo.read(context.processingDir).copy(updateEndedAt = System.currentTimeMillis(), updateFailure = ""),
                         )
                         context.importedDir.resolve(snapshot.uuid.toString()).replaceWithCopyOf(context.processingDir)
+                        if (switchTo != null) ConfigTemplateStore(context).write(snapshot.uuid, switchTo)
                         ConfigAppsStore(context).dropIfLocked(snapshot.uuid, context.importedDir.resolve(snapshot.uuid.toString()))
                         AnnouncementStore.record(context, snapshot.uuid, shown.second, shown.first)
 
@@ -247,7 +265,9 @@ object ProfileProcessor {
         }
 
         val subscriptionInfo = try {
-            fetchProfile(context, target, true, null, brokenConfigAllowed(context, uuid, from.type))
+            val template = templateOf(from.type, ConfigTemplateStore(context).read(uuid))
+
+            fetchProfile(context, target, true, null, brokenConfigAllowed(context, uuid, from.type), template)
         } catch (e: Exception) {
             // The kind only: the core's text carries the new link with the person's token.
             Log.w("Subscription move postponed, the new address failed: ${Failure.of(e.message).kind}")
@@ -369,6 +389,7 @@ object ProfileProcessor {
         force: Boolean,
         callback: IFetchObserver?,
         brokenConfigAllowed: Boolean,
+        template: ConfigTemplate? = null,
         tried: (List<FetchStatus.Try>) -> Unit = {},
     ): FetchStatus? {
         var subscriptionInfo: FetchStatus? = null
@@ -460,11 +481,15 @@ object ProfileProcessor {
             // объясняет `Failure` там, где ошибку показывают (D-227).
             if (Failure.of(failure.message).kind.download) throw failure
 
+            // A template takes only the nodes, and a config the core refused may still have them.
+            if (template != null) return@let
+
             val fromConfig = applyTemplateFallback(context, source, failure, callback, brokenConfigAllowed)
 
+            // Without a download (a switch back) the directory holds the previous response's details.
             ProviderInfo.write(
                 context.processingDir,
-                (provider ?: ProviderInfo()).copy(
+                (provider ?: ProviderInfo.read(context.processingDir)).copy(
                     usedTemplate = true,
                     lastError = failure.message.orEmpty(),
                     templateFromConfig = fromConfig,
@@ -472,7 +497,90 @@ object ProfileProcessor {
             )
         }
 
+        if (template != null) {
+            buildFromTemplate(context, source, template, callback)
+
+            // `templateFromConfig` is «no working provider config» (D-246) for a later return to the provider's.
+            ProviderInfo.write(
+                context.processingDir,
+                (provider ?: ProviderInfo.read(context.processingDir)).copy(
+                    template = template.id,
+                    usedTemplate = false,
+                    lastError = fetchFailure?.message.orEmpty(),
+                    templateFromConfig = fetchFailure != null,
+                ),
+            )
+        } else {
+            context.processingDir.resolve(SOURCE_FILE).delete()
+
+            ProviderInfo.read(context.processingDir).takeIf { it.template.isNotEmpty() }?.let {
+                ProviderInfo.write(context.processingDir, it.copy(template = ""))
+            }
+        }
+
         return subscriptionInfo
+    }
+
+    /** The template [chosen] names, for a URL subscription: a file the person edits themselves (D-493). */
+    private fun templateOf(type: Profile.Type, chosen: String): ConfigTemplate? {
+        if (type != Profile.Type.Url || chosen.isEmpty()) return null
+
+        return ConfigTemplate.byId(chosen) ?: throw IllegalArgumentException("Шаблон «$chosen» этой версии приложения неизвестен")
+    }
+
+    /**
+     * Template mode (D-493): the provider's download is kept as [SOURCE_FILE], and `config.yaml` becomes the
+     * template with its nodes and providers, checked by the core with the provider files fetched.
+     */
+    private suspend fun buildFromTemplate(context: Context, source: String, template: ConfigTemplate, callback: IFetchObserver?) {
+        val config = context.processingDir.resolve("config.yaml")
+
+        config.copyTo(context.processingDir.resolve(SOURCE_FILE), overwrite = true)
+
+        val text = context.assets.open(template.asset).bufferedReader().use { it.readText() }
+        val directHost = runCatching { Uri.parse(source).host.orEmpty() }.getOrDefault("")
+
+        config.writeText(Clash.convertWithSources(config.readText(), text, directHost))
+
+        var cb = callback
+
+        Clash.fetchAndValid(context.processingDir, source, false) {
+            try {
+                cb?.updateStatus(it)
+            } catch (e: Exception) {
+                cb = null
+            }
+        }.await()
+    }
+
+    /**
+     * [ProfileManager.setTemplate]. Not downloaded yet: only stored, its first download builds it so. Already in
+     * effect: only stored, which also converges a choice a crash left behind.
+     */
+    suspend fun setTemplate(context: Context, uuid: UUID, id: String, callback: IFetchObserver?) {
+        if (id.isNotEmpty()) requireNotNull(ConfigTemplate.byId(id)) { "Unsupported template $id" }
+
+        val type = ImportedDao().queryByUUID(uuid)?.type ?: PendingDao().queryByUUID(uuid)?.type
+            ?: throw IllegalArgumentException("profile $uuid not found")
+
+        require(id.isEmpty() || type == Profile.Type.Url) { "Templates are for URL subscriptions only" }
+
+        val stored = withContext(NonCancellable) {
+            profileLock.withLock {
+                val imported = ImportedDao().exists(uuid)
+                val effective = ProviderInfo.read(context.importedDir.resolve(uuid.toString())).template
+
+                if (!imported && PendingDao().queryByUUID(uuid) == null) return@withLock true
+                if (imported && effective != id) return@withLock false
+
+                ConfigTemplateStore(context).write(uuid, id)
+                if (imported) context.sendProfileChanged(uuid)
+
+                true
+            }
+        }
+
+        if (!stored) update(context, uuid, callback, switchTo = id)
     }
 
     /**
@@ -545,6 +653,7 @@ object ProfileProcessor {
                 pending.deleteRecursively()
                 imported.deleteRecursively()
                 AnnouncementStore.forget(context, uuid)
+                ConfigTemplateStore(context).delete(uuid)
 
                 context.sendProfileChanged(uuid)
             }
@@ -556,7 +665,12 @@ object ProfileProcessor {
             profileLock.withLock {
                 PendingDao().remove(uuid)
 
-                context.pendingDir.resolve(uuid.toString()).deleteRecursively()
+                val deleted = context.pendingDir.resolve(uuid.toString()).deleteRecursively()
+
+                // A subscription given up before its first download leaves no choice behind.
+                if (!ImportedDao().exists(uuid)) ConfigTemplateStore(context).delete(uuid)
+
+                deleted
             }
         }
     }

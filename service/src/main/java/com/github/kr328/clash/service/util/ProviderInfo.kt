@@ -77,8 +77,13 @@ data class ProviderInfo(
      */
     val updateEndedAt: Long = 0,
     val updateFailure: String = "",
+    /** The configuration template this directory's config was built with; empty — the subscription's own config. */
+    val template: String = "",
 ) {
     fun mirrorsFor(link: String): List<String> = if (source == link) mirrors else emptyList()
+
+    /** [overrideUser] locks the provider's own app list, not a template's (D-493). */
+    val appsLocked: Boolean get() = overrideUser && template.isEmpty()
 
     companion object {
         private const val FILE_NAME = "provider.json"

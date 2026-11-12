@@ -2,6 +2,7 @@ package com.github.kr328.clash.service
 
 import com.github.kr328.clash.service.clash.module.MobileModule
 import com.github.kr328.clash.service.store.ConfigAppsStore
+import com.github.kr328.clash.service.store.ConfigTemplateStore
 import com.github.kr328.clash.service.store.UserRulesStore
 import android.content.Context
 import com.github.kr328.clash.common.util.backgroundScope
@@ -176,6 +177,10 @@ class ProfileManager(private val context: Context) : IProfileManager,
         scheduleUpdate(uuid, true)
     }
 
+    override suspend fun setTemplate(uuid: UUID, template: String, callback: IFetchObserver?) {
+        ProfileProcessor.setTemplate(context, uuid, template, callback)
+    }
+
     override suspend fun commit(uuid: UUID, callback: IFetchObserver?) {
         ProfileProcessor.apply(context, uuid, callback)
 
@@ -292,6 +297,8 @@ class ProfileManager(private val context: Context) : IProfileManager,
             triedAt = if (provider.source == source) provider.triedAt else 0,
             updateEndedAt = provider.updateEndedAt,
             updateFailure = provider.updateFailure,
+            template = provider.template,
+            templateRequested = ConfigTemplateStore(context).read(uuid),
         )
     }
 

@@ -27,6 +27,13 @@ interface IProfileManager {
     suspend fun delete(uuid: UUID)
     suspend fun patch(uuid: UUID, name: String, source: String, interval: Long, followProvider: Boolean, ageSecretKey: String?)
     suspend fun update(uuid: UUID)
+
+    /**
+     * Chooses the configuration template of a URL subscription, "" — its own config. Rebuilt from the kept download
+     * where there is one, downloaded otherwise; the choice is stored only with a config that passed the core's check.
+     * Throws the reason on failure: then the profile and the previous choice stay.
+     */
+    suspend fun setTemplate(uuid: UUID, template: String, callback: IFetchObserver? = null)
     suspend fun queryByUUID(uuid: UUID): Profile?
     suspend fun queryAll(): List<Profile>
     suspend fun queryActive(): Profile?
