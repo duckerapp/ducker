@@ -651,4 +651,13 @@
     <plurals name="mobile_card_nodes">
         <item quantity="other">%1$s · %2$d 个节点</item>
     </plurals>
+    <string name="config_template">配置</string>
+    <string name="config_template_source">来自订阅</string>
+    <string name="config_template_source_hint">规则和设置与服务商提供的一致</string>
+    <string name="config_template_ducker_ru">ducker · 俄罗斯</string>
+    <string name="config_template_ducker_ru_hint">俄罗斯网站和应用直连，其余走 VPN。订阅只提供服务器</string>
+    <string name="config_template_not_applied">未应用</string>
+    <string name="config_template_failed">未应用：%1$s</string>
+    <string name="config_template_applying">正在应用…</string>
+    <string name="config_template_edited">配置曾被手动编辑：更换配置会覆盖这些编辑</string>
 </resources>

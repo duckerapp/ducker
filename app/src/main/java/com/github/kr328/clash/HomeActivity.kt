@@ -146,6 +146,8 @@ import com.github.kr328.clash.ui.subscriptions.InstallLink
 import com.github.kr328.clash.ui.subscriptions.SendToTvSheet
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.ui.subscriptions.SubscriptionAddressesSheet
+import com.github.kr328.clash.ui.subscriptions.ConfigTemplateSheet
+import com.github.kr328.clash.ui.subscriptions.shownName
 import com.github.kr328.clash.ui.subscriptions.sendable
 import com.github.kr328.clash.ui.subscriptions.clipboardLink
 import com.github.kr328.clash.ui.subscriptions.DeleteSubscriptionDialog
@@ -1206,6 +1208,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onMove = { from, to -> subscriptionsViewModel.move(from, to) },
                                         onMoved = { subscriptionsViewModel.saveOrder(this@HomeActivity) },
                                         onAddresses = { subscriptionsViewModel.showAddresses(it.uuid) },
+                                        onTemplate = { subscriptionsViewModel.showTemplate(this@HomeActivity, it.uuid) },
                                         onRules = { subscriptionsViewModel.openRules(this@HomeActivity, it.uuid) },
                                         onSendToTv = {
                                             guard(R.string.send_tv_title) {
@@ -1740,6 +1743,33 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         triedAt = profile?.triedAt ?: 0,
                         onDismiss = { subscriptionsViewModel.showAddresses(null) },
                         onClosed = { addressesShown = false },
+                    )
+                }
+
+                var templateShown by remember { mutableStateOf(false) }
+
+                LaunchedEffect(subscriptionsState.templateFor) {
+                    if (subscriptionsState.templateFor != null) templateShown = true
+                }
+
+                // Kept while the sheet slides away, as the addresses' sheet keeps its profile.
+                val keptTemplate = remember { arrayOfNulls<Profile>(1) }
+
+                if (templateShown) {
+                    subscriptionsState.profiles.firstOrNull { it.uuid == subscriptionsState.templateFor }
+                        ?.let { keptTemplate[0] = it }
+                    val profile = keptTemplate[0]
+
+                    ConfigTemplateSheet(
+                        open = subscriptionsState.templateFor != null && profile != null,
+                        name = profile?.shownName.orEmpty(),
+                        chosen = profile?.templateRequested.orEmpty(),
+                        switching = subscriptionsState.templateSwitching,
+                        error = subscriptionsState.templateError,
+                        edited = subscriptionsState.templateEdited,
+                        onChoose = { id -> profile?.let { subscriptionsViewModel.setTemplate(this@HomeActivity, it.uuid, id) } },
+                        onDismiss = { subscriptionsViewModel.showTemplate(this@HomeActivity, null) },
+                        onClosed = { templateShown = false },
                     )
                 }
 

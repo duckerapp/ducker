@@ -696,4 +696,13 @@
         <item quantity="many">%1$s · %2$d خادمًا</item>
         <item quantity="other">%1$s · %2$d خادم</item>
     </plurals>
+    <string name="config_template">الإعداد</string>
+    <string name="config_template_source">من الاشتراك</string>
+    <string name="config_template_source_hint">القواعد والإعدادات كما أرسلها المزوّد</string>
+    <string name="config_template_ducker_ru">ducker · روسيا</string>
+    <string name="config_template_ducker_ru_hint">المواقع والتطبيقات الروسية مباشرةً، والباقي عبر VPN. يُؤخذ من الاشتراك الخوادم فقط</string>
+    <string name="config_template_not_applied">لم يُطبَّق</string>
+    <string name="config_template_failed">لم يُطبَّق: %1$s</string>
+    <string name="config_template_applying">جارٍ التطبيق…</string>
+    <string name="config_template_edited">عُدِّل الإعداد يدويًا: تغيير الإعداد يستبدل التعديلات</string>
 </resources>

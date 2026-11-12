@@ -660,4 +660,13 @@
         <item quantity="one">%1$s · %2$d sunucu</item>
         <item quantity="other">%1$s · %2$d sunucu</item>
     </plurals>
+    <string name="config_template">Yapılandırma</string>
+    <string name="config_template_source">Abonelikten</string>
+    <string name="config_template_source_hint">Kurallar ve ayarlar sağlayıcının gönderdiği gibi</string>
+    <string name="config_template_ducker_ru">ducker · Rusya</string>
+    <string name="config_template_ducker_ru_hint">Rus siteleri ve uygulamaları doğrudan, geri kalanı VPN üzerinden. Abonelikten yalnızca sunucular alınır</string>
+    <string name="config_template_not_applied">uygulanmadı</string>
+    <string name="config_template_failed">Uygulanmadı: %1$s</string>
+    <string name="config_template_applying">Uygulanıyor…</string>
+    <string name="config_template_edited">Yapılandırma elle düzenlendi: başka yapılandırma seçmek düzenlemelerin yerini alır</string>
 </resources>

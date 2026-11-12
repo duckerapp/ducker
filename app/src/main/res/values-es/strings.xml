@@ -669,4 +669,13 @@
         <item quantity="many">%1$s · %2$d servidores</item>
         <item quantity="other">%1$s · %2$d servidores</item>
     </plurals>
+    <string name="config_template">Configuración</string>
+    <string name="config_template_source">De la suscripción</string>
+    <string name="config_template_source_hint">Reglas y ajustes tal como los envió tu proveedor</string>
+    <string name="config_template_ducker_ru">ducker · Rusia</string>
+    <string name="config_template_ducker_ru_hint">Los sitios y apps rusos van directos; el resto, por la VPN. De la suscripción solo se toman los servidores</string>
+    <string name="config_template_not_applied">sin aplicar</string>
+    <string name="config_template_failed">Sin aplicar: %1$s</string>
+    <string name="config_template_applying">Aplicando…</string>
+    <string name="config_template_edited">La configuración se editó a mano: cambiarla reemplaza las ediciones</string>
 </resources>

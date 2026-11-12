@@ -159,6 +159,8 @@ fun SubscriptionsScreen(
     onRules: (Profile) -> Unit = {},
     /** «Отправить на телевизор» in the menu: the scanner for the TV's code (D-162). */
     onSendToTv: (Profile) -> Unit = {},
+    /** «Конфигурация» in the menu or on the active card: the chooser of a URL subscription's template. */
+    onTemplate: (Profile) -> Unit = {},
     /** The announcements' sheet opened: this subscription's, or all of them (`null`) — they are seen now. */
     onSeeAnnouncements: (UUID?) -> Unit = {},
     /** Runs an action behind the lock (the reason names it in the system dialog). */
@@ -252,6 +254,7 @@ fun SubscriptionsScreen(
             actions = listOfNotNull(
                 MenuAction.Update.takeIf { !profile.local },
                 MenuAction.Edit,
+                MenuAction.Template.takeIf { profile.type == Profile.Type.Url },
                 MenuAction.Favorite,
                 MenuAction.Support.takeIf { support != null },
                 MenuAction.Renew.takeIf { renew != null },
@@ -263,10 +266,12 @@ fun SubscriptionsScreen(
                 MenuAction.Delete,
             ),
             favorite = profile.uuid in state.favorites,
+            template = templateLabel(profile),
             onAction = { action ->
                 afterMenu = when (action) {
                     MenuAction.Update -> ({ onUpdate(profile.uuid) })
                     MenuAction.Edit -> ({ onEdit(profile) })
+                    MenuAction.Template -> ({ onTemplate(profile) })
                     MenuAction.Renew -> ({ renew?.let(onOpenLink) })
                     MenuAction.Support -> ({ support?.let(onOpenLink) })
                     MenuAction.Announcements -> ({ showAnnouncements(profile.uuid) })
@@ -381,6 +386,7 @@ fun SubscriptionsScreen(
                         onMenu = openMenu,
                         onAddresses = onAddresses,
                         onRules = onRules,
+                        onTemplate = onTemplate,
                     )
                 }
 
@@ -472,6 +478,7 @@ private fun ActiveCard(
     onMenu: (Profile) -> Unit,
     onAddresses: (Profile) -> Unit,
     onRules: (Profile) -> Unit,
+    onTemplate: (Profile) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val tv = LocalTv.current
@@ -542,6 +549,9 @@ private fun ActiveCard(
                         }
 
                         CardFacts(
+                            // Source mode is today's default and not written on the card.
+                            template = templateLabel(shown).takeIf { shown.template.isNotEmpty() || shown.templateRequested.isNotEmpty() },
+                            onTemplate = { onTemplate(shown) },
                             rules = state.ruleCounts[shown.uuid] ?: 0,
                             backups = if (shown.imported) shown.backups else 0,
                             onRules = { onRules(shown) },
@@ -734,15 +744,23 @@ private fun hwidLimit(profile: Profile): Int =
     if (profile.hwidReason == "not_supported") R.string.limit_hwid_required else R.string.limit_max_devices
 
 /**
- * Under the active card's name (Q-83): the subscription's own rules and the provider's backup addresses,
- * only what there is — most subscriptions have neither, and the line is not there. A touch opens them.
+ * Under the active card's name (Q-83): the template in use, the subscription's own rules and the provider's backup
+ * addresses, only what there is — most subscriptions have neither, and the line is not there. A touch opens them.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CardFacts(rules: Int, backups: Int, onRules: () -> Unit, onAddresses: () -> Unit) {
-    if (rules == 0 && backups == 0) return
+private fun CardFacts(
+    template: String?,
+    onTemplate: () -> Unit,
+    rules: Int,
+    backups: Int,
+    onRules: () -> Unit,
+    onAddresses: () -> Unit,
+) {
+    if (template == null && rules == 0 && backups == 0) return
 
     FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (template != null) Fact(Symbols.Category, template, onTemplate)
         if (rules > 0) Fact(Symbols.Tune, pluralStringResource(R.plurals.subscription_rules_count, rules, rules), onRules)
         if (backups > 0) {
             Fact(Symbols.AltRoute, pluralStringResource(R.plurals.subscription_backup_addresses, backups, backups), onAddresses)
@@ -924,7 +942,7 @@ private fun ActiveDetails(
     }
 }
 
-private enum class MenuAction { Update, Edit, Renew, Support, Announcements, Share, SendTv, Favorite, Delete }
+private enum class MenuAction { Update, Edit, Template, Renew, Support, Announcements, Share, SendTv, Favorite, Delete }
 
 /** The same actions apply to active and inactive subscriptions. */
 @Composable
@@ -933,6 +951,8 @@ private fun ProfileMenu(
     name: String,
     actions: List<MenuAction>,
     favorite: Boolean,
+    /** What «Конфигурация» is set to, under its name. */
+    template: String,
     onAction: (MenuAction) -> Unit,
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
@@ -943,6 +963,7 @@ private fun ProfileMenu(
                 val icon = when (action) {
                     MenuAction.Update -> Symbols.Refresh
                     MenuAction.Edit -> Symbols.Edit
+                    MenuAction.Template -> Symbols.Category
                     MenuAction.Share -> Symbols.QrCode2
                     MenuAction.SendTv -> Symbols.Send
                     MenuAction.Favorite -> if (favorite) Symbols.Star else Symbols.StarOutline
@@ -954,6 +975,7 @@ private fun ProfileMenu(
                 val label = when (action) {
                     MenuAction.Update -> R.string.update
                     MenuAction.Edit -> R.string.edit
+                    MenuAction.Template -> R.string.config_template
                     MenuAction.Share -> R.string.share_qr
                     MenuAction.SendTv -> R.string.send_tv_title
                     MenuAction.Favorite -> if (favorite) R.string.unfavorite else R.string.favorite
@@ -967,7 +989,9 @@ private fun ProfileMenu(
                     MenuLine(icon, stringResource(label), MaterialTheme.colorScheme.error) { onAction(action) }
                 } else {
                     Card(Modifier.fillMaxWidth()) {
-                        MenuLine(icon, stringResource(label)) { onAction(action) }
+                        MenuLine(icon, stringResource(label), detail = template.takeIf { action == MenuAction.Template }) {
+                            onAction(action)
+                        }
                     }
                 }
             }
@@ -980,6 +1004,8 @@ private fun MenuLine(
     icon: ImageVector,
     text: String,
     color: Color = LocalContentColor.current,
+    /** A second line: what the action is set to. */
+    detail: String? = null,
     onClick: () -> Unit,
 ) {
     Row(
@@ -992,8 +1018,12 @@ private fun MenuLine(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
-        Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
-            color = color, modifier = Modifier.weight(1f))
+        Column(Modifier.weight(1f)) {
+            Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = color)
+            if (detail != null) {
+                Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }
 

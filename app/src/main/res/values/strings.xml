@@ -697,4 +697,13 @@
         <item quantity="one">%1$s · %2$d server</item>
         <item quantity="other">%1$s · %2$d servers</item>
     </plurals>
+    <string name="config_template">Configuration</string>
+    <string name="config_template_source">From the subscription</string>
+    <string name="config_template_source_hint">Rules and settings as your provider sent them</string>
+    <string name="config_template_ducker_ru">ducker · Russia</string>
+    <string name="config_template_ducker_ru_hint">Russian sites and apps go direct, everything else through the VPN. Only the servers come from the subscription</string>
+    <string name="config_template_not_applied">not applied</string>
+    <string name="config_template_failed">Not applied: %1$s</string>
+    <string name="config_template_applying">Applying…</string>
+    <string name="config_template_edited">The config was edited by hand: a new configuration replaces the edits</string>
 </resources>

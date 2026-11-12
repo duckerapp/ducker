@@ -700,4 +700,13 @@
         <item quantity="many">%1$s · %2$d узлов</item>
         <item quantity="other">%1$s · %2$d узла</item>
     </plurals>
+    <string name="config_template">Конфигурация</string>
+    <string name="config_template_source">Из подписки</string>
+    <string name="config_template_source_hint">Правила и настройки — как прислал провайдер</string>
+    <string name="config_template_ducker_ru">ducker · Россия</string>
+    <string name="config_template_ducker_ru_hint">Российские сайты и приложения — напрямую, остальное — через VPN. Из подписки берутся только серверы</string>
+    <string name="config_template_not_applied">не применено</string>
+    <string name="config_template_failed">Не применено: %1$s</string>
+    <string name="config_template_applying">Применяю…</string>
+    <string name="config_template_edited">Конфиг правили вручную: смена конфигурации заменит правки</string>
 </resources>

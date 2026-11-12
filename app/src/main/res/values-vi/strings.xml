@@ -651,4 +651,13 @@
     <plurals name="mobile_card_nodes">
         <item quantity="other">%1$s · %2$d máy chủ</item>
     </plurals>
+    <string name="config_template">Cấu hình</string>
+    <string name="config_template_source">Từ gói đăng ký</string>
+    <string name="config_template_source_hint">Quy tắc và cài đặt như nhà cung cấp gửi</string>
+    <string name="config_template_ducker_ru">ducker · Nga</string>
+    <string name="config_template_ducker_ru_hint">Trang web và ứng dụng Nga đi trực tiếp, phần còn lại qua VPN. Từ gói đăng ký chỉ lấy máy chủ</string>
+    <string name="config_template_not_applied">chưa áp dụng</string>
+    <string name="config_template_failed">Chưa áp dụng: %1$s</string>
+    <string name="config_template_applying">Đang áp dụng…</string>
+    <string name="config_template_edited">Cấu hình đã được sửa tay: đổi cấu hình sẽ thay thế các chỉnh sửa</string>
 </resources>

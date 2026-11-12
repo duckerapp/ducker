@@ -107,6 +107,14 @@ data class SubscriptionsState(
     val editBackup: Boolean = false,
     /** Whose «Адреса подписки» are open (Q-82); `null` — closed. */
     val addressesFor: UUID? = null,
+    /** Whose «Конфигурация» is open; `null` — closed. */
+    val templateFor: UUID? = null,
+    /** The template being switched to ("" — «Из подписки»); `null` — nothing running. */
+    val templateSwitching: String? = null,
+    /** Why the last switch was not applied; the sheet shows it. */
+    val templateError: String = "",
+    /** The subscription's config was edited by hand: a switch replaces the edits (D-125). */
+    val templateEdited: Boolean = false,
     /** Какую подписку собираемся удалить. Пусто — вопрос не задан. */
     val deleting: UUID? = null,
     /** Имя остаётся и после закрытия: панель ещё уезжает вниз, и заголовок не должен пустеть. */
@@ -828,6 +836,39 @@ class SubscriptionsViewModel : ViewModel() {
 
     fun showAddresses(uuid: UUID?) = _state.update { it.copy(addressesFor = uuid) }
 
+    /** A running switch keeps the sheet: it closes by itself when the switch succeeds. */
+    fun showTemplate(context: Context, uuid: UUID?) = _state.update {
+        if (it.templateSwitching != null) it
+        else it.copy(templateFor = uuid, templateError = "", templateEdited = uuid != null && ConfigEdits.edited(context, uuid))
+    }
+
+    /**
+     * The service rebuilds locally when it can, else downloads; a failure commits nothing and is thrown here, so it is
+     * told in the sheet rather than on the card's update error (D-495).
+     */
+    fun setTemplate(context: Context, uuid: UUID, id: String) {
+        if (_state.value.templateSwitching != null) return
+        // Already chosen and in effect: nothing to run. A choice not in effect yet is tried again.
+        val profile = _state.value.profiles.firstOrNull { it.uuid == uuid }
+        if (profile != null && id == profile.template && id == profile.templateRequested) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(templateSwitching = id, templateError = "") }
+
+            val failure = runCatching { withProfile { setTemplate(uuid, id) } }.exceptionOrNull()
+
+            _state.update {
+                it.copy(
+                    templateSwitching = null,
+                    templateFor = if (failure == null) null else it.templateFor,
+                    templateError = failure?.let { e -> templateFailure(context, e) }.orEmpty(),
+                )
+            }
+
+            refresh(context)
+        }
+    }
+
     fun setEditName(value: String) = _state.update { it.copy(editName = value) }
 
     fun setEditLink(value: String) = _state.update { it.copy(editLink = value) }
@@ -1130,6 +1171,17 @@ private class Told(text: String) : Exception(text)
 /** The download failed on an encrypted subscription: no key, or not the one it was encrypted to. */
 private val Throwable.encrypted: Boolean
     get() = this !is Told && Failure.of(message).kind == Failure.Kind.Encrypted
+
+/**
+ * A template switch's failure: a download one in the words of an update's, else the reason itself — the converter's
+ * refusals are written for people, and «check the link» would send them the wrong way.
+ */
+private fun templateFailure(context: Context, error: Throwable): String {
+    val failure = Failure.of(error.message, Failure.Kind.BadConfig, context.outOfSpace)
+    val reason = if (failure.kind == Failure.Kind.BadConfig) LogScrubber.scrub(failure.detail) else failure.text(context)
+
+    return context.getString(R.string.config_template_failed, reason.ifBlank { Failure(Failure.Kind.Unknown).text(context) })
+}
 
 private fun Throwable.shown(context: Context): String {
     if (this is Told) return message.orEmpty()

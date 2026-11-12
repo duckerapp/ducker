@@ -651,4 +651,13 @@
     <plurals name="mobile_card_nodes">
         <item quantity="other">%1$s · %2$d server</item>
     </plurals>
+    <string name="config_template">Konfigurasi</string>
+    <string name="config_template_source">Dari langganan</string>
+    <string name="config_template_source_hint">Aturan dan pengaturan seperti yang dikirim penyedia</string>
+    <string name="config_template_ducker_ru">ducker · Rusia</string>
+    <string name="config_template_ducker_ru_hint">Situs dan aplikasi Rusia langsung, sisanya lewat VPN. Dari langganan hanya server yang diambil</string>
+    <string name="config_template_not_applied">belum diterapkan</string>
+    <string name="config_template_failed">Belum diterapkan: %1$s</string>
+    <string name="config_template_applying">Menerapkan…</string>
+    <string name="config_template_edited">Konfigurasi diedit manual: mengganti konfigurasi akan menimpa editan</string>
 </resources>

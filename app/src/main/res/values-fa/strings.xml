@@ -660,4 +660,13 @@
         <item quantity="one">%1$s · %2$d سرور</item>
         <item quantity="other">%1$s · %2$d سرور</item>
     </plurals>
+    <string name="config_template">پیکربندی</string>
+    <string name="config_template_source">از اشتراک</string>
+    <string name="config_template_source_hint">قوانین و تنظیمات همان‌طور که ارائه‌دهنده فرستاده</string>
+    <string name="config_template_ducker_ru">ducker · روسیه</string>
+    <string name="config_template_ducker_ru_hint">سایت‌ها و برنامه‌های روسی مستقیم، بقیه از طریق VPN. از اشتراک فقط سرورها گرفته می‌شوند</string>
+    <string name="config_template_not_applied">اعمال نشده</string>
+    <string name="config_template_failed">اعمال نشده: %1$s</string>
+    <string name="config_template_applying">در حال اعمال…</string>
+    <string name="config_template_edited">پیکربندی دستی ویرایش شده: تغییر پیکربندی ویرایش‌ها را جایگزین می‌کند</string>
 </resources>
