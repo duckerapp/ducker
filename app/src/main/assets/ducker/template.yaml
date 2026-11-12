@@ -1110,7 +1110,12 @@ proxy-groups:
     interval: 1800
     lazy: true
     exclude-filter: *no_service
-    include-all-proxies: true
+    # include-all, not include-all-proxies: the latter skips proxy-providers' nodes. exclude-type keeps a
+    # provider's direct exit out (the name filter does not catch it), and empty-fallback replaces the
+    # default COMPATIBLE, which is itself a direct exit, when nothing is left (D-493, F-476).
+    include-all: true
+    exclude-type: "Direct|Reject|RejectDrop|Pass|Compatible"
+    empty-fallback: REJECT
     proxies:
       - ⚡ AUTO
 
@@ -1140,7 +1145,10 @@ proxy-groups:
     type: fallback
     url: https://connectivitycheck.gstatic.com/generate_204
     expected-status: 204
-    include-all-proxies: true
+    # As in «Основной профиль».
+    include-all: true
+    exclude-type: "Direct|Reject|RejectDrop|Pass|Compatible"
+    empty-fallback: REJECT
     exclude-filter: *no_service
 
   # Группы для конкретных сервисов
