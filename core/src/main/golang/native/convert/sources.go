@@ -58,7 +58,7 @@ func ApplyTemplateWithSources(content, template, directHost string) (string, err
 			return "", linksErr
 		}
 
-		proxies = buildable(source.Proxies)
+		proxies = connections(buildable(source.Proxies))
 		nameProxies(proxies)
 
 		if source.Providers.Kind == yaml.MappingNode {
@@ -121,6 +121,22 @@ func ApplyTemplateWithSources(content, template, directHost string) (string, err
 	tidy(root)
 
 	return encode(document)
+}
+
+// connections drops the nodes that are not a server: a direct exit, a reject, a DNS or rematch node. A config made
+// after ducker's template has its `DIRECTv4`; the template has its own, and its groups leave such nodes out anyway.
+func connections(proxies []map[string]any) []map[string]any {
+	out := proxies[:0]
+	for _, proxy := range proxies {
+		switch proxy["type"] {
+		case "direct", "reject", "dns", "rematch":
+			continue
+		}
+
+		out = append(out, proxy)
+	}
+
+	return out
 }
 
 // chainGroups returns the subscription's groups that its nodes and providers dial through

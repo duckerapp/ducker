@@ -148,6 +148,25 @@ func TestSourcesNodesOnly(t *testing.T) {
 	}
 }
 
+// C7: a config made after ducker's template brings the template's service exits (`DIRECTv4`) as nodes; only its
+// servers are carried, and the name stays the template's own direct exit.
+func TestSourcesServiceNodes(t *testing.T) {
+	out, cfg := withTemplate(t, fixture(t, "service-nodes.yaml"))
+
+	expectGroups(t, cfg, ss("🇪🇪 Delta"))
+
+	// The core refuses a second definition of a name, so this one is the template's.
+	if proxy, ok := cfg.Proxies["DIRECTv4"]; !ok || proxy.Type() != C.Direct {
+		t.Fatalf("DIRECTv4: %v", proxy)
+	}
+
+	for _, foreign := range []string{"Блок", "dns-out"} {
+		if strings.Contains(out, foreign) {
+			t.Fatalf("%q of the subscription is in the result", foreign)
+		}
+	}
+}
+
 // C2: a plain node, an inline provider and an HTTP provider reach both groups; the HTTP
 // provider is fetched with its own header and keeps every key as written.
 func TestSourcesProviders(t *testing.T) {

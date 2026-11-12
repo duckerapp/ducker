@@ -1,0 +1,11 @@
+# A provider's config made after ducker's template: besides its servers it has the template's own service exits
+# (a direct `DIRECTv4`, a reject node, a DNS node). They are not connections; template mode takes the servers only.
+proxies:
+  - {name: "DIRECTv4", type: direct, udp: true, ip-version: ipv4}
+  - {name: "Блок", type: reject}
+  - {name: "dns-out", type: dns}
+  - {name: "🇪🇪 Delta", type: ss, server: 192.0.2.12, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+proxy-groups:
+  - {name: "Без VPN", type: select, proxies: [DIRECTv4]}
+rules:
+  - MATCH,DIRECT
