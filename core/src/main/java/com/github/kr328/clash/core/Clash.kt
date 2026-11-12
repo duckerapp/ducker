@@ -397,6 +397,28 @@ object Clash {
         return result
     }
 
+    /**
+     * Builds a config in template mode (D-493): the template with the subscription's nodes,
+     * providers and the groups its dialer chains go through. Returns the YAML or throws
+     * [ClashException] with a reason that can be shown to a person.
+     */
+    fun convertWithSources(
+        source: String,
+        template: String,
+        directHost: String = "",
+    ): String {
+        val result = CoreJson.decodeFromString(
+            ConvertResult.serializer(),
+            Bridge.nativeConvertWithSources(source, template, directHost),
+        )
+
+        if (result.error.isNotEmpty()) {
+            throw ClashException(result.error)
+        }
+
+        return result.yaml
+    }
+
     fun setSubscriptionHeaders(headers: Map<String, String>) {
         Bridge.nativeSetSubscriptionHeaders(
             if (headers.isEmpty()) null

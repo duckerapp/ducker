@@ -1,0 +1,6 @@
+# Every provider node is a direct exit: the template's groups must end on REJECT, never on COMPATIBLE (direct).
+proxy-providers:
+  only-direct:
+    type: inline
+    payload:
+      - {name: Looks like a node, type: direct}

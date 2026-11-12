@@ -411,6 +411,23 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeConvertAndApplyTemplate(JNI
     return new_string(response);
 }
 
+JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeConvertWithSources(JNIEnv *env,
+                                                                       jobject thiz,
+                                                                       jstring source,
+                                                                       jstring template_,
+                                                                       jstring direct_host) {
+    TRACE_METHOD();
+
+    scoped_string _source = get_string(source);
+    scoped_string _template = get_string(template_);
+    scoped_string _direct_host = get_string(direct_host);
+
+    scoped_string response = convertWithSources(_source, _template, _direct_host);
+
+    return new_string(response);
+}
+
 JNIEXPORT void JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeSetSubscriptionHeaders(JNIEnv *env,
                                                                            jobject thiz,

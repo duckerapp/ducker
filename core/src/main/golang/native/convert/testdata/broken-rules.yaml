@@ -1,0 +1,8 @@
+# Valid proxies, a rule that does not parse: source mode keeps the D-246 fallback; template mode just uses the proxies.
+proxies:
+  - {name: Gamma, type: ss, server: 192.0.2.12, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+proxy-groups:
+  - {name: Choice, type: select, proxies: [Gamma]}
+rules:
+  - NOT-A-RULE,whatever,Choice
+  - MATCH,Choice

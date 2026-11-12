@@ -1,0 +1,12 @@
+# A provider's own full config: own groups and rules, plain proxies. Source mode keeps it; template mode keeps
+# only the proxies.
+mixed-port: 7890
+mode: rule
+proxies:
+  - {name: "🇩🇪 Alpha", type: ss, server: 192.0.2.10, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+  - {name: "🇫🇮 Beta", type: ss, server: 192.0.2.11, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+proxy-groups:
+  - {name: Provider choice, type: select, proxies: ["🇩🇪 Alpha", "🇫🇮 Beta"]}
+rules:
+  - DOMAIN-SUFFIX,example.org,DIRECT
+  - MATCH,Provider choice

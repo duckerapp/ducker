@@ -1,0 +1,23 @@
+# Plain proxies + an inline provider + an HTTP provider served by the test, with its own header, filter and
+# override. All three sources must reach the template's groups.
+proxies:
+  - {name: Static, type: ss, server: 192.0.2.13, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+proxy-providers:
+  inline-src:
+    type: inline
+    payload:
+      - {name: Inline One, type: ss, server: 192.0.2.30, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+  http-src:
+    type: http
+    url: http://127.0.0.1:18766/provider/a
+    path: ./proxy_providers/http-src.yaml
+    interval: 3600
+    header: {X-Fixture-Token: [provider-a-only]}
+    filter: "(?i)keep"
+    exclude-type: "direct"
+    override: {additional-prefix: "A · "}
+    health-check: {enable: true, url: https://example.invalid/generate_204, interval: 600}
+proxy-groups:
+  - {name: Provider choice, type: select, include-all: true}
+rules:
+  - MATCH,Provider choice

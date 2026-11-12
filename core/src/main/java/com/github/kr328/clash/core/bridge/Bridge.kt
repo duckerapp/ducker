@@ -73,6 +73,7 @@ object Bridge {
     external fun nativeSetSubscriptionHeaders(headers: String?)
     external fun nativeSetSubscriptionMirrors(plan: String?)
     external fun nativeConvertAndApplyTemplate(content: String, template: String, directHost: String): String
+    external fun nativeConvertWithSources(source: String, template: String, directHost: String): String
     external fun nativeSetAgeSecretKey(key: String?)
     external fun nativeSetUserRules(rules: String): Int
     external fun nativeValidateConfig(path: String): String

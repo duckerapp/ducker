@@ -64,9 +64,21 @@ func ConvertConfig(content string) ([]map[string]any, error) {
 		return nil, err
 	}
 
-	proxies := make([]map[string]any, 0, len(document.Proxies))
+	proxies := buildable(document.Proxies)
+	if len(proxies) == 0 {
+		return nil, ErrNotConvertible
+	}
 
-	for _, proxy := range document.Proxies {
+	nameProxies(proxies)
+
+	return proxies, nil
+}
+
+// buildable keeps the nodes the core can build, with a name and a type.
+func buildable(list []map[string]any) []map[string]any {
+	proxies := make([]map[string]any, 0, len(list))
+
+	for _, proxy := range list {
 		name, _ := proxy["name"].(string)
 		kind, _ := proxy["type"].(string)
 
@@ -84,13 +96,7 @@ func ConvertConfig(content string) ([]map[string]any, error) {
 		proxies = append(proxies, proxy)
 	}
 
-	if len(proxies) == 0 {
-		return nil, ErrNotConvertible
-	}
-
-	nameProxies(proxies)
-
-	return proxies, nil
+	return proxies
 }
 
 // nameProxies даёт имя узлам, у которых его нет, и разводит одинаковые.
@@ -167,22 +173,9 @@ func ApplyTemplate(content, template, directHost string) (string, bool, error) {
 		proxies, fromConfig = fromFile, true
 	}
 
-	// The template is edited as a tree of nodes, not as a map: a map comes back sorted by
-	// key, and a person opening their config found `allow-lan`, `dns`, … instead of the
-	// template's order (D-288). Anchors and their references stay as written.
-	var document yaml.Node
-	if err := yaml.Unmarshal([]byte(template), &document); err != nil {
+	document, root, err := templateDocument(template)
+	if err != nil {
 		return "", false, err
-	}
-
-	// An empty template is no document at all.
-	if document.Kind == 0 {
-		document = yaml.Node{Kind: yaml.DocumentNode, Content: []*yaml.Node{{Kind: yaml.MappingNode}}}
-	}
-
-	root := document.Content[0]
-	if root.Kind != yaml.MappingNode {
-		return "", false, errors.New("шаблон не является набором ключей")
 	}
 
 	tidy(root)
@@ -202,34 +195,70 @@ func ApplyTemplate(content, template, directHost string) (string, bool, error) {
 		withDirectHost(sequence(root, "rules"), directHost)
 	}
 
+	out, err := encode(document)
+	if err != nil {
+		return "", false, err
+	}
+
+	return out, fromConfig, nil
+}
+
+// templateDocument parses the template as a tree of nodes, not as a map: a map comes back
+// sorted by key, and a person opening their config found `allow-lan`, `dns`, … instead of
+// the template's order (D-288). Anchors and their references stay as written.
+func templateDocument(template string) (*yaml.Node, *yaml.Node, error) {
+	document := &yaml.Node{}
+	if err := yaml.Unmarshal([]byte(template), document); err != nil {
+		return nil, nil, err
+	}
+
+	// An empty template is no document at all.
+	if document.Kind == 0 {
+		*document = yaml.Node{Kind: yaml.DocumentNode, Content: []*yaml.Node{{Kind: yaml.MappingNode}}}
+	}
+
+	root := document.Content[0]
+	if root.Kind != yaml.MappingNode {
+		return nil, nil, errors.New("шаблон не является набором ключей")
+	}
+
+	return document, root, nil
+}
+
+func encode(document *yaml.Node) (string, error) {
 	var out bytes.Buffer
 
 	encoder := yaml.NewEncoder(&out)
 	// As the template is written.
 	encoder.SetIndent(2)
 
-	if err := encoder.Encode(&document); err != nil {
-		return "", false, err
+	if err := encoder.Encode(document); err != nil {
+		return "", err
 	}
 
 	if err := encoder.Close(); err != nil {
-		return "", false, err
+		return "", err
 	}
 
-	return out.String(), fromConfig, nil
+	return out.String(), nil
 }
 
 // sequence returns the list under a top-level key. A key the template lacks is added at
 // the end; a value that is not a list becomes an empty one.
 func sequence(root *yaml.Node, key string) *yaml.Node {
+	return child(root, key, yaml.SequenceNode)
+}
+
+// child returns the value of the given kind under a top-level key, as sequence does.
+func child(root *yaml.Node, key string, kind yaml.Kind) *yaml.Node {
 	for i := 0; i+1 < len(root.Content); i += 2 {
 		if root.Content[i].Value != key {
 			continue
 		}
 
 		value := root.Content[i+1]
-		if value.Kind != yaml.SequenceNode {
-			*value = yaml.Node{Kind: yaml.SequenceNode}
+		if value.Kind != kind {
+			*value = yaml.Node{Kind: kind}
 		}
 
 		// `proxies: []` would otherwise put every node on that one line.
@@ -238,7 +267,7 @@ func sequence(root *yaml.Node, key string) *yaml.Node {
 		return value
 	}
 
-	name, value := &yaml.Node{}, &yaml.Node{Kind: yaml.SequenceNode}
+	name, value := &yaml.Node{}, &yaml.Node{Kind: kind}
 	name.SetString(key)
 
 	root.Content = append(root.Content, name, value)

@@ -1,0 +1,16 @@
+# Dialer chains: a proxy and a whole provider go out through a source helper group. The helper group and its members
+# are the dependency closure that template mode must carry; without it the core refuses the config (F-476, E5).
+proxies:
+  - {name: Entry, type: ss, server: 192.0.2.40, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+  - {name: Exit, type: ss, server: 192.0.2.41, port: 8388, cipher: aes-128-gcm, password: fixture-only, dialer-proxy: Relay-in}
+proxy-providers:
+  chained:
+    type: inline
+    override: {dialer-proxy: Relay-in}
+    payload:
+      - {name: Chained One, type: ss, server: 192.0.2.42, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+proxy-groups:
+  - {name: Relay-in, type: select, proxies: [Entry]}
+  - {name: Provider choice, type: select, proxies: [Exit], use: [chained]}
+rules:
+  - MATCH,Provider choice

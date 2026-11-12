@@ -1,0 +1,5 @@
+# A source proxy named like a template group: the core refuses duplicates (F-476, E6). Template mode must refuse
+# with its own clear reason and keep the current profile.
+proxies:
+  - {name: "Основной профиль", type: ss, server: 192.0.2.50, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+  - {name: Delta, type: ss, server: 192.0.2.51, port: 8388, cipher: aes-128-gcm, password: fixture-only}

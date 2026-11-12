@@ -32,3 +32,18 @@ func convertAndApplyTemplate(content, template, directHost C.c_string) *C.char {
 
 	return marshalJson(convertResult{Yaml: out, FromConfig: fromConfig})
 }
+
+// convertWithSources builds a config in template mode (D-493): the template with the
+// subscription's nodes, providers and dialer-chain groups (convert.ApplyTemplateWithSources).
+// The same JSON as convertAndApplyTemplate, without "fromConfig".
+//
+//export convertWithSources
+func convertWithSources(source, template, directHost C.c_string) *C.char {
+	defer panicguard.Recover("convertWithSources", failExport)
+	out, err := convert.ApplyTemplateWithSources(C.GoString(source), C.GoString(template), C.GoString(directHost))
+	if err != nil {
+		return marshalJson(convertResult{Error: err.Error()})
+	}
+
+	return marshalJson(convertResult{Yaml: out})
+}

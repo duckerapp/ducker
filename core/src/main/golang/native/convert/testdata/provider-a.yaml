@@ -1,0 +1,5 @@
+proxies:
+  - {name: keep A1, type: ss, server: 192.0.2.60, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+  - {name: keep A2, type: ss, server: 192.0.2.61, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+  - {name: drop A3, type: ss, server: 192.0.2.62, port: 8388, cipher: aes-128-gcm, password: fixture-only}
+  - {name: keep direct, type: direct}
