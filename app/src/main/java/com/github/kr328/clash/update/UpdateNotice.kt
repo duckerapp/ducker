@@ -1,5 +1,6 @@
 package com.github.kr328.clash.update
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -37,6 +38,8 @@ object UpdateNotice {
 
     fun cancel(context: Context) = NotificationManagerCompat.from(context).cancel(TAG, ID)
 
+    // The notify below is in runCatching, and without the permission the system drops it: lint sees no check.
+    @SuppressLint("MissingPermission")
     private fun show(context: Context, title: String, text: String, action: String) {
         val manager = NotificationManagerCompat.from(context)
 

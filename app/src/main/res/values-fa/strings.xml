@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="home_tab">خانه</string>
     <string name="proxies_tab">پروکسی</string>
     <string name="subscriptions_tab">اشتراک‌ها</string>
@@ -287,7 +287,8 @@
     <string name="interval_hours">%d ساعت</string>
     <string name="interval_manual_hint">فقط با دکمه «به‌روزرسانی»</string>
     <plurals name="interval_auto_hint">
-        <item quantity="one">خودکار، هر ساعت</item>
+        <!-- 0 hours never reaches this plural: it is interval_manual_hint. -->
+        <item quantity="one" tools:ignore="ImpliedQuantity">خودکار، هر ساعت</item>
         <item quantity="other">خودکار، هر %d ساعت</item>
     </plurals>
     <string name="saving">در حال ذخیره…</string>

@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.remember
 import android.content.res.Configuration
@@ -54,11 +55,12 @@ internal fun TvSplash(visible: Boolean) {
             val color = MaterialTheme.colorScheme.onBackground
             val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
             val context = LocalContext.current
+            val base = LocalConfiguration.current
             // The image's light and dark variants follow the system's night mode, which the app's theme need not: an
             // Android 9 TV is never in it, and the light variant tinted white read as a grey duck with a glowing rim.
             // The variant is taken by the app's theme (D-484).
-            val duck = remember(context, dark) {
-                val config = Configuration(context.resources.configuration).apply {
+            val duck = remember(context, base, dark) {
+                val config = Configuration(base).apply {
                     uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
                         if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
                 }

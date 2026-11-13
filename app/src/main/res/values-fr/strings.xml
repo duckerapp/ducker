@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="home_tab">Accueil</string>
     <string name="proxies_tab">Proxys</string>
     <string name="subscriptions_tab">Abonnements</string>
@@ -288,7 +288,8 @@
     <string name="interval_hours">%d h</string>
     <string name="interval_manual_hint">Uniquement avec le bouton « Mettre à jour »</string>
     <plurals name="interval_auto_hint">
-        <item quantity="one">Automatiquement, toutes les heures</item>
+        <!-- 0 hours never reaches this plural: it is interval_manual_hint. -->
+        <item quantity="one" tools:ignore="ImpliedQuantity">Automatiquement, toutes les heures</item>
         <item quantity="many">Automatiquement, toutes les %d heures</item>
         <item quantity="other">Automatiquement, toutes les %d heures</item>
     </plurals>

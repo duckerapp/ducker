@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.settings
 
+import android.annotation.SuppressLint
 import android.os.Build
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
@@ -1204,6 +1205,8 @@ private fun settingsLanguages(): List<Pair<String, String>> = listOf(
     "tr" to "Türkçe", "vi" to "Tiếng Việt",
 )
 
+// The system's language, not the app's (which LocalConfiguration carries): a change of it recreates the activity anyway.
+@SuppressLint("NonObservableLocale")
 @Composable
 private fun SettingsLanguageSheet(
     open: Boolean,

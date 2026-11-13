@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.components
 
+import android.annotation.SuppressLint
 import kotlin.math.round
 import kotlin.math.roundToInt
 import android.content.Context
@@ -566,6 +567,8 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
     // dock's «+» kept a second frame under the open «+» sheet: a window without the remote draws none.
     private val windowFocus = ViewTreeObserver.OnWindowFocusChangeListener { follow() }
 
+    // A node's view does not change while it is attached; onDetach lets go of it.
+    @SuppressLint("SuspiciousCompositionLocalModifierRead")
     override fun onAttach() {
         view = currentValueOf(LocalView).also {
             it.viewTreeObserver.addOnPreDrawListener(moved)
