@@ -140,3 +140,8 @@ is downloaded only after the user taps **Add**. Encode the embedded subscription
 are tried at this first download when the link is already blocked. After that, the list comes from
 the header: a response from the link itself without it removes them. When a user shares the
 subscription as a QR code or sends it to a TV, ducker passes its current mirrors along.
+
+`key` is optional: the decryption key of an encrypted subscription, `AGE-SECRET-KEY-…`; it fills
+the **Decryption key** field. ducker adds it itself when a user shares an encrypted subscription as a
+QR code or sends it to a TV. A link with the key opens the subscription with nothing else, so on a
+shared page give the key separately, as above.

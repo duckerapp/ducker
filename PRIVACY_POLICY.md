@@ -57,9 +57,9 @@ template:
 in your browser only when you tap them.
 
 **6. Your TV, only at your request.** When you scan the TV's ducker QR code in the phone app
-and confirm sending, the phone sends the subscription URL to that TV over your home network.
-The URL is encrypted with a one-time key from the QR code. The TV listens on the network
-only while the code is displayed.
+and confirm sending, the phone sends the subscription URL to that TV over your home network,
+with its decryption key if the subscription is encrypted. The transfer is encrypted with a
+one-time key from the QR code. The TV listens on the network only while the code is displayed.
 
 **7. Checking for a new ducker version.** About twice a day and when opened, the app downloads
 `update.json` from the project's GitHub repository, from its GitLab mirror if GitHub does
