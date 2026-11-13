@@ -29,6 +29,16 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 
+/**
+ * What Home shows when the core answered with no group. Right after the tunnel goes up or down the
+ * core has none yet, and the node row fell to its placeholder for a second: until the core answers
+ * with groups, the shown ones stay — for the same subscription only. Otherwise an empty answer is
+ * the config's own (no `proxy-groups`), and keeping the previous subscription's group made Home's
+ * check probe a group that was gone: «The node is not answering» (F-451, F-453, F-482).
+ */
+internal fun keptGroups(shown: HomeState, profile: Profile?, awaitingGroups: Boolean): List<GroupState> =
+    if (awaitingGroups && profile != null && profile.uuid == shown.profile?.uuid) shown.groups else emptyList()
+
 /** The profile's main group as home shows it: its node and that node's delay. */
 @Immutable
 data class GroupState(
@@ -148,6 +158,9 @@ class HomeViewModel : ViewModel() {
     /** Промахи проверки связи подряд: одна неудача ничего не значит. */
     private var linkMisses = 0
 
+    /** The core has not answered with groups since the tunnel went up or down, see [keptGroups]. */
+    private var awaitingGroups = true
+
     /** Основная группа и узел, уже записанные в [DelayStore.main]: не писать на диск одно и то же. */
     private var lastMain: Pair<String, String>? = null
 
@@ -175,6 +188,8 @@ class HomeViewModel : ViewModel() {
                 switchedAt = System.currentTimeMillis()
 
                 linkMisses = 0
+
+                awaitingGroups = true
 
                 // Первая проверка связи — сразу после окна «сеть устаканивается», а не через
                 // минуту после прошлой: переподключились за минуту — и «Подключено» висело
@@ -276,6 +291,8 @@ class HomeViewModel : ViewModel() {
 
             val live = if (running || preview) loadGroups() else emptyList()
 
+            if (live.isNotEmpty()) awaitingGroups = false
+
             val profile = profileAsync.await()
 
             val mode = modeAsync.await()
@@ -357,10 +374,7 @@ class HomeViewModel : ViewModel() {
                     running = running,
                     mode = mode,
                     profile = profile,
-                    // Сразу после остановки туннеля ядро ещё не отдаёт группы, и строка
-                    // узла на секунду срывалась на заглушку. Пока подписка на месте,
-                    // держим прежний выбор: он всё равно не менялся.
-                    groups = shown.ifEmpty { if (profile != null) it.groups else emptyList() },
+                    groups = shown.ifEmpty { keptGroups(it, profile, awaitingGroups) },
                     loaded = true,
                     // Туннель опустили или сменили узел — прежний вывод о связи
                     // больше ничего не значит.
@@ -602,7 +616,11 @@ class HomeViewModel : ViewModel() {
         // Only the main group: home shows none of the others, and each comes with every node it
         // lists — 30 groups of 1 000 nodes were 30 000 nodes on every refresh (F-393). A main group
         // that did not answer is no group, not the next one in its place.
-        val name = names.firstOrNull() ?: return emptyList()
+        // A config whose groups are all automatic (one `url-test`) still has a main group: its node
+        // goes under the button, though it cannot be picked by hand (F-482).
+        val name = names.firstOrNull()
+            ?: runCatching { withClash { queryProxyGroupNames(false) } }.getOrDefault(emptyList()).firstOrNull()
+            ?: return emptyList()
 
         val group = runCatching {
             withClash { queryProxyGroup(name, ProxySort.Default) }
