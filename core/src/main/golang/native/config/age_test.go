@@ -35,8 +35,11 @@ func TestEncryptedSubscription(t *testing.T) {
 		}
 	}
 
-	SetGlobalSecretKeys(secret)
-	if err = FetchAndValid(t.TempDir(), panel.url, true, func(string) {}); err != nil {
-		t.Fatal(err)
+	// The service sends every subscription's key in one string, a line each (D-503).
+	for _, keys := range []string{secret, other + "\n" + secret, secret + "\n" + other} {
+		SetGlobalSecretKeys(keys)
+		if err = FetchAndValid(t.TempDir(), panel.url, true, func(string) {}); err != nil {
+			t.Fatalf("keys %q: %v", keys, err)
+		}
 	}
 }

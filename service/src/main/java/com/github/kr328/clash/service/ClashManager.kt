@@ -19,6 +19,7 @@ import com.github.kr328.clash.service.clash.module.MobileModule
 import com.github.kr328.clash.service.model.MobileState
 import com.github.kr328.clash.service.remote.IClashManager
 import com.github.kr328.clash.service.store.ServiceStore
+import com.github.kr328.clash.service.util.AgeKeys
 import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.sendOverrideChanged
 import com.github.kr328.clash.service.util.sendSelectorChanged
@@ -135,7 +136,7 @@ class ClashManager(private val context: Context) : IClashManager,
 
             Clash.patchOverride(Clash.OverrideSlot.Session, override)
 
-            Clash.setAgeSecretKey(imported.ageSecretKey?.takeIf { it.isNotBlank() })
+            AgeKeys.apply()
             Clash.setUserRules(UserRulesStore(context).raw(active))
             Clash.load(dir).await()
 

@@ -13,6 +13,7 @@ import com.github.kr328.clash.service.data.PendingDao
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.service.remote.IFetchObserver
 import com.github.kr328.clash.service.store.ServiceStore
+import com.github.kr328.clash.service.util.AgeKeys
 import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.service.store.AnnouncementStore
 import com.github.kr328.clash.service.store.ConfigAppsStore
@@ -98,7 +99,7 @@ object ProfileProcessor {
                     pending
                 }
 
-                Clash.setAgeSecretKey(snapshot.ageSecretKey?.takeIf { it.isNotBlank() })
+                AgeKeys.apply()
 
                 val force = snapshot.type != Profile.Type.File
                 val template = templateOf(snapshot.type, ConfigTemplateStore(context).read(snapshot.uuid))
@@ -175,7 +176,7 @@ object ProfileProcessor {
                     imported
                 }
 
-                Clash.setAgeSecretKey(snapshot.ageSecretKey?.takeIf { it.isNotBlank() })
+                AgeKeys.apply()
 
                 var tries = emptyList<FetchStatus.Try>()
 

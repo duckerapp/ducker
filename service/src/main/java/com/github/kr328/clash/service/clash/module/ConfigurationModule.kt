@@ -10,6 +10,7 @@ import com.github.kr328.clash.service.keepGlobalOffDirect
 import com.github.kr328.clash.service.data.ImportedDao
 import com.github.kr328.clash.service.data.SelectionDao
 import com.github.kr328.clash.service.store.ServiceStore
+import com.github.kr328.clash.service.util.AgeKeys
 import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.service.util.ProviderInfo
 import com.github.kr328.clash.service.util.importedDir
@@ -117,7 +118,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                         Clash.patchOverride(Clash.OverrideSlot.Session, override)
                     }
 
-                    Clash.setAgeSecretKey(active.ageSecretKey?.takeIf { it.isNotBlank() })
+                    AgeKeys.apply()
                     Clash.setUserRules(UserRulesStore(service).raw(active.uuid))
 
                     try {
