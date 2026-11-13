@@ -130,7 +130,7 @@ button() { # file, image, width, alt
   echo "</p>"
   echo
   echo "**On a TV or a box:** \`armeabi-v7a\` installs on almost any TV; a current TV or box needs \`arm64-v8a\`." \
-    "If one file does not install, take the other. Android 10 or later."
+    "If one file does not install, take the other. Android 8 or later."
   echo
   echo "[How to install]($SITE/users/install/) · [Installing on a TV]($SITE/users/tv/) · [Documentation]($SITE/)"
   echo
@@ -149,7 +149,7 @@ button() { # file, image, width, alt
   echo
   echo "**Какой файл скачать.** Телефон — большая кнопка, \`arm64-v8a\`. Старый телефон — \`armeabi-v7a\`." \
     "Телевизор или приставка: \`armeabi-v7a\` ставится почти на любой телевизор, современному телевизору или" \
-    "приставке нужен \`arm64-v8a\`. Если файл не установился, возьмите другой. Нужен Android 10 или новее."
+    "приставке нужен \`arm64-v8a\`. Если файл не установился, возьмите другой. Нужен Android 8 или новее."
   echo
   echo "[Как установить]($SITE/ru/users/install/) · [Установка на телевизор]($SITE/ru/users/tv/) · [Документация]($SITE/ru/)"
   echo
