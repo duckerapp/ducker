@@ -42,8 +42,9 @@ phone() { adb shell "$1" 2>/dev/null | tr -d '\r'; }
 # Android 12 (проверено на MIUI 14) — «VPN CONNECTED extra: » без пакета, но с «OwnerUid: <uid>» в той
 # же строке, старые (проверено на 10) — «type: VPN[], state: CONNECTED» без имени пакета.
 tunnel_up() {
-  local uid; uid=$(phone "cmd package list packages -U $PKG" | sed -n 's/.*uid://p')
-  phone "dumpsys connectivity" | grep -qE "VPN CONNECTED.*($PKG|OwnerUid: ${uid:-none}([^0-9]|\$))|type: VPN\[\], state: CONNECTED/"
+  # The filter is a substring: a second package such as `$PKG.templates` lists too and must not count.
+  local uid; uid=$(phone "cmd package list packages -U $PKG" | sed -n "s/^package:$PKG uid://p")
+  phone "dumpsys connectivity" | grep -qE "VPN CONNECTED.*($PKG([^.[:alnum:]_]|\$)|OwnerUid: ${uid:-none}([^0-9]|\$))|type: VPN\[\], state: CONNECTED/"
 }
 
 wait_tunnel() {
