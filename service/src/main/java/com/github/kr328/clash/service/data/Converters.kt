@@ -1,26 +1,26 @@
 package com.github.kr328.clash.service.data
 
-import androidx.room.TypeConverter
+import androidx.room3.ColumnTypeConverter
 import com.github.kr328.clash.service.model.Profile
 import java.util.*
 
 class Converters {
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromUUID(uuid: UUID): String {
         return uuid.toString()
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toUUID(uuid: String): UUID {
         return UUID.fromString(uuid)
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromProfileType(type: Profile.Type): String {
         return type.name
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toProfileType(type: String): Profile.Type {
         return Profile.Type.valueOf(type)
     }

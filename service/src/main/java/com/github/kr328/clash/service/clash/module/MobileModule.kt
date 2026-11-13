@@ -329,7 +329,7 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
         null
     }
 
-    private fun pick(group: String, node: String) {
+    private suspend fun pick(group: String, node: String) {
         if (!Clash.patchSelector(group, node)) return
 
         store.activeProfile?.let { SelectionDao().setSelected(Selection(it, group, node)) }

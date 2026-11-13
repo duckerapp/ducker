@@ -1,16 +1,16 @@
 package com.github.kr328.clash.service.data
 
-import androidx.room.*
+import androidx.room3.*
 import java.util.*
 
 @Dao
-@TypeConverters(Converters::class)
+@ColumnTypeConverters(Converters::class)
 interface SelectionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun setSelected(selection: Selection)
+    suspend fun setSelected(selection: Selection)
 
     @Query("DELETE FROM selections WHERE uuid = :uuid AND proxy = :proxy")
-    fun removeSelected(uuid: UUID, proxy: String)
+    suspend fun removeSelected(uuid: UUID, proxy: String)
 
     @Query("SELECT * FROM selections WHERE uuid = :uuid")
     suspend fun querySelections(uuid: UUID): List<Selection>

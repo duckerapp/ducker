@@ -170,7 +170,8 @@ class ClashManager(private val context: Context) : IClashManager,
         // With the VPN off the core may hold no config: the main group is then the one saved to bring back.
         if (group == MobileModule.mainGroup() || group == store.mobileBackGroup) MobileModule.manual(context)
 
-        SelectionDao().setSelected(Selection(active, group, name))
+        // A Binder thread: Room 2 blocked it the same way inside its non-suspend DAO calls.
+        runBlocking { SelectionDao().setSelected(Selection(active, group, name)) }
     }
 
     override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
@@ -223,9 +224,9 @@ class ClashManager(private val context: Context) : IClashManager,
             val current = store.activeProfile ?: return@also
 
             if (it) {
-                SelectionDao().setSelected(Selection(current, group, name))
+                runBlocking { SelectionDao().setSelected(Selection(current, group, name)) }
             } else {
-                SelectionDao().removeSelected(current, group)
+                runBlocking { SelectionDao().removeSelected(current, group) }
             }
         }
     }

@@ -1,11 +1,12 @@
 package com.github.kr328.clash.service.data
 
 import android.content.Context
-import androidx.room.Room
-import androidx.room.RoomDatabase
+import androidx.room3.Room
+import androidx.room3.RoomDatabase
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import com.github.kr328.clash.common.Global
 import com.github.kr328.clash.service.data.migrations.MIGRATIONS
-import androidx.room.Database as DB
+import androidx.room3.Database as DB
 
 @DB(
     version = 3,
@@ -27,12 +28,14 @@ abstract class Database : RoomDatabase() {
 
         private var instance: Database? = null
 
+        // The `Context` builder finds `profiles` in the app's databases folder, where Room 2 kept it; the builder
+        // without one takes the name as a path and would open an empty database. The system SQLite, as before (F-495).
         private fun open(context: Context): Database {
             return Room.databaseBuilder(
                 context.applicationContext,
                 Database::class.java,
                 "profiles"
-            ).addMigrations(*MIGRATIONS).build()
+            ).setDriver(AndroidSQLiteDriver()).addMigrations(*MIGRATIONS).build()
         }
     }
 }

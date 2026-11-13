@@ -11,7 +11,7 @@ serialization = "1.12.0"
 # compiler shares the processor classpath and was built against this version; 2.4.0 breaks it
 # (D-271). Raise it only together with Room, or after the checks in `kaidl/README.md`.
 kotlinpoet = "2.0.0"
-room = "2.8.5"
+room = "3.0.3"
 camerax = "1.6.2"
 zxing-cpp = "3.1.1"
 # Рисует QR подписки, чтобы поделиться ей (этап 10). zxing-cpp в Android только читает.
@@ -54,8 +54,8 @@ kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializat
 androidx-core = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-activity = { module = "androidx.activity:activity", version.ref = "activity" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
-androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
-androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+androidx-room-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room" }
+androidx-room-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room" }
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }

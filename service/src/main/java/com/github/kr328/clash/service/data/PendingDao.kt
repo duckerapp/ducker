@@ -1,10 +1,10 @@
 package com.github.kr328.clash.service.data
 
-import androidx.room.*
+import androidx.room3.*
 import java.util.*
 
 @Dao
-@TypeConverters(Converters::class)
+@ColumnTypeConverters(Converters::class)
 interface PendingDao {
     @Query("SELECT * FROM pending WHERE uuid = :uuid")
     suspend fun queryByUUID(uuid: UUID): Pending?
