@@ -120,6 +120,26 @@ class ProviderInfoTest {
     }
 
     @Test
+    fun `the install link's name stands in for a title not sent, and only for its link (D-506)`() {
+        val added = ProviderInfo(source = link, linkName = "Pond")
+        val title = mapOf("profile-title" to "Пруд")
+
+        val bare = ProviderInfo.continued(ProviderInfo.of(emptyMap(), link), added, emptyMap(), link, "")
+        assertEquals("Pond" to "Pond", bare.profileTitle to bare.linkName)
+
+        val titled = ProviderInfo.continued(ProviderInfo.of(title, link), bare, title, link, "")
+        assertEquals("Пруд" to "Pond", titled.profileTitle to titled.linkName)
+
+        // The provider stops sending it, or sends «-»: the link's name again.
+        assertEquals("Pond", ProviderInfo.continued(ProviderInfo.of(emptyMap(), link), titled, emptyMap(), link, "").profileTitle)
+        val dash = mapOf("profile-title" to "-")
+        assertEquals("Pond", ProviderInfo.continued(ProviderInfo.of(dash, link), titled, dash, link, "").profileTitle)
+
+        val other = ProviderInfo.continued(ProviderInfo.of(emptyMap(), "https://other.example/s"), titled, emptyMap(), "", "")
+        assertEquals("" to "", other.profileTitle to other.linkName)
+    }
+
+    @Test
     fun `nothing is kept from another link, and the move mark lasts a week`() {
         val other = "https://other.example.com/sub/OTHER"
         val elsewhere = ProviderInfo.continued(ProviderInfo.of(emptyMap(), other), previous, emptyMap(), mirror, "", 2_000)

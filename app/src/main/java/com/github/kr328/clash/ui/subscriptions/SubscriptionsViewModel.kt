@@ -343,7 +343,8 @@ class SubscriptionsViewModel : ViewModel() {
         // Со страницы провайдера подписку добавляют, чтобы включить, — как присланную с телефона.
         val activate = fromPhone || _state.value.linked
         val key = _state.value.addKey.trim().takeIf { it.isNotEmpty() }
-        val mirrors = _state.value.given?.takeIf { it.link == raw }?.mirrors.orEmpty()
+        val given = _state.value.given?.takeIf { it.link == raw }
+        val mirrors = given?.mirrors.orEmpty()
 
         addJob = viewModelScope.launch {
             _state.update { it.copy(busy = true, addError = "", addProgress = 0f, addBackup = false) }
@@ -368,9 +369,14 @@ class SubscriptionsViewModel : ViewModel() {
                             // The core tries them already at this first download, as it tries the previous
                             // download's on an update (`ProfileProcessor.fetchProfile`): the link may be blocked
                             // from the start. The own link's answer then decides, as on every update (D-345).
-                            if (mirrors.isNotEmpty()) ProviderInfo.write(
+                            // The link's name waits there for a download without `profile-title` (D-506).
+                            if (mirrors.isNotEmpty() || given?.name != null) ProviderInfo.write(
                                 context.pendingDir.resolve(created.toString()),
-                                ProviderInfo(source = raw, mirrors = SubscriptionMirrors.resolve(raw, mirrors.joinToString(","), "")),
+                                ProviderInfo(
+                                    source = raw,
+                                    mirrors = SubscriptionMirrors.resolve(raw, mirrors.joinToString(","), ""),
+                                    linkName = given?.name.orEmpty(),
+                                ),
                             )
                         }
                     } else {

@@ -58,6 +58,11 @@ data class ProviderInfo(
     val templateFromConfig: Boolean = false,
     /** The link this response was fetched for: [mirrors] and [movedFrom] belong to it alone (D-345). */
     val source: String = "",
+    /**
+     * `name=` of the provider's install link the subscription was added from (D-506): [profileTitle] while the
+     * provider sends none. Written by the add, kept by every download of the same [source].
+     */
+    val linkName: String = "",
     /** The provider's other addresses of [source] (`ducker-mirrors`, `fallback-url`), resolved. */
     val mirrors: List<String> = emptyList(),
     /** The address that gave this response, and how: "", "direct" or "proxy" (Q-81). */
@@ -131,6 +136,7 @@ data class ProviderInfo(
          * mirror's response without a mirror header keeps the list: Happ-style backups often sit on a
          * plain server that does not repeat headers (F-329). The own link's response is authoritative —
          * no header, no mirrors: that is how a provider removes them. The mark of a move stays a week.
+         * The install link's name stands in for a `profile-title` not sent, and steps back once it is (D-506).
          */
         fun continued(
             info: ProviderInfo,
@@ -143,8 +149,11 @@ data class ProviderInfo(
             val same = previous.source == info.source
             val sent = headers.keys.any { it.equals("ducker-mirrors", true) || it.equals("fallback-url", true) }
             val keep = same && !sent && servedBy != info.source
+            val linkName = if (same) previous.linkName else ""
 
             return info.copy(
+                profileTitle = info.profileTitle.ifEmpty { linkName },
+                linkName = linkName,
                 servedBy = servedBy,
                 servedVia = servedVia,
                 mirrors = if (keep) previous.mirrors else info.mirrors,

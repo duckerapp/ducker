@@ -16,6 +16,8 @@ repository was closed; they are listed here for history. APK files are on the
   fingerprint of their own use it too, and `random` picks it half the time.
 - An encrypted subscription shared as a QR code or sent to a TV now carries its decryption key, so it opens on the
   other device without typing the key there.
+- A provider's one-tap link with `name=` names the subscription while the provider sends no `profile-title`; once
+  the header comes, its name is shown, as before.
 
 ## 0.4.50 — 2026-11-11
 

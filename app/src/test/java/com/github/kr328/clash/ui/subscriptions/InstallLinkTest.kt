@@ -35,11 +35,11 @@ class InstallLinkTest {
     @Test
     fun `a provider's install link`() {
         assertEquals(
-            InstallLink(link, listOf("sub2.example.com", "sub3.example.org")),
+            InstallLink(link, listOf("sub2.example.com", "sub3.example.org"), name = "X"),
             InstallLink.parse("clash://install-config?name=X&url=https%3A%2F%2Fsub.example.com%2Fapi%2Fsub%2FAbC+1_x%3Fformat%3Dmihomo&mirror=sub2.example.com&mirror=sub3.example.org"),
         )
         // Unencoded, as some pages give it: everything up to the next `&` is the link.
-        assertEquals(InstallLink("https://sub.example.com/sub?t=1"), InstallLink.parse("ducker://install-config?url=https://sub.example.com/sub?t=1&name=X"))
+        assertEquals(InstallLink("https://sub.example.com/sub?t=1", name = "X"), InstallLink.parse("ducker://install-config?url=https://sub.example.com/sub?t=1&name=X"))
     }
 
     @Test
@@ -80,6 +80,20 @@ class InstallLinkTest {
         }
         // A provider's link may carry one too: it lands in the field, where the person sees it.
         assertEquals(KEY, InstallLink.parse("clash://install-config?url=https%3A%2F%2Fsub.example.com%2Fs&key=$KEY")?.key)
+    }
+
+    @Test
+    fun `the provider's name is read, and only one fit for a card (D-506)`() {
+        val base = "ducker://install-config?url=${encode(link)}&name="
+
+        assertEquals("Утка 🦆 VPN", InstallLink.parse(base + encode(" Утка 🦆 VPN "))?.name)
+        assertEquals("A+B C", InstallLink.parse(base + "A%2BB%20C")?.name)
+        for (bad in listOf("", "  ", "A\nB", "A\u0000", "A\uFFFD", "N".repeat(129))) {
+            assertNull(InstallLink.linkName(bad), bad)
+            assertEquals(InstallLink(link), InstallLink.parse(base + encode(bad)), bad)
+        }
+        // Not written back: «Поделиться» gives the bare link as before.
+        assertEquals(link, InstallLink(link, name = "Pond").toString())
     }
 
     @Test
