@@ -63,7 +63,7 @@
     <string name="share_qr">Compartir código QR</string>
     <string name="share_qr_hint">En el otro teléfono: ducker → Suscripciones → “Añadir” → “Escanear QR”. También sirve una captura de esta pantalla: usa “Desde la galería”.</string>
     <string name="share_qr_warning">Cualquiera que escanee este código podrá usar tu suscripción. Muéstralo solo a tus propios dispositivos.</string>
-    <string name="receive_hint">Apunta la cámara del teléfono al código y pega el enlace en la página que se abre. Con ducker: Suscripciones → “Añadir” → “Escanear QR”. O introduce el enlace aquí.</string>
+    <string name="receive_hint">Apunta la cámara del teléfono al código y pega el enlace en la página que se abre, solo en tu propia red. En otra red, usa ducker: Suscripciones → “Añadir” → “Escanear QR”. O introduce el enlace aquí.</string>
     <string name="receive_code">Código QR para enviar una suscripción desde tu teléfono</string>
     <string name="receive_received">Recibido. Cargando la suscripción…</string>
     <string name="receive_no_network">El televisor no está conectado a una red doméstica</string>

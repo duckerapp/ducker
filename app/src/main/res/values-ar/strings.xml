@@ -63,7 +63,7 @@
     <string name="share_qr">مشاركة رمز QR</string>
     <string name="share_qr_hint">على الهاتف الآخر: افتح ducker، ثم «الاشتراكات»، ثم «إضافة»، ثم «مسح QR». يمكن أيضًا استخدام لقطة شاشة لهذه الصفحة عبر «من المعرض».</string>
     <string name="share_qr_warning">يمكن لأي شخص يمسح هذا الرمز استخدام اشتراكك. اعرضه على أجهزتك فقط.</string>
-    <string name="receive_hint">وجّه كاميرا الهاتف إلى الرمز والصق الرابط في الصفحة التي تفتح. باستخدام ducker: «الاشتراكات»، ثم «إضافة»، ثم «مسح QR». أو أدخل الرابط هنا.</string>
+    <string name="receive_hint">وجّه كاميرا الهاتف إلى الرمز والصق الرابط في الصفحة التي تفتح، في شبكتك الخاصة فقط. وفي شبكة أخرى استخدم ducker: «الاشتراكات»، ثم «إضافة»، ثم «مسح QR». أو أدخل الرابط هنا.</string>
     <string name="receive_code">رمز QR لإرسال اشتراك من الهاتف</string>
     <string name="receive_received">تم الاستلام. جارٍ تحميل الاشتراك…</string>
     <string name="receive_no_network">التلفزيون غير متصل بشبكة منزلية</string>

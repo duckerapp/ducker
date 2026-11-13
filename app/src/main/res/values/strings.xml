@@ -84,7 +84,7 @@
     <string name="share_qr_hint">On the other device, open ducker:\nProfiles → “Add” → “Scan QR”</string>
     <string name="share_qr_warning">This code gives access to your subscription.\nShow it only to your own devices.</string>
     <!-- Передача подписки с телефона на телевизор (D-162) -->
-    <string name="receive_hint">Point your phone’s camera at the code and paste the link on the page that opens. With ducker: Profiles → “Add” → “Scan QR”. Or enter the link here.</string>
+    <string name="receive_hint">Point your phone’s camera at the code and paste the link on the page that opens — on your own network only. On another network, use ducker: Profiles → “Add” → “Scan QR”. Or enter the link here.</string>
     <string name="receive_code">QR code for sending a subscription from your phone</string>
     <string name="receive_received">Received. Loading the subscription…</string>
     <string name="receive_no_network">The TV is not connected to a home network</string>

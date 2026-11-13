@@ -63,7 +63,7 @@
     <string name="share_qr">Compartilhar código QR</string>
     <string name="share_qr_hint">No outro celular: ducker → Assinaturas → “Adicionar” → “Ler QR”. Uma captura desta tela também funciona: use “Da galeria”.</string>
     <string name="share_qr_warning">Qualquer pessoa que ler este código poderá usar sua assinatura. Mostre-o apenas aos seus próprios dispositivos.</string>
-    <string name="receive_hint">Aponte a câmera do celular para o código e cole o link na página que abrir. Com o ducker: Assinaturas → “Adicionar” → “Ler QR”. Ou digite o link aqui.</string>
+    <string name="receive_hint">Aponte a câmera do celular para o código e cole o link na página que abrir — só na sua própria rede. Em outra rede, use o ducker: Assinaturas → “Adicionar” → “Ler QR”. Ou digite o link aqui.</string>
     <string name="receive_code">Código QR para enviar uma assinatura pelo celular</string>
     <string name="receive_received">Recebido. Carregando a assinatura…</string>
     <string name="receive_no_network">A TV não está conectada a uma rede doméstica</string>

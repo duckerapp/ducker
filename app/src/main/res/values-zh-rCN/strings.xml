@@ -63,7 +63,7 @@
     <string name="share_qr">分享二维码</string>
     <string name="share_qr_hint">在另一部设备上依次点击：ducker → “订阅” → “添加” → “扫码”。也可以截屏后用“从相册选择”识别。</string>
     <string name="share_qr_warning">任何人扫描此二维码都能使用你的订阅，请仅在自己的设备上使用。</string>
-    <string name="receive_hint">用手机相机扫码，在打开的页面里粘贴链接。用 ducker：“订阅” → “添加” → “扫码”。也可以直接在此输入链接。</string>
+    <string name="receive_hint">用手机相机扫码，在打开的页面里粘贴链接（仅限自己的网络）。在其他网络中请用 ducker：“订阅” → “添加” → “扫码”。也可以直接在此输入链接。</string>
     <string name="receive_code">用于从手机发送订阅的二维码</string>
     <string name="receive_received">已收到，正在加载订阅…</string>
     <string name="receive_no_network">电视未连接家庭网络</string>

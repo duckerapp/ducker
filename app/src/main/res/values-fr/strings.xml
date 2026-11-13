@@ -63,7 +63,7 @@
     <string name="share_qr">Partager par code QR</string>
     <string name="share_qr_hint">Sur l’autre téléphone : ducker → Abonnements → « Ajouter » → « Scanner un QR ». Une capture de cet écran fonctionne aussi : choisissez « Depuis la galerie ».</string>
     <string name="share_qr_warning">Toute personne qui scanne ce code peut utiliser votre abonnement. Réservez ce code à vos propres appareils.</string>
-    <string name="receive_hint">Visez le code avec l’appareil photo du téléphone et collez le lien sur la page qui s’ouvre. Avec ducker : Abonnements → « Ajouter » → « Scanner un QR ». Vous pouvez aussi saisir le lien ici.</string>
+    <string name="receive_hint">Visez le code avec l’appareil photo du téléphone et collez le lien sur la page qui s’ouvre, uniquement sur votre propre réseau. Sur un autre réseau, passez par ducker : Abonnements → « Ajouter » → « Scanner un QR ». Vous pouvez aussi saisir le lien ici.</string>
     <string name="receive_code">Code QR pour envoyer un abonnement depuis votre téléphone</string>
     <string name="receive_received">Reçu. Chargement de l’abonnement…</string>
     <string name="receive_no_network">Le téléviseur n’est pas connecté à un réseau domestique</string>

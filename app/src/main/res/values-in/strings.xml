@@ -63,7 +63,7 @@
     <string name="share_qr">Bagikan kode QR</string>
     <string name="share_qr_hint">Di ponsel lain: ducker → Langganan → “Tambah” → “Pindai QR”. Tangkapan layar ini juga bisa digunakan melalui “Dari galeri”.</string>
     <string name="share_qr_warning">Siapa pun yang memindai kode ini dapat menggunakan langganan Anda. Tampilkan hanya ke perangkat milik Anda sendiri.</string>
-    <string name="receive_hint">Arahkan kamera ponsel ke kode lalu tempel tautannya di halaman yang terbuka. Dengan ducker: Langganan → “Tambah” → “Pindai QR”. Atau masukkan tautannya di sini.</string>
+    <string name="receive_hint">Arahkan kamera ponsel ke kode lalu tempel tautannya di halaman yang terbuka — hanya di jaringan Anda sendiri. Di jaringan lain, gunakan ducker: Langganan → “Tambah” → “Pindai QR”. Atau masukkan tautannya di sini.</string>
     <string name="receive_code">Kode QR untuk mengirim langganan dari ponsel</string>
     <string name="receive_received">Diterima. Memuat langganan…</string>
     <string name="receive_no_network">TV tidak terhubung ke jaringan rumah</string>

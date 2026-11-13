@@ -63,7 +63,7 @@
     <string name="share_qr">QR koduyla paylaş</string>
     <string name="share_qr_hint">Diğer telefonda: ducker → Abonelikler → “Ekle” → “QR tara”. Bu ekranın görüntüsü de kullanılabilir; “Galeriden” seçeneğini kullanın.</string>
     <string name="share_qr_warning">Bu kodu tarayan herkes aboneliğinizi kullanabilir. Yalnızca kendi cihazlarınıza gösterin.</string>
-    <string name="receive_hint">Telefonun kamerasını koda tutun ve açılan sayfaya bağlantıyı yapıştırın. ducker ile: Abonelikler → “Ekle” → “QR tara”. Ya da bağlantıyı buraya girin.</string>
+    <string name="receive_hint">Telefonun kamerasını koda tutun ve açılan sayfaya bağlantıyı yapıştırın; bunu yalnızca kendi ağınızda yapın. Başka bir ağda ducker ile gönderin: Abonelikler → “Ekle” → “QR tara”. Ya da bağlantıyı buraya girin.</string>
     <string name="receive_code">Telefondan abonelik göndermek için QR kodu</string>
     <string name="receive_received">Alındı. Abonelik yükleniyor…</string>
     <string name="receive_no_network">TV ev ağına bağlı değil</string>
