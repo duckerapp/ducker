@@ -135,6 +135,10 @@ Opens the app's add-subscription window with the URL already filled in. The subs
 is downloaded only after the user taps **Add**. Encode the embedded subscription URL
 (`https%3A%2F%2F…`). `clash://install-config` and `clashmeta://install-config` work in the same way.
 
+`name` is optional: the subscription's name while the provider sends no `profile-title`. Once the
+header arrives, its name is shown instead; a name the user gives the subscription comes first.
+Without either, the card shows the link's domain.
+
 `mirror` is optional and repeats: each is a backup address written as in
 [`ducker-mirrors`](headers.md#subscription-mirrors) — a bare host or a full `https://…` link. They
 are tried at this first download when the link is already blocked. After that, the list comes from
