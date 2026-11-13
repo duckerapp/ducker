@@ -82,10 +82,11 @@ class TvTransferTest {
     }
 
     @Test
-    fun `the link arrives with its mirrors`() = runBlocking {
+    fun `the link arrives with its mirrors and its key`() = runBlocking {
         val shown = CompletableDeferred<TvLink>()
         val tv = async { receive(loopback) { shown.complete(it) } }
-        val given = InstallLink(link, listOf("sub2.example.com:8443", "https://other.example/x?t=a+b&c"))
+        val key = "AGE-SECRET-KEY-1" + "QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L".repeat(2).take(58)
+        val given = InstallLink(link, listOf("sub2.example.com:8443", "https://other.example/x?t=a+b&c"), key)
 
         assertTrue(send(shown.await(), given.toString()))
         assertEquals(given, tv.await())

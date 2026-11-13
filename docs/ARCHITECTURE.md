@@ -78,7 +78,8 @@ published by `.github/workflows/pages.yaml`.
   - `proxy` — groups and nodes;
   - `subscriptions` — profile dialogs, sharing as a QR code, reordering, and the phone-to-TV
     transfer (`TvTransfer`: the QR payload, encryption, receiving and sending); `InstallLink` — a
-    link with its mirrors, as the install link, the shared QR and the TV transfer carry it;
+    link with its mirrors and an encrypted subscription's age key, as the install link, the shared QR
+    and the TV transfer carry it;
   - `settings`; `config` — the YAML editor; `rules` — My rules; `apps` — per-app access;
     `logs`; `probe` — the node test; `update` — the app update sheet;
   - `features` — the Features page behind the pill on Home (on a TV, the third button under the dock) and its

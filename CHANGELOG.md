@@ -14,6 +14,8 @@ repository was closed; they are listed here for history. APK files are on the
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
 - The `chrome` TLS fingerprint now matches the current Chrome 155 instead of Chrome 133. REALITY nodes without a
   fingerprint of their own use it too, and `random` picks it half the time.
+- An encrypted subscription shared as a QR code or sent to a TV now carries its decryption key, so it opens on the
+  other device without typing the key there.
 
 ## 0.4.50 — 2026-11-11
 

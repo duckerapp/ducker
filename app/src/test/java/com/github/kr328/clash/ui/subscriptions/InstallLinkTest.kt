@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.subscriptions
 
 import com.github.kr328.clash.service.util.SubscriptionMirrors
+import java.net.URLEncoder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -8,6 +9,13 @@ import kotlin.test.assertNull
 /** A link with the provider's mirrors (stage 21, package 3): the install link, «Поделиться», the TV transfer. */
 class InstallLinkTest {
     private val link = "https://sub.example.com/api/sub/AbC+1_x?format=mihomo"
+
+    private companion object {
+        val KEY = "AGE-SECRET-KEY-1" + "QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L".repeat(2).take(58)
+        val PQ_KEY = "AGE-SECRET-KEY-PQ-1" + "QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L".repeat(2).take(58)
+
+        fun encode(value: String): String = URLEncoder.encode(value, "UTF-8")
+    }
 
     @Test
     fun `a bare link is itself`() {
@@ -46,6 +54,32 @@ class InstallLinkTest {
         )) {
             assertNull(InstallLink.parse(bad), bad)
         }
+    }
+
+    @Test
+    fun `an age key travels in the link, alone or with mirrors`() {
+        for (key in listOf(KEY, PQ_KEY)) {
+            val alone = InstallLink.of(link, emptyList(), " $key\n")
+
+            assertEquals(InstallLink(link, key = key), alone)
+            assertEquals(alone, InstallLink.parse(alone.toString()))
+            assertEquals(InstallLink(link, listOf("sub2.example.com"), key), InstallLink.parse(InstallLink(link, listOf("sub2.example.com"), key).toString()))
+        }
+        // No key, a blank one or one not shaped as a key: the bare link, as before keys travelled.
+        for (none in listOf(null, "", "  ")) assertEquals(link, InstallLink.of(link, emptyList(), none).toString())
+    }
+
+    @Test
+    fun `anything not shaped as one age key is dropped`() {
+        for (bad in listOf(
+            KEY.lowercase(), "AGE-SECRET-KEY-", "AGE-PLUGIN-YUBIKEY-1QQQ", "$KEY $KEY", "$KEY\n$KEY", "$KEY\u0000",
+            "AGE-SECRET-KEY-1" + "Q".repeat(113), "https://evil.example/",
+        )) {
+            assertNull(InstallLink.ageKey(bad), bad)
+            assertEquals(InstallLink(link), InstallLink.parse("ducker://install-config?url=${encode(link)}&key=${encode(bad)}"), bad)
+        }
+        // A provider's link may carry one too: it lands in the field, where the person sees it.
+        assertEquals(KEY, InstallLink.parse("clash://install-config?url=https%3A%2F%2Fsub.example.com%2Fs&key=$KEY")?.key)
     }
 
     @Test

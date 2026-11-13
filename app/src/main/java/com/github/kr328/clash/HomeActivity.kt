@@ -1989,7 +1989,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
             if (url.isNotEmpty()) {
                 // `mirror` repeats: the provider's backups for a link blocked from the start (stage 21, package 3).
-                subscriptionsViewModel.openLink(InstallLink(url, uri.getQueryParameters("mirror")))
+                // `key` — an encrypted subscription's, from «Поделиться» read by a phone's camera (D-505).
+                subscriptionsViewModel.openLink(
+                    InstallLink(url, uri.getQueryParameters("mirror"), InstallLink.ageKey(uri.getQueryParameter("key")))
+                )
 
                 // Тот же вход, что у «Подключиться» без подписки: вкладка «Подписки» и панель «+».
                 needSubscription.value = true

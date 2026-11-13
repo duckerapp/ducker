@@ -327,7 +327,7 @@ class SubscriptionsViewModel : ViewModel() {
     fun openLink(given: InstallLink) {
         if (_state.value.busy) return
 
-        _state.update { it.copy(input = given.link, given = given, addError = "", linked = true) }
+        _state.update { it.copy(input = given.link, given = given, addError = "", linked = true).keyOf(given) }
     }
 
     /**
@@ -584,7 +584,7 @@ class SubscriptionsViewModel : ViewModel() {
 
             // Идёт своё добавление, руками, — дождаться: два разом не ведём.
             _state.first { !it.busy }
-            _state.update { it.copy(input = link.link, given = link, addError = "") }
+            _state.update { it.copy(input = link.link, given = link, addError = "").keyOf(link) }
 
             add(app, fromPhone = true)
         }
@@ -634,7 +634,7 @@ class SubscriptionsViewModel : ViewModel() {
             // «Поделиться» and a provider's page may give the link with its mirrors (stage 21, package 3).
             val given = InstallLink.parse(text.trim())
 
-            return _state.update { it.copy(input = given?.link ?: text, given = given, addError = "") }
+            return _state.update { it.copy(input = given?.link ?: text, given = given, addError = "").keyOf(given) }
         }
 
         _state.update {
@@ -662,12 +662,13 @@ class SubscriptionsViewModel : ViewModel() {
 
     /**
      * Ссылка выбранной подписки уходит на телевизор, зашифрованная ключом из его кода. With the
-     * provider's mirrors, so the TV does not start from a blocked link (stage 21, package 3).
+     * provider's mirrors, so the TV does not start from a blocked link (stage 21, package 3), and the age key of an
+     * encrypted one (D-505).
      */
     fun confirmSend(context: Context) {
         val state = _state.value
         val to = state.sendTo ?: return
-        val link = state.profiles.firstOrNull { it.uuid == state.sendChoice }?.let { InstallLink.of(it.source, it.mirrors) } ?: return
+        val link = state.profiles.firstOrNull { it.uuid == state.sendChoice }?.installLink ?: return
 
         viewModelScope.launch {
             _state.update { it.copy(sendBusy = true, sendError = "") }
@@ -1234,6 +1235,17 @@ val Profile.local: Boolean
 /** Что можно отправить на телевизор (D-162): подписки со ссылкой, которую он возьмёт. */
 internal val List<Profile>.sendable: List<Profile>
     get() = filter { subscriptionLink(it.source) != null }
+
+/** What «Поделиться» and the TV transfer carry: the link, its mirrors and its age key (D-505). */
+internal val Profile.installLink: InstallLink
+    get() = InstallLink.of(source, mirrors, ageSecretKey)
+
+/**
+ * A link that came with a key fills the key field and shows it, as if pasted there; one without leaves what the
+ * person typed (D-505).
+ */
+private fun SubscriptionsState.keyOf(given: InstallLink?): SubscriptionsState =
+    given?.key?.let { copy(addKey = it, addKeyShown = true) } ?: this
 
 val Profile.shownName: String
     get() = if (name.isNotEmpty() && name != defaultName(source)) name else profileTitle.ifEmpty { name }
