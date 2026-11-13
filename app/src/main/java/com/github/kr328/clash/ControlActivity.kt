@@ -32,7 +32,8 @@ abstract class ControlActivity : Activity() {
         }
         when (action) {
             Intents.ACTION_TOGGLE_CLASH -> if (running()) stopClash() else startClash()
-            Intents.ACTION_START_CLASH -> if (running()) toast(R.string.external_started) else startClash()
+            // Sent even to a running service: one still going down counts as running and would never hear it (F-492).
+            Intents.ACTION_START_CLASH -> startClash()
             Intents.ACTION_STOP_CLASH -> stopClash()
         }
         finish()

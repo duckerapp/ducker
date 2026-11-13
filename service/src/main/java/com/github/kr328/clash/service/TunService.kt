@@ -1,14 +1,21 @@
 package com.github.kr328.clash.service
 
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.ProxyInfo
 import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import com.github.kr328.clash.common.compat.pendingIntentFlags
+import com.github.kr328.clash.common.compat.registerReceiverCompat
+import com.github.kr328.clash.common.compat.startForegroundServiceCompat
 import com.github.kr328.clash.common.constants.Components
+import com.github.kr328.clash.common.constants.Intents
+import com.github.kr328.clash.common.constants.Permissions
 import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.service.clash.clashRuntime
@@ -26,6 +33,7 @@ import com.github.kr328.clash.service.util.parseCIDR
 import com.github.kr328.clash.service.util.sendClashStarted
 import com.github.kr328.clash.service.util.sendClashStopped
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.measureTime
@@ -62,13 +70,35 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
      */
     private val installedLate = ArrayList<String>()
 
+    /**
+     * Set once this instance is asked off or its runtime ends. Android keeps a VPN service bound until its interface is
+     * gone, so a start in that time is delivered here, and the instance it starts again is never destroyed: no tunnel,
+     * every screen saying on, stops unheard (F-492). Such a start brings up the next instance instead ([restartWanted]).
+     */
+    @Volatile
+    private var stopping = false
+    private var restartWanted = false
+
+    /**
+     * Heard from [onCreate] on: the runtime's own receiver came up only after the previous runtime's cleanup and the
+     * core's reset, and a stop before it was lost while every screen already showed the VPN on (F-492).
+     */
+    private val stops = Channel<Unit>(Channel.CONFLATED)
+    private val stopReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.d("User request close")
+
+            stopping = true
+            stops.trySend(Unit)
+        }
+    }
+
     private val runtime = clashRuntime {
         val store = ServiceStore(self)
 
         // До первой загрузки конфига: истёкший «Подробный журнал» в неё уже не попадёт (D-224).
         runCatching { VerboseLog.check(self) }
 
-        val close = install(CloseModule(self))
         val tun = install(TunModule(self))
         // Before the config starts loading: a socket its downloads open before this stays unprotected, and once the
         // interface is up its packets go into the tunnel (D-431). Every stop releases it: TunModule's finally, onDestroy.
@@ -108,6 +138,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         install(MobileModule(self) { config.ready })
 
         try {
+            // Asked off by now: the interface is not built at all. A stop during the build takes it down at the loop.
+            if (stopping) return@clashRuntime
+
             synchronized(openLock) { tun.open(resetMs = resetMs) }
 
             // After the first build: it has every app installed before it, only a later install matters (D-454).
@@ -122,7 +155,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
             while (isActive) {
                 val quit = select<Boolean> {
-                    close.onEvent {
+                    stops.onReceive {
                         true
                     }
                     config.onEvent {
@@ -206,6 +239,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             withContext(NonCancellable) {
                 tun.close()
 
+                stopping = true
                 stopSelf()
             }
         }
@@ -219,6 +253,10 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         StatusProvider.serviceRunning = true
         createdAt = SystemClock.elapsedRealtime()
+
+        registerReceiverCompat(
+            stopReceiver, IntentFilter(Intents.ACTION_CLASH_REQUEST_STOP), Permissions.RECEIVE_SELF_BROADCASTS,
+        )
 
         // Причина прошлой остановки к новому подъёму не относится (D-227).
         StopNotice.clear(this)
@@ -239,12 +277,23 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        sendClashStarted()
+        // The receiver and this both run on the main thread, so a start after a stop always sees it. stopSelf() takes
+        // back what the start asked of Android, and onDestroy brings up the next instance.
+        if (stopping) {
+            restartWanted = true
+
+            stopSelf()
+        } else {
+            sendClashStarted()
+        }
 
         return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onDestroy() {
+        // Not registered when onCreate found another instance running.
+        runCatching { unregisterReceiver(stopReceiver) }
+
         TunModule.requestStop()
 
         StatusProvider.serviceRunning = false
@@ -269,6 +318,13 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         cancelAndJoinBlocking(STOP_WAIT_MS)
 
         Log.i("TunService destroyed: ${reason ?: "successfully"}")
+
+        // Allowed from the background: the prepared VPN app may start its service (F-113).
+        if (restartWanted) {
+            Log.i("Started while going down: starting again")
+
+            startForegroundServiceCompat(TunService::class.intent)
+        }
 
         super.onDestroy()
     }
