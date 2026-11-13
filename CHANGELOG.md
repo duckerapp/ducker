@@ -12,12 +12,31 @@ repository was closed; they are listed here for history. APK files are on the
 
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
+
+## 0.4.51 — 2026-11-13
+
+- Configuration templates: a link subscription can run on ducker's own configuration instead of the provider's. In
+  Profiles, the subscription's “⋯” → “Configuration” → “ducker · Russia”: Russian sites and apps go direct, everything
+  else through the VPN, and only the servers come from the subscription, its node providers too; its groups never
+  fall back to a direct connection. “From the subscription” brings the provider's back. Encrypted subscriptions keep
+  the provider's configuration.
 - The `chrome` TLS fingerprint now matches the current Chrome 155 instead of Chrome 133. REALITY nodes without a
   fingerprint of their own use it too, and `random` picks it half the time.
 - An encrypted subscription shared as a QR code or sent to a TV now carries its decryption key, so it opens on the
   other device without typing the key there.
 - A provider's one-tap link with `name=` names the subscription while the provider sends no `profile-title`; once
   the header comes, its name is shown, as before.
+- Two encrypted subscriptions with different keys: updating one no longer stops the other's node lists from updating.
+- Turning the VPN off and straight back on, or on and straight off, from the tile, a shortcut or the notification now
+  ends as you chose; it no longer leaves the VPN stuck with no connection while every screen shows it on.
+- A config check that overlaps a config load no longer puts the previous config's general settings, such as the
+  mode and the ports, back over the new ones.
+- Home no longer keeps the previous subscription's group after a switch to a config that has no group to pick a
+  node in.
+- TV: the “Add subscription” sheet no longer stays on the screen after it closes, and the hint beside the TV's code
+  says the camera page is for your own network; on another one, use ducker's own scanner.
+- Subscriptions, their keys and chosen nodes are now kept by Room 3, the current version of the database library.
+  An update keeps them as they were.
 
 ## 0.4.50 — 2026-11-11
 
