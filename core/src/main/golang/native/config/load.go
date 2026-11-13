@@ -91,6 +91,9 @@ func ValidateConfig(path string) error {
 func validate(rawConfig *config.RawConfig) (*config.Config, error) {
 	rawConfig.Profile.StoreFakeIP = false
 
+	parseLock.Lock()
+	defer parseLock.Unlock()
+
 	return Parse(rawConfig)
 }
 
@@ -242,6 +245,15 @@ var (
 	resets    atomic.Uint64
 )
 
+// Parses do not overlap (D-500, F-486). The core's parse sets the live general settings (mode, IPv6,
+// geodata and more) to the parsed config's and at its end restores what it found at its start
+// (`temporaryUpdateGeneral`, clash/config/config.go): a parse that spans the apply of a load would
+// restore the previous config's settings over the loaded ones. So a load holds this across its apply
+// too. A reset stays outside, so that a stop does not wait for a load or a validation (D-460); one
+// that overlaps a parse may leave the stopped core with stale general settings, which the next load
+// replaces.
+var parseLock sync.Mutex
+
 var errReset = errors.New("a reset came during the load, the config is not applied")
 
 // applyUnlessReset applies cfg unless a reset came after generation was read.
@@ -272,6 +284,9 @@ func Load(path string) error {
 	logDns(rawCfg)
 
 	keepFakeIP(rawCfg)
+
+	parseLock.Lock()
+	defer parseLock.Unlock()
 
 	cfg, err := Parse(rawCfg)
 	if err != nil {
