@@ -150,6 +150,9 @@ class ClashManager(private val context: Context) : IClashManager,
 
             true
         }.getOrElse {
+            // The caller left (D-500): kaidl ends the call, nothing failed.
+            if (it is CancellationException) throw it
+
             Log.w("Load profile for preview: $it", it)
 
             false
