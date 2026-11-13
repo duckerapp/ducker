@@ -177,6 +177,7 @@ internal fun DuckerSheet(
     // Пока подписка загружается, панель не закрывается ни свайпом, ни «назад», ни касанием
     // мимо: иначе человек не узнает, чем кончилось.
     val working by rememberUpdatedState(busy)
+    val shown by rememberUpdatedState(open)
     val dismiss by rememberUpdatedState(onDismiss)
     val closed by rememberUpdatedState(onClosed)
     val ask by rememberUpdatedState(onAsk)
@@ -255,12 +256,18 @@ internal fun DuckerSheet(
             }
         }
 
+        // A leaving sheet follows neither a finger nor a scroll: Compose's scroll to the focused field reaches it as
+        // one, and it cancelled the slide-out, leaving the closed sheet on screen with Back unable to close it.
         fun drag(by: Float) {
+            if (!shown) return
+
             motion?.cancel()
             offset = (offset + by).coerceIn(0f, height)
         }
 
         fun settle(velocity: Float) {
+            if (!shown) return
+
             val down = velocity > FLING || (velocity > -FLING && offset > height * CLOSE_PART)
 
             if (!(down && close())) move(0f, SETTLE_MS, LinearOutSlowInEasing)
