@@ -53,10 +53,14 @@ Then **Open**.
 
 ## 6. Add the subscription
 
-In ducker on the TV, press **Add subscription**. There are two ways:
+In ducker on the TV, press **Add subscription**. There are three ways:
 
-- **A QR code from the phone,** if ducker is on the phone already: there, **Profiles → Add → Scan QR**, and point
-  the camera at the code on the TV. The subscription goes to the TV over the home network, encrypted.
+- **The phone's camera,** any phone, ducker not needed: point the camera at the code on the TV, open the page it
+  offers and paste the link there. Only on your own home network: whoever controls the network could change that page
+  and read the link.
+- **ducker's scanner on the phone,** if ducker is on the phone already, safe on any network: there,
+  **Profiles → Add → Scan QR**, and point the camera at the code on the TV. The subscription goes to the TV over the
+  home network, encrypted.
 - **The link by hand:** select the field, type your provider's link with the on-screen keyboard and press **Add**.
 
 ![ducker on a TV: Add subscription with the QR code and the link field](../assets/shots/tv-guide-add.png){ loading=lazy }
