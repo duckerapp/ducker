@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.subscriptions
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
@@ -10,6 +11,7 @@ import kotlinx.coroutines.withTimeout
 import java.io.IOException
 import java.net.InetAddress
 import java.net.Socket
+import java.net.SocketException
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -144,15 +146,21 @@ class TvTransferTest {
 
     @Test
     fun `the sheet closed — the port and every connection close with it`() = runBlocking {
-        val shown = CompletableDeferred<TvLink>()
-        val tv = launch(Dispatchers.Default) { receive(loopback) { shown.complete(it) } }
-        val to = shown.await()
-        val silent = Socket(to.host, to.port)
+        // Repeated: a connection whose coroutine was cancelled before it started stayed open in most runs. Outside
+        // this scope and with read timeouts, so such a leak fails the test instead of hanging it.
+        repeat(20) {
+            val shown = CompletableDeferred<TvLink>()
+            val tv = CoroutineScope(Dispatchers.Default).launch { receive(loopback) { shown.complete(it) } }
+            val to = shown.await()
+            val silent = Socket(to.host, to.port).apply { soTimeout = 2000 }
 
-        withTimeout(2000) { tv.cancelAndJoin() }
-        assertFailsWith<IOException> { send(to, link) }
-        assertEquals(-1, silent.getInputStream().read())
-        silent.close()
+            withTimeout(2000) { tv.cancelAndJoin() }
+            assertFailsWith<IOException> { send(to, link) }
+            // Closed, or reset when the session ended before accepting it; a timeout means it was left open.
+            val end = runCatching { silent.getInputStream().read() }
+            assertTrue(end.getOrNull() == -1 || end.exceptionOrNull() is SocketException, "$end")
+            silent.close()
+        }
     }
 
     @Test

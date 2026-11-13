@@ -163,13 +163,15 @@ internal suspend fun receive(
                             continue
                         }
 
+                        // Closed on completion as well: a coroutine cancelled before it starts never runs its body, and
+                        // the socket would stay open with nobody to close it.
                         launch {
                             try {
                                 socket.use { served.serve(this, it) }
                             } finally {
                                 open.release()
                             }
-                        }
+                        }.invokeOnCompletion { socket.close() }
                     }
                 }
 
@@ -225,13 +227,8 @@ private class Session(val id: String, val key: ByteArray, val page: ByteArray, v
  * Закрывает [what] через [after] мс или по отмене. Блокирующие `accept()` и `read()` отмены не
  * слышат, а таймаут сокета отмеряет каждое чтение отдельно — запрос по байту тянулся бы часами.
  */
-private fun CoroutineScope.closeAfter(what: Closeable, after: Long) = launch {
-    try {
-        delay(after)
-    } finally {
-        what.close()
-    }
-}
+private fun CoroutineScope.closeAfter(what: Closeable, after: Long) =
+    launch { delay(after) }.apply { invokeOnCompletion { what.close() } }
 
 /** What a request asked for. `null` from [read] — it never finished: silent, broken or not HTTP. */
 private sealed interface Asked {
