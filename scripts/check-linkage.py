@@ -12,8 +12,8 @@ The case it was written for — Room's compiler against a newer KotlinPoet (kaid
 
     C=~/.gradle/caches/modules-2/files-2.1
     scripts/check-linkage.py com/squareup/kotlinpoet/ \\
-        --consumers $C/androidx.room/room-compiler/2.8.5/*/room-compiler-2.8.5.jar \\
-                    $C/androidx.room/room-compiler-processing/2.8.5/*/room-compiler-processing-2.8.5.jar \\
+        --consumers $C/androidx.room3/room3-compiler/3.0.3/*/room3-compiler-3.0.3.jar \\
+                    $C/androidx.room3/room3-compiler-processing/3.0.3/*/room3-compiler-processing-3.0.3.jar \\
                     $C/com.squareup/kotlinpoet-javapoet/2.0.0/*/kotlinpoet-javapoet-2.0.0.jar \\
         --providers kotlinpoet-jvm-2.4.0.jar \\
                     $C/com.squareup/kotlinpoet-javapoet/2.0.0/*/kotlinpoet-javapoet-2.0.0.jar
