@@ -46,19 +46,36 @@ func fixture(t *testing.T, name string) string {
 	return string(content)
 }
 
-// parseCore reads a config as the core does and loads its proxy providers.
+// parseCore reads a config as the core does and loads its proxy providers, without health checks: a check still
+// dialing raced the next parse's write of resolver.DisableIPv6 under -race. A group with its own url hands its check
+// to the providers it uses (G/clash/adapter/outboundgroup/parser.go:150), so the groups lose theirs too; groups are
+// providers in cfg.Providers as well, and their Initial does nothing but start a check.
 func parseCore(t *testing.T, out string) *config.Config {
 	t.Helper()
 
 	C.SetHomeDir(t.TempDir())
 
-	cfg, err := config.Parse([]byte(out))
+	raw, err := config.UnmarshalRawConfig([]byte(out))
 	if err != nil {
 		t.Fatalf("the core refuses the result: %v", err)
 	}
 
-	for name, provider := range cfg.Providers {
-		if err := provider.Initial(); err != nil {
+	for _, mapping := range raw.ProxyProvider {
+		if check, ok := mapping["health-check"].(map[string]any); ok {
+			check["enable"] = false
+		}
+	}
+	for _, group := range raw.ProxyGroup {
+		delete(group, "url")
+	}
+
+	cfg, err := config.ParseRawConfig(raw)
+	if err != nil {
+		t.Fatalf("the core refuses the result: %v", err)
+	}
+
+	for name := range raw.ProxyProvider {
+		if err := cfg.Providers[name].Initial(); err != nil {
 			t.Fatalf("provider %s: %v", name, err)
 		}
 	}
