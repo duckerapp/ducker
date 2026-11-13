@@ -4,6 +4,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -133,10 +134,10 @@ class TvTransferTest {
         // A browser's spare requests and connections: none of them counts, and none holds the session up.
         val silent = List(STRIKES + 1) { Socket(to.host, to.port) }
         repeat(STRIKES + 1) {
-            assertEquals("HTTP/1.1 404 Not Found", raw(to, "GET /favicon.ico HTTP/1.1\r\n\r\n"))
+            assertEquals("HTTP/1.1 404 Not Found", retried("") { raw(to, "GET /favicon.ico HTTP/1.1\r\n\r\n") })
             Socket(to.host, to.port).close()
         }
-        assertTrue(send(to, link))
+        assertTrue(retried(false) { send(to, link) })
         assertEquals(InstallLink(link), tv.await())
         // The closed session leaves nothing open: the TV has hung up on the silent ones too.
         silent.forEach { assertEquals(-1, it.getInputStream().read()) }
@@ -178,5 +179,18 @@ class TvTransferTest {
         socket.getOutputStream().write(request.toByteArray())
 
         socket.getInputStream().bufferedReader().readLine().orEmpty()
+    }
+
+    /**
+     * Over its limit of open connections the TV drops one unread, and a browser asks again. With the silent ones
+     * holding most of the limit, a slow machine still holds the slots of the last requests: ask again as well.
+     */
+    private suspend fun <T> retried(dropped: T, ask: suspend () -> T): T {
+        repeat(20) {
+            val answer = try { ask() } catch (e: IOException) { dropped }
+            if (answer != dropped) return answer
+            delay(50)
+        }
+        return ask()
     }
 }
