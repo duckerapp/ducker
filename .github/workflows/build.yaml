@@ -78,6 +78,24 @@ jobs:
           CGO_ENABLED: "1"
         run: go test -race -count=3 github.com/metacubex/sing-mux/...
 
+      # The core wrapper's own tests, with the race detector. `native/app/dns.go` needs Android, so an overlay puts a
+      # stub in its place (F-204); the root package `cfa/native` needs the NDK's headers and is left out.
+      - name: Test the core wrapper
+        working-directory: core/src/foss/golang
+        env:
+          CGO_ENABLED: "1"
+        run: |
+          printf 'package app\n\nfunc NotifyDnsChanged(string) {}\n' > "$RUNNER_TEMP/dns_stub.go"
+          printf '{"Replace": {"%s": "%s"}}' "$GITHUB_WORKSPACE/core/src/main/golang/native/app/dns.go" \
+            "$RUNNER_TEMP/dns_stub.go" > "$RUNNER_TEMP/overlay.json"
+          go test -race -count=1 -overlay "$RUNNER_TEMP/overlay.json" -tags foss,with_gvisor,cmfa \
+            cfa/native/app cfa/native/config cfa/native/convert cfa/native/delegate cfa/native/panicguard \
+            cfa/native/platform cfa/native/proxy cfa/native/tun cfa/native/tunnel
+
+      # Release lint: NewApi for Android 8 (D-482) and the release variant's own checks. No APK is built (D-154).
+      - name: Lint the release variant
+        run: ./gradlew --no-daemon :app:lintMetaRelease
+
       # Только ядро, без APK: APK собираются на компьютере разработчика, а их выгрузка
       # упиралась в квоту хранилища артефактов. Задача настраивает CMake (версия ядра), собирает
       # Go-ядро под все четыре ABI и мост к нему; код приложения компилирует шаг юнит-тестов.
