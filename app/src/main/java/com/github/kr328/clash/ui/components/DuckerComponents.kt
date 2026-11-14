@@ -43,6 +43,11 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -105,6 +110,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
@@ -355,6 +362,13 @@ fun SearchField(
     // Пульт (этап 6): строка — одна кнопка, ввод открывается по ОК, см. [keyField].
     val (row, input) = keyField()
     val edge = airEdge()
+    // On a TV the row is one button and the clear button sits inside it, where no arrow's search looks: «end» leads
+    // to it explicitly, the key toward the start leads back (the page's room told by [ownLeft] not to send it to the
+    // dock), and clearing returns the focus to the row before the button disappears.
+    val keys = tvKeys()
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val self = remember { FocusRequester() }
+    val clear = remember { FocusRequester() }
 
     Box(
         modifier = modifier.fillMaxWidth()
@@ -375,6 +389,9 @@ fun SearchField(
                 if (compact) Modifier.background(MaterialTheme.colorScheme.surface, shape)
                 else Modifier.clip(shape).background(MaterialTheme.colorScheme.surface),
             )
+            .then(if (keys) Modifier.focusRequester(self).focusProperties {
+                if (value.isNotEmpty()) end = clear
+            } else Modifier)
             .then(row),
     ) {
         // Decoration belongs to the input so its icon, padding and empty clear slot also accept taps.
@@ -421,7 +438,20 @@ fun SearchField(
                     // Reserve the clear button's space so typing the first character does not shift text.
                     Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
                         if (value.isNotEmpty()) {
-                            IconButton(onClick = { onValue("") }) {
+                            IconButton(
+                                onClick = {
+                                    if (keys) self.requestFocus()
+                                    onValue("")
+                                },
+                                // The field around it takes the key toward the start for its cursor before
+                                // any focus search, so the button steps back to the row itself.
+                                modifier = if (keys) Modifier.focusRequester(clear).ownLeft(self).onPreviewKeyEvent {
+                                    val back = if (rtl) Key.DirectionRight else Key.DirectionLeft
+                                    if (it.key != back) return@onPreviewKeyEvent false
+                                    if (it.type == KeyEventType.KeyDown) self.requestFocus()
+                                    true
+                                } else Modifier,
+                            ) {
                                 Icon(
                                     imageVector = Symbols.Close,
                                     contentDescription = stringResource(R.string.search_clear),
