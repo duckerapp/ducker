@@ -399,6 +399,14 @@ fun SearchField(
             value = value,
             onValueChange = onValue,
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).then(input)
+                // «Назад» hides the keyboard but leaves the focus in the input, where the key toward the end only
+                // moved the cursor: it goes to the clear button there too.
+                .then(if (keys) Modifier.onPreviewKeyEvent {
+                    val toward = if (rtl) Key.DirectionLeft else Key.DirectionRight
+                    if (value.isEmpty() || it.key != toward) return@onPreviewKeyEvent false
+                    if (it.type == KeyEventType.KeyDown) clear.requestFocus()
+                    true
+                } else Modifier)
                 .semantics { contentDescription = hint },
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium
