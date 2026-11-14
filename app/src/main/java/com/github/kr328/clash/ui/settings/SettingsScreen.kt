@@ -675,7 +675,7 @@ fun SettingsScreen(
             onDismiss = { pendingLanguage = null; languageOpen = false },
             onClosed = {
                 languageMounted = false
-                // Apply after dismissal: a locale change may recreate the Activity.
+                // Apply after dismissal: the words change under the closed sheet, not in it as it slides away (D-508).
                 pendingLanguage?.let { value -> pendingLanguage = null; onLanguage(value) }
             },
         )
@@ -1205,7 +1205,7 @@ private fun settingsLanguages(): List<Pair<String, String>> = listOf(
     "tr" to "Türkçe", "vi" to "Tiếng Việt",
 )
 
-// The system's language, not the app's (which LocalConfiguration carries): a change of it recreates the activity anyway.
+// The system's language, not the app's (which LocalConfiguration carries): read again each time the sheet opens.
 @SuppressLint("NonObservableLocale")
 @Composable
 private fun SettingsLanguageSheet(

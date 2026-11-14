@@ -58,8 +58,10 @@ import android.content.ComponentName
 import android.app.StatusBarManager
 import android.app.UiModeManager
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.os.LocaleList
 import android.os.SystemClock
 import android.provider.DocumentsContract
 import android.provider.Settings
@@ -243,6 +245,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
     private val tips by lazy { TipsStore(this) }
 
+    /** The language the shortcuts were published in: a new one does not recreate the screen (D-508). */
+    private var shortcutLocales: LocaleList? = null
+
     /** Возвраты на экран — по ним панель «работа в фоне» узнаёт ответ системного окна. */
     private val resumes = mutableIntStateOf(0)
 
@@ -337,6 +342,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         // Ярлыки на значке (D-87). Вне главного потока: это вызов в системную службу,
         // а первому кадру он ни к чему.
         lifecycleScope.launch(Dispatchers.IO) { runCatching { publishShortcuts() } }
+        shortcutLocales = resources.configuration.locales
 
         // Телевизор (этап 6, D-12): тот же APK, но док слева и управление пультом.
         val tv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
@@ -1961,6 +1967,25 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         settingsViewModel.refresh(this)
 
         if (savedInstanceState == null) openExternal(intent)
+    }
+
+    // A new language keeps the screen (D-508): Compose redraws its words, the rest is redone here.
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        // Before Android 13 the language is AppCompat's and lives in the resources only: a rotation or night mode
+        // rebuilds them in the system's language, and AppCompat does not lay its own over them again by itself.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) delegate.applyDayNight()
+
+        // The resources, not newConfig: before Android 13 that is the system's language.
+        val config = resources.configuration
+        if (config.locales == shortcutLocales) return
+        shortcutLocales = config.locales
+
+        lifecycleScope.launch(Dispatchers.IO) { runCatching { publishShortcuts() } }
+        // AppCompat swaps the resources, but only the system's own change turns the window right to left:
+        // Arabic and Persian came in the old direction.
+        window.decorView.layoutDirection = config.layoutDirection
     }
 
     override fun onNewIntent(intent: Intent) {

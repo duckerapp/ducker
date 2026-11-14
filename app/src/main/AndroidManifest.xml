@@ -72,7 +72,7 @@
              маскировке — второй, «Калькулятор» (D-147). -->
         <activity
             android:name=".HomeActivity"
-            android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize|locale|layoutDirection"
             android:exported="true"
             android:label="@string/launch_name"
             android:launchMode="singleTask"
@@ -82,6 +82,8 @@
             <!-- Поворот и смена размера окна — без пересоздания: интерфейс на Compose и так
                  перестраивается, а редактор конфига держит правки и их историю в своём виде
                  и терял их при повороте (F-150). -->
+            <!-- A new language without recreating the screen too: recreated, it blinked (D-508).
+                 What the screen localised once is redone in HomeActivity.onConfigurationChanged. -->
             <!-- Системная строка «Настройки приложения» и настройки плитки быстрого
                  доступа вели на экран CMFA; теперь сюда. -->
             <intent-filter>

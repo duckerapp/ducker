@@ -149,6 +149,9 @@ class SettingsViewModel : ViewModel() {
      * заводим. Пустая метка возвращает язык системы.
      */
     fun setLanguage(tag: String) {
+        // The screen is not recreated by a new language (D-508), so nothing reads it back.
+        _state.update { it.copy(language = tag) }
+
         AppCompatDelegate.setApplicationLocales(
             if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
             else LocaleListCompat.forLanguageTags(tag)
