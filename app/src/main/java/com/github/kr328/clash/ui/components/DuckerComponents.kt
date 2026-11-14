@@ -453,7 +453,9 @@ fun SearchField(
                                 },
                                 // The field around it takes the key toward the start for its cursor before
                                 // any focus search, so the button steps back to the row itself.
-                                modifier = if (keys) Modifier.focusRequester(clear).ownLeft(self).onPreviewKeyEvent {
+                                // Its own frame: the row's stays round the whole row while the focus is inside it.
+                                modifier = if (keys) Modifier.ringAnchor { Rect(Offset.Zero, Size(it.width.toFloat(), it.height.toFloat())) }
+                                    .focusRequester(clear).ownLeft(self).onPreviewKeyEvent {
                                     val back = if (rtl) Key.DirectionRight else Key.DirectionLeft
                                     if (it.key != back) return@onPreviewKeyEvent false
                                     if (it.type == KeyEventType.KeyDown) self.requestFocus()

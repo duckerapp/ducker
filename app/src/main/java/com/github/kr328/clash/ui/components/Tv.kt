@@ -765,6 +765,8 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
 
 private object RingKey
 
+private object AnchorKey
+
 /**
  * Рамка — не вокруг элемента в фокусе, а вокруг [rect] этого места, пока фокус внутри. Док так ведёт
  * рамку вместе со своей белой подсветкой: вкладка получает фокус сразу, а подсветка едет за лентой
@@ -797,11 +799,23 @@ internal class RingAnchorNode(
     var forced: Boolean,
     var corner: Dp?,
     var rect: Density.(IntSize) -> Rect,
-) : Modifier.Node(), FocusEventModifierNode {
+) : Modifier.Node(), FocusEventModifierNode, TraversableNode {
+    override val traverseKey: Any get() = AnchorKey
+
     private var focused = false
 
     override fun onAttach() {
         if (forced) sync()
+    }
+
+    /** This place lies inside [outer]'s: a button inside a one-button row (the search field's clear button). */
+    private fun inside(outer: RingAnchorNode): Boolean {
+        var found = false
+        traverseAncestors(AnchorKey) {
+            found = it === outer
+            !found
+        }
+        return found
     }
 
     override fun onFocusEvent(focusState: FocusState) {
@@ -818,7 +832,11 @@ internal class RingAnchorNode(
         traverseAncestors(RingKey) {
             val ring = it as FocusRingNode
 
-            if (focused || forced) ring.anchor = this else if (ring.anchor === this) ring.anchor = null
+            // A focused place inside this one keeps the frame: the outer place's focus is only around it.
+            val inner = ring.anchor?.takeIf { a -> a !== this && a.focused && a.inside(this) }
+            if (focused || forced) {
+                if (inner == null) ring.anchor = this
+            } else if (ring.anchor === this) ring.anchor = null
             ring.follow()
             false
         }
