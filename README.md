@@ -139,6 +139,11 @@ keeps the previous working configuration; read the error and retry or choose the
 
 ## Android TV
 
+**From an iPhone or any phone without ducker:** scan the TV's QR with the ordinary camera,
+open the page in the browser, paste your subscription link and press **Send**. No app is
+needed on the sending device. Use your own home Wi-Fi and keep the QR open on the TV.
+A computer can also open the link read from the QR. [Step-by-step guide](https://duckerapp.github.io/ducker/users/tv/#browser-transfer).
+
 The same APK runs on Android TV and Google TV.
 
 - **Made for the remote.** A dock on the left, a glowing frame around the focused element, and

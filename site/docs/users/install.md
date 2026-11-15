@@ -27,12 +27,13 @@ All methods are described under [How to add a subscription](faq.md#how-to-add-a-
 
 ## On a TV
 
-The same APK works on Android TV and Google TV. You do not need to type the link with a remote:
-press **+** on the TV to show a QR code. Scan it in ducker on your phone
-(**Profiles → Add → Scan QR**) and confirm sending. The subscription is sent to the TV
-encrypted over the home network. The phone and TV must be on the same home network.
+The same APK works on Android TV and Google TV. Already installed? Open **Add subscription**
+on the TV and scan its QR with an iPhone's or Android phone's ordinary camera. Paste your
+subscription link on the browser page and press **Send**; no ducker app is needed on the phone.
+Keep both devices on your own home Wi-Fi and keep the TV's QR screen open.
 
-How to get the APK onto the TV in the first place, step by step: [Installing on a TV](tv.md).
+If ducker is installed on an Android phone, its **Profiles → Add → Scan QR** scanner can send
+an existing subscription too. [All steps, including installing the APK on the TV](tv.md#browser-transfer).
 
 ## Updates
 

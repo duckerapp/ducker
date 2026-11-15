@@ -124,6 +124,8 @@ ducker 是基于 mihomo 的 Android VPN 客户端，需要添加服务商提供�
 
 ## Android TV
 
+**从 iPhone 或未安装 ducker 的手机发送：**用普通相机扫描电视上的二维码，在浏览器打开页面，粘贴订阅链接并点击发送。发送设备不需要安装应用。请使用自己的家庭 Wi-Fi，并保持电视上的二维码页面打开。电脑也可以打开从二维码识别出的链接。[分步说明（英文）](https://duckerapp.github.io/ducker/users/tv/#browser-transfer)。
+
 同一个 APK 可在 Android TV 和 Google TV 上运行。
 
 - **为遥控器设计。** 左侧是导航栏，当前焦点周围有发光边框；各个页面都可用方向键操作——包括配置

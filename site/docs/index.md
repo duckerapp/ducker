@@ -131,7 +131,7 @@ are listed in the README.
 
 ## On the TV, no typing with the remote
 
-The same APK runs on Android TV and Google TV. The TV shows a QR code; scan it in ducker on your phone, and the subscription arrives over your home network, encrypted with a one-time key that exists only inside that code.
+The same APK runs on Android TV and Google TV. Scan the TV's QR with an iPhone's or Android phone's camera, open the browser page, paste the subscription link and press Send. No app is needed on the phone; use your own home Wi-Fi. ducker's Android scanner can also send an existing subscription.
 
 [How to install ducker on a TV, step by step](users/tv.md)
 

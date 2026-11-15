@@ -1,5 +1,9 @@
 # Installing on a TV
 
+**ducker already installed on the TV?** Go straight to [sending the subscription from an
+iPhone or another browser](#browser-transfer). ducker runs on Android TV/Google TV; the
+iPhone only sends the link and does not need a ducker app.
+
 The TV needs the ducker file, an APK. The easiest way to get it there is from your phone over the home network,
 with [LocalSend](https://localsend.org): free, open source and without ads. It goes only on the TV; the phone
 sends the file from its ordinary browser.
@@ -53,15 +57,35 @@ Then **Open**.
 
 ## 6. Add the subscription
 
-In ducker on the TV, press **Add subscription**. There are three ways:
+<a id="browser-transfer"></a>
 
-- **The phone's camera,** any phone, ducker not needed: point the camera at the code on the TV, open the page it
-  offers and paste the link there. Only on your own home network: whoever controls the network could change that page
-  and read the link.
-- **ducker's scanner on the phone,** if ducker is on the phone already, safe on any network: there,
-  **Profiles → Add → Scan QR**, and point the camera at the code on the TV. The subscription goes to the TV over the
-  home network, encrypted.
-- **The link by hand:** select the field, type your provider's link with the on-screen keyboard and press **Add**.
+### From an iPhone or another device without ducker
+
+1. Connect the TV and sending device to the same home Wi-Fi. Keep ducker's **Add subscription**
+   screen with its QR code open on the TV.
+2. On an iPhone or Android phone, scan that QR with the ordinary camera and open its link.
+   A computer can also open the complete link read from the QR.
+3. The **Subscription to TV** page opens in the browser. Paste the subscription link from
+   your provider into **Subscription link** and press **Send**.
+4. Wait for the confirmation. The TV receives the link and downloads the subscription itself.
+   Press the power button on its Home screen and allow the VPN if Android asks.
+
+No app is needed on the sender. This QR is for sending a subscription to ducker, not for
+installing the APK; LocalSend's earlier QR transfers the APK file instead. If the QR has
+expired or the receiving screen was closed, reopen it and scan the new code. If the page
+will not open, check both devices are on the same network; guest Wi-Fi may isolate them.
+
+The page encrypts the link before sending it to the TV. Use your own home network: the
+page itself loads over HTTP, so someone controlling that network could change it.
+
+### From ducker on an Android phone
+
+Open **Profiles → Add → Scan QR**, scan the TV's code and confirm which subscription to
+send. ducker encrypts it in the app; this route does not load the browser page.
+
+### With the remote
+
+Select the link field on the TV, type the provider's link and press **Add**.
 
 ![ducker on a TV: Add subscription with the QR code and the link field](../assets/shots/tv-guide-add.png){ loading=lazy }
 
