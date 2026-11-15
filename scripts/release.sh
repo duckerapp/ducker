@@ -9,7 +9,8 @@
 #
 # Что НЕ делает: не коммитит, не ставит тег, ничего никуда не выкладывает. Последний
 # шаг остаётся за человеком — он и решает, выпускать ли то, что получилось.
-set -u
+set -euo pipefail
+: "${ANDROID_SERIAL:?Select the one agreed physical test device with ANDROID_SERIAL}"
 
 cd "$(dirname "$0")/.."
 
@@ -21,10 +22,12 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-case "$VERSION" in
-  [0-9]*.[0-9]*.[0-9]*) ;;
-  *) echo "Версия должна быть вида 0.2.0, а не '$VERSION'"; exit 1 ;;
-esac
+[[ "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || {
+  echo "Version must be three nonnegative integers" >&2; exit 1;
+}
+OUT="$OUT_ROOT/v$VERSION"
+[ ! -e "$OUT" ] || { echo "Output already exists: $OUT. Preserve it; choose a new version." >&2; exit 1; }
+python3 -c 'import sys; sys.path.insert(0, "scripts"); from release_artifacts import tool, expected_certificate; tool("apksigner"); tool("aapt2"); expected_certificate()'
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "В дереве есть несохранённые правки. Сначала закоммить их — иначе непонятно,"
@@ -47,6 +50,9 @@ changes() {
       END {for (i = 1; i <= n; i++) print line[i]}'
 }
 for log in CHANGELOG.md docs/CHANGELOG.ru.md; do
+  if grep -Ei "^## $VERSION([[:space:]]|$).*(draft|черновик)" "$log" >/dev/null; then
+    echo "Date and finalize $log before building $VERSION" >&2; exit 1
+  fi
   if [ -z "$(changes "$log")" ]; then
     echo "В $log нет записи «## $VERSION» — её покажут страница выпуска и «Что нового» в приложении."
     exit 1
@@ -54,6 +60,7 @@ for log in CHANGELOG.md docs/CHANGELOG.ru.md; do
 done
 
 # The APK ships the licences of every Go module in the core; a dependency change needs a new list.
+python3 scripts/release_artifacts.py inputs "$VERSION"
 python3 scripts/core-licenses.py --check || exit 1
 
 OLD_VERSION=$(grep -m1 'versionName = ' build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
@@ -70,6 +77,10 @@ echo "Базовый профиль снят $(git log -1 --format=%cs -- "$PROF
   "Пересобрать — ./scripts/baseline-profile.sh"
 echo
 
+VERSION_BACKUP=$(mktemp)
+cp build.gradle.kts "$VERSION_BACKUP"
+trap 'rm -f "$VERSION_BACKUP"' EXIT
+# Post-build failures retain the version and artifacts for diagnosis; no automatic publication.
 sed -i "s/versionName = \"$OLD_VERSION\"/versionName = \"$VERSION\"/" build.gradle.kts
 sed -i "s/versionCode = $OLD_CODE/versionCode = $NEW_CODE/" build.gradle.kts
 
@@ -80,7 +91,7 @@ rm -f app/src/main/assets/geoip.metadb app/src/main/assets/geosite.dat
 echo "Собираю (это надолго)…"
 if ! ./gradlew :app:assembleMetaRelease -q >/tmp/ducker-release-build.log 2>&1; then
   echo "Сборка упала, смотри /tmp/ducker-release-build.log. Версию возвращаю обратно."
-  git checkout build.gradle.kts
+  cp "$VERSION_BACKUP" build.gradle.kts
   tail -20 /tmp/ducker-release-build.log
   exit 1
 fi
@@ -88,96 +99,16 @@ echo "Собралось."
 
 OUT="$OUT_ROOT/v$VERSION"
 mkdir -p "$OUT"
-rm -f "$OUT"/*.apk "$OUT"/SHA256SUMS "$OUT"/release-notes.md
 
-SIGNER=$(find "$HOME/Android/Sdk/build-tools" -name apksigner 2>/dev/null | sort | tail -1)
-BAD=0
 
 for abi in arm64-v8a armeabi-v7a; do
   SRC="app/build/outputs/apk/meta/release/ducker-$VERSION-meta-$abi-release.apk"
-  if [ ! -f "$SRC" ]; then
-    echo "Нет файла $SRC"
-    BAD=1
-    continue
-  fi
-
-  if [ -n "$SIGNER" ] && ! "$SIGNER" verify --print-certs "$SRC" 2>/dev/null | grep -q "CN=ducker"; then
-    echo "ВНИМАНИЕ: $abi подписан не нашим ключом. Проверь signing.properties."
-    BAD=1
-  fi
-
+  python3 scripts/release_artifacts.py apk "$VERSION" --abi "$abi" --file "$SRC"
   cp "$SRC" "$OUT/ducker-$VERSION-$abi.apk"
 done
-
-[ "$BAD" -eq 0 ] || { echo "Собранное не годится для раздачи. Версию возвращаю."; git checkout build.gradle.kts; exit 1; }
-
 ( cd "$OUT" && sha256sum ./*.apk > SHA256SUMS )
 
-# Описание выпуска для страницы на GitHub: кнопки скачивания, «что нового» из обоих списков изменений.
-# Picture URLs are absolute: a release body has no repository to resolve relative paths against.
-# The buttons come from docs/images/release/ on main (notes/brand/build-release-buttons.py makes them).
-REPO=https://github.com/duckerapp/ducker
-IMG=$REPO/raw/main/docs/images/release
-DL=$REPO/releases/download/v$VERSION
-SITE=https://duckerapp.github.io/ducker
-button() { # file, image, width, alt
-  echo "<a href=\"$DL/$1\"><picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"$IMG/$2-dark.svg\"><img src=\"$IMG/$2-light.svg\" width=\"$3\" alt=\"$4\"></picture></a>"
-}
-{
-  echo "<p>"
-  button "ducker-$VERSION-arm64-v8a.apk" android 360 "Download for Android: arm64-v8a"
-  button "ducker-$VERSION-armeabi-v7a.apk" android-v7a 360 "Older phones and TVs: armeabi-v7a"
-  echo "</p>"
-  echo
-  echo "**On a TV or a box:** \`armeabi-v7a\` installs on almost any TV; a current TV or box needs \`arm64-v8a\`." \
-    "If one file does not install, take the other. Android 8 or later."
-  echo
-  echo "[How to install]($SITE/users/install/) · [Installing on a TV]($SITE/users/tv/) · [Documentation]($SITE/)"
-  echo
-  echo "Telegram: [channel](https://t.me/ducker_mihomo) for releases and news ·" \
-    "[chat](https://t.me/ducker_community) for questions and discussion"
-  echo
-  echo "[![Downloads](https://img.shields.io/github/downloads/duckerapp/ducker/v$VERSION/total?style=flat-square&label=downloads&labelColor=000&color=2b2b2b)]($REPO/releases/tag/v$VERSION)"
-  echo
-  echo "## What's new"
-  echo
-  changes CHANGELOG.md
-  echo
-  # GitHub puts a spoiler's first line right under its title; a <br> gives it a line of room.
-  echo "<details><summary>По-русски</summary>"
-  echo "<br>"
-  echo
-  echo "**Какой файл скачать.** Телефон — большая кнопка, \`arm64-v8a\`. Старый телефон — \`armeabi-v7a\`." \
-    "Телевизор или приставка: \`armeabi-v7a\` ставится почти на любой телевизор, современному телевизору или" \
-    "приставке нужен \`arm64-v8a\`. Если файл не установился, возьмите другой. Нужен Android 8 или новее."
-  echo
-  echo "[Как установить]($SITE/ru/users/install/) · [Установка на телевизор]($SITE/ru/users/tv/) · [Документация]($SITE/ru/)"
-  echo
-  echo "Telegram: [канал](https://t.me/ducker_mihomo) — выпуски и новости ·" \
-    "[чат](https://t.me/ducker_community) — вопросы и обсуждение"
-  echo
-  echo "### Что нового"
-  echo
-  changes docs/CHANGELOG.ru.md
-  echo
-  echo "</details>"
-  echo
-  echo "<details><summary>Verify the files</summary>"
-  echo "<br>"
-  echo
-  # The report's address is the file's SHA-256; the report exists once the file is uploaded there.
-  ( cd "$OUT" && sha256sum ./*.apk | sed 's|^\([0-9a-f]*\)  \./\(.*\)$|- `\2`: [VirusTotal](https://www.virustotal.com/gui/file/\1)|' )
-  echo
-  echo "SHA-256 of both files: \`SHA256SUMS\` below."
-  echo
-  # meta-rules-dat publishes only a daily `latest`, so the hashes say which databases this file has;
-  # placed in app/src/main/assets/, they are not downloaded again and a rebuild matches.
-  echo "Country and site databases, MetaCubeX/meta-rules-dat \`latest\` of $(date +%d.%m.%Y), SHA-256:"
-  echo
-  ( cd app/src/main/assets && sha256sum geoip.metadb geosite.dat | sed 's/^\([0-9a-f]*\)  \(.*\)$/- `\2`: `\1`/' )
-  echo
-  echo "</details>"
-} > "$OUT/release-notes.md"
+./scripts/release-notes.sh "$VERSION" "$OUT"
 
 echo
 echo "Готово. Файлы в $OUT:"
@@ -186,18 +117,24 @@ ls -la "$OUT" | tail -n +4 | awk '{printf "  %s  %.1f МБ\n", $9, $5/1048576}'
 echo
 if adb get-state >/dev/null 2>&1; then
   echo "Прогоняю дымовой тест на подключённом телефоне…"
-  ./scripts/smoke.sh --no-build
-  RESULT=$?
+  RESULT=0
+  APK="$OUT/ducker-$VERSION-arm64-v8a.apk" ./scripts/smoke.sh --no-build || RESULT=$?
 else
   echo "Телефон не подключён — дымовой тест пропущен. Раздавать непроверенное нельзя:"
   echo "подключи телефон и запусти ./scripts/smoke.sh --no-build"
   RESULT=1
 fi
 
+if [ "$RESULT" -eq 0 ]; then
+  python3 scripts/release_artifacts.py seal "$VERSION" --out "$OUT" --smoke-passed
+else
+  echo 'Smoke did not pass: artifacts and version retained, publication is blocked.' >&2
+fi
+
 echo
 echo "Осталось сделать руками:"
-echo "  git commit -am \"release: $VERSION\""
-echo "  git tag v$VERSION"
+echo "  git add -- build.gradle.kts && git commit -m \"release: $VERSION\""
+echo "  scripts/publish.sh $VERSION   # only after publication authorization; creates the tag"
 echo
-echo "Описание релиза лежит в $OUT/release-notes.md — поправь и используй."
+echo "Описание релиза лежит в $OUT/release-notes.md — проверь до публикации; после seal файлы неизменяемы."
 exit "$RESULT"

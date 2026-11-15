@@ -102,6 +102,11 @@ jobs:
       - name: Build core
         run: ./gradlew --no-daemon :core:externalNativeBuildMetaRelease
 
+      # Packaging catches R8 and resource failures that a native-core build cannot catch.
+      # No production signing key or uploaded APK is needed for this check.
+      - name: Package ARM release APKs
+        run: ./gradlew --no-daemon :app:assembleMetaRelease -Pabi=arm64-v8a,armeabi-v7a
+
       # Проверка D-5: в собранном ядре должна быть наша uTLS, а не та, что тянется
       # транзитом. Молчаливая подмена уже случалась — см. FACTS.md, F-39 и F-44.
       - name: Verify pinned dependencies

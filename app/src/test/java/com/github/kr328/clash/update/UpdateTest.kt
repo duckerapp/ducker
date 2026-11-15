@@ -46,6 +46,23 @@ class UpdateTest {
     }
 
     @Test
+    fun `opting out never downgrades an installed beta and promotion needs no reinstall`() {
+        val beta = entry(40)
+        val feed = Feed(entry(39), beta, emptyList())
+        assertNull(feed.pick(beta = false, installed = 40))
+        assertNull(Feed(beta, beta, emptyList()).pick(beta = false, installed = 40))
+        assertEquals(41, Feed(entry(41), beta, emptyList()).pick(beta = false, installed = 40)?.code)
+    }
+
+    @Test
+    fun `first beta and withdrawal do not offer unintended releases`() {
+        val first = Feed(null, entry(56, minSdk = 26), emptyList())
+        assertNull(first.pick(beta = false, installed = 55, sdk = 26))
+        assertEquals(56, first.pick(beta = true, installed = 55, sdk = 26)?.code)
+        assertNull(Feed(entry(54), null, emptyList()).pick(beta = true, installed = 56))
+    }
+
+    @Test
     fun `выпуск, который на телефон не встанет, не предлагаем`() {
         // Новый требует Android новее — остаётся прежний, если он всё ещё новее установленного.
         assertEquals(37, Feed(entry(37), entry(38, minSdk = 31), emptyList()).pick(beta = true, sdk = 29)?.code)

@@ -15,6 +15,7 @@ gradle-app.setting
 
 # Kotlin compiler's session files (Kotlin 2.x)
 .kotlin/
+__pycache__/
 
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties

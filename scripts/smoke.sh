@@ -19,13 +19,14 @@
 # Имена переменных латиницей не для красоты: bash не умеет кириллицу в именах,
 # но прекрасно печатает её в тексте.
 set -u
+: "${ANDROID_SERIAL:?Select the one agreed test device with ANDROID_SERIAL}"
 
 cd "$(dirname "$0")/.."
 
 ABI=${ABI:-arm64-v8a}
 # Номер версии в имени файла меняется с каждым релизом, поэтому берём самый свежий
 # подходящий, а не прибитый гвоздями.
-APK=${APK:-$(ls -t app/build/outputs/apk/meta/release/ducker-*-meta-"$ABI"-release.apk 2>/dev/null | head -1)}
+APK=${APK:-}
 PKG=app.ducker.android
 EXTERNAL_HINT='в настройках ducker включи «Управление из других приложений»'
 FAILED=0
@@ -69,19 +70,16 @@ else
     exit 1
   fi
 fi
+VERSION=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' build.gradle.kts | head -1)
+APK=${APK:-app/build/outputs/apk/meta/release/ducker-$VERSION-meta-$ABI-release.apk}
 [ -f "$APK" ] || { bad "нет файла $APK"; exit 1; }
 
 step "Проверяем, каким ключом подписано"
-SIGNER=$(find "$HOME/Android/Sdk/build-tools" -name apksigner 2>/dev/null | sort | tail -1)
-if [ -n "$SIGNER" ]; then
-  DN=$("$SIGNER" verify --print-certs "$APK" 2>/dev/null | grep -m1 'certificate DN')
-  case "$DN" in
-    *"CN=ducker"*) ok "наш ключ ($DN)" ;;
-    *"Android Debug"*) bad "подписано ОТЛАДОЧНЫМ ключом — нет signing.properties" ;;
-    *) bad "непонятная подпись: $DN" ;;
-  esac
+if python3 scripts/release_artifacts.py apk "$VERSION" --abi "$ABI" --file "$APK"; then
+  ok "подпись, пакет, версия и архитектура совпадают"
 else
-  ok "apksigner не найден, проверку пропустили"
+  bad "проверка APK не прошла; установка отменена"
+  exit 1
 fi
 
 step "Смотрим, какое ядро внутри"
