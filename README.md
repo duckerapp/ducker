@@ -261,9 +261,8 @@ Found a vulnerability? Please report it privately: [SECURITY.md](SECURITY.md).
 ## How the project is made
 
 ducker is made by one person together with an AI agent; the owner decides what to build.
-Checks include automated tests, builds and selected emulator and physical-device scenarios.
-Coverage varies by change and device; it is not an independent security audit. You can build
-from source, but byte-for-byte reproducibility of release APKs is not established.
+We check the app with automated tests, emulators and real devices. The source code is open:
+you can inspect how the app works and build it yourself.
 
 Encryption and protocols are not ours: they come from the mihomo core. The pinned core submodule records the exact upstream and community changes, including
 Xray-compatible mux and REALITY patches.

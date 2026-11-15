@@ -227,7 +227,7 @@ ducker 提供：
 
 ## 项目是如何开发的
 
-ducker 由一位维护者与 AI 助手共同开发。检查包括自动测试、构建以及部分模拟器和真机场景，覆盖范围因改动和设备而异，并不代表独立安全审计。可以从源码构建，但尚未证明发布 APK 能逐字节复现。加密与协议来自 mihomo；精确版本由子模块固定。核心改动位于 [mihomo](https://github.com/duckerapp/mihomo)、[uTLS](https://github.com/duckerapp/utls) 和 [sing-mux](https://github.com/duckerapp/sing-mux) 分支中。
+ducker 由一位维护者与 AI 助手共同开发。我们通过自动测试、模拟器和真实设备检查应用。源代码开放，你可以了解应用的工作方式并自行构建。加密与协议来自 mihomo；精确版本由子模块固定。核心改动位于 [mihomo](https://github.com/duckerapp/mihomo)、[uTLS](https://github.com/duckerapp/utls) 和 [sing-mux](https://github.com/duckerapp/sing-mux) 分支中。
 
 ## 由其他应用控制
 
