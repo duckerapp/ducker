@@ -810,6 +810,9 @@ internal class RingAnchorNode(
 
     /** This place lies inside [outer]'s: a button inside a one-button row (the search field's clear button). */
     private fun inside(outer: RingAnchorNode): Boolean {
+        // A pointer can remove the previous keyboard anchor before its focus-loss callback runs.
+        if (!isAttached) return false
+
         var found = false
         traverseAncestors(AnchorKey) {
             found = it === outer

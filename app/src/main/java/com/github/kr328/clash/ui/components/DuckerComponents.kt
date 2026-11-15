@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.layout.Layout
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
@@ -444,36 +445,40 @@ fun SearchField(
                     }
 
                     // Reserve the clear button's space so typing the first character does not shift text.
-                    Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
-                        if (value.isNotEmpty()) {
-                            IconButton(
-                                onClick = {
-                                    if (keys) self.requestFocus()
-                                    onValue("")
-                                },
-                                // The field around it takes the key toward the start for its cursor before
-                                // any focus search, so the button steps back to the row itself.
-                                // Its own frame: the row's stays round the whole row while the focus is inside it.
-                                modifier = if (keys) Modifier.ringAnchor { Rect(Offset.Zero, Size(it.width.toFloat(), it.height.toFloat())) }
-                                    .focusRequester(clear).ownLeft(self).onPreviewKeyEvent {
-                                    val back = if (rtl) Key.DirectionRight else Key.DirectionLeft
-                                    if (it.key != back) return@onPreviewKeyEvent false
-                                    if (it.type == KeyEventType.KeyDown) self.requestFocus()
-                                    true
-                                } else Modifier,
-                            ) {
-                                Icon(
-                                    imageVector = Symbols.Close,
-                                    contentDescription = stringResource(R.string.search_clear),
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
+                    Spacer(Modifier.size(44.dp))
                 }
             },
         )
+
+        // Keep the action outside the text editor so its keyboard handling belongs to the button.
+        Box(
+            Modifier.align(Alignment.CenterEnd).padding(end = 4.dp).size(44.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (value.isNotEmpty()) {
+                IconButton(
+                    onClick = {
+                        if (keys) self.requestFocus()
+                        onValue("")
+                    },
+                    modifier = if (keys) Modifier
+                        .ringAnchor { Rect(Offset.Zero, Size(it.width.toFloat(), it.height.toFloat())) }
+                        .focusRequester(clear).ownLeft(self).onPreviewKeyEvent {
+                            val back = if (rtl) Key.DirectionRight else Key.DirectionLeft
+                            if (it.key != back) return@onPreviewKeyEvent false
+                            if (it.type == KeyEventType.KeyDown) self.requestFocus()
+                            true
+                        } else Modifier,
+                ) {
+                    Icon(
+                        imageVector = Symbols.Close,
+                        contentDescription = stringResource(R.string.search_clear),
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 }
 
