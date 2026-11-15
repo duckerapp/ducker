@@ -9,16 +9,16 @@
 - Network requests are limited to what the VPN needs: requesting the subscription from your
   provider, sending your traffic through its servers, and core requests specified by the
   profile. The app also checks whether a new ducker version is available. Details follow.
-- Everything else is stored only on the phone and removed when the app is uninstalled.
+- Local app data is removed on uninstall. Android settings backups and copies you export are exceptions described below.
 
 ## What goes to the network and who receives it
 
 **1. Your subscription provider** — when you add or update a subscription. The request uses
 the URL you supplied and includes:
 - a `User-Agent` such as `mihomo/<core version> ducker/<app version> (android)`;
-- if **Settings → Device ID** is enabled (the default): the device id, the word `Android`,
+- if **Settings → Privacy → Device ID** is enabled (the default): the device id, the word `Android`,
   the Android version, and the phone's manufacturer and model. The id is `ANDROID_ID`:
-  Android assigns it separately to each app on the phone, and other apps cannot see it.
+  on Android 8+, it is scoped to the app signing key, Android user and device, rather than being a universal device serial number.
   If it is unavailable, ducker generates a random id once. The provider uses it to count
   your devices. You can see the id being sent in the same settings section. Disabling
   this switch may prevent a provider that counts devices from returning the subscription.
@@ -41,9 +41,10 @@ device data is no longer sent, even if a later redirect returns to HTTPS.
 **2. Subscription images.** Group icons and the provider's logo are downloaded from
 addresses specified by the provider.
 
-**3. Your traffic.** While the VPN is enabled, app traffic travels through the provider's
-servers (nodes), as with any VPN. The provider and its nodes see what any VPN service can
-see; ducker does not change this.
+**3. Your traffic.** The profile, your rules and app exclusions determine what goes through
+the provider's nodes, what goes directly and what is blocked. Direct and excluded traffic is
+not protected by a node. Nodes can observe destination and connection metadata; HTTPS still
+protects its encrypted contents, subject to the destination and your trust settings.
 
 **4. Core service requests.** These are specified by the provider's profile or the built-in
 template:
@@ -79,7 +80,8 @@ checksum and signature: it will not install a file from someone else.
 - crash records: two files of up to 64 KB per process, plus the local core error log;
 - cached subscription images.
 
-All of this is removed when the app is uninstalled.
+Uninstalling removes these local app files. It does not delete copies you exported,
+provider-side records or Android cloud backups.
 
 **Android backup.** Only settings are included in cloud backups and transfers to a new phone.
 Subscriptions and configs are excluded because they contain access keys to your VPN.
@@ -87,7 +89,7 @@ Subscriptions and configs are excluded because they contain access keys to your 
 ## Logs
 
 Logs stay on the phone. They leave it only when you tap **Copy**, **Send**, or **Save** under
-**Settings → Log**. Node addresses, keys, and the device id are removed first. The domains
+**Settings → Help and diagnostics → Log**. Node addresses, keys, and the device id are removed first. The domains
 of sites you visited remain because they are needed to understand how rules worked.
 The screen warns about this, and you can review the text before sending. Kotlin crash
 records and the tail of core errors are scrubbed in the same way; the crash screen displays
@@ -100,6 +102,9 @@ and copies only the prepared report. Nothing is sent automatically.
 - **Camera** — only to scan subscription QR codes. Frames are neither saved nor sent anywhere.
 - **App list** — to let you choose apps that bypass the VPN. The list stays on the phone.
 - **Background work and start after reboot** — to prevent the VPN from stopping on its own.
+
+- **Install packages and update without user action** — to install verified app updates;
+  Android may require confirmation. Automatic updates are optional.
 
 ## Changes
 

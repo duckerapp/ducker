@@ -2,7 +2,7 @@
     `hide: [navigation, toc]` on wide screens, because on a phone the navigation sidebar is the ☰ menu. -#}
 {% extends "main.html" %}
 {% block container %}
-  <div class="dk-home" data-md-component="content">
+  <div id="__skip" tabindex="-1" class="dk-home" data-md-component="content">
     {{ page.content }}
   </div>
 {% endblock %}

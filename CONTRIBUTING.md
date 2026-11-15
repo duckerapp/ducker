@@ -9,7 +9,7 @@ its own interface. The project is run by one person, so small, clear changes wor
 ## Report a bug or suggest an idea
 
 - A bug — through [Issues](https://github.com/duckerapp/ducker/issues), using the bug template. The
-  log from the app (**Settings → Log → Send**) is almost always needed: without it the cause
+  log from the app (**Settings → Help and diagnostics → Log → Send**) is almost always needed: without it the cause
   cannot be found.
 - An idea — using the feature template. Describe the problem it solves, not only how it should
   look.
@@ -18,7 +18,8 @@ its own interface. The project is run by one person, so small, clear changes wor
 - **A vulnerability** — not in public Issues, but as described in [SECURITY.md](SECURITY.md).
 
 **Never post** in Issues or pull requests: a subscription link, a config file, keys, node
-addresses or a device ID. Anyone who has them gets access to your VPN. The log from the app
+addresses or a device ID. Subscription URLs, configs and keys may grant access; addresses
+and device IDs can identify your service or device. The log from the app
 removes this data itself, but look through it before sending: the domains of the sites you opened
 stay in it.
 
@@ -48,7 +49,10 @@ The checks that CI runs:
 
 ```
 ./gradlew :app:testMetaDebugUnitTest
-./gradlew :core:externalNativeBuildMetaRelease
+./gradlew :app:lintMetaRelease
+./gradlew :app:assembleMetaRelease -Pabi=arm64-v8a,armeabi-v7a
+python3 -m unittest discover -s scripts/tests
+# Go race checks and their Android DNS overlay: .github/workflows/build.yaml
 ```
 
 ## Dependencies
@@ -83,11 +87,14 @@ it is, ask in an issue and you will get a straight answer.
 
 1. **One task — one pull request.** The smaller the change, the sooner it is reviewed.
 2. **Say what and why** — and how you tested it: the phone, the Android version, what exactly you
-   pressed. A change that was not checked on a device is not accepted.
+   pressed. State what was not checked too. Device checks are needed for affected Android/VPN behavior;
+   documentation and host-only changes can use appropriate local checks.
 3. **Code style** — as in the neighbouring files: Kotlin in the official style (the profile is in
    `.idea/codeStyles`); comments explain "why", not "what".
-4. **Interface strings** — only in resources, in two languages: `values/strings.xml` and
-   `values-ru/strings.xml`.
+4. **Interface strings** — only in resources. Maintain English (`values/`) and the ten shipped
+   translations: Russian, Simplified Chinese, Persian, Arabic, Spanish, French, Indonesian,
+   Brazilian Portuguese, Turkish and Vietnamese. Preserve placeholders and explain any
+   translation you could not verify; native-speaker corrections are welcome.
 5. **The `core`, `service` and `common` modules** — touch them only when there is no other way,
    and explain why in the description. Changes to the mihomo core go to the
    [duckerapp/mihomo](https://github.com/duckerapp/mihomo) fork, branch `ducker`.

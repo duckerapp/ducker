@@ -9,7 +9,7 @@ site_url: !ENV [DUCKER_SITE_URL, 'https://duckerapp.github.io/ducker/']
 site_dir: build
 
 # Intentionally omit repo_url: the theme would request star and fork counts from
-# the GitHub API in the visitor's browser. Like the app, the site sends no data.
+# the GitHub API in the visitor's browser. The site has no analytics or tracking scripts.
 # The footer repository link (extra.social) is a plain link without API requests.
 copyright: ducker — GPL-3.0. No analytics or trackers.
 
@@ -107,7 +107,7 @@ nav:
       - Subscription for ducker: providers/start.md
       - ducker-* headers: providers/headers.md
       - Devices and limits: providers/devices.md
-      - Built-in template: providers/template.md
+      - Configuration templates: providers/template.md
   - Help the project:
       - Contributing: help/contributing.md
       - Security: help/security.md

@@ -79,5 +79,5 @@ After that, LocalSend is no longer needed: new versions of ducker come to the ap
 Copy the APK to a USB stick from a computer, plug it into the TV and open the file with a file manager; many TVs
 have one built in. Then continue as in step 5: allow installs from that file manager and press **Install**.
 
-From 2027, Google's TVs ask one more permission, for apps from unverified developers:
+If your TV requests permission for apps from unverified developers, see
 [what to tap](faq.md#android-asks-to-allow-apps-from-unverified-developers).

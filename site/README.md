@@ -21,7 +21,8 @@ http://localhost:8002/ducker/: it sets up Zensical in `.venv/` on the first run,
 addresses and serves them.
 
 `--strict` turns a broken link or anchor into an error. The built site is in `site/build/`,
-which is excluded from Git. The language switch links to `/ducker/` and `/ducker/ru/`, so it
+which is excluded from Git. Run `python ../scripts/check-site.py build` as well: it
+checks links and images emitted by custom templates, including skip links. The language switch links to `/ducker/` and `/ducker/ru/`, so it
 works on the published site, not under `zensical serve`.
 
 ## Content sources
@@ -48,5 +49,5 @@ works on the published site, not under `zensical serve`.
 
 ## Rules
 
-- No fonts, scripts, or analytics from third-party sites. Like the app, this site sends
-  nothing externally. Keep `font: false` and omit `repo_url` (the theme otherwise calls GitHub's API).
+- No fonts, scripts, or analytics from third-party sites. The site has no analytics or tracking scripts;
+  the browser still requests pages and assets from the host. Keep `font: false` and omit `repo_url` (the theme otherwise calls GitHub's API).

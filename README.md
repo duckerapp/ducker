@@ -21,10 +21,13 @@ One button, honest status, nothing extra on the screen.
 
 [![Release](https://img.shields.io/github/v/release/duckerapp/ducker?style=flat-square&label=release&labelColor=000&color=2b2b2b)](https://github.com/duckerapp/ducker/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-2b2b2b?style=flat-square&labelColor=000)](LICENSE)
-[![Android](https://img.shields.io/badge/Android-10%2B-2b2b2b?style=flat-square&labelColor=000)](#install)
+[![Android](https://img.shields.io/badge/Android-8%2B-2b2b2b?style=flat-square&labelColor=000)](#install)
 [![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
 
 [Install](#install) · [Screenshots](#screenshots) · [Features](#features) · [Android TV](#android-tv) · [For providers](#for-providers) · [Roadmap](#roadmap) · [FAQ](docs/FAQ.md) · [Community](#community)
+
+
+Android 8+ · Bring your own subscription · [Download APKs](https://github.com/duckerapp/ducker/releases) · [GitLab downloads](https://gitlab.com/duckerx/ducker/-/packages) · [Website](https://duckerapp.github.io/ducker/)
 
 <br>
 
@@ -40,11 +43,9 @@ One button, honest status, nothing extra on the screen.
 ducker connects your phone or TV to a VPN through the [mihomo](https://github.com/MetaCubeX/mihomo)
 core. You add a subscription from your provider, press one button and, if you want, pick a server.
 
-ducker started as a fork of [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) and has
-since been rewritten almost entirely: about 52,000 lines of code added and about 10,000 removed,
-and only about a third of CMFA's files are left unchanged. The Jetpack Compose interface,
-subscription handling, updates, the TV version and much of the VPN service are our own; the base
-of the service and the core bindings come from CMFA. Free, no ads, no analytics, GPL-3.0.
+ducker started from [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid).
+It has its own Compose interface, subscription handling and app-update flow, while retaining
+the VPN service and build foundations from CMFA. The VPN protocols come from mihomo.
 
 ## Screenshots
 
@@ -129,6 +130,13 @@ New features will keep arriving here in future versions.
 - **Measured on a budget phone.** On a Redmi Note 9S (2020, Android 12) the app cold-starts in
   about 0.4 s with the VPN running, and the VPN keeps working when Android unloads the interface.
 
+**Configuration per subscription.** In **Profiles → ⋯ → Configuration**, keep **From the subscription**
+for your provider's routing, or choose **ducker · Russia** to use its servers with ducker's
+rules: Russian sites and apps go direct, other traffic through the VPN. Switching replaces
+manual config edits. Encrypted subscriptions cannot use this template mode. A failed switch
+keeps the previous working configuration; read the error and retry or choose the source.
+[Configuration help](docs/FAQ.md#configuration-templates).
+
 ## Android TV
 
 The same APK runs on Android TV and Google TV.
@@ -171,12 +179,14 @@ You install ducker by hand once; after that it updates itself.
 - **Update automatically** (Settings): new versions download over Wi-Fi and install while the
   screen is off, usually at night. Off until you say yes. Android 12 and newer; on Android 8–11
   Android asks for a confirmation each time.
-- **Beta versions** (Settings): new versions a few days before everyone else. A beta that goes well
+- **Beta versions** (Settings): early access to test releases. A beta that goes well
   is then given to everyone as the very same file.
 - **Where from.** The list of versions comes from GitHub, or from the
   [GitLab mirror](https://gitlab.com/duckerx/ducker) or jsDelivr when GitHub does not answer. Before
   installing, ducker checks the file's checksum and that it is signed with the same key as the
   installed app: a file from anyone else is not installed.
+
+Background checks are approximate: Android can defer them. Play Protect or device policy may ask for installation confirmation even on Android 12+. Turning beta off does not downgrade an installed beta; stable promotion uses the same APK.
 
 ### Checking the file
 
@@ -187,14 +197,16 @@ You install ducker by hand once; after that it updates itself.
 - The app is built from this repository; the build also downloads the zashboard panel's release (checked by its
   SHA-256) and the country and site databases of MetaCubeX/meta-rules-dat. See [Build](#build) to do it yourself.
 
+A VirusTotal report describes scan results for that file at the reported time; it is not a guarantee of safety.
+
 ### Google's developer verification
 
-From 2027, certified Android phones and TVs install apps from outside Google Play only if their
-developer is registered with Google; in Brazil, Indonesia, Singapore and Thailand this started in
-2026. ducker is not registered. On such devices Android will ask once to allow apps from
-unverified developers: the setting needs your PIN, a restart and a 24-hour wait. After that ducker
-installs and updates as before; turning the setting off again stops its updates. Installing over
-`adb` is not affected. More in the [FAQ](docs/FAQ.md#android-asks-to-allow-apps-from-unverified-developers).
+As of November 2026, ducker is not registered with Google's developer verification.
+Google's initial enforcement covers participating stores on phones and tablets in selected
+countries; direct APK downloads are not covered by that initial phase. Wider rollout is
+planned from 2027. Requirements depend on country, device and distribution channel.
+If Android asks for apps from unverified developers, follow the [FAQ](docs/FAQ.md#android-asks-to-allow-apps-from-unverified-developers).
+Installing over `adb` is unaffected. [Google's current guidance](https://developer.android.com/developer-verification/guides/faq).
 
 ## For providers
 
@@ -227,86 +239,11 @@ subscription response settings (`customResponseHeaders`); the panel code does no
   </picture>
 </p>
 
-- **`ducker-brand-name: <text>`** — the provider's name in the Home header instead of DUCKER.
-  Also shown in the notification and on the Quick Settings tile.
-- **`ducker-brand-logo: <image>`** — the logo next to the name on Home and on the subscription
-  card. An `https://…` link or the image itself as `data:…;base64,…`; PNG, JPEG, WebP or SVG. If
-  it fails to load, the ducker icon is shown.
-- **`ducker-buy-url: <link>`** — the **Renew** button on the subscription card when less than
-  three days or 10 % of traffic are left, or the term is over. The same link is used in the
-  expiry notification. Without the header, `support-url` is used, then
-  `profile-web-page-url`.
-- **`ducker-global: off`** — hides the Global/Rules switch on the Proxies tab; the mode stays as
-  set in the config.
-- **`ducker-local-proxy: off`** — the tunnel starts with the config's local ports closed
-  (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`), without `listeners` and without
-  the DNS server of `dns.listen`, so other apps on the phone cannot find a proxy or a DNS server on
-  `127.0.0.1`. The config itself is not rewritten.
-  Any other value changes nothing: the ports stay as in the config.
-- **`ducker-share: off`** — keeps "Wi-Fi sharing" closed: the card says the provider turned it
-  off, and sharing that is on goes off at the next update that brings the header. The config's
-  ports are not affected; `ducker-local-proxy` closes those.
-- **`ducker-override-user: on`** — locks the apps of the config's `tun.exclude-package` and
-  `tun.include-package`: "Apps" and "My rules" show them, but the user cannot change them. Without
-  the header the user may change each of them for this subscription; the config file is not
-  rewritten. An update that brings the header drops the user's changes.
-
-General rules:
-
-- Header names are case-insensitive.
-- Text with non-ASCII characters or line breaks is passed as `base64:<…>` (UTF-8), the way
-  Remnawave sends `announce`; in Remnawave, `rwEncodeBase64:` does it for you.
-- A single dash `-` means "not set": the panel does not allow saving an empty header, and a dash
-  lets you remove your own.
-- **Without headers** (static hosting, or PasarGuard with headers placed in the body) — any header
-  can be a `#name: value` line at the top or the end of the subscription file, such as
-  `#fallback-url: <link>`. A real header wins over a line.
-- Headers change only the look and behavior listed above. They have no access to anything
-  security-related: the core API secret, logs or the app update address.
-
-ducker also understands the common subscription headers: `profile-title`,
-`profile-update-interval`, `profile-web-page-url`, `support-url`, `announce`,
-`subscription-userinfo`, `subscription-refill-date`.
-
-**Subscription mirrors.** When the subscription's domain is blocked or its server is down, ducker
-tries other addresses on its own, and the user notices nothing:
-
-- **`ducker-mirrors: <host or link>, …`** — up to five backup addresses. A bare host
-  (`sub2.example.com`) means the same link on another domain, with its path and token, so one
-  value in the panel serves every user. A full `https://…` link is used as is; in Remnawave,
-  `{{SHORT_UUID}}` fills in the user's part. Addresses go in one header, separated by
-  commas: `ducker-mirrors: sub2.example.com, sub3.example.net`.
-- **`fallback-url: <link>`** — Happ's backup link; ducker reads it too, as one more mirror.
-- **`new-url: <link>`** or **`new-domain: <domain>`** — Happ's permanent move. ducker switches the
-  stored link only after the new address has given a working subscription; until then it keeps
-  updating from the old one.
-
-A mirror must open the same link: point its domain at the same subscription page, at a copy of it
-on another server, or at the panel itself — wherever this path gives the subscription. If a backup
-serves it on another path, give that mirror as a full link.
-ducker learns mirrors from a successful update, so add them before a block, on another IP or CDN.
-The address that answered last time is tried first. A blocked address is given 10 seconds, the
-last one a full minute. A web page instead of a subscription (a block page) counts as a failure;
-the panel's device-limit answer stops the search. Mirrors of an `https` link must be `https` and
-get the same device headers. If no address answers, ducker tries once more directly and through
-the subscription's own node.
-
-**Device limit.** With each subscription request ducker sends a stable device ID in `x-hwid`
-together with `x-device-os`, `x-ver-os` and `x-device-model`, so a panel can count devices. The
-user sees this ID in **Settings → Privacy → Device ID** and can turn it off. The ID is sent over HTTPS
-only. A refusal with `x-hwid-*` headers, or PasarGuard's "Device limit reached", shows the user a
-screen about the device limit instead of an error.
-
-**Encrypted subscriptions.** Remnawave can encrypt a subscription with age in its response rules.
-When ducker downloads one, the add sheet explains it and shows a **Decryption key** field for the
-key that starts with `AGE-SECRET-KEY-`. Give users the key separately from the link.
-
-**One-tap install.** `ducker://install-config?url=<subscription link>` opens the Add subscription
-dialog with the link filled in; the user confirms before anything is downloaded.
+Provider reference: [headers](https://duckerapp.github.io/ducker/providers/headers/), [mirrors and encrypted subscriptions](https://duckerapp.github.io/ducker/providers/start/).
 
 ## Privacy and security
 
-- **Nothing is collected.** No analytics, no ads, no crash reports sent to the developer. The
+- **No analytics or reports to the developer.** No analytics, no ads, no crash reports sent to the developer. The
   project has no server of its own.
 - **What goes to the network:** the subscription request to your provider, images the
   subscription refers to, the check for a new ducker version, and your traffic through the
@@ -323,12 +260,13 @@ Found a vulnerability? Please report it privately: [SECURITY.md](SECURITY.md).
 
 ## How the project is made
 
-ducker is made by one person together with an AI agent; the owner decides what to build. Every change is built,
-tested and checked on real devices before it is released, and anyone can repeat the build from
-this repository.
+ducker is made by one person together with an AI agent; the owner decides what to build.
+Checks include automated tests, builds and selected emulator and physical-device scenarios.
+Coverage varies by change and device; it is not an independent security audit. You can build
+from source, but byte-for-byte reproducibility of release APKs is not established.
 
-Encryption and protocols are not ours: they come from the mihomo core. Our changes to it are 24
-commits on top of v1.19.34, 13 of them community patches for the Xray-compatible mux and REALITY.
+Encryption and protocols are not ours: they come from the mihomo core. The pinned core submodule records the exact upstream and community changes, including
+Xray-compatible mux and REALITY patches.
 They are public in the [duckerapp/mihomo](https://github.com/duckerapp/mihomo) fork, branch `ducker`;
 two smaller forks, [duckerapp/utls](https://github.com/duckerapp/utls) and
 [duckerapp/sing-mux](https://github.com/duckerapp/sing-mux), carry a few more fixes.
@@ -357,6 +295,8 @@ No dates yet. An iOS version is not planned for now.
 What has already been done, version by version, is in the [changelog](CHANGELOG.md).
 
 ## Build
+
+Release tooling and the beta/stable workflow: [Releasing](docs/RELEASING.md).
 
 You need JDK 21, the Android SDK (platform 37, NDK 29.0.14206865), git, curl and patch; the build
 downloads its own Go.

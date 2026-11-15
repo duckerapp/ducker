@@ -47,7 +47,7 @@ nav:
       - Подписка для ducker: providers/start.md
       - Заголовки ducker-*: providers/headers.md
       - Устройства и лимит: providers/devices.md
-      - Встроенный шаблон: providers/template.md
+      - Шаблоны конфигурации: providers/template.md
   - Помочь проекту:
       - Как помочь: help/contributing.md
       - Безопасность: help/security.md

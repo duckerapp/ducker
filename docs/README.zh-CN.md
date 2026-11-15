@@ -21,10 +21,13 @@
 
 [![Release](https://img.shields.io/github/v/release/duckerapp/ducker?style=flat-square&label=release&labelColor=000&color=2b2b2b)](https://github.com/duckerapp/ducker/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-2b2b2b?style=flat-square&labelColor=000)](../LICENSE)
-[![Android](https://img.shields.io/badge/Android-10%2B-2b2b2b?style=flat-square&labelColor=000)](#安装)
+[![Android](https://img.shields.io/badge/Android-8%2B-2b2b2b?style=flat-square&labelColor=000)](#安装)
 [![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
 
 [安装](#安装) · [截图](#截图) · [功能](#功能) · [Android TV](#android-tv) · [给服务商](#给服务商) · [后续计划](#后续计划) · [常见问题](FAQ.md) · [社区](#社区)
+
+
+Android 8+ · 需要自备订阅 · [下载 APK](https://github.com/duckerapp/ducker/releases) · [GitLab 镜像](https://gitlab.com/duckerx/ducker/-/packages) · [网站（英文）](https://duckerapp.github.io/ducker/)
 
 <br>
 
@@ -40,13 +43,7 @@
 
 ## 这是什么
 
-ducker 通过 [mihomo](https://github.com/MetaCubeX/mihomo) 内核把手机或电视连接到 VPN。
-添加服务商提供的订阅，按下一个按钮，需要时再选择服务器即可。
-
-ducker 最初是 [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid) 的分支，此后几乎被
-完全重写：新增约 5.2 万行代码、删除约 1 万行，CMFA 的文件只有约三分之一保持原样。Jetpack Compose
-界面、订阅处理、更新、电视版以及 VPN 服务中的许多部分都是我们自己写的；服务的基础和内核绑定来自
-CMFA。免费，无广告，无统计，采用 GPL-3.0 许可证。
+ducker 是基于 mihomo 的 Android VPN 客户端，需要添加服务商提供的订阅。项目源自 [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid)，拥有自己的 Compose 界面、订阅处理和应用更新流程；VPN 服务与构建的基础来自 CMFA。
 
 ## 截图
 
@@ -123,6 +120,8 @@ CMFA。免费，无广告，无统计，采用 GPL-3.0 许可证。
 - **在低价手机上实测。** 在 Redmi Note 9S（2020 年，Android 12）上，VPN 运行时应用冷启动约
   0.4 秒；Android 回收界面进程后，VPN 仍继续工作。
 
+**每个订阅可选择配置。** 在订阅的「⋯」菜单中打开配置选项，可保留服务商配置，或选择 `ducker · Russia`：使用订阅中的服务器和 ducker 的规则，俄罗斯网站和应用直连，其余流量经过 VPN。切换会替换手动修改；加密订阅不支持此模板模式。切换失败时保留原来的可用配置。[详细说明（英文）](FAQ.md#configuration-templates)。
+
 ## Android TV
 
 同一个 APK 可在 Android TV 和 Google TV 上运行。
@@ -166,6 +165,8 @@ ducker 只需手动安装一次，之后会自己更新。
   或 jsDelivr。安装前 ducker 会核对文件的校验和，并确认它与已安装的应用使用同一密钥签名：其他人
   的文件不会被安装。
 
+Android 可能推迟后台检查；即使在 Android 12+ 上，Play Protect 或设备策略也可能要求确认安装。关闭 beta 不会降级已安装的版本；转为稳定版时仍使用同一个 APK。
+
 ### 检查文件
 
 - 每个发布版本都附带 `SHA256SUMS`，即其中 APK 的校验和。
@@ -174,13 +175,11 @@ ducker 只需手动安装一次，之后会自己更新。
 - 应用由本仓库构建；构建时还会下载 zashboard 面板的发布版本（按 SHA-256 校验）以及 MetaCubeX/meta-rules-dat 的
   国家和网站数据库。自己构建的方法见[构建](#构建)。
 
+VirusTotal 报告仅反映所示时间对该文件的扫描结果，不能保证安全。
+
 ### Google 的开发者验证
 
-从 2027 年起，经过认证的 Android 手机和电视只有在开发者已向 Google 注册时，才会安装 Google Play
-之外的应用；巴西、印度尼西亚、新加坡和泰国从 2026 年就已开始。ducker 没有注册。在这类设备上，
-Android 会要求你一次性允许来自未验证开发者的应用：需要输入 PIN 码、重启并等待 24 小时。之后
-ducker 的安装和更新照常进行；如果再次关闭该设置，ducker 将无法更新。通过 `adb` 安装不受影响。
-详见[常见问题](FAQ.md#android-asks-to-allow-apps-from-unverified-developers)（英文）。
+截至 2026 年 11 月，ducker 尚未参加 Google 开发者验证。首阶段限制只涉及部分国家的手机和平板电脑上的指定应用商店，暂不包括直接下载 APK。Google 计划从 2027 年起扩大实施范围；实际要求取决于国家、设备和安装渠道。若系统提示允许未验证开发者的应用，请参阅[常见问题（英文）](FAQ.md#android-asks-to-allow-apps-from-unverified-developers)。通过 `adb` 安装不受影响。[Google 官方说明](https://developer.android.com/developer-verification/guides/faq)。
 
 ## 给服务商
 
@@ -212,66 +211,7 @@ ducker 提供：
   </picture>
 </p>
 
-- **`ducker-brand-name: <文本>`** —— 主页顶部显示服务商名称，取代 DUCKER 字样。通知和快捷设置
-  磁贴中也会显示。
-- **`ducker-brand-logo: <图片>`** —— 主页名称旁和订阅卡片上的标志。可以是 `https://…` 链接，也可以
-  是 `data:…;base64,…` 形式的图片本身；支持 PNG、JPEG、WebP 和 SVG。加载失败时显示 ducker 图标。
-- **`ducker-buy-url: <链接>`** —— 当剩余不足三天、剩余流量不足 10 % 或已到期时，订阅卡片上出现
-  **续费**按钮。到期提醒通知也使用这个链接。没有此响应头时使用 `support-url`，再没有则使用
-  `profile-web-page-url`。
-- **`ducker-global: off`** —— 隐藏“代理”页面上的“全局 / 规则”开关；模式保持配置中的设定。
-- **`ducker-local-proxy: off`** —— 隧道启动时关闭配置中的本地端口（`mixed-port`、`port`、
-  `socks-port`、`redir-port`、`tproxy-port`），忽略 `listeners`，也不启动 `dns.listen` 的 DNS
-  服务器，手机上的其他应用因此无法在 `127.0.0.1` 上发现代理或 DNS 服务器。配置本身不会被改写。其他取值不会改变任何东西：端口保持配置中的设定。
-- **`ducker-share: off`** —— 让“Wi-Fi 共享”保持关闭：卡片会说明服务商已关闭共享，已开启的共享会在带有
-  该响应头的下一次更新时关闭。它不影响配置中的端口，那些由 `ducker-local-proxy` 关闭。
-- **`ducker-override-user: on`** —— 锁定配置中 `tun.exclude-package` 和 `tun.include-package` 的应用：
-  “应用”和“我的规则”会显示它们，但用户无法更改。没有该响应头时，用户可以针对此订阅逐个更改；
-  配置文件不会被改写。带来该响应头的更新会清除用户的更改。
-
-通用规则：
-
-- 响应头名称不区分大小写。
-- 含非 ASCII 字符或换行的文本以 `base64:<…>`（UTF-8）传递，与 Remnawave 发送 `announce` 的方式
-  相同；在 Remnawave 中可用 `rwEncodeBase64:` 自动完成。
-- 单个短横线 `-` 表示“未设置”：面板不允许保存空的响应头，用短横线可以取消自己的设置。
-- **没有响应头时**（静态托管，或 PasarGuard 把响应头放在正文中）—— 任何响应头都可以写成订阅文件
-  开头或结尾的 `#名称: 值` 行，例如 `#fallback-url: <链接>`。真正的响应头优先于这些行。
-- 响应头只能改变上面列出的外观和行为，无法触及任何与安全相关的内容：内核 API 密钥、日志或应用
-  更新地址。
-
-ducker 还支持常见的订阅响应头：`profile-title`、`profile-update-interval`、
-`profile-web-page-url`、`support-url`、`announce`、`subscription-userinfo`、
-`subscription-refill-date`。
-
-**订阅镜像。** 当订阅域名被封锁或服务器宕机时，ducker 会自动尝试其他地址，用户不会察觉：
-
-- **`ducker-mirrors: <域名或链接>, …`** —— 最多五个备用地址。单独的域名（`sub2.example.com`）表示
-  换一个域名的同一链接，保留原路径和令牌，因此面板中一个值即可适用于所有用户。完整的 `https://…`
-  链接按原样使用；在 Remnawave 中，用户专属部分由 `{{SHORT_UUID}}` 填入。多个地址写在同一个响应头中，用逗号
-  分隔：`ducker-mirrors: sub2.example.com, sub3.example.net`。
-- **`fallback-url: <链接>`** —— Happ 的备用链接；ducker 也会读取，作为又一个镜像。
-- **`new-url: <链接>`** 或 **`new-domain: <域名>`** —— 永久迁移，与 Happ 相同。只有当新地址返回了
-  可用的订阅后，ducker 才会更换已保存的链接；在此之前继续从旧链接更新。
-
-镜像必须能打开同一个链接：把它的域名指向同一个订阅页面、另一台服务器上的订阅页面副本，或面板本身——只要
-该路径能返回订阅即可。如果备用服务器以不同的路径提供订阅，请把该镜像写成完整链接。
-ducker 从一次成功的更新中获知镜像，因此请在被封锁之前、在另一个 IP 或 CDN 上添加。上次响应的地址会被
-优先尝试。被封锁的地址最多等待 10 秒，最后一个地址等待整整一分钟。返回网页而不是订阅（封锁页面）视为
-失败；面板关于设备数量上限的回应会停止尝试。`https` 链接的镜像必须是 `https`，并会收到相同的设备
-响应头。如果所有地址都没有响应，ducker 会再直连尝试一次，并通过订阅自身的节点尝试一次。
-
-**设备数量限制。** 每次请求订阅时，ducker 会在 `x-hwid` 中发送稳定的设备 ID，同时发送
-`x-device-os`、`x-ver-os` 和 `x-device-model`，面板可以据此统计设备。用户可以在
-**设置 → 隐私 → 设备 ID** 中看到这个 ID 并将其关闭。设备 ID 只通过 HTTPS 发送。带有 `x-hwid-*`
-响应头的拒绝，或 PasarGuard 的“Device limit reached”，会以设备数量上限页面呈现给用户，而不是错误。
-
-**加密订阅。** Remnawave 可以在响应规则中用 age 加密订阅。ducker 下载到这样的订阅时，会在添加窗口中
-说明情况，并显示 **解密密钥** 输入框，用于填写以 `AGE-SECRET-KEY-` 开头的密钥。请把密钥与链接分开
-交给用户。
-
-**一键导入。** `ducker://install-config?url=<订阅链接>` 会打开已填好链接的添加订阅窗口；用户确认
-之前不会下载任何内容。
+服务商文档（英文）：[响应头](https://duckerapp.github.io/ducker/providers/headers/)、[镜像和加密订阅](https://duckerapp.github.io/ducker/providers/start/)。
 
 ## 隐私与安全
 
@@ -287,13 +227,7 @@ ducker 从一次成功的更新中获知镜像，因此请在被封锁之前、�
 
 ## 项目是如何开发的
 
-ducker 由一个人和 AI 智能体共同开发；做什么由项目所有者决定。每项改动在发布前都会经过构建、测试，并在真实设备上检查；任何人都可以用本仓库重复构建。
-
-加密和协议不是我们写的：它们来自 mihomo 内核。我们对内核的改动是在 v1.19.34 之上的 24 个提交，
-其中 13 个是社区为 Xray 兼容的多路复用和 REALITY 编写的补丁。它们公开在
-[duckerapp/mihomo](https://github.com/duckerapp/mihomo) 分支仓库的 `ducker` 分支中；另有几处修复位于两个较小的
-分支仓库 [duckerapp/utls](https://github.com/duckerapp/utls) 和
-[duckerapp/sing-mux](https://github.com/duckerapp/sing-mux)。
+ducker 由一位维护者与 AI 助手共同开发。检查包括自动测试、构建以及部分模拟器和真机场景，覆盖范围因改动和设备而异，并不代表独立安全审计。可以从源码构建，但尚未证明发布 APK 能逐字节复现。加密与协议来自 mihomo；精确版本由子模块固定。核心改动位于 [mihomo](https://github.com/duckerapp/mihomo)、[uTLS](https://github.com/duckerapp/utls) 和 [sing-mux](https://github.com/duckerapp/sing-mux) 分支中。
 
 ## 由其他应用控制
 

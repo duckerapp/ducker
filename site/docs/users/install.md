@@ -13,6 +13,10 @@ Which file to choose:
 Android 8 or later is required. You install ducker by hand once; after that it
 [updates itself](#updates).
 
+If GitHub is unavailable, open [GitLab packages](https://gitlab.com/duckerx/ducker/-/packages),
+choose the same release version, and download its APK and `SHA256SUMS`. GitLab is a download
+mirror; reports and contributions go to GitHub. Check the filename and checksum before installing.
+
 ## Your first subscription
 
 Open **Profiles → Add** and paste the provider's link, scan its QR code, or pick a file. A
@@ -38,7 +42,7 @@ How to get the APK onto the TV in the first place, step by step: [Installing on 
 - **Update automatically** (Settings): new versions download over Wi-Fi and install while the
   screen is off, usually at night. Off until you say yes. Android 12 and newer; on Android 8–11
   Android asks for a confirmation each time.
-- **Beta versions** (Settings): new versions a few days before everyone else. A beta that goes
+- **Beta versions** (Settings): early access to test releases. A beta that goes
   well is then given to everyone as the very same file.
 - **Where from.** The list of versions comes from GitHub, or from the
   [GitLab mirror](https://gitlab.com/duckerx/ducker) or jsDelivr when GitHub does not answer.
@@ -56,14 +60,12 @@ How to get the APK onto the TV in the first place, step by step: [Installing on 
   MetaCubeX/meta-rules-dat. You can repeat the build yourself.
 
 ## Google's developer verification
-
-From 2027, certified Android phones and TVs install apps from outside Google Play only if their
-developer is registered with Google; in Brazil, Indonesia, Singapore and Thailand this started in
-2026. ducker is not registered. On such devices Android will ask once to allow apps from
-unverified developers: the setting needs your PIN, a restart and a 24-hour wait. After that
-ducker installs and updates as before; turning the setting off again stops its updates.
-Installing over `adb` is not affected.
-[What to tap](faq.md#android-asks-to-allow-apps-from-unverified-developers).
+As of November 2026, ducker is not registered with Google's developer verification.
+Google's initial enforcement covers participating stores on phones and tablets in selected
+countries; direct APK downloads are not covered by that initial phase. Wider rollout is
+planned from 2027. Requirements depend on country, device and distribution channel.
+If Android asks for apps from unverified developers, follow the [FAQ](faq.md#android-asks-to-allow-apps-from-unverified-developers).
+Installing over `adb` is unaffected. [Google's current guidance](https://developer.android.com/developer-verification/guides/faq).
 
 ## External control
 

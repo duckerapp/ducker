@@ -21,7 +21,7 @@ Powered by [mihomo](https://github.com/MetaCubeX/mihomo): one button, an accurat
 [Install](users/install.md){ .dk-btn .dk-btn--solid } [Questions and answers](users/faq.md){ .dk-btn }
 { .dk-actions }
 
-No ads, analytics, or reports to the developer. This site sends nothing either.
+No ads, analytics, or reports to the developer. No analytics or tracking scripts on this site; your browser requests its pages from GitHub Pages.
 { .dk-quiet }
 
 </div>
@@ -90,7 +90,7 @@ Home shows the power button, the current node with its delay, when the subscript
 
 ### Honest status
 
-Right after the tunnel comes up, ducker checks that traffic really goes through the node. If it doesn't, a card says so and offers the fastest node.
+Right after the tunnel comes up, ducker checks whether the selected node answers a connection probe. If it doesn't, a card says so and offers the fastest node.
 
 </div>
 <div markdown>
@@ -112,79 +112,15 @@ When the VPN stops or a subscription fails to update, you see why and what to do
 </div>
 </section>
 
-<section class="dk-on-paper" markdown>
+<section class="dk-section dk-on-paper" markdown>
 <div class="dk-wrap" markdown>
 
 ## Everything else, when you need it
 
-<div class="dk-index" markdown>
-<div markdown>
 
-### [Subscriptions your way](users/faq.md#how-to-add-a-subscription)
-
-A link, a QR code or a file. Full mihomo configs work as they are; plain lists of links get a built-in profile.
-
-</div>
-<div markdown>
-
-### [Nodes](users/faq.md#what-a-vpn-a-subscription-and-a-server-are)
-
-Groups with their icons, delay checks, favorites, search, and a node test with loss and delay.
-
-</div>
-<div markdown>
-
-### [Updates itself](users/install.md#updates)
-
-A new version is one tap from Home, or let it install by itself at night.
-
-</div>
-<div markdown>
-
-### Mobile network
-
-A subscription and servers of its own for when the phone leaves Wi-Fi.
-
-</div>
-<div markdown>
-
-### Connections
-
-Which apps connect where, live: the app, the site, the rule, the node, the speed.
-
-</div>
-<div markdown>
-
-### [Wi-Fi sharing](users/faq.md#sharing-the-vpn-with-a-laptop-or-another-device)
-
-The VPN's internet for a laptop or another phone, through a proxy on your network.
-
-</div>
-<div markdown>
-
-### [Apps and my rules](users/faq.md#an-app-complains-about-the-vpn)
-
-Send an app, a site or a whole country through the VPN, past it, or block it, without touching YAML.
-
-</div>
-<div markdown>
-
-### [Stays up](users/faq.md#the-vpn-turns-itself-off)
-
-Autostart after a reboot, and step-by-step help with phones that like to kill VPN apps.
-
-</div>
-<div markdown>
-
-### Privacy extras
-
-Hide ducker from recent apps, disguise its icon, put the link and the config behind your fingerprint.
-
-</div>
-</div>
-
-Every feature in detail: [the README](https://github.com/duckerapp/ducker#features).
-{ .dk-more }
+Read [questions and answers](users/faq.md) for subscriptions, configuration templates,
+app rules, Wi-Fi sharing and updates. [All features](https://github.com/duckerapp/ducker#features)
+are listed in the README.
 
 </div>
 </section>
@@ -245,7 +181,7 @@ Your name, logo, announcement and renewal link reach the app through response he
 <section class="dk-on-paper" markdown>
 <div class="dk-wrap" markdown>
 
-Nothing is collected. The project has no server of its own.
+No analytics or reports to the developer.
 { .dk-statement }
 
 <div class="dk-facts" markdown>

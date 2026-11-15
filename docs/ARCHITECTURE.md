@@ -21,8 +21,9 @@ ID is `app.ducker.android`.
 1. **The profile is applied as is.** The app never rewrites config keys silently.
 2. **The core API listens only on `127.0.0.1`** and is protected by a random secret created at
    install time.
-3. **Nothing is sent anywhere** except the subscription request, images the subscription refers
-   to, and what the user explicitly sends (a log, a subscription to their own TV).
+3. **No analytics or reports are sent to the developer.** Subscription downloads, profile
+   service requests, app-update checks/downloads and provider images use the network, as
+   described in [Privacy](../PRIVACY_POLICY.md). Logs/TV transfers require user action.
 4. **Logs are scrubbed before export:** node addresses, UUIDs, passwords and the API secret are
    removed (`A/log/LogScrubber.kt`).
 

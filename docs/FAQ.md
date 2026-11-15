@@ -23,14 +23,17 @@ in the app.
 - [Updating ducker](#updating-ducker)
 - [Google Play Protect asks to scan the app](#google-play-protect-asks-to-scan-the-app)
 - [Android asks to allow apps from unverified developers](#android-asks-to-allow-apps-from-unverified-developers)
+- [Configuration templates](#configuration-templates)
+- [Mobile network, rules and moving to another device](#mobile-network-rules-and-moving-to-another-device)
+- [Beta versions and returning to stable](#beta-versions-and-returning-to-stable)
 - [How to send a log](#how-to-send-a-log)
 - [What never to send](#what-never-to-send)
 
 ## What a VPN, a subscription and a server are
 
-**A VPN** is a protected channel from your phone to a server. Apps reach the internet not
-directly but through that server: sites see it instead of you, and what is closed in your network
-opens.
+**A VPN** carries selected connections through another server. Sites reached through that
+server see its IP instead of your direct IP. Rules can also send traffic directly or block
+it; a VPN does not guarantee that every site will be accessible.
 
 **A server** is the provider's computer, usually in another country. In ducker servers are called
 **nodes** and live on the Proxies tab. There are usually several: if one does not work or is slow,
@@ -50,7 +53,8 @@ provider there is nowhere to connect to.
 
 **Global and Rules** — a switch on the Proxies tab, if the provider left it there. Rules means "as
 the provider set it up": usually local sites go directly and the rest through the server. Global
-means everything through the server. If unsure, leave Rules.
+means traffic handled by the core goes through the selected server group; Android app
+exclusions still apply. If unsure, leave Rules.
 
 ## How to add a subscription
 
@@ -303,10 +307,10 @@ instead: Home → "Features" → "Wi-Fi sharing".
 2. Connect the second device to the phone's hotspot, or put both on the same Wi-Fi.
 3. On its page, tap "Turn on sharing". The IP and the port appear; a tap copies them.
 4. On the second device, set a manual proxy with that IP and port in the Wi-Fi network's settings:
-   - Android: Wi-Fi → the network's settings → "Proxy" → "Manual" (sometimes under "Advanced options");
-   - iPhone and iPad: Settings → Wi-Fi → ⓘ next to the network → "Configure Proxy" → "Manual";
-   - Windows: Settings → "Network & internet" → "Proxy" → "Use a proxy server";
-   - macOS: System Settings → "Network" → Wi-Fi → "Details" → "Proxies".
+    - Android: Wi-Fi → the network's settings → "Proxy" → "Manual" (sometimes under "Advanced options");
+    - iPhone and iPad: Settings → Wi-Fi → ⓘ next to the network → "Configure Proxy" → "Manual";
+    - Windows: Settings → "Network & internet" → "Proxy" → "Use a proxy server";
+    - macOS: System Settings → "Network" → Wi-Fi → "Details" → "Proxies".
 
 On the phone's own hotspot no password is asked: only people you told the hotspot's password can join it. On any
 other Wi-Fi the page also shows a login and a password, and "Password sign-in" is on, so that neighbours on a café's
@@ -340,7 +344,7 @@ ducker updates itself: there is no need to download each new version by hand.
   Wi-Fi and install while the screen is off, usually at night. This needs Android 12 or newer; on
   Android 8–11 Android asks to confirm each update.
 - To check right now: ⚙ Settings → "Check for updates".
-- "Beta versions" in the same place gives you new versions a few days early.
+- "Beta versions" in the same place enables early access to test releases.
 
 ducker installs only a file signed with the same key as the app already on your phone, and only
 if its checksum matches. To check a file you downloaded yourself, each release lists its
@@ -364,25 +368,72 @@ from Google Play, and every new version is a new file to Google.
 
 ## Android asks to allow apps from unverified developers
 
-From 2027 Google lets certified Android phones and TVs install apps from outside Google Play only
-if their developer is registered with Google; in Brazil, Indonesia, Singapore and Thailand this
-started in 2026. ducker is not registered, so on such a device installing or updating it needs a
-one-time setting:
+ducker is not registered with Google's developer verification. As of November 2026, the
+initial rules apply to participating stores on phones/tablets in selected countries, not
+direct APK downloads. Wider rollout is planned from 2027; device and country coverage vary.
 
-1. Android offers to allow apps from unverified developers. Agree and confirm with your PIN or
-   fingerprint.
-2. Restart the phone and wait 24 hours: Google requires this pause.
-3. After that, install ducker or let it update as usual.
+If your device actually requests the advanced flow, Google's steps are: enable developer
+options, confirm you are acting on your own, restart and authenticate, then return after
+the one-day wait to authenticate and finish enabling it for seven days or indefinitely.
+Further installs may still need “Install anyway”. Keep the advanced flow enabled while
+installing or updating unregistered apps; ADB installs are unaffected. Do not change these
+settings just because you read this page: follow the prompt on your own device.
 
-Keep the setting on: while it is off, ducker cannot update. Installing over `adb` from a computer
-does not need it.
+[Google's current instructions](https://developer.android.com/developer-verification/guides/faq)
+are authoritative; labels and rollout can change.
 
-Google is only starting to show these screens, so their names on your phone may differ. If
-something does not match, write to us through ⚙ Settings → "Help and diagnostics".
+## Configuration templates
 
-<!-- Source: Google's rollout as reported by Android Authority, 9to5Google and XDA, August–September
-     2026, searched on 09.11.2026; not yet seen on our own devices. Update the wording once a phone
-     shows these screens. -->
+Open **Profiles → ⋯ → Configuration** for a URL subscription.
+
+- **From the subscription** is the default: use the provider's rules and settings.
+- **ducker · Russia** takes server connections and proxy providers from the subscription,
+  with ducker's groups, DNS, app list and routing. Russian sites/apps go direct; other
+  traffic uses the VPN. This is a regional policy, not protection of every connection.
+
+Switching replaces manual config edits and may reconnect the VPN. The sheet waits for
+the result; if it fails, the previous working configuration stays in use. A requested
+choice marked “not applied” is not the active configuration. Fix the reported problem
+and retry, or choose **From the subscription** to return to the provider's settings.
+This mode requires a URL subscription and refuses encrypted subscriptions.
+
+Separately, a plain list of server links gets the built-in template automatically.
+A new subscription with a broken provider config may use its nodes with the template
+and show an error card. A failed update of an existing working subscription keeps its
+previous configuration. These recovery paths are not an explicit template selection.
+
+## Mobile network, rules and moving to another device
+
+- **Home → Features → Mobile network:** choose a subscription and nodes for mobile
+  data. Wi-Fi keeps the normal selection; a manual selection can override an automatic
+  switch. Check the active subscription/node before diagnosing a routing difference.
+- **My rules:** your site/app/address rules are considered before the provider's routing
+  rules. App exclusions are separate: an app outside the Android VPN does not reach the
+  core's routing rules. Start with one rule and check **Features → Connections**.
+- **Encrypted subscriptions:** enter the provider's age key in **Decryption key** when
+  adding the link. ducker's shared QR/install link and phone-to-TV transfer may include
+  that key. Treat the whole QR/link as a credential. On older versions the receiver may
+  need the key separately; the TV browser page accepts an install link containing it.
+- **Moving:** share the subscription to your own device, or add its original URL and
+  key there. Android backup transfers settings, not subscriptions/configs. A local file
+  subscription or manual config edits need a separate private copy. Uninstalling is not
+  an update-repair step: it removes local subscriptions. Do not post backup files publicly.
+
+## Beta versions and returning to stable
+
+**Settings → Beta versions** is off by default. Off means stable releases only; on means
+the newest compatible release from stable or beta. Both use the same app, signing key
+and version numbers. **Update automatically** is a separate preference and follows the
+selected channels.
+
+Turning beta off does not downgrade an already installed beta. You keep it until a
+newer stable release is available; promoting that same beta does not require a second
+download. Avoid uninstalling to go back: it deletes local subscriptions. A withdrawn
+release is no longer offered, but already installed copies require a later fixed version.
+The same APK is promoted after testing; there is no promised number of days for a beta.
+
+Checks run approximately twice a day and when the app opens; Android may defer background
+work. Even on Android 12+, Play Protect or device policy may require installation confirmation.
 
 ## How to send a log
 

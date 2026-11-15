@@ -1,13 +1,20 @@
-# Built-in template
+# Configuration templates
 
-If the URL returns a list of node links (`vless://`, `vmess://`, `ss://`, `trojan://`,
-and similar), as plain text or base64 rather than a mihomo config, ducker inserts them
-into its own template. The template is also used when a new subscription has a config
-error: nodes are taken from its `proxies` section
-([details](start.md#what-the-app-accepts)).
+The default **From the subscription** mode uses a valid provider config as supplied.
+Users may explicitly choose **ducker · Russia** under **Profiles → ⋯ → Configuration**
+for URL subscriptions. That choice takes server connections and `proxy-providers` from
+the subscription; groups, rules, DNS and app exclusions come from the template. Provider
+health-check settings and node dependencies are retained; the template adds its own checks.
+The provider's `ducker-override-user` does not lock the template's app rows in this mode.
+Encrypted subscriptions cannot use the explicit template mode.
 
-The template is a fallback. A complete provider config always takes precedence:
-the app applies it as supplied.
+The switch replaces manual config edits. Failures retain the previous working config;
+a requested choice is not effective until successfully applied. Choose **From the
+subscription** to restore provider routing. See [user instructions](../users/faq.md#configuration-templates).
+
+A separate automatic fallback inserts a plain node-link list into the built-in template.
+It can also recover nodes from a broken config for a new subscription, with a visible
+error card. An existing working subscription keeps its old config after a failed update.
 
 ## What the template contains
 
@@ -28,4 +35,4 @@ It contains detailed comments explaining each decision.
 ## If you need your own routing
 
 Provide a complete mihomo config as described under [Subscription for ducker](start.md).
-The app template is not used in that case.
+In the default source mode that config is used. A user can still explicitly choose the template.
