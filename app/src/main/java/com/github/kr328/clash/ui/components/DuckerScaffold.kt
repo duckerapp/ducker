@@ -54,6 +54,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -363,11 +364,12 @@ private fun FloatingDock(
     // Блик по кнопке — раз, когда она появилась, и потом раз в несколько секунд. Не
     // бесконечная пульсация: та гоняла бы экран без остановки, как полоска загрузки (D-91).
     val shine = remember { Animatable(0f) }
+    val motionEnabled = rememberCoroutineScope().coroutineContext.motionScale > 0f
 
-    LaunchedEffect(alone) {
+    LaunchedEffect(alone, motionEnabled) {
         shine.snapTo(0f)
 
-        if (!alone) return@LaunchedEffect
+        if (!alone || !motionEnabled) return@LaunchedEffect
 
         delay(MERGE_MS.toLong())
 
@@ -411,10 +413,10 @@ private fun FloatingDock(
     // Three shines over the highlight, then still: the call is made once, not repeated (D-91).
     val tabShine = remember { Animatable(0f) }
 
-    LaunchedEffect(added, alone) {
+    LaunchedEffect(added, alone, motionEnabled) {
         tabShine.snapTo(0f)
 
-        if (!added || alone) return@LaunchedEffect
+        if (!added || alone || !motionEnabled) return@LaunchedEffect
 
         delay(ACTION_SHINE_DELAY_MS)
 

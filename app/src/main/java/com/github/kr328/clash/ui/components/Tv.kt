@@ -1,6 +1,7 @@
 package com.github.kr328.clash.ui.components
 
 import android.annotation.SuppressLint
+import kotlin.coroutines.coroutineContext
 import kotlin.math.round
 import kotlin.math.roundToInt
 import android.content.Context
@@ -530,6 +531,8 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
     private var size = IntSize.Zero
     // Время кадра, который рисуется: его знает опрос, у отрисовки своих часов нет.
     private var frame = 0L
+    private val motionTime = MotionTime()
+    private var motionDisabled = false
     // Следующий скачок места — переход фокуса: было нажатие или фокус сменил группу.
     private var armed = false
     // Куда рамка показывала, на сколько цель сдвинулась за прошлый кадр и где рамка была
@@ -616,27 +619,28 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
         if (arm) armed = true
         following?.cancel()
         following = coroutineScope.launch {
-            var start = 0L
+            var start = -1L
             var moved = 0L
             var seen: Rect? = null
 
             do {
                 val now = withFrameNanos { it }
-                if (start == 0L) start = now
-
-                frame = now
+                val scale = coroutineContext.motionScale
+                motionDisabled = scale == 0f
+                frame = motionTime.advance(now, scale)
+                if (start < 0L) start = frame
 
                 val rect = aim()
 
                 if (rect != seen) {
                     seen = rect
-                    moved = now
+                    moved = frame
                 }
 
                 invalidateDraw()
             } while (
-                now - start < FOLLOW_NS || glide != null || now - shownAt < FADE_NS ||
-                (now - moved < STILL_NS && now - start < FOLLOW_MAX_NS)
+                !motionDisabled && (frame - start < FOLLOW_NS || glide != null || frame - shownAt < FADE_NS ||
+                (frame - moved < STILL_NS && frame - start < FOLLOW_MAX_NS))
             )
 
             armed = false
@@ -686,7 +690,12 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
         // (прокрутка) переезд не перезапускает, иначе рамка отставала бы от неё заново.
         val step = if (before != null) aim.topLeft - before.topLeft else Offset.Zero
 
-        if (armed && before != null && last != null) {
+        if (motionDisabled) {
+            glide = null
+            shownAt = now - FADE_NS.toLong()
+        }
+
+        if (!motionDisabled && armed && before != null && last != null) {
             val resized = abs(aim.width - before.width) > 0.5f || abs(aim.height - before.height) > 0.5f
 
             if (resized || (step - aimStep).getDistance() > RING_JUMP.toPx()) {
@@ -700,7 +709,7 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
         aimStep = step
 
         // Рамки не было (фокус пришёл в окно, её прятали) — она проявляется на месте, без переезда.
-        if (last == null) shownAt = now
+        if (last == null && !motionDisabled) shownAt = now
 
         aimed = aim
 
@@ -721,7 +730,7 @@ private class FocusRingNode(var onLost: (() -> Unit)?) :
         drawn = r
         round = own
 
-        val alpha = ((now - shownAt).toFloat() / FADE_NS).coerceIn(0f, 1f)
+        val alpha = if (motionDisabled) 1f else ((now - shownAt).toFloat() / FADE_NS).coerceIn(0f, 1f)
         val gap = RING_GAP.toPx()
         val stroke = RING_STROKE.toPx()
 
@@ -1274,19 +1283,32 @@ private class SoftScrollNode(var state: ScrollableState) : Modifier.Node(), Brin
  * осталось, [onScrolled] — сколько проехали за кадр. Скорость при сдвиге цели сохраняется — быстрые нажатия не
  * дёргают список.
  */
-private suspend fun ScrollableState.springScroll(left: () -> Float, onScrolled: (Float) -> Unit = {}) {
+internal suspend fun ScrollableState.springScroll(left: () -> Float, onScrolled: (Float) -> Unit = {}) {
     val w = sqrt(TV_SPRING)
     // Скорость остатка, пикселей в секунду.
     var speed = 0f
-    var last = 0L
+    val time = MotionTime()
+    var played = 0L
 
     scroll {
         while (true) {
             // Сначала кадр, потом место: раскладка прошлого шага к этому времени уже прошла.
-            val dt = withFrameNanos { now -> (if (last == 0L) 0f else (now - last) / 1e9f).also { last = now } }
+            val now = withFrameNanos { it }
+            val scale = coroutineContext.motionScale
+            val next = time.advance(now, scale)
+            val dt = (next - played) / 1e9f
+            played = next
             val rest = left()
 
             if (abs(rest) < 0.5f && abs(speed) < 30f) break
+
+            if (scale == 0f) {
+                val done = scrollBy(rest)
+                onScrolled(done)
+                speed = 0f
+                if (abs(done - rest) > 0.5f) break
+                continue
+            }
 
             // Шаг пружины без колебаний за время кадра: точное решение, а не приближение.
             val c = speed + w * rest

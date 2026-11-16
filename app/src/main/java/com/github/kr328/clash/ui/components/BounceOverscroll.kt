@@ -25,6 +25,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
+import kotlin.coroutines.coroutineContext
 
 /**
  * Край списка — пружиной, а не системным растяжением (D-137).
@@ -66,7 +67,7 @@ class BounceOverscroll(private val scope: CoroutineScope) : OverscrollEffect {
             val scrolled = performScroll(delta)
             val rest = (delta - scrolled).along()
 
-            if (abs(rest) > 0.5f && !bounced && flingStepAt > 0L) {
+            if (scope.coroutineContext.motionScale > 0f && abs(rest) > 0.5f && !bounced && flingStepAt > 0L) {
                 val velocity = delta.along() / ((now - flingStepAt) / 1e9f)
 
                 if (abs(velocity) > MIN_VELOCITY) {
@@ -157,6 +158,7 @@ class BounceOverscroll(private val scope: CoroutineScope) : OverscrollEffect {
 
                 // До вершины: там скорость меняет знак.
                 play(out, start) { played -> out.getVelocityVectorFromNanos(played).value.sign != velocity.sign }
+                if (coroutineContext.motionScale == 0f) return@launch
                 start = 0L
             }
 
@@ -179,13 +181,17 @@ class BounceOverscroll(private val scope: CoroutineScope) : OverscrollEffect {
         since: Long,
         stop: (played: Long) -> Boolean,
     ) {
-        var start = since
+        val time = MotionTime(since, FRAME_NANOS)
+        val context = coroutineContext
 
         do {
             val done = withFrameNanos { now ->
-                if (start <= 0L || start > now) start = now - FRAME_NANOS
-
-                val played = now - start
+                val scale = context.motionScale
+                if (scale == 0f) {
+                    offset = 0f
+                    return@withFrameNanos true
+                }
+                val played = time.advance(now, scale)
 
                 offset = spring.getValueFromNanos(played)
 
