@@ -217,7 +217,7 @@ ducker работает с обычной подпиской mihomo. Он зап
 Android 8 или новее · телефоны и телевизоры · бесплатно
 { .dk-quiet }
 
-[Установить](users/install.md){ .dk-btn .dk-btn--solid } [Канал в Telegram](https://t.me/ducker_mihomo){ .dk-btn } [GitHub](https://github.com/duckerapp/ducker){ .dk-btn }
+[Установить](users/install.md){ .dk-btn .dk-btn--solid } [Канал в Telegram](https://t.me/ducker_news){ .dk-btn } [GitHub](https://github.com/duckerapp/ducker){ .dk-btn }
 { .dk-actions }
 
 </div>

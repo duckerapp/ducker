@@ -33,8 +33,8 @@ button() { # file, image, width, alt
   echo
   echo "[How to install]($SITE/users/install/) · [Installing on a TV]($SITE/users/tv/) · [Documentation]($SITE/)"
   echo
-  echo "Telegram: [channel](https://t.me/ducker_mihomo) for releases and news ·" \
-    "[chat](https://t.me/ducker_community) for questions and discussion"
+  echo "Telegram: [channel](https://t.me/ducker_news) for releases and news ·" \
+    "[chat](https://t.me/ducker_chat) for questions and discussion"
   echo
   echo "[![Downloads](https://img.shields.io/github/downloads/duckerapp/ducker/v$VERSION/total?style=flat-square&label=downloads&labelColor=000&color=2b2b2b)]($REPO/releases/tag/v$VERSION)"
   echo
@@ -56,8 +56,8 @@ button() { # file, image, width, alt
   echo
   echo "[Как установить]($SITE/ru/users/install/) · [Установка на телевизор]($SITE/ru/users/tv/) · [Документация]($SITE/ru/)"
   echo
-  echo "Telegram: [канал](https://t.me/ducker_mihomo) — выпуски и новости ·" \
-    "[чат](https://t.me/ducker_community) — вопросы и обсуждение"
+  echo "Telegram: [канал](https://t.me/ducker_news) — выпуски и новости ·" \
+    "[чат](https://t.me/ducker_chat) — вопросы и обсуждение"
   echo
   echo "Прямые ссылки: [arm64-v8a]($DL/ducker-$VERSION-arm64-v8a.apk) · [armeabi-v7a]($DL/ducker-$VERSION-armeabi-v7a.apk) · [зеркало GitLab](https://gitlab.com/duckerx/ducker/-/packages)"
   echo

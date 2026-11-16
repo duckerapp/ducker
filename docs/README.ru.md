@@ -22,7 +22,7 @@
 [![Выпуск](https://img.shields.io/github/v/release/duckerapp/ducker?style=flat-square&label=%D0%B2%D1%8B%D0%BF%D1%83%D1%81%D0%BA&labelColor=000&color=2b2b2b)](https://github.com/duckerapp/ducker/releases)
 [![Лицензия](https://img.shields.io/badge/%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F-GPL--3.0-2b2b2b?style=flat-square&labelColor=000)](../LICENSE)
 [![Android](https://img.shields.io/badge/Android-8%2B-2b2b2b?style=flat-square&labelColor=000)](#установка)
-[![Telegram](https://img.shields.io/badge/Telegram-%D0%BA%D0%B0%D0%BD%D0%B0%D0%BB-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
+[![Telegram](https://img.shields.io/badge/Telegram-%D0%BA%D0%B0%D0%BD%D0%B0%D0%BB-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_news)
 
 [Установка](#установка) · [Снимки](#снимки-экрана) · [Возможности](#возможности) · [Android TV](#android-tv) · [Провайдерам](#провайдерам) · [Планы](#что-дальше) · [Вопросы и ответы](FAQ.ru.md) · [Сообщество](#сообщество)
 
@@ -332,8 +332,8 @@ cd ducker
 
 ## Сообщество
 
-- [Канал в Telegram](https://t.me/ducker_mihomo) — выпуски и новости;
-- [Чат в Telegram](https://t.me/ducker_community) — вопросы и обсуждение;
+- [Канал в Telegram](https://t.me/ducker_news) — выпуски и новости;
+- [Чат в Telegram](https://t.me/ducker_chat) — вопросы и обсуждение;
 - [Issues](https://github.com/duckerapp/ducker/issues) — ошибки и идеи;
 - [duckermihomo@proton.me](mailto:duckermihomo@proton.me) — почта, если Telegram и GitHub не подходят;
 - [CONTRIBUTING.ru.md](CONTRIBUTING.ru.md) — как сообщить об ошибке, собрать приложение и прислать
@@ -341,6 +341,9 @@ cd ducker
 
 Проект ведёт один человек, поэтому помощь важна: сообщения об ошибках, проверка на своём
 телефоне или телевизоре, переводы — особенно от носителей языков из списка выше.
+
+Поддержать проект деньгами: [CryptoBot](https://t.me/send?start=IVviDBljozrs) в Telegram, любая монета, или на кошелёк — адреса
+на [сайте](https://duckerapp.github.io/ducker/ru/support/donate/) и в приложении: «Настройки» → «Поддержать проект».
 
 ## Лицензия
 

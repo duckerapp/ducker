@@ -22,7 +22,7 @@
 [![Release](https://img.shields.io/github/v/release/duckerapp/ducker?style=flat-square&label=release&labelColor=000&color=2b2b2b)](https://github.com/duckerapp/ducker/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-2b2b2b?style=flat-square&labelColor=000)](../LICENSE)
 [![Android](https://img.shields.io/badge/Android-8%2B-2b2b2b?style=flat-square&labelColor=000)](#安装)
-[![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
+[![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_news)
 
 [安装](#安装) · [截图](#截图) · [功能](#功能) · [Android TV](#android-tv) · [给服务商](#给服务商) · [后续计划](#后续计划) · [常见问题](FAQ.md) · [社区](#社区)
 
@@ -281,14 +281,17 @@ cd ducker
 
 ## 社区
 
-- [Telegram 频道](https://t.me/ducker_mihomo) —— 版本发布和新闻；
-- [Telegram 群组](https://t.me/ducker_community) —— 提问和讨论；
+- [Telegram 频道](https://t.me/ducker_news) —— 版本发布和新闻；
+- [Telegram 群组](https://t.me/ducker_chat) —— 提问和讨论；
 - [Issues](https://github.com/duckerapp/ducker/issues) —— 错误报告和建议；
 - [duckermihomo@proton.me](mailto:duckermihomo@proton.me) —— 邮箱，不方便用 Telegram 和 GitHub 时可以写信；
 - [CONTRIBUTING.md](../CONTRIBUTING.md) —— 如何报告错误、构建应用和提交改动。
 
 项目由一个人维护，所以每一份帮助都很重要：错误报告、在你的手机或电视上测试，以及翻译——尤其
 欢迎上述各语言的母语使用者。
+
+用钱支持项目：通过 Telegram 中的 [CryptoBot](https://t.me/send?start=IVviDBljozrs)（任意币种），或转入钱包——地址见[网站（英文）](https://duckerapp.github.io/ducker/support/donate/)
+和应用内「设置 → 支持项目」。
 
 ## 许可证
 

@@ -11,7 +11,7 @@
 - Ошибка — через [Issues](https://github.com/duckerapp/ducker/issues), по шаблону «Ошибка». Журнал из приложения
   (**Настройки → Помощь и диагностика → Журнал → Отправить**) почти всегда нужен: без него причину не найти.
 - Идея — по шаблону «Идея». Опишите, какую задачу она решает, а не только как должна выглядеть.
-- Вопрос — в [чат в Telegram](https://t.me/ducker_community) или письмом на
+- Вопрос — в [чат в Telegram](https://t.me/ducker_chat) или письмом на
   [duckermihomo@proton.me](mailto:duckermihomo@proton.me).
 - **Уязвимость** — не в открытые Issues, а по правилам из [SECURITY.ru.md](SECURITY.ru.md).
 

@@ -113,5 +113,6 @@ nav:
       - Security: help/security.md
   - Community:
       - Community and contact: support/contact.md
+      - Support the project: support/donate.md
       - Roadmap: support/roadmap.md
       - Credits: support/credits.md

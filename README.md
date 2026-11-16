@@ -22,7 +22,7 @@ One button, honest status, nothing extra on the screen.
 [![Release](https://img.shields.io/github/v/release/duckerapp/ducker?style=flat-square&label=release&labelColor=000&color=2b2b2b)](https://github.com/duckerapp/ducker/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-2b2b2b?style=flat-square&labelColor=000)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-8%2B-2b2b2b?style=flat-square&labelColor=000)](#install)
-[![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
+[![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_news)
 
 [Install](#install) · [Screenshots](#screenshots) · [Features](#features) · [Android TV](#android-tv) · [For providers](#for-providers) · [Roadmap](#roadmap) · [FAQ](docs/FAQ.md) · [Community](#community)
 
@@ -330,14 +330,17 @@ Details are in [CONTRIBUTING.md](CONTRIBUTING.md); where things live in the code
 
 ## Community
 
-- [Telegram channel](https://t.me/ducker_mihomo) — releases and news;
-- [Telegram chat](https://t.me/ducker_community) — questions and discussion;
+- [Telegram channel](https://t.me/ducker_news) — releases and news;
+- [Telegram chat](https://t.me/ducker_chat) — questions and discussion;
 - [Issues](https://github.com/duckerapp/ducker/issues) — bugs and ideas;
 - [duckermihomo@proton.me](mailto:duckermihomo@proton.me) — email, if Telegram and GitHub do not suit you;
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to report a bug, build the app and send a change.
 
 The project is run by one person, so help matters: bug reports, testing on your phone or TV,
 and translations — especially from native speakers of the languages above.
+
+To support the project with money: [CryptoBot](https://t.me/send?start=IVviDBljozrs) in Telegram, any coin, or a wallet — the addresses are
+on the [website](https://duckerapp.github.io/ducker/support/donate/) and in the app under **Settings → Support the project**.
 
 ## License
 

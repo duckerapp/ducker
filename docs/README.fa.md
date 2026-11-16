@@ -22,7 +22,7 @@
 [![Release](https://img.shields.io/github/v/release/duckerapp/ducker?style=flat-square&label=release&labelColor=000&color=2b2b2b)](https://github.com/duckerapp/ducker/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-2b2b2b?style=flat-square&labelColor=000)](../LICENSE)
 [![Android](https://img.shields.io/badge/Android-8%2B-2b2b2b?style=flat-square&labelColor=000)](#install)
-[![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_mihomo)
+[![Telegram](https://img.shields.io/badge/Telegram-channel-2b2b2b?style=flat-square&labelColor=000)](https://t.me/ducker_news)
 
 [نصب](#install) · [تصاویر](#screenshots) · [امکانات](#features) · [Android TV](#android-tv) · [برای ارائه‌دهندگان](#providers) · [برنامهٔ آینده](#roadmap) · [پرسش و پاسخ](FAQ.md) · [انجمن](#community)
 
@@ -337,14 +337,17 @@ cd ducker
 
 ## انجمن
 
-- [کانال Telegram](https://t.me/ducker_mihomo) — نسخه‌ها و خبرها؛
-- [گروه Telegram](https://t.me/ducker_community) — پرسش و گفت‌وگو؛
+- [کانال Telegram](https://t.me/ducker_news) — نسخه‌ها و خبرها؛
+- [گروه Telegram](https://t.me/ducker_chat) — پرسش و گفت‌وگو؛
 - [Issues](https://github.com/duckerapp/ducker/issues) — خطاها و ایده‌ها؛
 - [duckermihomo@proton.me](mailto:duckermihomo@proton.me) — ایمیل، اگر Telegram و GitHub برایتان مناسب نیست؛
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — چگونه خطا گزارش کنیم، برنامه را بسازیم و تغییر بفرستیم.
 
 پروژه را یک نفر اداره می‌کند، پس هر کمکی مهم است: گزارش خطا، آزمایش روی گوشی یا تلویزیون خودتان،
 و ترجمه — به‌ویژه از گویشوران زبان‌های بالا.
+
+حمایت مالی از پروژه: [CryptoBot](https://t.me/send?start=IVviDBljozrs) در Telegram با هر رمزارزی، یا واریز به کیف پول — نشانی‌ها در
+[وب‌سایت انگلیسی](https://duckerapp.github.io/ducker/support/donate/) و در برنامه: «تنظیمات ← حمایت از پروژه».
 
 <a id="license"></a>
 

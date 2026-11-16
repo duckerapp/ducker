@@ -8,5 +8,5 @@
 
 Что уже сделано, по версиям, — в
 [списке изменений](https://github.com/duckerapp/ducker/blob/main/docs/CHANGELOG.ru.md). Идеи и
-пожелания — в [чат в Telegram](https://t.me/ducker_community) и в
+пожелания — в [чат в Telegram](https://t.me/ducker_chat) и в
 [Issues на GitHub](https://github.com/duckerapp/ducker/issues).
