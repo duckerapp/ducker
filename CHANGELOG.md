@@ -12,6 +12,9 @@ repository was closed; they are listed here for history. APK files are on the
 
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
+- "About" is now the project's card: versions, the news channel and chat, source code, the core and the licence.
+  "Support the project" holds the ways to donate: CryptoBot in Telegram or a wallet, with the coin and network
+  to pick and the address to copy. The core version is shown without the build hash.
 
 ## 0.4.51 — 2026-11-13
 

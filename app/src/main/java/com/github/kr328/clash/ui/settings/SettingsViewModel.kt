@@ -116,11 +116,10 @@ class SettingsViewModel : ViewModel() {
                 )
             }
 
-            // Версию ядра и оверрайд спрашиваем у службы: там нативная библиотека уже
-            // загружена (F-5). Впереди — выпуск mihomo, на котором стоит наша ветка ядра,
-            // тот же, что в User-Agent.
-            val core = runCatching { withClash { queryCoreVersion() } }.getOrDefault("")
-                .let { if (it.isEmpty()) it else "mihomo ${SubscriptionHeaders.MIHOMO_RELEASE} ($it)" }
+            // The mihomo release our core branch stands on, the same as in the User-Agent; the owner asked for
+            // the version without the build hash (D-525). The override is asked of the service, where the
+            // native library is already loaded (F-5).
+            val core = "mihomo ${SubscriptionHeaders.MIHOMO_RELEASE}"
 
             val debugLog = runCatching {
                 withClash { queryOverride(Clash.OverrideSlot.Persist) }.logLevel

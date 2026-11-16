@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.os.Build
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
-import com.github.kr328.clash.ui.components.smoothResource
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -25,7 +24,6 @@ import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,7 +38,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import com.github.kr328.clash.update.UpdateState
 import androidx.compose.material3.HorizontalDivider
@@ -54,7 +51,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
@@ -140,7 +136,7 @@ data class SettingsState(
 )
 
 /** Community support remains reachable from diagnostics as well as project support. */
-internal const val COMMUNITY = "https://t.me/ducker_community"
+internal const val COMMUNITY = "https://t.me/ducker_chat"
 
 /** Почта проекта — там же, для тех, кому Telegram не подходит. */
 const val MAIL = "duckermihomo@proton.me"
@@ -203,6 +199,8 @@ fun SettingsScreen(
     val tv = LocalTv.current
     var destination by rememberSaveable { mutableStateOf(SettingsPage.Appearance.name) }
     var sectionOpen by rememberSaveable { mutableStateOf(false) }
+    // A layer of its own above the section, so that Back from it returns to «О приложении» it was opened from.
+    var supportOpen by rememberSaveable { mutableStateOf(false) }
     val pages = rememberSaveableStateHolder()
     var languageMounted by rememberSaveable { mutableStateOf(false) }
     var languageOpen by rememberSaveable { mutableStateOf(false) }
@@ -312,7 +310,7 @@ fun SettingsScreen(
                                     title = stringResource(R.string.settings_project),
                                     subtitle = stringResource(R.string.settings_project_summary),
                                     icon = Symbols.Favorite,
-                                    onClick = { navigate(SettingsPage.Project) },
+                                    onClick = { supportOpen = true },
                                 )
                                 SettingsNavigationDivider()
                                 SettingsNavigationRow(
@@ -613,34 +611,7 @@ fun SettingsScreen(
                         projectSupportItems(onLink = onLink, onMail = onMail)
                     }
                     SettingsPage.About -> {
-                        item {
-                            Card(modifier = Modifier.fillMaxWidth()) {
-                                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    // The tile as on the launcher (D-291): the mark of the other theme, so that it
-                                    // stands out from the card instead of blending into it.
-                                    Image(
-                                        bitmap = smoothResource(
-                                            if (MaterialTheme.colorScheme.background.luminance() < 0.5f) R.drawable.ducker_mark_light
-                                            else R.drawable.ducker_mark_dark,
-                                            44.dp,
-                                        ),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(percent = 22)),
-                                    )
-                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text(
-                                            text = stringResource(R.string.version_app, state.appVersion),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.version_core, state.coreVersion),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                        aboutItems(state.appVersion, state.coreVersion, onLink = onLink, onSupport = { supportOpen = true })
                     }
                 }
             }
@@ -650,7 +621,7 @@ fun SettingsScreen(
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier.fillMaxSize().then(
-                if (sectionOpen) Modifier.clearAndSetSemantics {} else Modifier,
+                if (sectionOpen || supportOpen) Modifier.clearAndSetSemantics {} else Modifier,
             ),
         ) {
             ScreenFrame { pageContent(SettingsPage.Root, onBack) }
@@ -659,12 +630,15 @@ fun SettingsScreen(
         // its saved position, using the same motion as entry into Settings.
         BackLayer(
             visible = sectionOpen,
-            enabled = active && !languageMounted,
+            enabled = active && !languageMounted && !supportOpen,
             onBack = { sectionOpen = false },
             // The Settings layer around it draws the fade.
             fade = false,
         ) {
             pageContent(SettingsPage.valueOf(destination)) { sectionOpen = false }
+        }
+        BackLayer(visible = supportOpen, enabled = active, onBack = { supportOpen = false }, fade = false) {
+            pageContent(SettingsPage.Project) { supportOpen = false }
         }
     }
 
@@ -1095,7 +1069,7 @@ private fun SettingsIcon(icon: ImageVector) {
 }
 
 @Composable
-private fun SettingsNavigationGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
+internal fun SettingsNavigationGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             title, modifier = Modifier.padding(start = 4.dp, top = 4.dp).semantics { heading() },
@@ -1111,7 +1085,7 @@ private fun SettingsNavigationGroup(title: String, content: @Composable ColumnSc
 }
 
 @Composable
-private fun SettingsNavigationDivider() {
+internal fun SettingsNavigationDivider() {
     HorizontalDivider(
         Modifier.padding(horizontal = 16.dp),
         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
