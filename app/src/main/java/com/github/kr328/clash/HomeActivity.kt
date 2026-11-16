@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.github.kr328.clash.ui.components.BackFollow
 import com.github.kr328.clash.ui.components.BackLayer
+import com.github.kr328.clash.ui.components.clearCardShadows
 import com.github.kr328.clash.ui.components.SensitiveLock
 import androidx.annotation.StringRes
 import com.github.kr328.clash.ui.components.ScreenFrame
@@ -2085,6 +2086,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
     override fun onStop() {
         super.onStop()
+
+        clearCardShadows()
 
         Remote.broadcasts.removeObserver(this)
 

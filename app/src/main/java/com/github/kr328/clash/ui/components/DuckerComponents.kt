@@ -115,6 +115,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -126,6 +127,7 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.LayerOutsets
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.graphics.shadow.ShadowContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.isTraversalGroup
@@ -176,7 +178,25 @@ internal fun airEdge(fill: Color = MaterialTheme.colorScheme.surface): BorderStr
 /** [DuckerCardShadow], or the hairline of [airEdge] where a shadow cannot show. */
 @Composable
 internal fun Modifier.airShadow(shape: Shape, fill: Color = MaterialTheme.colorScheme.surface): Modifier =
-    airEdge(fill)?.let { border(it, shape) } ?: dropShadow(shape, DuckerCardShadow)
+    airEdge(fill)?.let { border(it, shape) } ?: cardShadow(shape)
+
+/**
+ * Blurred [DuckerCardShadow] masks shared by every window. [dropShadow] caches masks per window, and
+ * each [DuckerSheet] is a new dialog window, so every open blurred all its shadows again on the main
+ * thread (F-512, F-513). Same painter, same pixels; [clearCardShadows] empties it with the app's UI.
+ */
+private val CardShadows = ShadowContext()
+
+/** [DuckerCardShadow] drawn from the app-wide [CardShadows] cache; the shape must compare by value. */
+internal fun Modifier.cardShadow(shape: Shape): Modifier = drawWithCache {
+    val painter = CardShadows.createDropShadowPainter(shape, DuckerCardShadow)
+    onDrawWithContent {
+        with(painter) { draw(size) }
+        drawContent()
+    }
+}
+
+internal fun clearCardShadows() = CardShadows.clearCache()
 
 /**
  * The shadow of a surface whose size animates. [dropShadow] keeps one blurred mask per size in a
@@ -214,7 +234,7 @@ fun DuckerCard(
                 when {
                     edge != null -> Modifier
                     resizing -> Modifier.resizingShadow(shape)
-                    else -> Modifier.dropShadow(shape, DuckerCardShadow)
+                    else -> Modifier.cardShadow(shape)
                 },
             )
             .then(surfaceModifier),
@@ -375,7 +395,7 @@ fun SearchField(
         modifier = modifier.fillMaxWidth()
             .then(when {
                 edge != null -> Modifier.border(edge, shape)
-                compact -> Modifier.dropShadow(shape, DuckerCardShadow)
+                compact -> Modifier.cardShadow(shape)
                 else -> Modifier.dropShadow(shape) {
                     val lift = shadowLift().coerceIn(0f, 1f)
                     // Keep blur geometry fixed while scrolling so the cached mask stays reusable.

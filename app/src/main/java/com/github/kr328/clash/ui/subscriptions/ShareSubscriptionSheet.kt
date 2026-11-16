@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -24,7 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.DuckerSheet
-import com.github.kr328.clash.ui.components.DuckerCardShadow
+import com.github.kr328.clash.ui.components.cardShadow
 import com.github.kr328.clash.ui.components.SheetButton
 import io.nayuki.qrcodegen.QrCode
 
@@ -52,7 +51,7 @@ fun ShareSubscriptionSheet(
                     .widthIn(max = if (LocalTv.current) 180.dp else 280.dp)
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .dropShadow(MaterialTheme.shapes.large, DuckerCardShadow)
+                    .cardShadow(MaterialTheme.shapes.large)
                     .clip(MaterialTheme.shapes.large)
                     .qr(qr),
             )

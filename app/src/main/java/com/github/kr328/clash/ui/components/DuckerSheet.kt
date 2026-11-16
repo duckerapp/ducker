@@ -126,7 +126,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
@@ -656,7 +655,7 @@ internal fun SheetField(
 
     Row(
         modifier = Modifier.fillMaxWidth()
-            .then(if (flat == null) Modifier.dropShadow(shape, DuckerCardShadow) else Modifier)
+            .then(if (flat == null) Modifier.cardShadow(shape) else Modifier)
             .clip(shape)
             .background(scheme.surface)
             .then(edge?.let { Modifier.border(it, shape) } ?: Modifier)
@@ -746,7 +745,7 @@ internal fun SheetButton(
                 alpha = if (enabled || busy) 1f else 0.4f
                 outsets = DuckerShadowOutsets
             }
-            .then(if (edge == null) Modifier.dropShadow(CircleShape, DuckerCardShadow) else Modifier)
+            .then(if (edge == null) Modifier.cardShadow(CircleShape) else Modifier)
             .clip(CircleShape)
             .background(back)
             .then(
