@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.components
 
 import androidx.compose.runtime.derivedStateOf
 import android.os.Build
+import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.compose.animation.core.FiniteAnimationSpec
@@ -48,6 +49,7 @@ import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.FocusRequester
@@ -169,6 +171,11 @@ internal fun DuckerSheet(
     compact: Boolean = false,
     /** A fraction of the full window; keyboard insets expand it only as far as space allows. */
     heightFraction: Float? = null,
+    /**
+     * Keep the window and its composition between opens (D-521); the caller keeps the sheet composed. A closed sheet
+     * hides its window: creating it and composing the body made each open's first frame long (F-513).
+     */
+    keep: Boolean = false,
     titleAction: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -326,12 +333,25 @@ internal fun DuckerSheet(
             lift.animateTo(target, tween(LIFT_MS, easing = FastOutSlowInEasing))
         }
 
+        val focus = LocalFocusManager.current
+
+        // A hidden window draws nothing and takes no touch, key, focus or accessibility: the fullscreen
+        // transparent window must never stay visible over the app once the sheet has gone.
+        fun finish() {
+            if (keep) {
+                focus.clearFocus(force = true)
+                window?.decorView?.visibility = View.GONE
+            }
+            closed()
+        }
+
         // Выезд и отъезд — от того места, где панель сейчас: закрытие жестом продолжается
         // с того места, где палец её отпустил.
         LaunchedEffect(open, height > 0f) {
             when {
-                height == 0f -> if (!open) closed()
+                height == 0f -> if (!open) finish()
                 open -> {
+                    if (keep) window?.decorView?.visibility = View.VISIBLE
                     exitVelocity = null
                     move(0f, tween(ENTER_MS, easing = FastOutSlowInEasing))
                 }
@@ -339,7 +359,7 @@ internal fun DuckerSheet(
                     val spec = exitVelocity?.let { sheetReleaseSpec(height - offset.coerceAtMost(height), it, EXIT_MS) }
                         ?: tween(EXIT_MS, easing = FastOutLinearInEasing)
                     exitVelocity = null
-                    move(height, spec) { closed() }
+                    move(height, spec) { finish() }
                 }
             }
         }

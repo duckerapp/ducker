@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
@@ -92,6 +93,7 @@ internal fun NodePickerSheet(
     onClosed: () -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
+    val list = rememberLazyListState()
     val group = state.groups.firstOrNull { it.name == initialGroup }
         ?: state.groups.firstOrNull()
     val shortWindow = LocalConfiguration.current.screenHeightDp < 480
@@ -100,12 +102,18 @@ internal fun NodePickerSheet(
         open = open,
         title = stringResource(R.string.all_nodes),
         titleAction = { ProxySortToggle(state.sort, onSort) },
-        busy = false, onDismiss = onDismiss, onClosed = onClosed,
-        scrollable = false, compact = true,
+        busy = false, onDismiss = onDismiss,
+        // The kept sheet opens as a new one did: no search, list at its start.
+        onClosed = {
+            query = ""
+            list.requestScrollToItem(0)
+            onClosed()
+        },
+        scrollable = false, compact = true, keep = true,
         heightFraction = if (shortWindow) 1f else 0.80f,
     ) {
         PickerList(
-            state = state, group = group, query = query, onQuery = { query = it },
+            state = state, list = list, group = group, query = query, onQuery = { query = it },
             onPick = onPick, onCheck = onCheck,
             modifier = Modifier.fillMaxWidth().weight(1f),
         )
@@ -121,6 +129,7 @@ internal fun NodePickerSheet(
 @Composable
 private fun PickerList(
     state: ProxyState,
+    list: LazyListState,
     group: ProxyGroupState?,
     query: String,
     onQuery: (String) -> Unit,
@@ -128,7 +137,6 @@ private fun PickerList(
     onCheck: (String) -> Unit,
     modifier: Modifier,
 ) {
-    val list = rememberLazyListState()
     val density = LocalDensity.current
     val search = remember(density) { FloatingSearch(with(density) { 8.dp.toPx() }) }
     var searchHeight by remember(density) { mutableFloatStateOf(with(density) { 48.dp.toPx() }) }

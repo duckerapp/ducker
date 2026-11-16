@@ -443,6 +443,7 @@ private fun HomeRegular(
     // карточки видно только отсюда.
     var picking by remember { mutableStateOf(false) }
     var pickerMounted by remember { mutableStateOf(false) }
+    var pickerClosed by remember { mutableStateOf(false) }
     var pendingPick by remember { mutableStateOf<Pair<String, String>?>(null) }
     val tv = LocalTv.current
     // Display-size changes alter the logical window height; text keeps the system's own scale. A TV is
@@ -466,6 +467,7 @@ private fun HomeRegular(
     LaunchedEffect(picking, tv) {
         if (!tv && picking) {
             pickerMounted = true
+            pickerClosed = false
             // Loaded content can open first; refreshing the sibling tab must not interrupt the sheet.
             if (nodesLoaded) delay(280)
             requestNodes()
@@ -628,31 +630,50 @@ private fun HomeRegular(
     }
 
     if (!tv && pickerMounted) {
+        // Hidden, the kept sheet takes no new input (D-521): the proxy tab's checks and Home's updates would recompose
+        // it for no one. Its callbacks read the current values through states, so they stay the same objects.
+        val live = picking || !pickerClosed
+        val heldState = remember { Held(pickerState) }
+        val heldGroup = remember { Held<String?>(null) }
+        if (live) {
+            heldState.value = pickerState
+            heldGroup.value = picker?.group ?: state.groups.firstOrNull()?.name
+        }
+        val firstGroup by rememberUpdatedState(state.groups.firstOrNull()?.name)
+        val previewNode by rememberUpdatedState(onPreviewNode)
+        val pickNode by rememberUpdatedState(onPickNode)
+        val sortNodes by rememberUpdatedState(onSortNodes)
+        val checkNodes by rememberUpdatedState(onCheckNodes)
+
         NodePickerSheet(
             open = picking,
-            state = pickerState,
-            onSort = onSortNodes,
-            onCheck = onCheckNodes,
-            initialGroup = picker?.group ?: state.groups.firstOrNull()?.name,
+            state = heldState.value,
+            onSort = { sortNodes(it) },
+            onCheck = { checkNodes(it) },
+            initialGroup = heldGroup.value,
             onPick = { group, name ->
                 // A service-specific group must not replace the main connection's node label.
-                if (group == state.groups.firstOrNull()?.name) onPreviewNode(name)
+                if (group == firstGroup) previewNode(name)
                 // A pick closes the sheet and is applied once it has gone: applying rebuilds the proxy
                 // tab and would cost the closing frames (D-91), as with the old panel (D-116).
                 pendingPick = group to name
                 picking = false
             },
             onDismiss = { picking = false },
+            // The sheet stays composed with its window hidden, so the next open needs no new window (D-521).
             onClosed = {
-                pickerMounted = false
+                pickerClosed = true
                 pendingPick?.let { (group, name) ->
                     pendingPick = null
-                    onPickNode(group, name)
+                    pickNode(group, name)
                 }
             },
         )
     }
 }
+
+/** A value composition keeps without observing it: the hidden node sheet's last input (D-521). */
+private class Held<T>(var value: T)
 
 /**
  * Заглушка на время, пока служба не ответила (D-77).
