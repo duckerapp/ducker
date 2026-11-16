@@ -4,10 +4,9 @@ import androidx.compose.runtime.derivedStateOf
 import android.os.Build
 import android.view.ViewGroup
 import android.view.WindowManager
-import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animate
 import androidx.compose.foundation.gestures.Orientation
@@ -245,11 +244,13 @@ internal fun DuckerSheet(
         var height by remember { mutableFloatStateOf(0f) }
         var offset by remember { mutableFloatStateOf(Float.MAX_VALUE) }
         var motion by remember { mutableStateOf<Job?>(null) }
+        var exitVelocity by remember { mutableStateOf<Float?>(null) }
+        val gestureDensity by rememberUpdatedState(LocalDensity.current.density)
 
-        fun move(to: Float, duration: Int, easing: Easing, then: () -> Unit = {}) {
+        fun move(to: Float, spec: FiniteAnimationSpec<Float>, then: () -> Unit = {}) {
             motion?.cancel()
             motion = scope.launch {
-                animate(offset.coerceAtMost(height), to, animationSpec = tween(duration, easing = easing)) { value, _ ->
+                animate(offset.coerceAtMost(height), to, animationSpec = spec) { value, _ ->
                     offset = value
                 }
                 then()
@@ -262,15 +263,19 @@ internal fun DuckerSheet(
             if (!shown) return
 
             motion?.cancel()
+            exitVelocity = null
             offset = (offset + by).coerceIn(0f, height)
         }
 
         fun settle(velocity: Float) {
             if (!shown) return
 
-            val down = velocity > FLING || (velocity > -FLING && offset > height * CLOSE_PART)
-
-            if (!(down && close())) move(0f, SETTLE_MS, LinearOutSlowInEasing)
+            val down = sheetShouldClose(offset, height, velocity / gestureDensity)
+            exitVelocity = if (down) velocity else null
+            if (!(down && close())) {
+                exitVelocity = null
+                move(0f, sheetReleaseSpec(-offset, velocity, SETTLE_MS))
+            }
         }
 
         val density = LocalDensity.current
@@ -327,8 +332,16 @@ internal fun DuckerSheet(
         LaunchedEffect(open, height > 0f) {
             when {
                 height == 0f -> if (!open) closed()
-                open -> move(0f, ENTER_MS, FastOutSlowInEasing)
-                else -> move(height, EXIT_MS, FastOutLinearInEasing) { closed() }
+                open -> {
+                    exitVelocity = null
+                    move(0f, tween(ENTER_MS, easing = FastOutSlowInEasing))
+                }
+                else -> {
+                    val spec = exitVelocity?.let { sheetReleaseSpec(height - offset.coerceAtMost(height), it, EXIT_MS) }
+                        ?: tween(EXIT_MS, easing = FastOutLinearInEasing)
+                    exitVelocity = null
+                    move(height, spec) { closed() }
+                }
             }
         }
 
@@ -561,12 +574,6 @@ private val LIFT_ROOM = 540.dp
 private val LIFT_GAP = 16.dp
 private const val SETTLE_MS = 200
 private const val SCRIM = 0.32f
-
-/** Утянута больше чем на треть — закрывается. */
-private const val CLOSE_PART = 0.33f
-
-/** Смахнули быстрее этого, пикселей в секунду, — закрывается, как бы мало ни утянули. */
-private const val FLING = 1500f
 
 /**
  * Вопрос перед тем, как бросить несохранённое: правку конфига (D-124), новое правило (D-135)
