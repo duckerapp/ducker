@@ -54,6 +54,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -95,6 +96,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -684,6 +689,19 @@ private fun groupPicks(context: Context) {
     groupToast = Toast.makeText(context.applicationContext, R.string.group_picks_itself, Toast.LENGTH_SHORT).apply { show() }
 }
 
+private val FavoriteCornerShape = GenericShape { size, direction ->
+    val end = if (direction == LayoutDirection.Ltr) size.width else 0f
+    moveTo(end, 0f)
+    lineTo(size.width - end, 0f)
+    arcTo(
+        rect = Rect(end - size.width, -size.height, end + size.width, size.height),
+        startAngleDegrees = if (direction == LayoutDirection.Ltr) 180f else 0f,
+        sweepAngleDegrees = if (direction == LayoutDirection.Ltr) -90f else 90f,
+        forceMoveTo = false,
+    )
+    close()
+}
+
 
 @Composable
 private fun ProxyOption(
@@ -758,8 +776,18 @@ private fun ProxyOption(
                 // и не ездит вслед за его длиной.
                 Icon(
                     imageVector = if (proxy.favorite) Symbols.Star else Symbols.StarOutline,
-                    contentDescription = stringResource(R.string.favorite),
+                    contentDescription = stringResource(if (proxy.favorite) R.string.unfavorite else R.string.favorite),
                     modifier = Modifier.size(20.dp)
+                        // Anchor the sector to the card's top/end while retaining the 20 dp icon slot.
+                        // The real clipped target also keeps surrounding star taps off the card.
+                        .then(if (tv) Modifier else Modifier.layout { measurable, _ ->
+                            val icon = 20.dp.roundToPx()
+                            val target = icon + 24.dp.roundToPx() + 12.dp.roundToPx()
+                            val placeable = measurable.measure(Constraints.fixed(target, target))
+                            layout(icon, icon) {
+                                placeable.placeRelative(-24.dp.roundToPx(), -12.dp.roundToPx())
+                            }
+                        })
                         .focusRequester(star)
                         // Left to its own card, as the subscription row's «⋯»: the first column's card holds the
                         // star, and the page sent Left to the dock.
@@ -778,8 +806,9 @@ private fun ProxyOption(
                             focusManager.moveFocus(FocusDirection.Down)
                             true
                         }
-                        .clip(MaterialTheme.shapes.small)
-                        .clickable(onClick = onFavorite),
+                        .clip(if (tv) MaterialTheme.shapes.small else FavoriteCornerShape)
+                        .toggleable(value = proxy.favorite, role = Role.Checkbox, onValueChange = { onFavorite() })
+                        .then(if (tv) Modifier else Modifier.padding(start = 24.dp, top = 12.dp, end = 12.dp, bottom = 24.dp)),
                     tint = if (proxy.favorite) LocalContentColor.current
                     else LocalContentColor.current.copy(alpha = 0.4f),
                 )

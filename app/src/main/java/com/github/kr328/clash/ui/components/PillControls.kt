@@ -1,6 +1,5 @@
 package com.github.kr328.clash.ui.components
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -237,8 +236,7 @@ fun Pill(
 ) {
     val scheme = MaterialTheme.colorScheme
     val rest = if (onCard) scheme.surfaceVariant else scheme.surface
-    val fill by animateColorAsState(if (selected) scheme.primaryContainer else rest, tween(PILL_FADE_MS), label = "pillFill")
-    val ink by animateColorAsState(if (selected) scheme.onPrimaryContainer else scheme.onSurface, tween(PILL_FADE_MS), label = "pillInk")
+    val selection by animateFloatAsState(if (selected) 1f else 0f, tween(PILL_FADE_MS), label = "pillSelection")
     val style = MaterialTheme.typography.labelLarge
     val action = when (role) {
         Role.Button -> Modifier.clickable(enabled = enabled, role = role, onClick = onClick)
@@ -246,7 +244,7 @@ fun Pill(
         else -> Modifier.selectable(selected = selected, enabled = enabled, role = role, onClick = onClick)
     }
 
-    Row(
+    Box(
         modifier = modifier.minimumInteractiveComponentSize()
             // Before the shadow, which would otherwise show through the faded pill.
             .graphicsLayer {
@@ -255,17 +253,44 @@ fun Pill(
             }
             .then(if (onCard) Modifier else Modifier.airShadow(CircleShape, rest))
             .clip(CircleShape)
-            .background(fill)
-            .then(action)
-            .heightIn(min = 36.dp)
-            .padding(start = if (icon != null) 10.dp else 14.dp, end = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            .then(action),
+        propagateMinConstraints = true,
     ) {
-        if (icon != null) Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(18.dp))
+        val content: @Composable (Color, Modifier) -> Unit = { ink, layer ->
+            Row(
+                modifier = layer.heightIn(min = 36.dp)
+                    .padding(start = if (icon != null) 10.dp else 14.dp, end = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            ) {
+                if (icon != null) Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(18.dp))
 
-        if (fit) FitLabel(text, style, color = ink)
-        else Text(text, color = ink, style = style, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (fit) FitLabel(text, style, color = ink)
+                else Text(text, color = ink, style = style, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+
+        content(
+            scheme.onSurface,
+            Modifier.drawWithContent {
+                val edge = size.width * selection
+                val left = if (layoutDirection == LayoutDirection.Rtl) 0f else edge
+                val right = if (layoutDirection == LayoutDirection.Rtl) size.width - edge else size.width
+                clipRect(left = left, right = right) { this@drawWithContent.drawContent() }
+            }.background(rest),
+        )
+        // Reveal fill and its ink together, as in PillSegments: opposing color fades cross
+        // at zero contrast. The second label is visual only and never sizes the pill.
+        content(
+            scheme.onPrimaryContainer,
+            Modifier.matchParentSize().clearAndSetSemantics {}
+                .drawWithContent {
+                    val edge = size.width * selection
+                    val left = if (layoutDirection == LayoutDirection.Rtl) size.width - edge else 0f
+                    clipRect(left = left, right = left + edge) { this@drawWithContent.drawContent() }
+                }
+                .background(scheme.primaryContainer),
+        )
     }
 }
 
