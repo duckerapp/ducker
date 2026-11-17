@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -23,7 +24,25 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,7 +79,9 @@ import kotlin.math.floor
 /**
  * One choice of a few, first made for «Вручную · Свой · Провайдер» (D-286): a white track and a black pill that
  * rides to the chosen segment. [widest] sizes the segments, so a label that changes while one looks keeps its
- * place; by default the labels themselves.
+ * place; by default the labels themselves. The glass style (D-541): under a finger the pill swells into the dock's
+ * clear lens, which a drag carries between the segments and lets go on the nearest; a tap's lens rides to the
+ * tapped segment and settles once it lands.
  */
 @Composable
 fun PillSegments(
@@ -74,11 +95,11 @@ fun PillSegments(
     val scheme = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
 
-    val position by animateFloatAsState(
-        targetValue = selected.toFloat(),
-        animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
-        label = "pillPosition",
-    )
+    val scope = rememberCoroutineScope()
+    val motion = scope.coroutineContext.motionScale > 0f
+    val positionState = remember { Animatable(selected.toFloat()) }
+    val position by positionState.asState()
+    LaunchedEffect(selected) { positionState.animateTo(selected.toFloat(), PILL_SPRING) }
     val pill = chosenFill()
     // Пульт (этап 6) входит в переключатель на выбранный сегмент, а не на ближайший к центру.
     val segments = remember(labels.size) { List(labels.size) { FocusRequester() } }
@@ -88,6 +109,25 @@ fun PillSegments(
     // Left and width of every segment, from the last layout; the pill rides between them.
     var spans by remember { mutableStateOf(FloatArray(0)) }
 
+    // The glass style's lens: 0 — the pill, 1 — a clear lens under a finger.
+    val glass = (LocalGlassBackdrop.current != null || LocalFrosted.current) && !tv
+    val bubble = remember(glass) { if (glass) bubbleShader() else null }
+    val lens = remember { Animatable(0f) }
+    val touch = remember { LensTouch() }
+    val segmentsLayer = if (bubble != null) rememberGraphicsLayer() else null
+    val bubbleLayer = if (bubble != null) rememberGraphicsLayer() else null
+    val under = rememberPaneUnder()
+    val at = remember { floatArrayOf(0f, 0f) }
+    val base = scheme.background
+    val selectedNow by rememberUpdatedState(selected)
+    if (bubble != null) LaunchedEffect(touch.count, touch.down, motion) {
+        // Swollen until the pill has landed where the finger sent it.
+        lens.follow(touch, motion) {
+            snapshotFlow { !positionState.isRunning && positionState.value == selectedNow.toFloat() }.first { it }
+        }
+    }
+    val presence = { if (bubble != null) lens.value else 0f }
+
     Layout(
         modifier = modifier.fillMaxWidth()
             .height(52.dp)
@@ -96,14 +136,48 @@ fun PillSegments(
                 alpha = if (enabled) 1f else 0.5f
                 outsets = DuckerShadowOutsets
             }
+            .then(
+                if (bubble != null) Modifier.onGloballyPositioned { val p = it.positionInRoot(); at[0] = p.x; at[1] = p.y }
+                    .drawWithContent {
+                        val shown = lens.value
+                        if (shown < 0.01f) {
+                            drawContent()
+                            return@drawWithContent
+                        }
+                        // The lens shows the segments under it: the track, the faded pill, the labels.
+                        segmentsLayer!!.record { this@drawWithContent.drawContent() }
+                        drawLayer(segmentsLayer)
+
+                        val pad = PILL_PAD.toPx()
+                        val (left, width) = pillSpan(spans, positionState.value)
+                        // Stretched by its speed, as the dock's lens.
+                        val stretch = (abs(positionState.velocity) * width / 5000f).coerceAtMost(0.25f)
+                        val origin = Offset(at[0], at[1])
+                        drawGlassBubble(
+                            layer = bubbleLayer!!,
+                            shader = bubble,
+                            center = Offset(pad + left + width / 2f, size.height / 2f),
+                            halfWidth = width / 2f * (1f + 0.08f * shown) * (1f + stretch),
+                            halfHeight = (size.height / 2f - pad + LENS_RISE.toPx() * shown) * (1f - 0.35f * stretch),
+                            presence = shown,
+                            base = base,
+                        ) {
+                            under(origin)
+                            drawLayer(segmentsLayer)
+                        }
+                    }
+                else Modifier,
+            )
             .sheetSurface(CircleShape)
-            .padding(4.dp)
+            .padding(PILL_PAD)
+            .then(if (bubble != null && enabled) Modifier.pillDrag(touch, { spans }, positionState, motion, scope, selected, onSelect) else Modifier)
             // Пилюля рисуется, а не компонуется: едет каждый кадр, и перекладывать
             // ради этого сегменты незачем.
             .drawBehind {
                 val (left, width) = pillSpan(spans, position)
                 drawRoundRect(
-                    color = pill,
+                    // Under the lens the pill clears, as the dock's highlight under its bubble.
+                    color = pill.copy(alpha = pill.alpha * (1f - presence())),
                     topLeft = Offset(left, 0f),
                     size = Size(width, size.height),
                     cornerRadius = CornerRadius(size.height / 2f),
@@ -163,6 +237,7 @@ fun PillSegments(
                     Box(
                         modifier = Modifier.matchParentSize()
                             .clearAndSetSemantics {}
+                            .then(if (bubble != null) Modifier.graphicsLayer { alpha = 1f - lens.value } else Modifier)
                             .drawWithContent {
                                 val (left, width) = pillSpan(spans, position)
                                 val from = left - spans.getOrElse(index * 2) { 0f }
@@ -204,8 +279,77 @@ fun PillSegments(
     }
 }
 
+/**
+ * The glass pill's drag: a finger moved sideways past the slop takes the pill (and the touch from the segment under it),
+ * which follows it between the segments with a tick at each; let go, the nearest is chosen. A vertical move is a scroll.
+ */
+private fun Modifier.pillDrag(
+    touch: LensTouch,
+    spans: () -> FloatArray,
+    position: Animatable<Float, *>,
+    motion: Boolean,
+    scope: CoroutineScope,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+): Modifier = composed {
+    val haptics = LocalHapticFeedback.current
+    val selectedNow by rememberUpdatedState(selected)
+    val selectNow by rememberUpdatedState(onSelect)
+    fingerOn(touch).pointerInput(motion) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            val slop = viewConfiguration.touchSlop
+            var moving = false
+            var near = selectedNow
+            while (true) {
+                val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
+                if (!change.pressed) break
+                val dx = abs(change.position.x - down.position.x)
+                if (!moving && abs(change.position.y - down.position.y) > slop && dx <= slop) return@awaitEachGesture
+                if (!moving && dx > slop) moving = true
+                if (!moving) continue
+
+                change.consume()
+                val to = positionAt(spans(), change.position.x)
+                scope.launch { if (motion) position.animateTo(to, FOLLOW_SPRING) else position.snapTo(to) }
+                val now = to.roundToInt()
+                if (now != near) {
+                    near = now
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                }
+            }
+            if (!moving) return@awaitEachGesture
+
+            val count = spans().size / 2
+            val picked = near.coerceIn(0, maxOf(count - 1, 0))
+            if (picked != selectedNow) selectNow(picked)
+            else scope.launch { position.animateTo(picked.toFloat(), PILL_SPRING) }
+        }
+    }
+}
+
+/** The inverse of [pillSpan]: where between the segments a pill centred at [x] stands; past the ends, the end. */
+internal fun positionAt(spans: FloatArray, x: Float): Float {
+    val count = spans.size / 2
+    if (count < 2) return 0f
+    fun middle(i: Int) = spans[i * 2] + spans[i * 2 + 1] / 2f
+    for (i in 0 until count - 1) {
+        val a = middle(i)
+        val b = middle(i + 1)
+        if (x >= minOf(a, b) && x <= maxOf(a, b)) return i + (x - a) / (b - a)
+    }
+    return if (abs(x - middle(0)) < abs(x - middle(count - 1))) 0f else (count - 1).toFloat()
+}
+
+private val PILL_SPRING = spring<Float>(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
+// The pill under a finger: close behind it, a little give.
+private val FOLLOW_SPRING = spring<Float>(dampingRatio = 0.85f, stiffness = 1400f)
+private val PILL_PAD = 4.dp
+// How far the lens swells over the track, above and below (the dock's is 10 dp over a taller row).
+private val LENS_RISE = 6.dp
+
 /** The pill between the segments at [position]: left and width, from [spans] of [PillSegments]. */
-private fun pillSpan(spans: FloatArray, position: Float): Pair<Float, Float> {
+internal fun pillSpan(spans: FloatArray, position: Float): Pair<Float, Float> {
     val count = spans.size / 2
     if (count < 2) return (spans.getOrElse(0) { 0f }) to (spans.getOrElse(1) { 0f })
 

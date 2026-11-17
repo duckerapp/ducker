@@ -66,15 +66,16 @@ internal fun DuckerSwitch(
     onDrag: ((Boolean) -> Unit)? = null,
     /** The row's presses: held, the lens over the thumb swells. */
     pressed: InteractionSource? = null,
+    enabled: Boolean = true,
 ) {
     val glass = LocalGlassBackdrop.current != null || LocalFrosted.current
     val bubble = remember(glass) { if (glass) bubbleShader() else null }
-    if (bubble == null) Switch(checked = checked, onCheckedChange = null, modifier = modifier)
-    else GlassToggle(checked, bubble, modifier, onDrag, pressed)
+    if (bubble == null) Switch(checked = checked, onCheckedChange = null, modifier = modifier, enabled = enabled)
+    else GlassToggle(checked, bubble, modifier.alpha(if (enabled) 1f else DISABLED_ALPHA), onDrag.takeIf { enabled }, pressed, enabled)
 }
 
 @Composable
-private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifier, onDrag: ((Boolean) -> Unit)?, pressed: InteractionSource?) {
+private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifier, onDrag: ((Boolean) -> Unit)?, pressed: InteractionSource?, enabled: Boolean) {
     val scheme = MaterialTheme.colorScheme
     val dark = scheme.background.luminance() < 0.5f
     val off = if (dark) Color(0xFF787880).copy(alpha = 0.36f) else Color(0xFF787878).copy(alpha = 0.2f)
@@ -96,7 +97,7 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
     val under = rememberPaneUnder()
     val at = remember { floatArrayOf(0f, 0f) }
     val touch = remember { LensTouch() }
-    LaunchedEffect(pressed) { pressed?.let { touch.watch(it) } }
+    LaunchedEffect(pressed, enabled) { if (enabled) pressed?.let { touch.watch(it) } }
     LaunchedEffect(touch.count, touch.down, motion) { held.follow(touch, motion) }
 
     LaunchedEffect(checked) {
@@ -119,7 +120,7 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
     Box(
         modifier.size(TRACK_WIDTH, TRACK_HEIGHT)
             .onGloballyPositioned { val p = it.positionInRoot(); at[0] = p.x; at[1] = p.y }
-            .fingerOn(touch)
+            .then(if (enabled) Modifier.fingerOn(touch) else Modifier)
             .then(
                 if (onDrag != null) Modifier.draggable(
                     dragState,
@@ -167,7 +168,7 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
  * The fingers on a control and on the row that speaks for it. [count] counts touches: a row's short tap reports its press
  * and release together, so [down] may never be seen true, and the lens must still swell once.
  */
-private class LensTouch {
+internal class LensTouch {
     var count by mutableIntStateOf(0)
     private var own by mutableStateOf(false)
     private var row by mutableStateOf(false)
@@ -189,8 +190,11 @@ private class LensTouch {
     }
 }
 
-/** Swells while a finger is down, settles back after; a touch already gone still swells fully once. */
-private suspend fun Animatable<Float, *>.follow(touch: LensTouch, motion: Boolean) {
+/**
+ * Swells while a finger is down, settles back after; a touch already gone still swells fully once. [rest]: what the
+ * lens waits for, swollen, before it settles (a segment's lens, its landing).
+ */
+internal suspend fun Animatable<Float, *>.follow(touch: LensTouch, motion: Boolean, rest: suspend () -> Unit = {}) {
     val touched = touch.count != touch.seen
     touch.seen = touch.count
     if (!motion) {
@@ -199,12 +203,13 @@ private suspend fun Animatable<Float, *>.follow(touch: LensTouch, motion: Boolea
         animateTo(1f, tween(LENS_IN_MS))
     } else {
         if (value < 1f && (value > 0f || touched)) animateTo(1f, tween((LENS_IN_MS * (1f - value)).toInt()))
+        rest()
         animateTo(0f, tween(LENS_OUT_MS))
     }
 }
 
 /** A finger on this, from its touch until it lifts, whatever gesture takes the touch meanwhile. */
-private fun Modifier.fingerOn(touch: LensTouch): Modifier = pointerInput(touch) {
+internal fun Modifier.fingerOn(touch: LensTouch): Modifier = pointerInput(touch) {
     awaitEachGesture {
         awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
         touch.finger(true)
