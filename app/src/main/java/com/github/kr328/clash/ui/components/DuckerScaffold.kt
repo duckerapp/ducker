@@ -12,6 +12,7 @@ import android.os.Build
 import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
@@ -224,7 +225,13 @@ fun DuckerScaffold(
     val backdrop = rememberGlassBackdrop()
     val sheetGlass = LocalSheetGlass.current
     // Under an open glass sheet the screen stands still: drawn once for the sheet's panes, see SheetStillPictures.
-    if (backdrop != null && sheetGlass != null) SheetStillPictures(backdrop, sheetGlass, extra = SHEET_BLUR)
+    if (backdrop != null && sheetGlass != null) {
+        SheetStillPictures(backdrop, sheetGlass, extra = SHEET_BLUR)
+        DisposableEffect(sheetGlass, backdrop) {
+            sheetGlass.screen = backdrop
+            onDispose { if (sheetGlass.screen === backdrop) sheetGlass.screen = null }
+        }
+    }
 
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { insets ->
         Box(
@@ -243,8 +250,6 @@ fun DuckerScaffold(
             val side = if (rtl) bars.getRight(density, direction) else bars.getLeft(density, direction)
 
             Box(Modifier.fillMaxSize().glassSource(backdrop)) {
-            // A glass sheet over the screen shows this screen through itself.
-            CompositionLocalProvider(LocalScreenBackdrop provides backdrop) {
             content(
                 if (rail) {
                     PaddingValues(
@@ -267,7 +272,6 @@ fun DuckerScaffold(
                 },
                 insets,
             )
-            }
             }
 
             NavigationFade()

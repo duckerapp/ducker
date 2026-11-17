@@ -184,10 +184,10 @@ internal fun DuckerSheet(
     keep: Boolean = false,
     titleAction: (@Composable () -> Unit)? = null,
     /**
-     * The glass style: the screen under the sheet ([LocalScreenBackdrop]), which the sheet then shows through itself
+     * The glass style: the screen under the sheet ([SheetGlass.screen]), which the sheet then shows through itself
      * as a pane of glass, its controls as glass on it. Null (outside the app's scaffold) — a frosted sheet.
      */
-    backdrop: GlassBackdrop? = LocalScreenBackdrop.current,
+    backdrop: GlassBackdrop? = LocalSheetGlass.current?.screen,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     // Пока подписка загружается, панель не закрывается ни свайпом, ни «назад», ни касанием

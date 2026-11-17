@@ -24,6 +24,12 @@ internal class SheetGlass {
         want(owner, false)
     }
 
+    /**
+     * The screen as recorded for the glass dock, set by [DuckerScaffold]; a glass sheet over it shows it through itself.
+     * Here, not in the scaffold's scope: Home's subscription, update and VPN sheets are composed beside the scaffold.
+     */
+    var screen by mutableStateOf<GlassBackdrop?>(null)
+
     private val wanting = mutableSetOf<Any>()
 
     /** Another glass pane sheet than [owner] is opening or open, not leaving. */
@@ -45,5 +51,3 @@ internal class SheetGlass {
 
 internal val LocalSheetGlass = staticCompositionLocalOf<SheetGlass?> { null }
 
-/** The screen under the tabs as recorded for the glass dock; a glass sheet over it shows it through itself. */
-internal val LocalScreenBackdrop = staticCompositionLocalOf<GlassBackdrop?> { null }
