@@ -154,10 +154,11 @@ class ArtifactsTest(unittest.TestCase):
     def test_first_release_waits_for_wallets_and_final_changelog(self):
         support=self.root/'app/src/main/java/com/github/kr328/clash/ui/settings/ProjectSupport.kt'
         support.parent.mkdir(parents=True)
-        support.write_text('  DonationWallet("BTC", "Bitcoin")\n')
+        enum = 'internal enum class DonationNetwork(val title: String, val label: String, val address: String) {\n%s}\n'
+        support.write_text(enum % '    Bitcoin("Bitcoin", "Bitcoin", ""),\n')
         with self.assertRaisesRegex(ValueError, 'wallet addresses'):
             a.release_inputs('1.0.0')
-        support.write_text('  DonationWallet("BTC", "Bitcoin", "fixture-address")\n')
+        support.write_text(enum % '    Bitcoin("Bitcoin", "Bitcoin", "fixture-address"),\n')
         a.release_inputs('1.0.0')
         (self.root/'CHANGELOG.md').write_text('## 1.0.0 — draft\n- Pending\n')
         with self.assertRaisesRegex(ValueError, 'changelog'):

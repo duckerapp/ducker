@@ -177,7 +177,8 @@ def release_inputs(version):
         notes(path, version)
     if version == "1.0.0":
         support = ROOT / "app/src/main/java/com/github/kr328/clash/ui/settings/ProjectSupport.kt"
-        wallets = re.findall(r'^\s*DonationWallet\("[^"\n]+",\s*"[^"\n]+"(?:,\s*"([^"\n]*)")?\)', support.read_text(), re.M)
+        networks = re.search(r"enum class DonationNetwork\b.*?\{(.*?)^\}", support.read_text(), re.S | re.M)
+        wallets = re.findall(r'^\s*\w+\("[^"\n]*",\s*"[^"\n]*",\s*"([^"\n]*)"\),?$', networks[1] if networks else "", re.M)
         if not wallets or not all(value.strip() for value in wallets):
             raise ValueError("Add all agreed wallet addresses before building 1.0.0")
 
