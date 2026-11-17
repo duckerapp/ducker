@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.home
 
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
+import com.github.kr328.clash.ui.theme.failureOn
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -289,7 +290,7 @@ private fun PickerNode(node: NodeState, selected: Boolean, enabled: Boolean, onC
                 else -> stringResource(R.string.value_unknown)
             },
             style = MaterialTheme.typography.labelLarge,
-            color = if (node.delay == DelayStore.NO_ANSWER) scheme.error else content.copy(alpha = 0.7f),
+            color = if (node.delay == DelayStore.NO_ANSWER) failureOn(content) else content.copy(alpha = 0.7f),
             maxLines = 1,
         )
     }

@@ -692,4 +692,32 @@
     <string name="config_template_failed">Sin aplicar: %1$s</string>
     <string name="config_template_applying">Aplicando…</string>
     <string name="config_template_edited">La configuración se editó a mano: cambiarla reemplaza las ediciones</string>
+
+    <!-- Liquid glass appearance settings. -->
+    <string name="style">Estilo</string>
+    <string name="style_air">Air</string>
+    <string name="style_glass">Cristal líquido</string>
+    <string name="glass_backdrop">Fondo</string>
+    <string name="glass_backdrop_none">Ninguno</string>
+    <string name="glass_backdrop_sunset">Atardecer</string>
+    <string name="glass_backdrop_grey">Gris</string>
+    <string name="glass_backdrop_black_gradient">Degradado negro</string>
+    <string name="glass_backdrop_green">Verde</string>
+    <string name="glass_backdrop_pink">Rosa</string>
+    <string name="glass_backdrop_black">Negro liso</string>
+    <string name="glass_backdrop_black_white">Blanco y negro</string>
+    <string name="glass_blur">Desenfoque del cristal</string>
+    <string name="glass_blur_none">Sin desenfoque</string>
+    <string name="glass_tuning">Ajustes del cristal</string>
+    <string name="glass_refraction">Refracción (distorsión)</string>
+    <string name="glass_dispersion">Aberración cromática</string>
+    <string name="glass_depth">Profundidad de la lente (curvatura)</string>
+    <string name="glass_highlight">Brillo del borde</string>
+    <string name="glass_noise">Ruido fino (efecto mate)</string>
+    <string name="glass_vibrancy">Intensidad del fondo</string>
+    <string name="glass_tint">Tinte del cristal</string>
+    <string name="glass_reset_tuning">Restablecer los ajustes del cristal</string>
+    <string name="glass_backdrop_image">Imagen propia</string>
+    <string name="glass_image_pick">Elegir otra imagen</string>
+    <string name="glass_image_pick_hint">Permanece fija al desplazar las tarjetas</string>
 </resources>

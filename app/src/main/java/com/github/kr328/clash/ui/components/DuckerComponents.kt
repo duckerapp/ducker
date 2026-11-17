@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.components
 
+import com.github.kr328.clash.ui.theme.BackdropTone
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.SystemClock
@@ -227,11 +228,28 @@ fun DuckerCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val edge = airEdge(colors.containerColor)
+    // The glass style: on the tabs a filled card is a pane of glass over the screen's backdrop, tinted
+    // by its own colour. A shadow would show through it, so the rim marks the edge instead; a card with no fill keeps
+    // its shadow as its edge.
+    val backdrop = LocalGlassBackdrop.current
+    val glass = backdrop != null && colors.containerColor.alpha > 0f
 
     Card(
         modifier = modifier
             .then(
                 when {
+                    glass -> Modifier.liquidGlass(
+                        backdrop,
+                        base = MaterialTheme.colorScheme.background,
+                        // A selected card, in the accent fill, is as dense as Home's card when on: the same colour reads
+                        // as the same glass, not a muddy half-tint of it over the backdrop.
+                        tint = colors.containerColor.copy(
+                            alpha = colors.containerColor.alpha * if (colors.containerColor == MaterialTheme.colorScheme.primaryContainer) {
+                                glassAccentTint(MaterialTheme.colorScheme.background.luminance() < 0.5f)
+                            } else GLASS_CARD_TINT,
+                        ),
+                        shape = shape,
+                    )
                     edge != null -> Modifier
                     resizing -> Modifier.resizingShadow(shape)
                     else -> Modifier.cardShadow(shape)
@@ -239,7 +257,7 @@ fun DuckerCard(
             )
             .then(surfaceModifier),
         shape = shape,
-        colors = colors,
+        colors = if (glass) colors.copy(containerColor = Color.Transparent) else colors,
         border = border ?: edge,
         content = content,
     )
@@ -363,6 +381,9 @@ fun EmptyState(
     }
 }
 
+/** How much of a glass card's own colour lies over the glass: enough for its text, little enough to see through. */
+internal const val GLASS_CARD_TINT = 0.55f
+
 /** A soft shadow separates the search surface; floating lift is read during shadow drawing. */
 @Composable
 fun SearchField(
@@ -374,6 +395,8 @@ fun SearchField(
     compact: Boolean = false,
     /** On a TV, where «Готово» takes the frame: the first result (D-377). */
     next: FocusRequester? = null,
+    /** The glass style: floating over this, the field is glass. */
+    glass: GlassBackdrop? = null,
 ) {
     val visualHeight = with(LocalDensity.current) {
         MaterialTheme.typography.bodyMedium.lineHeight.toDp() + 8.dp
@@ -407,8 +430,15 @@ fun SearchField(
                 }
             })
             .then(
-                if (compact) Modifier.background(MaterialTheme.colorScheme.surface, shape)
-                else Modifier.clip(shape).background(MaterialTheme.colorScheme.surface),
+                when {
+                    compact -> Modifier.background(MaterialTheme.colorScheme.surface, shape)
+                    glass != null -> Modifier.liquidGlass(
+                        glass,
+                        base = MaterialTheme.colorScheme.background,
+                        tint = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                    ).clip(shape)
+                    else -> Modifier.clip(shape).background(MaterialTheme.colorScheme.surface)
+                },
             )
             .then(if (keys) Modifier.focusRequester(self).focusProperties {
                 if (value.isNotEmpty()) end = clear
@@ -588,7 +618,7 @@ fun ScreenHeader(
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
-) {
+) = BackdropTone {
     val enlarged = LocalDensity.current.fontScale > 1f
 
     // The actions go under the title when an enlarged system font leaves the title no room for its full size:
@@ -679,22 +709,32 @@ val ReadableWidth = 640.dp
  */
 @Composable
 fun ScreenFrame(wide: Boolean = false, entry: FocusRequester? = null, content: @Composable () -> Unit) {
+    // The glass style: a tab over Home's backdrop leaves the status bar clear over it; elsewhere the status bar's
+    // veil is frosted glass over the page. Air: neither, the veil below as it was.
+    val overBackdrop = LocalGlassBackdrop.current != null
+    val backdrop = if (!overBackdrop) rememberGlassBackdrop() else null
+
     Box(Modifier.fillMaxSize()) {
         Box(
-            Modifier.align(Alignment.TopCenter).widthIn(max = if (wide) Dp.Unspecified else ReadableWidth).fillMaxWidth().fillMaxHeight(),
+            Modifier.align(Alignment.TopCenter).widthIn(max = if (wide) Dp.Unspecified else ReadableWidth).fillMaxWidth().fillMaxHeight()
+                .then(if (backdrop != null) Modifier.glassSource(backdrop) else Modifier),
         ) {
             CompositionLocalProvider(LocalTabEntry provides entry, content = content)
         }
 
-        val color = MaterialTheme.colorScheme.background
-        val bar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        // A soft veil, as the fade at the bottom (D-481): solid under the clock and gone within 12 dp, it drew a hard
-        // band in the background's colour across a dark card on the light theme and a light card on the dark one.
-        val veil = remember(color) {
-            Brush.verticalGradient(*TOP_VEIL.map { (at, alpha) -> at to color.copy(alpha = alpha) }.toTypedArray())
-        }
+        if (!overBackdrop) {
+            val color = MaterialTheme.colorScheme.background
+            val bar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            // A soft veil, as the fade at the bottom (D-481): solid under the clock and gone within 12 dp, it drew a hard
+            // band in the background's colour across a dark card on the light theme and a light card on the dark one.
+            val veil = remember(color) {
+                Brush.verticalGradient(*TOP_VEIL.map { (at, alpha) -> at to color.copy(alpha = alpha) }.toTypedArray())
+            }
 
-        Box(Modifier.fillMaxWidth().height(bar + TOP_VEIL_RAMP).background(veil))
+            if (backdrop != null) {
+                Box(Modifier.fillMaxWidth().height(bar + 20.dp).glassVeil(backdrop, bar, color))
+            } else Box(Modifier.fillMaxWidth().height(bar + TOP_VEIL_RAMP).background(veil))
+        }
     }
 }
 

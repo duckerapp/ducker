@@ -41,6 +41,14 @@ Apache 2.0); **Coil** с OkHttp (Apache 2.0) — картинки; **zxing-cpp**
   в `ui/components/Symbols.kt`, их пишет `scripts/material-symbols.py`. Лицензия и уведомление —
   в `app/src/main/assets/licenses/`.
 
+## Код
+
+- **AndroidLiquidGlass** — Kyant, Apache License 2.0. Шейдеры стиля «Жидкое стекло» взяты из его
+  `backdrop/.../internal/Shaders.kt` (коммит `65ab177`) и изменены: поле расстояний скруглённого
+  прямоугольника, преломление у края, семиполосная дисперсия и блик по краю — в
+  `ui/components/LiquidGlass.kt`. Сама библиотека не подключена. Уведомление — в
+  `app/src/main/assets/licenses/`.
+
 ## Заимствованные идеи и код
 Формат записи: что взято, откуда (репозиторий, ветка, коммит), идея или код.
 

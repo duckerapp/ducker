@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -57,6 +58,9 @@ internal fun ProxyCheckButton(
 ) {
     val label = stringResource(if (checking) R.string.checking else R.string.check_delay)
     val active = enabled && !checking
+    val backdrop = LocalGlassBackdrop.current
+    val fill = MaterialTheme.colorScheme.surfaceContainer
+    val container = if (backdrop != null) Color.Transparent else fill
     val press = if (compact) {
         Modifier.clickable(
             interactionSource = remember { MutableInteractionSource() },
@@ -64,8 +68,16 @@ internal fun ProxyCheckButton(
             enabled = keepFocus(active), role = Role.Button, onClickLabel = label,
         ) { if (active) onClick() }
     } else {
-        Modifier.clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainer)
+        Modifier
+            .liquidGlass(
+                backdrop,
+                base = MaterialTheme.colorScheme.background,
+                tint = fill.copy(alpha = 0.7f),
+                shape = CircleShape,
+                blurBoost = INNER_BLUR,
+            )
+            .clip(CircleShape)
+            .background(container)
             // Keep focus on the remote while a check is running.
             .clickable(enabled = keepFocus(active), role = Role.Button, onClickLabel = label) { if (active) onClick() }
     }

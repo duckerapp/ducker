@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.CompositionLocalProvider
@@ -77,7 +78,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -98,7 +101,25 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
 import com.github.kr328.clash.R
+import kotlin.math.sin
+import kotlin.math.floor
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -189,14 +210,27 @@ fun DuckerScaffold(
     val bars = WindowInsets.systemBars.union(WindowInsets.displayCutout)
     val below = bars.getBottom(density)
 
+    // The glass style: the dock shows the screen under it through glass. Null — Air.
+    val backdrop = rememberGlassBackdrop()
+    val sheetGlass = LocalSheetGlass.current
+
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { insets ->
-        Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier.fillMaxSize().then(
+                // The glass style: under a bottom sheet the screen blurs as the sheet comes out.
+                if (LocalGlassStyle.current.enabled) Modifier.graphicsLayer {
+                    val shown = sheetGlass?.shown ?: 0f
+                    renderEffect = if (shown > 0.01f) BlurEffect(SHEET_BLUR.toPx() * shown, SHEET_BLUR.toPx() * shown) else null
+                } else Modifier,
+            ),
+        ) {
             // Под панелью резервируем её измеренную высоту: при крупном шрифте она
             // выше, и последний пункт списка не должен уезжать под неё.
             val reserved = with(density) { dockDepth.toDp() }
             val rtl = direction == LayoutDirection.Rtl
             val side = if (rtl) bars.getRight(density, direction) else bars.getLeft(density, direction)
 
+            Box(Modifier.fillMaxSize().glassSource(backdrop)) {
             content(
                 if (rail) {
                     PaddingValues(
@@ -219,6 +253,7 @@ fun DuckerScaffold(
                 },
                 insets,
             )
+            }
 
             NavigationFade()
 
@@ -251,6 +286,7 @@ fun DuckerScaffold(
                     onSingle = onSingle,
                     vertical = rail,
                     modifier = Modifier.onSizeChanged { dockDepth = if (rail) it.width else it.height },
+                    backdrop = backdrop,
                 )
             }
         }
@@ -301,6 +337,9 @@ private val FADE_RAMP = 60.dp
 internal fun navigationRoom(): Dp =
     WindowInsets.navigationBars.exclude(WindowInsets.ime).asPaddingValues().calculateBottomPadding()
 
+/** How much the glass highlight magnifies halfway between two tabs. */
+private const val LENS_ZOOM = 0.18f
+
 /** The TV's round button under its dock (D-97). */
 val ACTION_SIZE = 56.dp
 
@@ -337,12 +376,13 @@ private fun FloatingDock(
     onSingle: () -> Unit,
     /** Standing at the side ([lowWindow]): the tabs go top to bottom, and so does the highlight. */
     vertical: Boolean,
+    backdrop: GlassBackdrop?,
     modifier: Modifier = Modifier,
 ) {
     // Upright, the dock and its highlight round their corners as the TV's side dock does: as pills, nearly square
     // tabs became circles, and the dock's round ends cut the highlight's.
     val shape = if (vertical) RoundedCornerShape(RAIL_CORNER + DOCK_PAD) else RoundedCornerShape(percent = 50)
-    val pill = MaterialTheme.colorScheme.primaryContainer
+    val pill = MaterialTheme.colorScheme.primaryContainer.let { if (backdrop != null) it.copy(alpha = 0.8f) else it }
     val onPill = MaterialTheme.colorScheme.onPrimaryContainer
 
     val alone = single != null
@@ -433,11 +473,34 @@ private fun FloatingDock(
 
     val current = selected()
 
+    // The lens and the bubble need the side the tabs run from outside a draw scope.
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+
+    // The glass style: held, the highlight swells into a clear bubble that follows the finger
+    // along the dock; let go, it picks the tab under it and settles back into the highlight.
+    val bubble = remember { Animatable(0f) }
+    val stretch = remember { Animatable(0f) }
+    // The highlight's middle in the row of tabs while the finger leads it, pixels.
+    val scope = rememberCoroutineScope()
+    val drag = remember(scope) { DockDrag(scope) }
+    val dockLayer = if (backdrop != null && !vertical) rememberGraphicsLayer() else null
+    val bubbleLayer = if (backdrop != null && !vertical) rememberGraphicsLayer() else null
+    val shader = remember(backdrop != null) { if (backdrop != null && !vertical) bubbleShader() else null }
+    val lens = remember(glassSupported, backdrop != null, vertical) {
+        if (android.os.Build.VERSION.SDK_INT >= 33 && backdrop != null && !vertical) DockLens() else null
+    }
+    var dockAt by remember { mutableStateOf(Offset.Zero) }
+    val screen = MaterialTheme.colorScheme.background
+
+    fun pillLeftAt(width: Float): Float =
+        drag.center(dockPillOffset(width = width, position = position(), rtl = rtl) + dockSlotWidth(width) / 2f) - dockSlotWidth(width) / 2f
+
+    fun DrawScope.pillLeft() = pillLeftAt(size.width)
     // The highlight along the dock: across its width at the bottom, down its height at the side.
     fun DrawScope.pill(): Rect {
         val length = if (vertical) size.height else size.width
         val start = lerp(
-            dockPillOffset(length, position(), rtl = !vertical && layoutDirection == LayoutDirection.Rtl),
+            if (!vertical) pillLeftAt(length) else dockPillOffset(length, position(), rtl = false),
             0f,
             merge,
         )
@@ -447,13 +510,163 @@ private fun FloatingDock(
         else Rect(Offset(start, 0f), Size(extent, size.height))
     }
 
-    Surface(
-        modifier = modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.widthIn(max = 420.dp))
-            .airShadow(shape),
-        shape = shape,
-        color = MaterialTheme.colorScheme.surface,
+    fun DrawScope.pillWidth() = pill().width
+
+    val glass = backdrop != null && shader != null
+
+    /** Half the bubble's width in a row [row] wide; the swap of grey and dark labels follows it, not the pill. */
+    fun bubbleHalf(row: Float) = dockSlotWidth(row) / 2f * (1f + 0.08f * bubble.value) * (1f + stretch.value)
+
+    /** Where the labels change from grey to dark: under the bubble while it shows, else under the pill. */
+    fun DrawScope.swapLeft() =
+        if (glass && bubble.value > 0.01f) pillLeft() + dockSlotWidth(size.width) / 2f - bubbleHalf(size.width) else pillLeft()
+
+    fun DrawScope.swapWidth() = if (glass && bubble.value > 0.01f) 2f * bubbleHalf(size.width) else pillWidth()
+
+    /** Opaque under the bubble, fading over [SWAP_FADE] at its sides: a hard edge read as doubled letters. */
+    fun DrawScope.swapMask(): Brush {
+        val left = swapLeft() / size.width
+        val right = (swapLeft() + swapWidth()) / size.width
+        val fade = SWAP_FADE.toPx() / size.width
+
+        return Brush.horizontalGradient(
+            0f to Color.Transparent,
+            left.coerceIn(0f, 1f) to Color.Transparent,
+            (left + fade).coerceIn(0f, 1f) to Color.Black,
+            (right - fade).coerceIn(0f, 1f) to Color.Black,
+            right.coerceIn(0f, 1f) to Color.Transparent,
+            1f to Color.Transparent,
+        )
+    }
+
+    Box(
+        modifier
+            .onGloballyPositioned { dockAt = it.positionInRoot() }
+            .drawWithContent {
+                drawContent()
+
+                if (!glass) return@drawWithContent
+                val presence = bubble.value
+                if (presence < 0.01f) return@drawWithContent
+
+                val inset = 4.dp.toPx()
+                val row = size.width - 2 * inset
+                val slot = dockSlotWidth(row)
+                val halfWidth = bubbleHalf(row)
+                val halfHeight = ((size.height - 2 * inset) / 2f + BUBBLE_RISE.toPx() * presence) * (1f - 0.35f * stretch.value)
+
+                drawGlassBubble(
+                    layer = bubbleLayer!!,
+                    shader = shader,
+                    center = Offset(inset + pillLeftAt(row) + slot / 2f, size.height / 2f),
+                    halfWidth = halfWidth,
+                    halfHeight = halfHeight,
+                    presence = presence,
+                    base = screen,
+                ) {
+                    drawRect(screen, Offset(-size.width, -size.height), Size(size.width * 3, size.height * 3))
+                    translate(backdrop.origin.x - dockAt.x, backdrop.origin.y - dockAt.y) { drawLayer(backdrop.layer) }
+                    drawLayer(dockLayer!!)
+                }
+            },
     ) {
-        Box(Modifier.fillMaxWidth().padding(DOCK_PAD)) {
+    Surface(
+        modifier = Modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.widthIn(max = 420.dp)).airShadow(shape)
+            .then(
+                // What the bubble shows of the dock: the pane and the tabs, without the shadow.
+                if (glass) Modifier.drawWithContent {
+                    dockLayer!!.record { this@drawWithContent.drawContent() }
+                    drawLayer(dockLayer)
+                } else Modifier,
+            )
+            .liquidGlass(
+                backdrop,
+                base = MaterialTheme.colorScheme.background,
+                tint = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
+                shape = shape,
+            ),
+        shape = shape,
+        color = if (backdrop != null) Color.Transparent else MaterialTheme.colorScheme.surface,
+    ) {
+        Box(
+            Modifier.fillMaxWidth().padding(DOCK_PAD)
+                .then(if (glass && !vertical && !alone) Modifier.pointerInput(rtl) {
+                    val slop = viewConfiguration.touchSlop
+
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                        val width = size.width.toFloat()
+                        val slot = dockSlotWidth(width)
+
+                        fun clamp(x: Float) = x.coerceIn(slot / 2f, width - slot / 2f)
+                        fun tabAt(x: Float): Int {
+                            val raw = (clamp(x) / slot).toInt().coerceIn(0, TABS - 1)
+                            return if (rtl) TABS - 1 - raw else raw
+                        }
+                        fun middleOf(tab: Int) = dockPillOffset(width = width, position = tab.toFloat(), rtl = rtl) + slot / 2f
+
+                        drag.cancel()
+                        var released = false
+                        try {
+                            scope.launch { bubble.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium)) }
+
+                            val tracker = VelocityTracker().apply { addPosition(down.uptimeMillis, down.position) }
+                            var dragging = false
+                            var tab = tabAt(dockPillOffset(width = width, position = position(), rtl = rtl) + slot / 2f)
+
+                            while (true) {
+                                val change = awaitPointerEvent(PointerEventPass.Initial).changes
+                                    .firstOrNull { it.id == down.id } ?: break
+                                if (!change.pressed) break
+
+                                tracker.addPosition(change.uptimeMillis, change.position)
+
+                                if (!dragging && abs(change.position.x - down.position.x) > slop) {
+                                    dragging = true
+                                    val from = dockPillOffset(width = width, position = position(), rtl = rtl) + slot / 2f
+                                    drag.begin(from)
+                                }
+
+                                if (dragging) {
+                                    // Taken: the tab under the finger must not also take it as a tap.
+                                    change.consume()
+
+                                    val x = clamp(change.position.x)
+                                    val speed = abs(tracker.calculateVelocity().x)
+
+                                    drag.move(x)
+                                    scope.launch {
+                                        stretch.animateTo((speed / 5000f).coerceAtMost(0.25f), spring(stiffness = Spring.StiffnessMedium))
+                                    }
+
+                                    val now = tabAt(x)
+                                    if (now != tab) {
+                                        tab = now
+                                        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                    }
+                                }
+                            }
+
+                            if (dragging) {
+                                val picked = tab
+
+                                onSelect(picked)
+                                drag.release(dockPillOffset(width, position(), rtl = rtl) + slot / 2f)
+                            }
+
+                            released = true
+                        } finally {
+                            if (!released) drag.cancel()
+                            scope.launch { stretch.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)) }
+                            scope.launch {
+                                // A quick tap would stop the bubble before it showed: let it flash first.
+                                if (bubble.value < 0.7f) bubble.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 1000f))
+                                bubble.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow))
+                            }
+                        }
+                    }
+                } else Modifier),
+        ) {
             // Подсветка — своим слоем под обеими копиями вкладок: при слиянии она растёт,
             // а вкладки гаснут, и гасить её вместе с ними нельзя.
             Box(
@@ -466,7 +679,19 @@ private fun FloatingDock(
                         topLeft = rect.topLeft,
                         size = rect.size,
                         cornerRadius = corner,
+                        alpha = 1f - bubble.value.coerceIn(0f, 1f),
                     )
+
+                    // On a dark theme the highlight is light itself and needs no rim.
+                    if (backdrop != null && screen.luminance() > 0.5f) {
+                        drawRoundRect(
+                            color = Color.White.copy(alpha = 0.25f * (1f - bubble.value.coerceIn(0f, 1f))),
+                            topLeft = rect.topLeft,
+                            size = rect.size,
+                            cornerRadius = corner,
+                            style = Stroke(1.dp.toPx()),
+                        )
+                    }
 
                     val t = tabShine.value
 
@@ -496,6 +721,7 @@ private fun FloatingDock(
                 onSelect = if (alone) null else { index ->
                     val action = onAction
 
+                    drag.cancel()
                     if (index == ACTION_TAB && added && action != null) action() else onSelect(index)
                 },
                 turn = turn,
@@ -503,7 +729,24 @@ private fun FloatingDock(
                 vertical = vertical,
                 modifier = Modifier
                     .then(if (alone) Modifier.clearAndSetSemantics { } else Modifier)
-                    .graphicsLayer { alpha = 1f - (merge * 2f).coerceIn(0f, 1f) },
+                    .graphicsLayer { alpha = 1f - (merge * 2f).coerceIn(0f, 1f) }
+                    .then(
+                        // Through the glass highlight this copy showed beside the magnified one: not under it.
+                        if (glass) Modifier.graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                            .drawWithContent {
+                                if (bubble.value > 0.01f) {
+                                    drawContent()
+                                    drawRect(swapMask(), blendMode = BlendMode.DstOut)
+                                } else {
+                                    val left = pillLeft()
+
+                                    clipRect(left, 0f, left + pillWidth(), size.height, ClipOp.Difference) {
+                                        this@drawWithContent.drawContent()
+                                    }
+                                }
+                            }
+                        else Modifier,
+                    ),
             )
 
             DockTabs(
@@ -516,7 +759,18 @@ private fun FloatingDock(
                 // Нажатия и озвучка живут в нижней копии: верхняя только перекрашивает,
                 // иначе TalkBack читал бы каждую вкладку дважды.
                 modifier = Modifier.clearAndSetSemantics { }
-                    .graphicsLayer { alpha = 1f - (merge * 2f).coerceIn(0f, 1f) }
+                    .graphicsLayer {
+                        alpha = (1f - (merge * 2f).coerceIn(0f, 1f)) * (1f - bubble.value.coerceIn(0f, 1f))
+                        // On glass the highlight is a lens: between two tabs it magnifies the labels under it.
+                        if (glass && !drag.dragging && android.os.Build.VERSION.SDK_INT >= 33) {
+                            val at = position()
+                            val zoom = 1f + LENS_ZOOM * sin(PI.toFloat() * (at - floor(at)))
+                            val left = lerp(pillLeftAt(size.width), 0f, merge)
+                            val width = lerp(dockSlotWidth(size.width), size.width, merge)
+
+                            renderEffect = if (zoom > 1.002f) lens?.effect(left, width, size.height, zoom) else null
+                        } else renderEffect = null
+                    }
                     .drawWithContent {
                         val rect = pill()
 
@@ -525,6 +779,27 @@ private fun FloatingDock(
                         }
                     },
             )
+
+            if (glass) {
+                // Under the bubble the labels turn dark on clear glass, as the white ones on the highlight fade.
+                DockTabs(
+                    selected = current,
+                    content = MaterialTheme.colorScheme.onSurface,
+                    onSelect = null,
+                    turn = turn,
+                    actionLabel = null,
+                    vertical = vertical,
+                    modifier = Modifier.clearAndSetSemantics { }
+                        .graphicsLayer {
+                            alpha = bubble.value.coerceIn(0f, 1f)
+                            compositingStrategy = CompositingStrategy.Offscreen
+                        }
+                        .drawWithContent {
+                            drawContent()
+                            drawRect(swapMask(), blendMode = BlendMode.DstIn)
+                        },
+                )
+            }
 
             if (lastLabel.value.isNotEmpty()) {
                 val face = Modifier.matchParentSize()
@@ -593,7 +868,15 @@ private fun FloatingDock(
             }
         }
     }
+    }
 }
+
+private val SHEET_BLUR = 18.dp
+
+/** How far the bubble swells over the dock's edges, above and below. */
+private val SWAP_FADE = 14.dp
+
+private val BUBBLE_RISE = 10.dp
 
 /** Слияние вкладок в одну кнопку и обратно (D-98). */
 private const val MERGE_MS = 420

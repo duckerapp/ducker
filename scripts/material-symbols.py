@@ -109,6 +109,7 @@ ICONS = [
     ("VisibilityOff", "visibility_off", False, False),
     ("VitalSigns", "vital_signs", False, False),
     ("VpnLock", "vpn_lock", False, False),
+    ("Wallpaper", "wallpaper", False, False),
     ("WarningAmber", "warning", False, False),
     ("Widgets", "widgets", False, False),
     ("Wifi", "wifi", False, False),

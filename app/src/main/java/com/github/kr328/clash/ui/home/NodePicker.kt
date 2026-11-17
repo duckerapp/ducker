@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.home
 
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
+import com.github.kr328.clash.ui.theme.failureOn
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.ringCorner
 import com.github.kr328.clash.ui.components.LocalTv
@@ -225,7 +226,7 @@ private fun NodeLine(node: NodeState, selected: Boolean, onClick: () -> Unit, mo
                 else -> stringResource(R.string.value_unknown)
             },
             style = MaterialTheme.typography.labelLarge,
-            color = if (node.delay == DelayStore.NO_ANSWER) MaterialTheme.colorScheme.error
+            color = if (node.delay == DelayStore.NO_ANSWER) failureOn(content)
             else content.copy(alpha = 0.7f),
             maxLines = 1,
         )

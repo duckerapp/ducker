@@ -42,6 +42,14 @@ Their licences ship inside the app, in `app/src/main/assets/licenses/`: `librari
   vectors in `ui/components/Symbols.kt` by `scripts/material-symbols.py`. License and notice in
   `app/src/main/assets/licenses/`.
 
+## Code
+
+- **AndroidLiquidGlass** — Kyant, Apache License 2.0. The shaders of the liquid glass style are
+  adapted from its `backdrop/.../internal/Shaders.kt` (commit `65ab177`): the rounded-rectangle
+  distance field, the rim refraction, the seven-band dispersion and the rim highlight, changed in
+  `ui/components/LiquidGlass.kt`. The library is not a dependency. Notice in
+  `app/src/main/assets/licenses/`.
+
 ## Borrowed ideas and code
 
 Each record states what was borrowed, its source (repository, branch, commit), and whether

@@ -3,6 +3,11 @@ package com.github.kr328.clash.ui.proxy
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.isolated
+import androidx.compose.foundation.shape.CircleShape
+import com.github.kr328.clash.ui.components.GLASS_CARD_TINT
+import com.github.kr328.clash.ui.components.liquidGlass
+import com.github.kr328.clash.ui.theme.failureOn
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvScrollToStart
 import com.github.kr328.clash.ui.components.TvLazyColumn
@@ -117,6 +122,8 @@ import com.github.kr328.clash.ui.components.EmptyState
 import com.github.kr328.clash.ui.components.PullToRefresh
 import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.FloatingSearch
+import com.github.kr328.clash.ui.components.glassSource
+import com.github.kr328.clash.ui.components.rememberGlassBackdrop
 import com.github.kr328.clash.ui.components.ProxySortToggle
 import com.github.kr328.clash.ui.components.ProxyCheckButton
 import com.github.kr328.clash.ui.components.SearchField
@@ -249,11 +256,16 @@ fun ProxyScreen(
         top = contentPadding.calculateTopPadding(),
         modifier = modifier.fillMaxSize(),
     ) {
+        // The glass style: the floating search shows the screen's backdrop through glass where the tabs have one,
+        // else the list under it — recorded only then, as it costs a recording of the whole list every frame.
+        val tabBackdrop = LocalGlassBackdrop.current
+        val listBackdrop = if (tabBackdrop == null) rememberGlassBackdrop() else null
+
         Box(Modifier.fillMaxSize().nestedScroll(search)) {
             TvLazyColumn(
                 state = listState,
                 overscrollEffect = overscroll,
-                modifier = Modifier.fillMaxSize().screenInsets().focusRequester(listFocus)
+                modifier = Modifier.fillMaxSize().glassSource(listBackdrop).screenInsets().focusRequester(listFocus)
                     .onSizeChanged { viewportHeight = it.height },
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
@@ -277,7 +289,20 @@ fun ProxyScreen(
 
                         // With the VPN off too: the tab loads the profile into the core without the
                         // tunnel, and the core sorts that list by delay as well (D-319).
-                        ProxySortToggle(state.sort, onSort)
+                        if (tabBackdrop == null) {
+                            ProxySortToggle(state.sort, onSort)
+                        } else {
+                            // The glass style: on a small pane, as «Другие подписки»: the header's tone follows the
+                            // picture's top on average, and a dark rock or a blue shape could stand right behind it.
+                            Box(
+                                Modifier.liquidGlass(
+                                    tabBackdrop,
+                                    base = MaterialTheme.colorScheme.background,
+                                    tint = MaterialTheme.colorScheme.surface.copy(alpha = GLASS_CARD_TINT),
+                                    shape = CircleShape,
+                                ),
+                            ) { ProxySortToggle(state.sort, onSort) }
+                        }
                     }
                 }
 
@@ -400,6 +425,7 @@ fun ProxyScreen(
                     onValue = onQuery,
                     hint = stringResource(R.string.proxy_search),
                     next = firstRow,
+                    glass = tabBackdrop ?: listBackdrop,
                     shadowLift = {
                         with(density) {
                             val (slot, floating) = searchPlace()
@@ -835,7 +861,8 @@ private fun ProxyOption(
                     else -> stringResource(R.string.value_unknown)
                 },
                 style = MaterialTheme.typography.labelLarge,
-                color = if (failed) MaterialTheme.colorScheme.error else LocalContentColor.current,
+                // A selected card is filled in the accent: the red of its own letters' side, not the screen's.
+                color = if (failed) failureOn(LocalContentColor.current) else LocalContentColor.current,
             )
         }
     }

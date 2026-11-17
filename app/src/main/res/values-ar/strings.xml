@@ -719,4 +719,32 @@
     <string name="config_template_failed">لم يُطبَّق: %1$s</string>
     <string name="config_template_applying">جارٍ التطبيق…</string>
     <string name="config_template_edited">عُدِّل الإعداد يدويًا: تغيير الإعداد يستبدل التعديلات</string>
+
+    <!-- Liquid glass appearance settings. -->
+    <string name="style">النمط</string>
+    <string name="style_air">Air</string>
+    <string name="style_glass">الزجاج السائل</string>
+    <string name="glass_backdrop">الخلفية</string>
+    <string name="glass_backdrop_none">بدون</string>
+    <string name="glass_backdrop_sunset">غروب الشمس</string>
+    <string name="glass_backdrop_grey">رمادي</string>
+    <string name="glass_backdrop_black_gradient">تدرج أسود</string>
+    <string name="glass_backdrop_green">أخضر</string>
+    <string name="glass_backdrop_pink">وردي</string>
+    <string name="glass_backdrop_black">أسود خالص</string>
+    <string name="glass_backdrop_black_white">أبيض وأسود</string>
+    <string name="glass_blur">تمويه الزجاج</string>
+    <string name="glass_blur_none">بدون تمويه</string>
+    <string name="glass_tuning">ضبط الزجاج</string>
+    <string name="glass_refraction">الانكسار (التشوه)</string>
+    <string name="glass_dispersion">الزيغ اللوني</string>
+    <string name="glass_depth">عمق العدسة (الانحناء)</string>
+    <string name="glass_highlight">لمعان الحواف</string>
+    <string name="glass_noise">ضجيج دقيق (تأثير بلوري)</string>
+    <string name="glass_vibrancy">حيوية الخلفية</string>
+    <string name="glass_tint">تلوين الزجاج</string>
+    <string name="glass_reset_tuning">استعادة إعدادات الزجاج الافتراضية</string>
+    <string name="glass_backdrop_image">صورة خاصة</string>
+    <string name="glass_image_pick">اختيار صورة أخرى</string>
+    <string name="glass_image_pick_hint">تبقى ثابتة أثناء تمرير البطاقات</string>
 </resources>

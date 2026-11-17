@@ -1,5 +1,11 @@
 package com.github.kr328.clash.ui.settings
 
+import android.net.Uri
+import android.graphics.ImageDecoder
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Color
+import java.io.File
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -65,9 +71,20 @@ class SettingsViewModel : ViewModel() {
             seeded = true
 
             SettingsStore(context).let { ours ->
-                // The lock too: the screens it covers must not open unguarded while the rest loads.
+                // Seed the lock before a covered screen can open while the rest loads.
                 _state.update {
-                    it.copy(theme = ours.theme, oled = ours.oled, dynamicColor = ours.dynamicColor, lockSensitive = ours.lockSensitive)
+                    it.copy(
+                        theme = ours.theme, oled = ours.oled, dynamicColor = ours.dynamicColor,
+                        lockSensitive = ours.lockSensitive,
+                        style = ours.style,
+                        glassBackdrop = ours.glassBackdrop, glassBlur = ours.glassBlur,
+                        glassImage = glassImageTime(context), glassImageDark = ours.glassImageDark,
+                        glassImageTopDark = ours.glassImageTopDark ?: false,
+                        glassRefraction = ours.glassRefraction, glassDispersion = ours.glassDispersion,
+                        glassDepth = ours.glassDepth, glassHighlight = ours.glassHighlight,
+                        glassNoise = ours.glassNoise, glassVibrancy = ours.glassVibrancy,
+                        glassTint = ours.glassTint,
+                    )
                 }
             }
         }
@@ -76,6 +93,10 @@ class SettingsViewModel : ViewModel() {
             val loaded = withContext(Dispatchers.IO) {
                 val ours = SettingsStore(context)
                 val service = ServiceStore(context)
+
+                // A picture chosen before its top was measured, its darkness judged by the old threshold: measured again
+                // here, before the state below is read, as that state replaces the whole of the current one.
+                if (ours.glassBackdrop == SettingsStore.BACKDROP_IMAGE && ours.glassImageTopDark == null) remeasureGlassImage(context)
 
                 val appVersion = context.packageManager
                     .getPackageInfo(context.packageName, 0).versionName ?: ""
@@ -90,6 +111,19 @@ class SettingsViewModel : ViewModel() {
                         .takeIf { !it.isEmpty }?.get(0)?.toLanguageTag().orEmpty(),
                     oled = ours.oled,
                     dynamicColor = ours.dynamicColor,
+                    style = ours.style,
+                    glassBackdrop = ours.glassBackdrop,
+                    glassBlur = ours.glassBlur,
+                    glassImage = glassImageTime(context),
+                    glassImageDark = ours.glassImageDark,
+                    glassImageTopDark = ours.glassImageTopDark ?: false,
+                    glassRefraction = ours.glassRefraction,
+                    glassDispersion = ours.glassDispersion,
+                    glassDepth = ours.glassDepth,
+                    glassHighlight = ours.glassHighlight,
+                    glassNoise = ours.glassNoise,
+                    glassVibrancy = ours.glassVibrancy,
+                    glassTint = ours.glassTint,
                     allowExternalControl = ours.allowExternalControl,
                     ipv6 = service.allowIpv6,
                     appVersion = appVersion,
@@ -160,6 +194,171 @@ class SettingsViewModel : ViewModel() {
     fun setOled(context: Context, value: Boolean) = edit(context) { it.oled = value }
 
     fun setDynamicColor(context: Context, value: Boolean) = edit(context) { it.dynamicColor = value }
+
+    /**
+     * The look and the glass's settings: the state first, so the screen behind follows the finger as with the theme,
+     * then the store, on this thread so that a slider's last value is the one kept.
+     */
+    fun setStyle(context: Context, value: String) {
+        _state.update { it.copy(style = value) }
+        SettingsStore(context).style = value
+    }
+
+    fun setGlassBackdrop(context: Context, value: String) {
+        val store = SettingsStore(context)
+        if (value == SettingsStore.BACKDROP_NONE) {
+            runCatching { File(context.filesDir, SettingsStore.GLASS_IMAGE_FILE).delete() }
+            store.apply {
+                glassBackdrop = value
+                glassImageDark = false
+                glassImageTopDark = null
+            }
+            _state.update { it.copy(glassImage = 0L, glassImageDark = false, glassImageTopDark = false).withGlass(store) }
+        } else {
+            store.glassBackdrop = value
+            // The blur and the tuning default differently over an own picture.
+            _state.update { it.withGlass(store) }
+        }
+    }
+
+    /**
+     * Experiment: the picked picture becomes Home's backdrop. Copied in, fitted to the screen's long side, and
+     * measured: a dark one takes the app dark, as the black backdrops do.
+     */
+    fun setGlassImage(context: Context, uri: Uri) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) return
+
+        viewModelScope.launch {
+            val tone = withContext(Dispatchers.IO) {
+                runCatching {
+                    val screen = context.resources.displayMetrics.let { maxOf(it.widthPixels, it.heightPixels) }
+                    val bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, info, _ ->
+                        val long = maxOf(info.size.width, info.size.height)
+                        if (long > screen) {
+                            val scale = screen.toFloat() / long
+                            decoder.setTargetSize((info.size.width * scale).toInt(), (info.size.height * scale).toInt())
+                        }
+                        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                    }
+
+                    File(context.filesDir, SettingsStore.GLASS_IMAGE_FILE).outputStream().use {
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 92, it)
+                    }
+
+                    pictureTone(bitmap, context)
+                }.getOrNull()
+            } ?: return@launch
+
+            val store = SettingsStore(context).apply {
+                glassImageDark = tone.first
+                glassImageTopDark = tone.second
+                glassBackdrop = SettingsStore.BACKDROP_IMAGE
+            }
+            _state.update {
+                it.copy(glassImage = glassImageTime(context), glassImageDark = tone.first, glassImageTopDark = tone.second)
+                    .withGlass(store)
+            }
+        }
+    }
+
+    /** The own picture already in place, measured again from its file; on a background thread. */
+    private fun remeasureGlassImage(context: Context) {
+        val tone = runCatching {
+            BitmapFactory.decodeFile(File(context.filesDir, SettingsStore.GLASS_IMAGE_FILE).path)?.let { pictureTone(it, context) }
+        }.getOrNull() ?: return
+
+        SettingsStore(context).apply {
+            glassImageDark = tone.first
+            glassImageTopDark = tone.second
+        }
+    }
+
+    /**
+     * Whether [bitmap] is dark on average (the theme over it) and at its top as the screen shows it, under the status
+     * bar and the headers. The picture fills the window cropped to its middle (`glassImage`), so the top is measured
+     * there.
+     */
+    private fun pictureTone(bitmap: Bitmap, context: Context): Pair<Boolean, Boolean> {
+        fun dark(part: Bitmap): Boolean {
+            val small = Bitmap.createScaledBitmap(part, 24, 24, true)
+            val pixels = IntArray(24 * 24).also { small.getPixels(it, 0, 24, 0, 0, 24, 24) }
+            return pixels.map { Color.luminance(it) }.average() < DARK_LUMINANCE
+        }
+
+        val metrics = context.resources.displayMetrics
+        // The glass is a phone's style, and a phone holds it upright.
+        val width = minOf(metrics.widthPixels, metrics.heightPixels).toFloat()
+        val height = maxOf(metrics.widthPixels, metrics.heightPixels).toFloat()
+        val scale = maxOf(width / bitmap.width, height / bitmap.height)
+        val shownWidth = (width / scale).toInt().coerceIn(1, bitmap.width)
+        val shownHeight = (height / scale).toInt().coerceIn(1, bitmap.height)
+        val left = (bitmap.width - shownWidth) / 2
+        val top = (bitmap.height - shownHeight) / 2
+        val band = Bitmap.createBitmap(bitmap, left, top, shownWidth, (shownHeight * TOP_BAND).toInt().coerceAtLeast(1))
+
+        return dark(bitmap) to dark(band)
+    }
+
+    /** The blur and the tuning as the store has them now: their defaults follow the backdrop. */
+    private fun SettingsState.withGlass(store: SettingsStore) = copy(
+        glassBackdrop = store.glassBackdrop,
+        glassBlur = store.glassBlur,
+        glassRefraction = store.glassRefraction,
+        glassDispersion = store.glassDispersion,
+        glassDepth = store.glassDepth,
+        glassHighlight = store.glassHighlight,
+        glassNoise = store.glassNoise,
+        glassVibrancy = store.glassVibrancy,
+        glassTint = store.glassTint,
+    )
+
+    private fun glassImageTime(context: Context): Long =
+        File(context.filesDir, SettingsStore.GLASS_IMAGE_FILE).lastModified()
+
+    fun setGlassBlur(context: Context, value: Int) {
+        _state.update { it.copy(glassBlur = value) }
+        SettingsStore(context).glassBlur = value
+    }
+
+    fun setGlassRefraction(context: Context, value: Int) {
+        _state.update { it.copy(glassRefraction = value) }
+        SettingsStore(context).glassRefraction = value
+    }
+
+    fun setGlassDispersion(context: Context, value: Int) {
+        _state.update { it.copy(glassDispersion = value) }
+        SettingsStore(context).glassDispersion = value
+    }
+
+    fun setGlassDepth(context: Context, value: Int) {
+        _state.update { it.copy(glassDepth = value) }
+        SettingsStore(context).glassDepth = value
+    }
+
+    fun setGlassHighlight(context: Context, value: Int) {
+        _state.update { it.copy(glassHighlight = value) }
+        SettingsStore(context).glassHighlight = value
+    }
+
+    fun setGlassNoise(context: Context, value: Int) {
+        _state.update { it.copy(glassNoise = value) }
+        SettingsStore(context).glassNoise = value
+    }
+
+    fun setGlassVibrancy(context: Context, value: Int) {
+        _state.update { it.copy(glassVibrancy = value) }
+        SettingsStore(context).glassVibrancy = value
+    }
+
+    fun setGlassTint(context: Context, value: Int) {
+        _state.update { it.copy(glassTint = value) }
+        SettingsStore(context).glassTint = value
+    }
+
+    fun resetGlassTuning(context: Context) {
+        val store = SettingsStore(context).apply { resetGlassTuning() }
+        _state.update { it.withGlass(store) }
+    }
 
     fun setAllowExternalControl(context: Context, value: Boolean) {
         SettingsStore(context).allowExternalControl = value
@@ -291,3 +490,11 @@ class SettingsViewModel : ViewModel() {
  */
 private fun alwaysOnVpn(): Boolean = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q &&
     runCatching { VpnService().isAlwaysOn }.getOrDefault(false)
+/**
+ * Below this average relative luminance a picture counts as dark. 0.18 is where white and black letters have the same
+ * contrast; the old 0.45 (about sRGB 180, a light grey) took snow and clouds for dark (F-388).
+ */
+private const val DARK_LUMINANCE = 0.2
+
+/** The part of the screen's height under the status bar and the tabs' headers. */
+private const val TOP_BAND = 0.12f

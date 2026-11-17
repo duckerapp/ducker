@@ -1,7 +1,28 @@
 package com.github.kr328.clash.ui.settings
 
+import androidx.compose.foundation.Image
+
 import android.annotation.SuppressLint
 import android.os.Build
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.runtime.produceState
+import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
+import java.io.File
+import com.github.kr328.clash.ui.components.glassBackground
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.semantics.stateDescription
+import com.github.kr328.clash.ui.components.glassSupported
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.Symbols
@@ -92,6 +113,21 @@ data class SettingsState(
     val language: String = "",
     val oled: Boolean = false,
     val dynamicColor: Boolean = false,
+    /** The look, Air or glass, and the glass's settings, see [SettingsStore.style]. */
+    val style: String = SettingsStore.STYLE_AIR,
+    val glassBackdrop: String = SettingsStore.BACKDROP_SUNSET,
+    val glassBlur: Int = 0,
+    val glassRefraction: Int = 50,
+    val glassDispersion: Int = 40,
+    val glassDepth: Int = 30,
+    val glassHighlight: Int = 60,
+    val glassNoise: Int = 15,
+    val glassVibrancy: Int = 40,
+    val glassTint: Int = 50,
+    /** The own picture: its file's time (0 — none yet), whether it is dark, and whether its top is. */
+    val glassImage: Long = 0L,
+    val glassImageDark: Boolean = false,
+    val glassImageTopDark: Boolean = false,
     val allowExternalControl: Boolean = false,
     val ipv6: Boolean = false,
     /** Уровень журнала ядра поднят до debug — иначе разбирать нечего. */
@@ -156,6 +192,18 @@ fun SettingsScreen(
     onLanguage: (String) -> Unit,
     onOled: (Boolean) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
+    onStyle: (String) -> Unit,
+    onGlassBackdrop: (String) -> Unit,
+    onGlassBlur: (Int) -> Unit,
+    onGlassRefraction: (Int) -> Unit = {},
+    onGlassDispersion: (Int) -> Unit = {},
+    onGlassDepth: (Int) -> Unit = {},
+    onGlassHighlight: (Int) -> Unit = {},
+    onGlassNoise: (Int) -> Unit = {},
+    onGlassVibrancy: (Int) -> Unit = {},
+    onGlassTint: (Int) -> Unit = {},
+    onResetGlassTuning: () -> Unit = {},
+    onPickGlassImage: () -> Unit,
     onExternalControl: (Boolean) -> Unit,
     onIpv6: (Boolean) -> Unit,
     onAccessControl: () -> Unit,
@@ -356,6 +404,59 @@ fun SettingsScreen(
                                 onChange = onDynamicColor,
                                 icon = Symbols.Palette,
                             )
+                        }
+
+                        // Only where the glass is drawn: phones with Android 13+.
+                        if (!tv && glassSupported) {
+                            item {
+                                ChipsCard(
+                                    title = stringResource(R.string.style),
+                                    icon = Symbols.Palette,
+                                    options = listOf(
+                                        SettingsStore.STYLE_AIR to stringResource(R.string.style_air),
+                                        SettingsStore.STYLE_GLASS to stringResource(R.string.style_glass),
+                                    ),
+                                    selected = state.style,
+                                    onSelect = onStyle,
+                                )
+                            }
+                        }
+
+                        if (!tv && glassSupported && state.style == SettingsStore.STYLE_GLASS) {
+                            item {
+                                BackdropCard(
+                                    selected = state.glassBackdrop,
+                                    image = state.glassImage,
+                                    onSelect = onGlassBackdrop,
+                                    onPick = onPickGlassImage,
+                                )
+                            }
+
+                            if (state.glassBackdrop == SettingsStore.BACKDROP_IMAGE) {
+                                item {
+                                    LinkRow(
+                                        title = stringResource(R.string.glass_image_pick),
+                                        subtitle = stringResource(R.string.glass_image_pick_hint),
+                                        onClick = onPickGlassImage,
+                                        icon = Symbols.PhotoLibrary,
+                                    )
+                                }
+                            }
+
+                            item { GlassBlurCard(state.glassBlur, onGlassBlur) }
+                            item {
+                                GlassTuningSection(
+                                    state = state,
+                                    onRefraction = onGlassRefraction,
+                                    onDispersion = onGlassDispersion,
+                                    onDepth = onGlassDepth,
+                                    onHighlight = onGlassHighlight,
+                                    onNoise = onGlassNoise,
+                                    onVibrancy = onGlassVibrancy,
+                                    onTint = onGlassTint,
+                                    onReset = onResetGlassTuning,
+                                )
+                            }
                         }
                     }
                     SettingsPage.Connection -> {
@@ -903,6 +1004,177 @@ private fun InnerSwitch(
     }
 }
 
+/** The glass style: the glass's blur in steps of 10 %, from none to full. */
+@Composable
+private fun GlassBlurCard(blur: Int, onBlur: (Int) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val haptics = LocalHapticFeedback.current
+    val shown = if (blur == 0) stringResource(R.string.glass_blur_none) else "$blur %"
+
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SettingsIcon(Symbols.Contrast)
+                Text(stringResource(R.string.glass_blur), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text(shown, style = MaterialTheme.typography.labelLarge, color = scheme.onSurfaceVariant)
+            }
+            Slider(
+                value = blur / 10f,
+                onValueChange = { value ->
+                    val next = value.roundToInt().coerceIn(0, 10) * 10
+                    if (next != blur) {
+                        haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                        onBlur(next)
+                    }
+                },
+                valueRange = 0f..10f,
+                steps = 9,
+                colors = SliderDefaults.colors(
+                    thumbColor = scheme.primary,
+                    activeTrackColor = scheme.primary,
+                    activeTickColor = scheme.onPrimary,
+                    inactiveTrackColor = scheme.surfaceContainerHighest,
+                    inactiveTickColor = scheme.onSurfaceVariant,
+                ),
+                modifier = Modifier.fillMaxWidth().semantics { stateDescription = shown },
+            )
+        }
+    }
+}
+
+/** The glass style: fine-tuning parameters for iOS-style liquid glass. */
+@Composable
+private fun GlassTuningSection(
+    state: SettingsState,
+    onRefraction: (Int) -> Unit,
+    onDispersion: (Int) -> Unit,
+    onDepth: (Int) -> Unit,
+    onHighlight: (Int) -> Unit,
+    onNoise: (Int) -> Unit,
+    onVibrancy: (Int) -> Unit,
+    onTint: (Int) -> Unit,
+    onReset: () -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+            ) {
+                SettingsIcon(Symbols.Tune)
+                Text(
+                    stringResource(R.string.glass_tuning),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    if (expanded) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = scheme.onSurfaceVariant,
+                )
+            }
+
+            if (expanded) {
+                GlassTuningSlider(
+                    label = stringResource(R.string.glass_refraction),
+                    value = state.glassRefraction,
+                    onValueChange = onRefraction,
+                )
+                GlassTuningSlider(
+                    label = stringResource(R.string.glass_dispersion),
+                    value = state.glassDispersion,
+                    onValueChange = onDispersion,
+                )
+                GlassTuningSlider(
+                    label = stringResource(R.string.glass_depth),
+                    value = state.glassDepth,
+                    onValueChange = onDepth,
+                )
+                GlassTuningSlider(
+                    label = stringResource(R.string.glass_highlight),
+                    value = state.glassHighlight,
+                    onValueChange = onHighlight,
+                )
+                GlassTuningSlider(
+                    label = stringResource(R.string.glass_noise),
+                    value = state.glassNoise,
+                    onValueChange = onNoise,
+                )
+                GlassTuningSlider(
+                    label = stringResource(R.string.glass_vibrancy),
+                    value = state.glassVibrancy,
+                    onValueChange = onVibrancy,
+                )
+                GlassTuningSlider(
+                    label = stringResource(R.string.glass_tint),
+                    value = state.glassTint,
+                    onValueChange = onTint,
+                )
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onReset)
+                        .padding(vertical = 4.dp, horizontal = 8.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.glass_reset_tuning),
+                        color = scheme.primary,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GlassTuningSlider(
+    label: String,
+    value: Int,
+    onValueChange: (Int) -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val haptics = LocalHapticFeedback.current
+    val shown = if (value == 0) "0 %" else "$value %"
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Text(shown, style = MaterialTheme.typography.labelMedium, color = scheme.onSurfaceVariant)
+        }
+        Slider(
+            value = value / 5f,
+            onValueChange = { v ->
+                val next = (v.roundToInt() * 5).coerceIn(0, 100)
+                if (next != value) {
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                    onValueChange(next)
+                }
+            },
+            valueRange = 0f..20f,
+            steps = 19,
+            colors = SliderDefaults.colors(
+                thumbColor = scheme.primary,
+                activeTrackColor = scheme.primary,
+                activeTickColor = scheme.onPrimary,
+                inactiveTrackColor = scheme.surfaceContainerHighest,
+                inactiveTickColor = scheme.onSurfaceVariant,
+            ),
+            modifier = Modifier.fillMaxWidth().semantics { stateDescription = "$label $shown" },
+        )
+    }
+}
+
 /** Theme choices wrap vertically when large text needs more room. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -957,6 +1229,99 @@ private fun ChipsCard(
         }
     }
 }
+
+/**
+ * The glass style's backdrop: every choice as a small round sample of itself, the own picture as its thumbnail. Nine
+ * text pills over two screens of scrolling showed none of them (F-388).
+ */
+@Composable
+private fun BackdropCard(selected: String, image: Long, onSelect: (String) -> Unit, onPick: () -> Unit) {
+    val options = listOf(
+        SettingsStore.BACKDROP_NONE to stringResource(R.string.glass_backdrop_none),
+        SettingsStore.BACKDROP_SUNSET to stringResource(R.string.glass_backdrop_sunset),
+        SettingsStore.BACKDROP_GREY to stringResource(R.string.glass_backdrop_grey),
+        SettingsStore.BACKDROP_GREEN to stringResource(R.string.glass_backdrop_green),
+        SettingsStore.BACKDROP_PINK to stringResource(R.string.glass_backdrop_pink),
+        SettingsStore.BACKDROP_BLACK_GRADIENT to stringResource(R.string.glass_backdrop_black_gradient),
+        SettingsStore.BACKDROP_BLACK to stringResource(R.string.glass_backdrop_black),
+        SettingsStore.BACKDROP_BLACK_WHITE to stringResource(R.string.glass_backdrop_black_white),
+        SettingsStore.BACKDROP_IMAGE to stringResource(R.string.glass_backdrop_image),
+    )
+    val scheme = MaterialTheme.colorScheme
+
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SettingsIcon(Symbols.Wallpaper)
+                Text(stringResource(R.string.glass_backdrop), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text(
+                    options.firstOrNull { it.first == selected }?.second.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = scheme.onSurfaceVariant,
+                )
+            }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth().selectableGroup(),
+            ) {
+                options.forEach { (value, label) ->
+                    val chosen = selected == value
+                    Box(
+                        Modifier.size(SWATCH + 8.dp)
+                            .border(2.dp, if (chosen) scheme.primary else androidx.compose.ui.graphics.Color.Transparent, CircleShape)
+                            .padding(4.dp)
+                            .clip(CircleShape)
+                            .border(1.dp, scheme.outlineVariant, CircleShape)
+                            .selectable(selected = chosen, role = Role.RadioButton, onClick = {
+                                // The own picture: picked first when there is none, and again when it is the one chosen.
+                                if (value == SettingsStore.BACKDROP_IMAGE && (image == 0L || chosen)) onPick() else onSelect(value)
+                            })
+                            .semantics { contentDescription = label },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        when (value) {
+                            SettingsStore.BACKDROP_NONE -> Box(
+                                Modifier.fillMaxSize().background(scheme.background).drawBehind {
+                                    drawLine(scheme.outline, Offset(size.width * 0.78f, size.height * 0.22f), Offset(size.width * 0.22f, size.height * 0.78f), 1.5.dp.toPx())
+                                },
+                            )
+                            SettingsStore.BACKDROP_IMAGE -> PictureSample(image)
+                            else -> Box(Modifier.fillMaxSize().glassBackground(value, running = true))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** The own picture's thumbnail, or the gallery's sign while there is none. */
+@Composable
+private fun PictureSample(image: Long) {
+    val context = LocalContext.current
+    val thumbnail by produceState<ImageBitmap?>(null, image) {
+        value = if (image == 0L) null else withContext(Dispatchers.IO) {
+            runCatching {
+                BitmapFactory.decodeFile(
+                    File(context.filesDir, SettingsStore.GLASS_IMAGE_FILE).path,
+                    BitmapFactory.Options().apply { inSampleSize = 16 },
+                )?.asImageBitmap()
+            }.getOrNull()
+        }
+    }
+
+    val picture = thumbnail
+    if (picture != null) {
+        Image(picture, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+    } else {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+            Icon(Symbols.PhotoLibrary, contentDescription = null, modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
+private val SWATCH = 48.dp
 
 @Composable
 private fun SectionTitle(text: String) {

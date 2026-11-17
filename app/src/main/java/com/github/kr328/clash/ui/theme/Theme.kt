@@ -1,6 +1,11 @@
 package com.github.kr328.clash.ui.theme
 
+import com.github.kr328.clash.ui.components.SheetGlass
+import com.github.kr328.clash.ui.components.LocalSheetGlass
 import com.github.kr328.clash.ui.components.LocalRingInk
+import com.github.kr328.clash.ui.settings.SettingsStore
+import com.github.kr328.clash.ui.components.GlassStyle
+import com.github.kr328.clash.ui.components.LocalGlassStyle
 import com.github.kr328.clash.ui.components.LocalTv
 import androidx.compose.runtime.CompositionLocalProvider
 import android.app.Activity
@@ -11,6 +16,7 @@ import android.os.Looper
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +28,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -199,6 +208,45 @@ private fun rememberWallpaperColor(): Int? {
     return color
 }
 
+/**
+ * The failure red that reads on a fill whose letters are [content]: the light red under light letters, the dark one
+ * under dark. The scheme's own `error` assumes the screen's background and vanished on a selected card's fill.
+ */
+@Composable
+fun failureOn(content: Color): Color = when {
+    !LocalGlassStyle.current.enabled -> MaterialTheme.colorScheme.error
+    content.luminance() > 0.5f -> DarkColors.error
+    else -> LightColors.error
+}
+
+/**
+ * The glass style: whether the picture under the tabs' headers is dark, by its own top. Null — the headers follow
+ * the theme (no backdrop, or one drawn in the theme's own tones).
+ */
+val LocalBackdropTone = staticCompositionLocalOf<Boolean?> { null }
+
+/** Whether the app's theme is dark, which [BackdropTone] does not change. */
+val LocalThemeDark = staticCompositionLocalOf { false }
+
+/** The app's light and dark schemes, as [DuckerTheme] built them. */
+private val LocalSchemes = staticCompositionLocalOf<Pair<ColorScheme, ColorScheme>?> { null }
+
+/**
+ * Content drawn straight on the glass style's picture: in the picture's tone ([LocalBackdropTone]) rather than the
+ * theme's, as a phone's clock follows its wallpaper. The cards keep the theme.
+ */
+@Composable
+fun BackdropTone(content: @Composable () -> Unit) {
+    val tone = LocalBackdropTone.current
+    val schemes = LocalSchemes.current
+    if (tone == null || schemes == null || tone == LocalThemeDark.current) return content()
+
+    val scheme = if (tone) schemes.second else schemes.first
+    MaterialTheme(colorScheme = scheme) {
+        CompositionLocalProvider(LocalContentColor provides scheme.onBackground, content = content)
+    }
+}
+
 /** Скругления, общие для карточек, кнопок и нижней панели. */
 private val DuckerShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
@@ -224,15 +272,26 @@ fun DuckerTheme(
     onToggleDark: (() -> Unit)? = null,
     /** Телевизор: включает всё, что сделано под пульт (этап 6), см. [LocalTv]. */
     tv: Boolean = false,
+    /** The liquid glass style; disabled — Air. */
+    glass: GlassStyle = GlassStyle(),
+    /** Whether the status bar's icons stand on something dark; null — on the theme's background. */
+    statusBarDark: Boolean? = null,
     content: @Composable () -> Unit,
 ) {
-    val base = if (dark) DarkColors else LightColors
     val wallpaper = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) rememberWallpaperColor() else null
-    val palette = if (wallpaper != null) wallpaperTinted(base, wallpaper, dark) else base
-    // OLED применяется и к системной палитре: это две независимые настройки.
-    val colors = if (dark && oled) {
-        palette.copy(background = Color.Black, surface = Color.Black)
-    } else palette
+    fun schemeFor(dark: Boolean): ColorScheme {
+        val base = if (dark) DarkColors else LightColors
+        val palette = if (wallpaper != null) wallpaperTinted(base, wallpaper, dark) else base
+        // OLED применяется и к системной палитре: это две независимые настройки.
+        val scheme = if (dark && oled) {
+            palette.copy(background = Color.Black, surface = Color.Black)
+        } else palette
+        // On glass the picture shows through behind the letters: the secondary grey goes halfway to the main colour,
+        // or captions such as «Безлимит» merged with leaves and snow.
+        return if (glass.enabled) scheme.copy(onSurfaceVariant = lerp(scheme.onSurfaceVariant, scheme.onSurface, 0.5f)) else scheme
+    }
+    val schemes = remember(wallpaper, oled, glass.enabled) { schemeFor(false) to schemeFor(true) }
+    val colors = if (dark) schemes.second else schemes.first
 
     val view = androidx.compose.ui.platform.LocalView.current
     if (!view.isInEditMode) {
@@ -243,14 +302,23 @@ fun DuckerTheme(
             // bar either; the list fades out there instead (DuckerScaffold).
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
             WindowCompat.getInsetsController(window, view).apply {
-                isAppearanceLightStatusBars = !dark
+                isAppearanceLightStatusBars = !(statusBarDark ?: dark)
                 isAppearanceLightNavigationBars = !dark
             }
         }
     }
 
+    val sheetGlass = if (glass.enabled) remember { SheetGlass() } else null
+
     MaterialTheme(colorScheme = colors, shapes = DuckerShapes, typography = DuckerTypography) {
-        CompositionLocalProvider(LocalTv provides tv, LocalRingInk provides colors.onBackground) {
+        CompositionLocalProvider(
+            LocalTv provides tv,
+            LocalRingInk provides colors.onBackground,
+            LocalGlassStyle provides glass,
+            LocalSheetGlass provides sheetGlass,
+            LocalThemeDark provides dark,
+            LocalSchemes provides schemes,
+        ) {
             if (onToggleDark == null) content()
             else ThemeReveal(onToggle = onToggleDark, content = content)
         }

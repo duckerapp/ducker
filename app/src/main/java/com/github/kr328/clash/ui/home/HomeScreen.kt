@@ -5,6 +5,18 @@ import android.os.SystemClock
 import android.view.HapticFeedbackConstants
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
+import com.github.kr328.clash.ui.settings.SettingsStore
+import com.github.kr328.clash.ui.components.GLASS_CARD_TINT
+import com.github.kr328.clash.ui.theme.failureOn
+import com.github.kr328.clash.ui.theme.BackdropTone
+import com.github.kr328.clash.ui.theme.LocalThemeDark
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.LocalGlassStyle
+import com.github.kr328.clash.ui.components.heroWaveShader
+import com.github.kr328.clash.ui.components.heroWaveEffect
+import com.github.kr328.clash.ui.components.liquidGlass
+import com.github.kr328.clash.ui.components.INNER_BLUR
+import com.github.kr328.clash.ui.components.glassAccentTint
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.focusRoom
 import com.github.kr328.clash.ui.components.smoothResource
@@ -107,12 +119,17 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -175,6 +192,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.em
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -719,7 +737,7 @@ private fun HomeSkeleton(compact: Boolean) {
 }
 
 @Composable
-private fun BrandHeader(profile: Profile?, onSettings: () -> Unit, onBird: (() -> Unit)?) {
+private fun BrandHeader(profile: Profile?, onSettings: () -> Unit, onBird: (() -> Unit)?) = BackdropTone {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -912,9 +930,8 @@ internal fun ThemeButton(
 ) {
     val switch = LocalThemeSwitch.current
 
-    // Какая тема сейчас, видно по самой палитре — тащить настройку через все экраны
-    // ради одного значка незачем.
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    // The theme itself, not the palette here: in Home's header over a picture the palette is the picture's tone.
+    val dark = LocalThemeDark.current
 
     var center by remember { mutableStateOf(Offset.Zero) }
 
@@ -958,6 +975,32 @@ private fun HeroCard(
     modifier: Modifier = Modifier,
 ) {
     val active = state.running
+    val backdrop = LocalGlassBackdrop.current
+    val glassStyle = LocalGlassStyle.current
+    // The glass style: the card is glass over Home's backdrop. Null backdrop — Air, the card as it always was.
+    val isGlass = backdrop != null
+    val waveShader = remember(isGlass) { if (isGlass) heroWaveShader() else null }
+    val density = LocalDensity.current
+
+    val scheme = MaterialTheme.colorScheme
+    val dark = scheme.background.luminance() < 0.5f
+    val tintFactor = (glassStyle.tint / 50f).coerceIn(0f, 2f)
+    val baseAlphaOn = glassAccentTint(dark)
+    // Over an own picture as dense as the other cards: the thinner glass left the letters on leaves, rocks and a white sky
+    // (F-388). The built-in gradients carry no detail and keep the lighter pane.
+    val baseAlphaOff = when {
+        glassStyle.backdrop == SettingsStore.BACKDROP_IMAGE -> GLASS_CARD_TINT
+        dark -> 0.28f
+        else -> 0.42f
+    }
+    val alphaOn = if (tintFactor <= 1f) baseAlphaOn * tintFactor else baseAlphaOn + (1f - baseAlphaOn) * ((tintFactor - 1f) * 0.65f)
+    val alphaOff = if (tintFactor <= 1f) baseAlphaOff * tintFactor else baseAlphaOff + (0.85f - baseAlphaOff) * ((tintFactor - 1f) * 0.70f)
+    val tintOn = scheme.primaryContainer.copy(alpha = alphaOn.coerceIn(0f, 1f))
+    val tintOff = scheme.surface.copy(alpha = alphaOff.coerceIn(0f, 1f))
+
+    val cardPath = remember { Path() }
+    val circlePath = remember { Path() }
+    val outsidePath = remember { Path() }
 
     // Какое состояние лежит внизу целиком. Пока идёт волна, поверх него — новое.
     var settled by remember { mutableStateOf(active) }
@@ -966,6 +1009,7 @@ private fun HeroCard(
     val wave = remember { Animatable(0f) }
 
     var card by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    var buttonCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var center by remember { mutableStateOf(Offset.Unspecified) }
     var reach by remember { mutableFloatStateOf(0f) }
     // The button's own radius: the wave leaves from its edge.
@@ -978,10 +1022,24 @@ private fun HeroCard(
     val buttonScale = pressScale(press)
 
     LaunchedEffect(active) {
+        buttonCoords?.takeIf { it.isAttached }?.let { b ->
+            backdrop?.waveCenter = b.positionInRoot() + Offset(b.size.width / 2f, b.size.height / 2f)
+        }
+
         // Передумали посреди наката: the circle closes from where it is. Removed at once, the new copy vanished,
         // and with quick presses on the button the fill was never seen.
         if (active == settled) {
-            if (wave.value > 0f) wave.animateTo(0f, tween((WAVE_MS * wave.value).roundToInt(), easing = WaveEasing))
+            if (wave.value > 0f) {
+                try {
+                    backdrop?.waveActive = true
+                    wave.animateTo(0f, tween((WAVE_MS * wave.value).roundToInt(), easing = WaveEasing)) {
+                        backdrop?.waveProgress = value
+                    }
+                } finally {
+                    backdrop?.waveActive = false
+                    backdrop?.waveProgress = 0f
+                }
+            }
 
             upper = settled
 
@@ -999,7 +1057,15 @@ private fun HeroCard(
             withFrameNanos {}
         }
 
-        wave.animateTo(1f, tween((WAVE_MS * (1f - wave.value)).roundToInt(), easing = WaveEasing))
+        try {
+            backdrop?.waveActive = true
+            wave.animateTo(1f, tween((WAVE_MS * (1f - wave.value)).roundToInt(), easing = WaveEasing)) {
+                backdrop?.waveProgress = value
+            }
+        } finally {
+            backdrop?.waveActive = false
+            backdrop?.waveProgress = 0f
+        }
 
         settled = active
 
@@ -1011,11 +1077,18 @@ private fun HeroCard(
 
         if (!button.isAttached) return
 
+        buttonCoords = button
+
         val c = box.localPositionOf(button, Offset(button.size.width / 2f, button.size.height / 2f))
 
         center = c
         start = button.size.width / 2f
-        reach = Size(box.size.width.toFloat(), box.size.height.toFloat()).farthestFrom(c)
+        // On glass the wave is a refracting ring 32 dp wide: it travels on until the ring has left the card.
+        reach = Size(box.size.width.toFloat(), box.size.height.toFloat()).farthestFrom(c) +
+            if (isGlass) with(density) { 48.dp.toPx() } else 0f
+
+        val rootCenter = button.positionInRoot() + Offset(button.size.width / 2f, button.size.height / 2f)
+        backdrop?.waveCenter = rootCenter
     }
 
     // Быстрая смена узла (D-116): плашка узла раскрывается на всю карточку.
@@ -1091,51 +1164,109 @@ private fun HeroCard(
         // The remote's node panel unfolds inside this card.
         resizing = tv,
     ) {
-        Box(Modifier.fillMaxWidth().padding(HERO_RING).clip(HeroInner).onGloballyPositioned { card = it }) {
-            HeroFace(
-                running = settled,
-                state = state,
-                metrics = metrics,
-                press = press,
-                buttonScale = { buttonScale.value },
-                onToggle = onToggle,
-                onNode = onNode,
-                compact = compact,
-                tight = tight,
-                onButtonPlaced = ::locate,
-                onNodePlaced = ::placeNodeRow,
-                nodeFocus = Modifier.focusRequester(rowFocus),
-                // Надписи прежнего состояния гаснут в первой трети волны, новые проявляются
-                // во второй половине. Фронт проходит по пустому месту, и два разных слова не
-                // встречаются на экране — без этого волна резала заголовок пополам.
-                textAlpha = { if (settled != upper) 1f - fade(wave.value, 0f, TEXT_OUT) else 1f },
-            )
+        Box(
+            Modifier.fillMaxWidth().padding(HERO_RING).clip(HeroInner).onGloballyPositioned { card = it }
+                .then(
+                    if (isGlass) {
+                        Modifier
+                            .liquidGlass(
+                                backdrop = backdrop,
+                                base = MaterialTheme.colorScheme.background,
+                                tint = Color.Transparent,
+                                shape = HeroInner,
+                            )
+                            .drawBehind {
+                                val curRadius = start + (reach - start).coerceAtLeast(0f) * wave.value
+                                val centerOffset = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f)
 
-            if (settled != upper) {
+                                if (settled == upper || wave.value <= 0f) {
+                                    drawRect(if (settled) tintOn else tintOff)
+                                } else {
+                                    cardPath.reset()
+                                    cardPath.addRect(Rect(0f, 0f, size.width, size.height))
+                                    circlePath.reset()
+                                    circlePath.addOval(Rect(centerOffset, curRadius))
+                                    outsidePath.reset()
+                                    outsidePath.op(cardPath, circlePath, PathOperation.Difference)
+
+                                    drawPath(outsidePath, if (settled) tintOn else tintOff)
+                                    drawPath(circlePath, if (upper) tintOn else tintOff)
+                                }
+                            }
+                    } else Modifier
+                ),
+        ) {
+            val waveWidthPx = with(density) { 32.dp.toPx() }
+
+            Box(
+                Modifier.fillMaxWidth().then(if (isGlass) Modifier.graphicsLayer {
+                    if (waveShader != null && settled != upper && wave.value > 0f && center.isSpecified) {
+                        val curRadius = start + (reach - start).coerceAtLeast(0f) * wave.value
+                        val waveAlpha = fade(wave.value, 0f, 0.08f) * (1f - fade(wave.value, 0.80f, 0.95f))
+                        val str = 0.35f * (glassStyle.refraction / 50f)
+                        val disp = 0.85f * (glassStyle.dispersion / 40f)
+                        val hi = 0.60f * (glassStyle.highlight / 60f)
+                        renderEffect = heroWaveEffect(waveShader, center, curRadius, waveWidthPx, str, disp, hi, waveAlpha)
+                    } else {
+                        renderEffect = null
+                    }
+                } else Modifier),
+            ) {
                 HeroFace(
-                    running = upper,
+                    running = settled,
                     state = state,
                     metrics = metrics,
                     press = press,
                     buttonScale = { buttonScale.value },
+                    // On glass both copies' button and node row are see-through: the old ones fade out as the new
+                    // ones fade in. Air's lower copy stays whole under the new one.
+                    buttonAlpha = { if (isGlass && settled != upper) 1f - fade(wave.value, 0f, GLASS_BUTTON_FADE) else 1f },
+                    nodeRowAlpha = { if (isGlass && settled != upper) 1f - fade(wave.value, 0.08f, 0.28f) else 1f },
                     onToggle = onToggle,
                     onNode = onNode,
                     compact = compact,
                     tight = tight,
-                    onButtonPlaced = {},
-                    onNodePlaced = {},
-                    textAlpha = { fade(wave.value, TEXT_IN, 1f) },
-                    modifier = Modifier.matchParentSize().graphicsLayer {
-                        clip = true
-                        // The button changes by a crossfade and the wave leaves from its edge: a circle growing from
-                        // the centre crossed the small button in a frame or two, and the press filled it with a jerk.
-                        alpha = fade(wave.value, 0f, BUTTON_FADE)
-                        shape = WaveShape(
-                            center = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f),
-                            radius = start + (reach - start).coerceAtLeast(0f) * wave.value,
-                        )
-                    },
+                    onButtonPlaced = ::locate,
+                    onNodePlaced = ::placeNodeRow,
+                    nodeFocus = Modifier.focusRequester(rowFocus),
+                    // Надписи прежнего состояния гаснут в первой трети волны, новые проявляются
+                    // во второй половине. Фронт проходит по пустому месту, и два разных слова не
+                    // встречаются на экране — без этого волна резала заголовок пополам.
+                    textAlpha = { if (settled != upper) 1f - fade(wave.value, 0f, TEXT_OUT) else 1f },
+                    isGlass = isGlass,
+                    cardTint = if (settled) tintOn else tintOff,
                 )
+
+                if (settled != upper) {
+                    HeroFace(
+                        running = upper,
+                        state = state,
+                        metrics = metrics,
+                        press = press,
+                        buttonScale = { buttonScale.value },
+                        buttonAlpha = { 1f },
+                        nodeRowAlpha = { if (isGlass) fade(wave.value, 0.08f, 0.28f) else 1f },
+                        onToggle = onToggle,
+                        onNode = onNode,
+                        compact = compact,
+                        tight = tight,
+                        onButtonPlaced = {},
+                        onNodePlaced = {},
+                        textAlpha = { fade(wave.value, TEXT_IN, 1f) },
+                        isGlass = isGlass,
+                        cardTint = if (upper) tintOn else tintOff,
+                        modifier = Modifier.matchParentSize().graphicsLayer {
+                            clip = true
+                            // The button changes by a crossfade and the wave leaves from its edge: a circle growing from
+                            // the centre crossed the small button in a frame or two, and the press filled it with a jerk.
+                            alpha = fade(wave.value, 0f, if (isGlass) GLASS_BUTTON_FADE else BUTTON_FADE)
+                            shape = WaveShape(
+                                center = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f),
+                                radius = start + (reach - start).coerceAtLeast(0f) * wave.value,
+                            )
+                        },
+                    )
+                }
             }
 
             if (pickerShown) {
@@ -1212,6 +1343,8 @@ private fun HeroFace(
     metrics: () -> HomeMetrics,
     press: MutableInteractionSource,
     buttonScale: () -> Float,
+    buttonAlpha: () -> Float = { 1f },
+    nodeRowAlpha: () -> Float = { 1f },
     onToggle: () -> Unit,
     onNode: () -> Unit,
     compact: Boolean,
@@ -1223,10 +1356,17 @@ private fun HeroFace(
     nodeFocus: Modifier = Modifier,
     /** Прозрачность надписей, которые у двух состояний разные. Читается при отрисовке. */
     textAlpha: () -> Float,
+    isGlass: Boolean = false,
+    /**
+     * The glass card's tint in this copy's state. The button and the node row lay it under their own: they show
+     * Home's backdrop, not the card, and without it they read as holes through the card to the backdrop.
+     */
+    cardTint: Color = Color.Transparent,
     modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
-    val fill = if (running) scheme.primaryContainer else scheme.surface
+    val solidFill = if (running) scheme.primaryContainer else scheme.surface
+    val fill = if (isGlass) Color.Transparent else solidFill
     val ink = if (running) scheme.onPrimaryContainer else scheme.onSurface
 
     CompositionLocalProvider(LocalContentColor provides ink) {
@@ -1293,7 +1433,7 @@ private fun HeroFace(
                     }
                 }
 
-                UptimePill(running, metrics)
+                UptimePill(running, metrics, isGlass = isGlass)
             }
 
             PowerButton(
@@ -1301,15 +1441,27 @@ private fun HeroFace(
                 busy = state.busy,
                 press = press,
                 scale = buttonScale,
+                buttonAlpha = buttonAlpha,
                 onToggle = onToggle,
                 compact = compact,
                 tight = tight,
+                isGlass = isGlass,
+                cardTint = cardTint,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
                     .onGloballyPositioned(onButtonPlaced),
             )
 
             if (state.groups.isNotEmpty() || state.profile != null) {
-                NodeRow(state, onNode, Modifier.onGloballyPositioned(onNodePlaced).then(nodeFocus))
+                NodeRow(
+                    state = state,
+                    onClick = onNode,
+                    modifier = Modifier
+                        .then(if (isGlass) Modifier.graphicsLayer { alpha = nodeRowAlpha() } else Modifier)
+                        .onGloballyPositioned(onNodePlaced)
+                        .then(nodeFocus),
+                    glass = isGlass,
+                    cardTint = cardTint,
+                )
             }
         }
     }
@@ -1335,7 +1487,7 @@ private fun Reserved(
 }
 
 /** Радиус, при котором круг из точки накрывает всю карточку. */
-private fun Size.farthestFrom(point: Offset): Float = maxOf(
+internal fun Size.farthestFrom(point: Offset): Float = maxOf(
     hypot(point.x, point.y),
     hypot(width - point.x, point.y),
     hypot(point.x, height - point.y),
@@ -1344,11 +1496,17 @@ private fun Size.farthestFrom(point: Offset): Float = maxOf(
 
 /** Сколько туннель работает. Прочерк, пока не работает, — плашка не пропадает. */
 @Composable
-private fun UptimePill(running: Boolean, metrics: () -> HomeMetrics) {
+private fun UptimePill(running: Boolean, metrics: () -> HomeMetrics, isGlass: Boolean = false) {
+    val hiFactor = if (isGlass) (LocalGlassStyle.current.highlight / 60f).coerceIn(0f, 1.8f) else 1f
     Row(
         // Своим слоем: часы тикают каждую секунду и не должны тянуть за собой карточку.
         modifier = Modifier.graphicsLayer()
-            .border(1.dp, LocalContentColor.current.copy(alpha = 0.22f), CircleShape)
+            .then(
+                if (isGlass) {
+                    Modifier.background(LocalContentColor.current.copy(alpha = 0.08f), CircleShape)
+                } else Modifier
+            )
+            .border(1.dp, LocalContentColor.current.copy(alpha = if (isGlass) 0.30f * hiFactor else 0.22f), CircleShape)
             .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1403,9 +1561,13 @@ private fun PowerButton(
     press: MutableInteractionSource,
     /** The button's size, one for both copies: see [pressScale]. */
     scale: () -> Float,
+    buttonAlpha: () -> Float = { 1f },
     onToggle: () -> Unit,
     compact: Boolean,
     tight: Boolean,
+    isGlass: Boolean = false,
+    /** On glass: the card's tint, laid under the button's own, see [HeroFace]. */
+    cardTint: Color = Color.Transparent,
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -1419,6 +1581,11 @@ private fun PowerButton(
     // announcement it takes the small one, so the subscription card stays on screen.
     val small = compact && (!LocalTv.current || tight)
     val diameter = if (small) 96.dp else 112.dp
+
+    // The glass style: a disc of the card's glass with a shade of the card's letters over it, the icon in the letters'
+    // colour; Air fills the circle with the letters' colour and draws the icon in the card's.
+    val backdrop = LocalGlassBackdrop.current
+
     Box(modifier.size(diameter + 20.dp), contentAlignment = Alignment.Center) {
         AnimatedVisibility(
             visible = busy,
@@ -1453,9 +1620,20 @@ private fun PowerButton(
                 .graphicsLayer {
                     scaleX = scale()
                     scaleY = scale()
+                    alpha = buttonAlpha()
                 }
                 .clip(CircleShape)
-                .background(face)
+                .then(
+                    if (isGlass) {
+                        Modifier.liquidGlass(
+                            backdrop = backdrop,
+                            base = Color.Transparent,
+                            tint = face.copy(alpha = GLASS_BUTTON_SHADE).compositeOver(cardTint),
+                            shape = CircleShape,
+                            blurBoost = INNER_BLUR + 4.dp,
+                        )
+                    } else Modifier.background(face),
+                )
                 // Пульт входит на главную сразу на кнопку питания (этап 6).
                 .tabEntry()
                 .clickable(
@@ -1491,7 +1669,7 @@ private fun PowerButton(
                 contentDescription = stringResource(if (running) R.string.ducker_disconnect else R.string.ducker_connect),
                 modifier = Modifier.size(if (small) 44.dp else 48.dp),
                 // Значок — цвета карточки: кружок залит её содержимым наоборот.
-                tint = fill,
+                tint = if (isGlass) face else fill,
             )
         }
     }
@@ -1526,7 +1704,7 @@ private sealed interface Dip : Interaction {
 private const val DIP_MS = 120L
 
 /** Плавный переход 0→1 на участке [from, to] хода волны. */
-private fun fade(progress: Float, from: Float, to: Float): Float {
+internal fun fade(progress: Float, from: Float, to: Float): Float {
     val t = ((progress - from) / (to - from)).coerceIn(0f, 1f)
 
     return t * t * (3f - 2f * t)
@@ -1566,13 +1744,26 @@ private const val TEXT_OUT = 0.3f
 private const val TEXT_IN = 0.45f
 /** До какой доли волны кнопка перетекает в новый цвет. */
 private const val BUTTON_FADE = 0.15f
+/** The same on glass, where the button is see-through and both copies show: slower, or the change read as a flash. */
+private const val GLASS_BUTTON_FADE = 0.28f
+/** How much of the card's letters' colour shades the glass power button, so it stands out of the card. */
+private const val GLASS_BUTTON_SHADE = 0.14f
 private const val HINT_OUT_MS = 90
 private const val HINT_IN_MS = 150
 private const val RING_DELAY_MS = 150
 
-/** Строка с текущим узлом внутри главной карточки. */
+/**
+ * Строка с текущим узлом внутри главной карточки. [glass] — the glass style's pill: Air's plate over the card's
+ * [cardTint], see [HeroFace].
+ */
 @Composable
-private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
+private fun NodeRow(
+    state: HomeState,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    glass: Boolean = false,
+    cardTint: Color = Color.Transparent,
+) {
     val group = state.groups.firstOrNull()
 
     // "Нет ответа" under the button is this screen's own verdict — two checks of the connection
@@ -1582,11 +1773,19 @@ private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
 
     Row(
         modifier = modifier.fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(LocalContentColor.current.copy(alpha = PLATE_ALPHA))
+            .clip(if (glass) CircleShape else MaterialTheme.shapes.medium)
+            .then(
+                if (glass) Modifier.liquidGlass(
+                    LocalGlassBackdrop.current,
+                    base = MaterialTheme.colorScheme.background,
+                    tint = LocalContentColor.current.copy(alpha = PLATE_ALPHA).compositeOver(cardTint),
+                    shape = CircleShape,
+                    blurBoost = INNER_BLUR,
+                ) else Modifier.background(LocalContentColor.current.copy(alpha = PLATE_ALPHA)),
+            )
             .then(if (LocalTv.current) Modifier.ringCorner(NODE_ROW_CORNER) else Modifier)
             .clickable(onClick = onClick)
-            .padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
+            .padding(start = if (glass) 16.dp else 14.dp, end = if (glass) 12.dp else 10.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -1632,7 +1831,7 @@ private fun NodeRow(state: HomeState, onClick: () -> Unit, modifier: Modifier) {
                         },
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.widthIn(max = delayRoom),
-                        color = if (shownDelay == DelayStore.NO_ANSWER) MaterialTheme.colorScheme.error
+                        color = if (shownDelay == DelayStore.NO_ANSWER) failureOn(LocalContentColor.current)
                         else LocalContentColor.current.copy(alpha = 0.7f),
                     )
                 }
@@ -2295,17 +2494,28 @@ private fun CardPill(
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
+    // The glass style: on glass a frosted pill, blurred more than the card so the two do not merge.
+    val backdrop = LocalGlassBackdrop.current
+    val fill = MaterialTheme.colorScheme.surfaceVariant
+    val container = if (backdrop != null) Color.Transparent else fill
+
     Button(
         onClick = onClick,
         enabled = enabled,
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = container,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContainerColor = container,
             disabledContentColor = MaterialTheme.colorScheme.onSurface,
         ),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-        modifier = modifier.heightIn(min = 40.dp),
+        modifier = modifier.heightIn(min = 40.dp).liquidGlass(
+            backdrop,
+            base = MaterialTheme.colorScheme.background,
+            tint = fill.copy(alpha = 0.7f),
+            shape = ButtonDefaults.shape,
+            blurBoost = INNER_BLUR,
+        ),
         content = content,
     )
 }

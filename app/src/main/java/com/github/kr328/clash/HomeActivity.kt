@@ -1,5 +1,24 @@
 package com.github.kr328.clash
 
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.glassBackground
+import com.github.kr328.clash.ui.components.glassSource
+import com.github.kr328.clash.ui.components.rememberGlassBackdrop
+import com.github.kr328.clash.ui.components.heroWaveShader
+import com.github.kr328.clash.ui.components.heroWaveEffect
+import com.github.kr328.clash.ui.components.LocalGlassStyle
+import com.github.kr328.clash.ui.home.fade
+import com.github.kr328.clash.ui.home.farthestFrom
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.platform.LocalDensity
+import androidx.activity.result.PickVisualMediaRequest
+import com.github.kr328.clash.ui.components.backdropIsDark
+import com.github.kr328.clash.ui.components.backdropTopDark
+import com.github.kr328.clash.ui.theme.LocalBackdropTone
+import androidx.compose.runtime.SideEffect
+import com.github.kr328.clash.ui.components.glassSupported
+import com.github.kr328.clash.ui.components.GlassStyle
 import com.github.kr328.clash.ui.components.Symbols
 import android.content.ClipData
 import android.content.ClipDescription
@@ -49,6 +68,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.input.InputMode
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.calculateEndPadding
 import com.github.kr328.clash.ui.subscriptions.AddSubscriptionButton
@@ -101,7 +121,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -193,7 +212,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 
 /**
@@ -260,6 +278,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
     private val qrScanner = registerForActivityResult(QrScanActivity.Scan) { text ->
         subscriptionsViewModel.scanned(text)
+    }
+
+    /** The glass style: the own picture behind Home, from the system's photo picker. */
+    private val pickGlassImage = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) settingsViewModel.setGlassImage(this, uri)
     }
 
     /** «Файл» в окне добавления подписки: любой тип — у `.yaml` на телефоне часто нет своего. */
@@ -375,13 +398,27 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         setContent {
             val settingsState by settingsViewModel.state.collectAsState()
 
+            // The liquid glass style: chosen, on a phone that draws it; otherwise the app is Air.
+            val glassOn = !tv && glassSupported && settingsState.style == SettingsStore.STYLE_GLASS
+            // With the glass, while the theme follows the system: a black backdrop or a dark own picture takes the app
+            // dark, as a wallpaper does, a light picture light. A chosen theme wins. Null — no say.
+            val backdropDark = when {
+                !glassOn -> null
+                backdropIsDark(settingsState.glassBackdrop, settingsState.glassImageDark) -> true
+                settingsState.glassBackdrop == SettingsStore.BACKDROP_IMAGE -> false
+                else -> null
+            }
             val dark = when (settingsState.theme) {
                 SettingsStore.THEME_LIGHT -> false
                 SettingsStore.THEME_DARK -> true
                 // Телевизор смотрят в полутьме — там тёмная, что бы ни сообщала система, пока
                 // проверки на настоящих телевизорах не покажут иного.
-                else -> tv || isSystemInDarkTheme()
+                else -> backdropDark ?: (tv || isSystemInDarkTheme())
             }
+            // The backdrop's top, under the status bar and the tabs' headers: they take its tone, whatever the theme.
+            val backdropTop = if (glassOn) backdropTopDark(settingsState.glassBackdrop, settingsState.glassImageTopDark) else null
+            // A screen over the tabs (settings, log…) hides the backdrop: the status bar is the theme's again there.
+            val overScreen = remember { mutableStateOf(false) }
 
             DuckerTheme(
                 dark = dark,
@@ -396,6 +433,21 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     )
                 },
                 tv = tv,
+                glass = GlassStyle(
+                    enabled = glassOn,
+                    backdrop = settingsState.glassBackdrop,
+                    blur = settingsState.glassBlur,
+                    image = settingsState.glassImage,
+                    imageTopDark = settingsState.glassImageTopDark,
+                    refraction = settingsState.glassRefraction,
+                    dispersion = settingsState.glassDispersion,
+                    depth = settingsState.glassDepth,
+                    highlight = settingsState.glassHighlight,
+                    noise = settingsState.glassNoise,
+                    vibrancy = settingsState.glassVibrancy,
+                    tint = settingsState.glassTint,
+                ),
+                statusBarDark = if (overScreen.value) null else backdropTop,
             ) {
                 val pagerState = rememberPagerState { TABS }
                 val scope = rememberCoroutineScope()
@@ -453,6 +505,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 val showConfig = configState.open && editGone
                 var showApps by rememberSaveable { mutableStateOf(false) }
                 var showLogs by rememberSaveable { mutableStateOf(false) }
+                val covered = showSettings || showProbe || showApps || showLogs || showRules || showConfig
+                SideEffect { overScreen.value = covered }
 
                 // Признаки «экран открыт» переживают выгрузку процесса, а данные экранов — нет.
                 // Грузились они только по нажатию, и после возврата «Приложения» вечно показывали
@@ -1030,7 +1084,9 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         // Иначе быстрое «вниз-вверх» по доку принималось за повторное нажатие — лента
                         // доезжала до соседней вкладки, а фокус оставался на прежней (D-159). Пока лента
                         // едет, и на телефоне касание вкладки — смена, а не повторное нажатие.
-                        if (pagerState.currentPage == tab && !fromOverlay && !tv && paging?.isActive != true) {
+                        if (pagerState.currentPage == tab && !pagerState.isScrollInProgress &&
+                            pagerState.currentPageOffsetFraction == 0f && !fromOverlay && !tv && paging?.isActive != true
+                        ) {
                             // Повторное нажатие по своей же вкладке обновляет данные:
                             // страница не меняется, и эффект по `settledPage` промолчит.
                             // «Подписки» does not: a repeated tap there is the dock's «+ Добавить» or nothing
@@ -1349,15 +1405,57 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             pageContent = tabPage,
                         )
                     } else {
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = pagerModifier,
-                            key = { it },
-                            // Пока подписок нет, листать некуда: вкладкам нечего показывать (D-98).
-                            userScrollEnabled = !onboarding,
-                            beyondViewportPageCount = TABS - 1,
-                            pageContent = tabPage,
-                        )
+                        // The glass style: one backdrop under all three tabs, still as they move over it; their cards
+                        // and buttons are glass over it. Air has none.
+                        val wallpaper = glassOn && settingsState.glassBackdrop != SettingsStore.BACKDROP_NONE
+                        val backdrop = if (wallpaper) rememberGlassBackdrop() else null
+                        val wallpaperWaveShader = remember(wallpaper) { if (wallpaper) heroWaveShader() else null }
+                        val glassStyle = LocalGlassStyle.current
+                        val density = LocalDensity.current
+
+                        if (wallpaper) {
+                            Box(
+                                Modifier.fillMaxSize()
+                                    .then(if (backdrop != null) Modifier.glassSource(backdrop) else Modifier)
+                                    .graphicsLayer {
+                                        val b = backdrop
+                                        val shader = wallpaperWaveShader
+                                        if (b != null && b.waveActive && b.waveCenter.isSpecified && shader != null) {
+                                            val progress = b.waveProgress
+                                            if (progress > 0f) {
+                                                val wallpaperCenter = b.waveCenter - b.origin
+                                                val maxReach = Size(size.width, size.height).farthestFrom(wallpaperCenter)
+                                                val startRadius = with(density) { 56.dp.toPx() }
+                                                val curRadius = startRadius + (maxReach - startRadius) * progress
+                                                val waveWidthPx = with(density) { 48.dp.toPx() }
+                                                val waveAlpha = fade(progress, 0f, 0.08f) * (1f - fade(progress, 0.70f, 0.95f))
+                                                val damping = 1f - progress * 0.45f
+                                                val str = 0.32f * (glassStyle.refraction / 50f) * damping
+                                                val disp = 0.75f * (glassStyle.dispersion / 40f) * damping
+                                                val hi = 0.45f * (glassStyle.highlight / 60f) * damping
+                                                renderEffect = heroWaveEffect(shader, wallpaperCenter, curRadius, waveWidthPx, str, disp, hi, waveAlpha)
+                                            } else {
+                                                renderEffect = null
+                                            }
+                                        } else {
+                                            renderEffect = null
+                                        }
+                                    }
+                                    .glassBackground(settingsState.glassBackdrop, state.running),
+                            )
+                        }
+
+                        CompositionLocalProvider(LocalGlassBackdrop provides backdrop, LocalBackdropTone provides backdropTop) {
+                            HorizontalPager(
+                                state = pagerState,
+                                modifier = pagerModifier,
+                                key = { it },
+                                // Пока подписок нет, листать некуда: вкладкам нечего показывать (D-98).
+                                userScrollEnabled = !onboarding,
+                                beyondViewportPageCount = TABS - 1,
+                                pageContent = tabPage,
+                            )
+                        }
                     }
 
                     // Экраны поверх вкладок — слоями над лентой, а не вместо неё (D-91).
@@ -1372,6 +1470,20 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onTheme = { settingsViewModel.setTheme(this@HomeActivity, it) },
                             onOled = { settingsViewModel.setOled(this@HomeActivity, it) },
                             onDynamicColor = { settingsViewModel.setDynamicColor(this@HomeActivity, it) },
+                            onStyle = { settingsViewModel.setStyle(this@HomeActivity, it) },
+                            onGlassBackdrop = { settingsViewModel.setGlassBackdrop(this@HomeActivity, it) },
+                            onGlassBlur = { settingsViewModel.setGlassBlur(this@HomeActivity, it) },
+                            onGlassRefraction = { settingsViewModel.setGlassRefraction(this@HomeActivity, it) },
+                            onGlassDispersion = { settingsViewModel.setGlassDispersion(this@HomeActivity, it) },
+                            onGlassDepth = { settingsViewModel.setGlassDepth(this@HomeActivity, it) },
+                            onGlassHighlight = { settingsViewModel.setGlassHighlight(this@HomeActivity, it) },
+                            onGlassNoise = { settingsViewModel.setGlassNoise(this@HomeActivity, it) },
+                            onGlassVibrancy = { settingsViewModel.setGlassVibrancy(this@HomeActivity, it) },
+                            onGlassTint = { settingsViewModel.setGlassTint(this@HomeActivity, it) },
+                            onResetGlassTuning = { settingsViewModel.resetGlassTuning(this@HomeActivity) },
+                            onPickGlassImage = {
+                                pickGlassImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            },
                             onExternalControl = { settingsViewModel.setAllowExternalControl(this@HomeActivity, it) },
                             onIpv6 = { settingsViewModel.setIpv6(this@HomeActivity, it) },
                             onAddTile = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

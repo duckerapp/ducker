@@ -1,0 +1,13 @@
+AndroidLiquidGlass
+Copyright 2025 Kyant (https://github.com/Kyant0/AndroidLiquidGlass)
+
+The shaders of the app's liquid glass style are adapted from this project's
+backdrop/src/commonMain/kotlin/com/kyant/backdrop/internal/Shaders.kt (commit 65ab177): the
+rounded-rectangle distance field and its gradient, the rim refraction with its circle map, the
+seven-band dispersion and the rim highlight. They were changed: an inner bevel that keeps the
+corners round, a lens dome, a surface frost and the corners' gradient. They live in
+app/src/main/java/com/github/kr328/clash/ui/components/LiquidGlass.kt. The library itself is not
+a dependency of the app.
+
+Licensed under the Apache License, Version 2.0; the complete license accompanies this file as
+Material-Symbols-LICENSE.txt, the same text.

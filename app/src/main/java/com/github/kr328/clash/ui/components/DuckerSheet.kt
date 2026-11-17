@@ -1,5 +1,9 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.runtime.derivedStateOf
 import android.os.Build
 import android.view.View
@@ -187,6 +191,7 @@ internal fun DuckerSheet(
     val closed by rememberUpdatedState(onClosed)
     val ask by rememberUpdatedState(onAsk)
     val tv = LocalTv.current
+    var glassVisible by remember { mutableStateOf(open) }
     val sheetShape = remember(tv) { if (tv) TvSheetShape else RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp) }
 
     /** Жест закрытия: занята — нельзя, есть что бросить — спросить, иначе закрыть. Закрылась ли. */
@@ -338,6 +343,7 @@ internal fun DuckerSheet(
         // A hidden window draws nothing and takes no touch, key, focus or accessibility: the fullscreen
         // transparent window must never stay visible over the app once the sheet has gone.
         fun finish() {
+            glassVisible = false
             if (keep) {
                 focus.clearFocus(force = true)
                 window?.decorView?.visibility = View.GONE
@@ -352,6 +358,7 @@ internal fun DuckerSheet(
                 // A kept window hidden before its first layout is never measured again: show it so it can be.
                 height == 0f -> if (!open) finish() else if (keep) window?.decorView?.visibility = View.VISIBLE
                 open -> {
+                    glassVisible = true
                     if (keep) window?.decorView?.visibility = View.VISIBLE
                     exitVelocity = null
                     move(0f, tween(ENTER_MS, easing = FastOutSlowInEasing))
@@ -404,12 +411,28 @@ internal fun DuckerSheet(
             }
         }
 
+        // The glass style: the screen under the sheet blurs as it comes out.
+        val glass = !tv && LocalGlassStyle.current.enabled
+        val rim = glassRim(MaterialTheme.colorScheme.background)
+
+        val sheetGlass = LocalSheetGlass.current
+        if (glass && sheetGlass != null) {
+            val owner = remember { Any() }
+            LaunchedEffect(sheetGlass, owner) {
+                snapshotFlow {
+                    if (glassVisible && height > 0f) (1f - offset / height).coerceIn(0f, 1f) else 0f
+                }.collect { sheetGlass.update(owner, it) }
+            }
+            DisposableEffect(sheetGlass, owner) { onDispose { sheetGlass.remove(owner) } }
+        }
+
         // Затемнение — отдельным слоем под панелью: касание панели до него не доходит.
         Box(
             Modifier.fillMaxSize()
                 .drawBehind {
                     val shown = if (height > 0f) (1f - offset / height).coerceIn(0f, 1f) else 0f
-                    drawRect(Color.Black, alpha = SCRIM * shown)
+                    // Over a blurred screen a light dim is enough.
+                    drawRect(Color.Black, alpha = (if (glass) GLASS_SCRIM else SCRIM) * shown)
                 }
                 .pointerInput(Unit) { detectTapGestures { close() } },
         )
@@ -458,9 +481,24 @@ internal fun DuckerSheet(
                     )
                     // Its height animates: a platform outline shadow avoids rebuilding
                     // a full-sheet blur mask for each new height.
-                    .shadow(8.dp, sheetShape, clip = false)
+                    // On glass the shadow showed through the pane as a dark inner frame; the light rim marks the edge instead.
+                    .then(if (glass) Modifier else Modifier.shadow(8.dp, sheetShape, clip = false))
                     .clip(sheetShape)
-                    .background(MaterialTheme.colorScheme.background, sheetShape),
+                    .then(
+                        if (glass) Modifier
+                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.85f), sheetShape)
+                            .drawWithContent {
+                                drawContent()
+                                // Light catches the glass's top edge.
+                                drawRoundRect(
+                                    rim,
+                                    size = Size(size.width, size.height + 28.dp.toPx()),
+                                    cornerRadius = CornerRadius(28.dp.toPx()),
+                                    style = Stroke(1.dp.toPx()),
+                                )
+                            }
+                        else Modifier.background(MaterialTheme.colorScheme.background, sheetShape),
+                    ),
             ) {
                 // Ручка — знак, что панель тянется. Пульту тянуть нечем: на телевизоре на её месте поле.
                 if (tv) {
@@ -594,6 +632,7 @@ private val LIFT_ROOM = 540.dp
 private val LIFT_GAP = 16.dp
 private const val SETTLE_MS = 200
 private const val SCRIM = 0.32f
+private const val GLASS_SCRIM = 0.12f
 
 /**
  * Вопрос перед тем, как бросить несохранённое: правку конфига (D-124), новое правило (D-135)

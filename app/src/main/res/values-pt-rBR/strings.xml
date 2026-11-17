@@ -693,4 +693,32 @@
     <string name="config_template_failed">Não aplicado: %1$s</string>
     <string name="config_template_applying">Aplicando…</string>
     <string name="config_template_edited">A configuração foi editada à mão: trocar a configuração substitui as edições</string>
+
+    <!-- Liquid glass appearance settings. -->
+    <string name="style">Estilo</string>
+    <string name="style_air">Air</string>
+    <string name="style_glass">Vidro líquido</string>
+    <string name="glass_backdrop">Fundo</string>
+    <string name="glass_backdrop_none">Nenhum</string>
+    <string name="glass_backdrop_sunset">Pôr do sol</string>
+    <string name="glass_backdrop_grey">Cinza</string>
+    <string name="glass_backdrop_black_gradient">Degradê preto</string>
+    <string name="glass_backdrop_green">Verde</string>
+    <string name="glass_backdrop_pink">Rosa</string>
+    <string name="glass_backdrop_black">Preto liso</string>
+    <string name="glass_backdrop_black_white">Preto e branco</string>
+    <string name="glass_blur">Desfoque do vidro</string>
+    <string name="glass_blur_none">Sem desfoque</string>
+    <string name="glass_tuning">Ajustes do vidro</string>
+    <string name="glass_refraction">Refração (distorção)</string>
+    <string name="glass_dispersion">Aberração cromática</string>
+    <string name="glass_depth">Profundidade da lente (curvatura)</string>
+    <string name="glass_highlight">Brilho da borda</string>
+    <string name="glass_noise">Ruído fino (efeito fosco)</string>
+    <string name="glass_vibrancy">Intensidade do fundo</string>
+    <string name="glass_tint">Tonalidade do vidro</string>
+    <string name="glass_reset_tuning">Restaurar os ajustes padrão do vidro</string>
+    <string name="glass_backdrop_image">Imagem própria</string>
+    <string name="glass_image_pick">Escolher outra imagem</string>
+    <string name="glass_image_pick_hint">Permanece fixa ao rolar os cartões</string>
 </resources>

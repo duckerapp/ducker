@@ -693,4 +693,32 @@
     <string name="config_template_failed">Non appliqué : %1$s</string>
     <string name="config_template_applying">Application…</string>
     <string name="config_template_edited">La configuration a été modifiée à la main : en changer remplace les modifications</string>
+
+    <!-- Liquid glass appearance settings. -->
+    <string name="style">Style</string>
+    <string name="style_air">Air</string>
+    <string name="style_glass">Verre liquide</string>
+    <string name="glass_backdrop">Arrière-plan</string>
+    <string name="glass_backdrop_none">Aucun</string>
+    <string name="glass_backdrop_sunset">Coucher de soleil</string>
+    <string name="glass_backdrop_grey">Gris</string>
+    <string name="glass_backdrop_black_gradient">Dégradé noir</string>
+    <string name="glass_backdrop_green">Vert</string>
+    <string name="glass_backdrop_pink">Rose</string>
+    <string name="glass_backdrop_black">Noir uni</string>
+    <string name="glass_backdrop_black_white">Noir et blanc</string>
+    <string name="glass_blur">Flou du verre</string>
+    <string name="glass_blur_none">Sans flou</string>
+    <string name="glass_tuning">Réglages du verre</string>
+    <string name="glass_refraction">Réfraction (distorsion)</string>
+    <string name="glass_dispersion">Aberration chromatique</string>
+    <string name="glass_depth">Profondeur de la lentille (courbure)</string>
+    <string name="glass_highlight">Reflet du bord</string>
+    <string name="glass_noise">Bruit fin (effet dépoli)</string>
+    <string name="glass_vibrancy">Intensité du fond</string>
+    <string name="glass_tint">Teinte du verre</string>
+    <string name="glass_reset_tuning">Réinitialiser les réglages du verre</string>
+    <string name="glass_backdrop_image">Image personnelle</string>
+    <string name="glass_image_pick">Choisir une autre image</string>
+    <string name="glass_image_pick_hint">Reste fixe pendant le défilement des cartes</string>
 </resources>

@@ -723,4 +723,31 @@
     <string name="config_template_failed">Не применено: %1$s</string>
     <string name="config_template_applying">Применяю…</string>
     <string name="config_template_edited">Конфиг правили вручную: смена конфигурации заменит правки</string>
+    <!-- The liquid glass style (phones with Android 13+); its strings are in English and Russian only for now -->
+    <string name="style">Стиль</string>
+    <string name="style_air">Air</string>
+    <string name="style_glass">Жидкое стекло</string>
+    <string name="glass_backdrop">Фон</string>
+    <string name="glass_backdrop_none">Без фона</string>
+    <string name="glass_backdrop_sunset">Закат</string>
+    <string name="glass_backdrop_grey">Серый</string>
+    <string name="glass_backdrop_black_gradient">Чёрный градиент</string>
+    <string name="glass_backdrop_green">Зелёный</string>
+    <string name="glass_backdrop_pink">Розовый</string>
+    <string name="glass_backdrop_black">Просто чёрный</string>
+    <string name="glass_backdrop_black_white">Чёрно-белый</string>
+    <string name="glass_blur">Размытие стекла</string>
+    <string name="glass_blur_none">Без размытия</string>
+    <string name="glass_tuning">Тюнинг жидкого стекла</string>
+    <string name="glass_refraction">Преломление (дисторсия)</string>
+    <string name="glass_dispersion">Хроматическая аберрация</string>
+    <string name="glass_depth">Выпуклость линзы (объём)</string>
+    <string name="glass_highlight">Световой блик кромки</string>
+    <string name="glass_noise">Микрошум (матовость)</string>
+    <string name="glass_vibrancy">Сочность фона (Vibrancy)</string>
+    <string name="glass_tint">Тонирование стекла</string>
+    <string name="glass_reset_tuning">Сбросить настройки стекла</string>
+    <string name="glass_backdrop_image">Своя картинка</string>
+    <string name="glass_image_pick">Выбрать другую картинку</string>
+    <string name="glass_image_pick_hint">Стоит на месте, карточки едут поверх</string>
 </resources>

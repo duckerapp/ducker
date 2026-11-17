@@ -5,6 +5,10 @@ import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.formatCount
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.liquidGlass
+import com.github.kr328.clash.ui.components.INNER_BLUR
+import com.github.kr328.clash.ui.components.GLASS_CARD_TINT
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.TvLazyColumn
 import com.github.kr328.clash.ui.components.LocalTv
@@ -392,12 +396,32 @@ fun SubscriptionsScreen(
 
                 if (others.isNotEmpty()) {
                     item(key = OTHERS_KEY) {
-                        Text(
-                            text = stringResource(R.string.other_subscriptions),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = ROW_INSET, top = 20.dp, bottom = 8.dp),
-                        )
+                        val label = @Composable { modifier: Modifier ->
+                            Text(
+                                text = stringResource(R.string.other_subscriptions),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = modifier,
+                            )
+                        }
+                        val backdrop = LocalGlassBackdrop.current
+                        if (backdrop == null) {
+                            label(Modifier.padding(start = ROW_INSET, top = 20.dp, bottom = 8.dp))
+                        } else {
+                            // The glass style: on a small pane of glass, as the cards are. Grey letters straight on the
+                            // picture could not be read on any of the 17 pictures tried, nor on flat grey.
+                            Box(
+                                Modifier.padding(start = ROW_INSET - LABEL_PAD, top = 16.dp, bottom = 4.dp)
+                                    .liquidGlass(
+                                        backdrop,
+                                        base = MaterialTheme.colorScheme.background,
+                                        tint = MaterialTheme.colorScheme.surface.copy(alpha = GLASS_CARD_TINT),
+                                        shape = CircleShape,
+                                    ),
+                            ) {
+                                label(Modifier.padding(horizontal = LABEL_PAD, vertical = 4.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -617,6 +641,8 @@ private fun ProfileRow(
     val lift by animateFloatAsState(if (up) 1f else 0f, tween(LIFT_MS), label = "lift")
     val raised = lifted || reorder.settling == key || lift > 0f
     val shape = MaterialTheme.shapes.large
+    val backdrop = LocalGlassBackdrop.current
+    val glass = backdrop != null
 
     // The row is lifted with the finger still down: its press highlight would stay on the card all
     // the way, a grey card. The press is called off at the lift.
@@ -652,9 +678,20 @@ private fun ProfileRow(
                     shadowElevation = LIFT_SHADOW.toPx() * lift
                     this.shape = shape
                 }
-                .airShadow(shape)
+                .then(
+                    if (glass) {
+                        Modifier.liquidGlass(
+                            backdrop,
+                            base = MaterialTheme.colorScheme.background,
+                            tint = scheme.surface.copy(alpha = scheme.surface.alpha * GLASS_CARD_TINT),
+                            shape = shape,
+                        )
+                    } else {
+                        Modifier.airShadow(shape)
+                    }
+                )
                 .clip(shape)
-                .background(scheme.surface)
+                .then(if (!glass) Modifier.background(scheme.surface) else Modifier)
                 .then(if (tv) Modifier.ringCorner(ROW_CORNER) else Modifier)
                 .focusRequester(self)
                 .focusProperties {
@@ -1037,18 +1074,30 @@ private fun CardAction(
     enabled: Boolean = true,
     label: @Composable RowScope.() -> Unit,
 ) {
+    // The glass style: on glass a frosted button tinted by its colour, blurred more than the card.
+    val backdrop = LocalGlassBackdrop.current
+    val fill = if (backdrop != null) MaterialTheme.colorScheme.surfaceVariant else container
+    val buttonContent = if (backdrop != null) MaterialTheme.colorScheme.onSurface else content
+    val buttonContainer = if (backdrop != null) Color.Transparent else fill
+
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = 48.dp),
+        modifier = modifier.heightIn(min = 48.dp).liquidGlass(
+            backdrop,
+            base = MaterialTheme.colorScheme.background,
+            tint = fill.copy(alpha = 0.7f),
+            shape = ButtonDefaults.shape,
+            blurBoost = INNER_BLUR,
+        ),
         contentPadding = PaddingValues(horizontal = 8.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = container,
-            contentColor = content,
+            containerColor = buttonContainer,
+            contentColor = buttonContent,
             // Выключается только «Обновить» на время обновления — и не сереет, как на главной:
             // кольцо и так говорит, что идёт.
-            disabledContainerColor = container,
-            disabledContentColor = content,
+            disabledContainerColor = buttonContainer,
+            disabledContentColor = buttonContent,
         ),
         content = label,
     )
@@ -1185,6 +1234,8 @@ private val GAP = 12.dp
 
 /** Text inset and spacing for the compact subscription cards. */
 private val ROW_INSET = 16.dp
+/** The glass style: room around «Другие подписки» inside its pane, its letters where they stand without one. */
+private val LABEL_PAD = 10.dp
 private val ROW_HEIGHT = 74.dp
 private val ROW_GAP = 10.dp
 
