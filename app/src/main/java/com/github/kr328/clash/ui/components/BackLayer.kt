@@ -1,5 +1,12 @@
 package com.github.kr328.clash.ui.components
 
+import com.github.kr328.clash.ui.theme.LocalBackdropTone
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -74,6 +81,13 @@ fun BackLayer(
     wide: Boolean = false,
     frameContent: Boolean = true,
     fade: Boolean = true,
+    /**
+     * The glass style: Home's picture under the screen instead of the plain background, its cards glass over it (D-540).
+     * A layer inside a glass one (Settings' pages) is glass too.
+     */
+    backdrop: GlassBackdrop? = LocalGlassBackdrop.current,
+    /** The picture's tone at the top, for the header drawn on it, see [BackdropTone]. */
+    backdropTone: Boolean? = LocalBackdropTone.current,
     content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -194,6 +208,7 @@ fun BackLayer(
                     shadowElevation = ELEVATION.toPx() * p
                 }
                 .background(MaterialTheme.colorScheme.background)
+                .then(if (backdrop != null) Modifier.backdropPicture(backdrop) else Modifier)
                 // Пустое место экрана — тоже экран: касание не должно проваливаться
                 // к вкладкам под ним и листать их.
                 .pointerInput(Unit) {
@@ -204,10 +219,27 @@ fun BackLayer(
                 .then(if (enabled) Modifier else Modifier.clearAndSetSemantics {})
                 .then(if (tv) Modifier.onFocusChanged { room.focused = it.hasFocus }.focusRoom(focus) else Modifier),
         ) {
-            if (frameContent) ScreenFrame(wide, content = content) else content()
+            CompositionLocalProvider(
+                LocalGlassBackdrop provides backdrop,
+                LocalBackdropTone provides if (backdrop != null) backdropTone else null,
+            ) {
+                if (frameContent) ScreenFrame(wide, content = content) else content()
+            }
 
             if (fade) NavigationFade()
         }
+    }
+}
+
+/**
+ * Home's picture where it lies in the window, as under the tabs: the glass of the cards on it shows the picture at their
+ * place in the window, so a picture moved with the screen would not meet it.
+ */
+@Composable
+private fun Modifier.backdropPicture(backdrop: GlassBackdrop): Modifier {
+    var at by remember { mutableStateOf(Offset.Zero) }
+    return onGloballyPositioned { at = it.positionInRoot() }.drawBehind {
+        translate(backdrop.origin.x - at.x, backdrop.origin.y - at.y) { drawLayer(backdrop.layer) }
     }
 }
 

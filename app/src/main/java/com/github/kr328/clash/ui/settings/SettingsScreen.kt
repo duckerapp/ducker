@@ -1,5 +1,8 @@
 package com.github.kr328.clash.ui.settings
 
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.GlassMaterial
+import com.github.kr328.clash.ui.components.chosenFill
 import androidx.compose.foundation.Image
 
 import android.annotation.SuppressLint
@@ -1209,10 +1212,13 @@ private fun ChipsCard(
                     options.forEach { (value, label) ->
                         val chosen = selected == value
                         val scheme = MaterialTheme.colorScheme
+                        // On a glass card the choices are tinted as the glass's controls, the chosen one as its chosen.
+                        val rest = if (LocalGlassBackdrop.current != null) scheme.surfaceVariant.copy(alpha = GlassMaterial.Control.tint)
+                        else scheme.surfaceVariant
                         Box(
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                                 .clip(MaterialTheme.shapes.extraLarge)
-                                .background(if (chosen) scheme.primaryContainer else scheme.surfaceVariant)
+                                .background(if (chosen) chosenFill() else rest)
                                 .selectable(selected = chosen, role = Role.RadioButton, onClick = { onSelect(value) })
                                 .padding(horizontal = 6.dp, vertical = 10.dp),
                             contentAlignment = Alignment.Center,

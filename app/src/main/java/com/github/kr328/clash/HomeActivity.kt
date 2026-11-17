@@ -513,7 +513,14 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 var showApps by rememberSaveable { mutableStateOf(false) }
                 var showLogs by rememberSaveable { mutableStateOf(false) }
                 val covered = showSettings || showProbe || showApps || showLogs || showRules || showConfig
-                SideEffect { overScreen.value = covered }
+                // The glass style: one picture under all three tabs, still as they move over it, and under the screens
+                // made glass so far, Settings and My rules (D-540). Air has none.
+                val wallpaper = !tv && glassOn && settingsState.glassBackdrop != SettingsStore.BACKDROP_NONE
+                val wallpaperBackdrop = if (wallpaper) rememberGlassBackdrop(still = true) else null
+                // Over a glass screen the status bar keeps the picture's tone, as over the tabs.
+                val airCovered = showProbe || showApps || showLogs || showConfig ||
+                    (wallpaperBackdrop == null && (showSettings || showRules))
+                SideEffect { overScreen.value = airCovered }
 
                 // Признаки «экран открыт» переживают выгрузку процесса, а данные экранов — нет.
                 // Грузились они только по нажатию, и после возврата «Приложения» вечно показывали
@@ -1416,10 +1423,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             pageContent = tabPage,
                         )
                     } else {
-                        // The glass style: one backdrop under all three tabs, still as they move over it; their cards
-                        // and buttons are glass over it. Air has none.
-                        val wallpaper = glassOn && settingsState.glassBackdrop != SettingsStore.BACKDROP_NONE
-                        val backdrop = if (wallpaper) rememberGlassBackdrop(still = true) else null
+                        // Their cards and buttons are glass over the picture.
+                        val backdrop = wallpaperBackdrop
                         val wallpaperWaveShader = remember(wallpaper) { if (wallpaper) heroWaveShader() else null }
                         val glassStyle = LocalGlassStyle.current
                         val density = LocalDensity.current
@@ -1486,6 +1491,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         onBack = closeSettings,
                         enabled = !showApps && !showLogs && !showProbe,
                         frameContent = false,
+                        backdrop = wallpaperBackdrop,
+                        backdropTone = backdropTop,
                     ) {
                         SettingsScreen(
                             state = settingsState,
@@ -1666,6 +1673,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showRules,
                         onBack = { subscriptionsViewModel.closeRules() },
+                        backdrop = wallpaperBackdrop,
+                        backdropTone = backdropTop,
                     ) {
                         RulesScreen(
                             name = subscriptionsState.rulesName,
