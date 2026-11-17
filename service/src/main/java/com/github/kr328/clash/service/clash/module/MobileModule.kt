@@ -118,9 +118,15 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
             var starting = true
             var failed = false
 
+            // After none of the list answered: the checks made since, and when the next is due (0 — not set yet).
+            var rechecks = 0
+            var recheckAt = 0L
+
             while (true) {
                 if (changed) {
                     changed = false
+                    rechecks = 0
+                    recheckAt = 0
 
                     if (!settingsChanged(loaded)) failed = true
                 }
@@ -128,6 +134,28 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
                 val now = kind
                 val settled = NetworkKind.entries.getOrElse(store.mobileSettled) { NetworkKind.None }
                 val wait = mobileWait(now, settled, starting, failed, SystemClock.elapsedRealtime() - since, power?.isInteractive != false)
+                val clock = SystemClock.elapsedRealtime()
+
+                // None of the list answered at the switch, and it still holds: checked again, as a node often answers
+                // only seconds after the mobile network comes. Settled, so `wait` is UNTIL_WAKE here.
+                val silent = now == NetworkKind.Mobile && settled == NetworkKind.Mobile &&
+                    store.mobileShownNow == MobileState.Shown.NoneAnswered
+
+                if (!silent) {
+                    rechecks = 0
+                    recheckAt = 0
+                } else if (recheckAt == 0L) {
+                    recheckAt = clock + recheckIn(rechecks)
+                }
+
+                if (silent && clock >= recheckAt) {
+                    recheck()
+
+                    rechecks++
+                    recheckAt = 0
+
+                    continue
+                }
 
                 if (wait != 0L) {
                     if (wait == UNTIL_WAKE) {
@@ -135,7 +163,10 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
                         failed = false
                     }
 
-                    pause(screen, wait.coerceAtLeast(0))
+                    val screenOn = pause(screen, if (silent) recheckAt - clock else wait.coerceAtLeast(0))
+
+                    // The screen coming on is when the person wants the internet: the check goes now.
+                    if (silent && screenOn) recheckAt = SystemClock.elapsedRealtime()
 
                     continue
                 }
@@ -159,16 +190,19 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
         wake.trySend(Unit)
     }
 
-    /** Until something changes: the network, the screen coming on, the settings, or [timeout] ms when above zero. */
-    private suspend fun pause(screen: ReceiveChannel<Intent>, timeout: Long) {
-        val wait: suspend () -> Unit = {
+    /**
+     * Until something changes: the network, the screen coming on, the settings, or [timeout] ms when above zero.
+     * True — the screen came on.
+     */
+    private suspend fun pause(screen: ReceiveChannel<Intent>, timeout: Long): Boolean {
+        val wait: suspend () -> Boolean = {
             select {
-                wake.onReceive { }
-                screen.onReceive { }
+                wake.onReceive { false }
+                screen.onReceive { true }
             }
         }
 
-        if (timeout > 0) withTimeoutOrNull(timeout) { wait() } else wait()
+        return if (timeout > 0) withTimeoutOrNull(timeout) { wait() } == true else wait()
     }
 
     private fun observe() {
@@ -254,19 +288,39 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
 
         pick(main, list.first())
         show(MobileState.Shown.InEffect)
+        settle(main, list, started)
 
+        return true
+    }
+
+    /** Keeps the first of [list] that answers, the first being set already; none — it stays, and the note says so. */
+    private suspend fun settle(main: String, list: List<String>, started: Int) {
         val answered = firstAnswering(list)
 
-        if (epoch.get() != started) return true
+        if (epoch.get() != started) return
 
         Log.i("Mobile: ${answered ?: "none"} of ${list.size} answered")
 
-        when {
-            answered == null -> show(MobileState.Shown.NoneAnswered)
-            answered != list.first() -> pick(main, answered)
+        if (answered == null) {
+            if (store.mobileShown != MobileState.Shown.NoneAnswered.ordinal) show(MobileState.Shown.NoneAnswered)
+
+            return
         }
 
-        return true
+        if (answered != list.first()) pick(main, answered)
+        if (store.mobileShown != MobileState.Shown.InEffect.ordinal) show(MobileState.Shown.InEffect)
+    }
+
+    /** The list once more after none of it answered; the loop has seen the mobile choice still in effect. */
+    private suspend fun recheck() {
+        val started = epoch.incrementAndGet()
+        val main = mainGroup() ?: return
+        val members = members(main)
+        val list = store.mobileNodes.filter { it in members }
+
+        Log.i("Mobile: the list again")
+
+        if (list.isNotEmpty()) settle(main, list, started)
     }
 
     private suspend fun restore(loaded: ReceiveChannel<Intent>): Boolean {
@@ -547,6 +601,13 @@ internal fun loadOutcome(target: String, uuid: String?, loaded: Boolean, reason:
     reason?.startsWith(Failure.RELOAD) == true -> false
     else -> null
 }
+
+/** When the list is checked again after none of it answered: 30 s, then twice as long each time, at most 5 min. */
+internal fun recheckIn(done: Int): Long = (RECHECK_FIRST_MS shl done.coerceIn(0, 4)).coerceAtMost(RECHECK_MAX_MS)
+
+internal const val RECHECK_FIRST_MS = 30_000L
+internal const val RECHECK_MAX_MS = 300_000L
+
 /** Waits until [ready], looking every [pollMs], at most [timeoutMs]; false — it never was. */
 internal suspend fun awaitReady(timeoutMs: Long, pollMs: Long, ready: () -> Boolean): Boolean =
     withTimeoutOrNull(timeoutMs) { while (!ready()) delay(pollMs) } != null

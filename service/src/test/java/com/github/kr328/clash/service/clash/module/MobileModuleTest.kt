@@ -88,4 +88,10 @@ class MobileModuleTest {
         assertNull(loadOutcome(target, "b", loaded = false, reason = Failure.RELOAD + "bad yaml"))
         assertNull(loadOutcome(target, null, loaded = true, reason = null))
     }
+
+    @Test
+    fun `a silent list is checked again after 30 s, then twice as long, at most every 5 min`() {
+        assertEquals(listOf(30_000L, 60_000L, 120_000L, 240_000L, 300_000L, 300_000L), (0..5).map(::recheckIn))
+        assertEquals(RECHECK_MAX_MS, recheckIn(Int.MAX_VALUE))
+    }
 }
