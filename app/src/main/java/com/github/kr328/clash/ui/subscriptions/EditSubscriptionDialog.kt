@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.DuckerSlider
 import com.github.kr328.clash.ui.components.sheetSurface
 import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.Symbols
@@ -20,8 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -475,7 +474,7 @@ private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Un
             .sheetSurface(RoundedCornerShape(20.dp))
             .padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
-        Slider(
+        DuckerSlider(
             value = stop.toFloat(),
             onValueChange = { value ->
                 val index = value.roundToInt().coerceIn(STOPS.indices)
@@ -487,13 +486,6 @@ private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Un
             valueRange = 0f..STOPS.lastIndex.toFloat(),
             steps = STOPS.size - 2,
             enabled = enabled,
-            colors = SliderDefaults.colors(
-                thumbColor = scheme.primary,
-                activeTrackColor = scheme.primary,
-                activeTickColor = scheme.onPrimary,
-                inactiveTrackColor = scheme.surfaceContainerHighest,
-                inactiveTickColor = scheme.onSurfaceVariant,
-            ),
             // The stops are uneven hours: read them as hours, not as a share of the track.
             modifier = Modifier.fillMaxWidth().semantics { stateDescription = shown },
         )

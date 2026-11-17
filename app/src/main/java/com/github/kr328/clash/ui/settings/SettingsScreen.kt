@@ -1,5 +1,8 @@
 package com.github.kr328.clash.ui.settings
 
+import com.github.kr328.clash.ui.components.DuckerSlider
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.github.kr328.clash.ui.components.DuckerSwitch
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.GlassMaterial
@@ -21,8 +24,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.stateDescription
@@ -770,6 +771,8 @@ fun SettingsScreen(
  */
 @Composable
 private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> Unit) {
+    // Held, the switch's thumb stands as a lens (D-541).
+    val hwidPress = remember { MutableInteractionSource() }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -777,7 +780,7 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
-                    .toggleable(value = sendHwid, role = Role.Switch, onValueChange = onSendHwid),
+                    .toggleable(value = sendHwid, interactionSource = hwidPress, indication = LocalIndication.current, role = Role.Switch, onValueChange = onSendHwid),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -793,7 +796,7 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
                     )
                 }
 
-                DuckerSwitch(checked = sendHwid, onDrag = onSendHwid)
+                DuckerSwitch(checked = sendHwid, onDrag = onSendHwid, pressed = hwidPress)
             }
 
             if (sendHwid) {
@@ -989,8 +992,9 @@ private fun InnerSwitch(
     checked: Boolean,
     onChange: (Boolean) -> Unit,
 ) {
+    val press = remember { MutableInteractionSource() }
     Row(
-        modifier = Modifier.fillMaxWidth().toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+        modifier = Modifier.fillMaxWidth().toggleable(value = checked, interactionSource = press, indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -1003,7 +1007,7 @@ private fun InnerSwitch(
             )
         }
 
-        DuckerSwitch(checked = checked, onDrag = onChange)
+        DuckerSwitch(checked = checked, onDrag = onChange, pressed = press)
     }
 }
 
@@ -1021,7 +1025,7 @@ private fun GlassBlurCard(blur: Int, onBlur: (Int) -> Unit) {
                 Text(stringResource(R.string.glass_blur), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 Text(shown, style = MaterialTheme.typography.labelLarge, color = scheme.onSurfaceVariant)
             }
-            Slider(
+            DuckerSlider(
                 value = blur / 10f,
                 onValueChange = { value ->
                     val next = value.roundToInt().coerceIn(0, 10) * 10
@@ -1032,13 +1036,6 @@ private fun GlassBlurCard(blur: Int, onBlur: (Int) -> Unit) {
                 },
                 valueRange = 0f..10f,
                 steps = 9,
-                colors = SliderDefaults.colors(
-                    thumbColor = scheme.primary,
-                    activeTrackColor = scheme.primary,
-                    activeTickColor = scheme.onPrimary,
-                    inactiveTrackColor = scheme.surfaceContainerHighest,
-                    inactiveTickColor = scheme.onSurfaceVariant,
-                ),
                 modifier = Modifier.fillMaxWidth().semantics { stateDescription = shown },
             )
         }
@@ -1155,7 +1152,7 @@ private fun GlassTuningSlider(
             Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             Text(shown, style = MaterialTheme.typography.labelMedium, color = scheme.onSurfaceVariant)
         }
-        Slider(
+        DuckerSlider(
             value = value / 5f,
             onValueChange = { v ->
                 val next = (v.roundToInt() * 5).coerceIn(0, 100)
@@ -1166,13 +1163,6 @@ private fun GlassTuningSlider(
             },
             valueRange = 0f..20f,
             steps = 19,
-            colors = SliderDefaults.colors(
-                thumbColor = scheme.primary,
-                activeTrackColor = scheme.primary,
-                activeTickColor = scheme.onPrimary,
-                inactiveTrackColor = scheme.surfaceContainerHighest,
-                inactiveTickColor = scheme.onSurfaceVariant,
-            ),
             modifier = Modifier.fillMaxWidth().semantics { stateDescription = "$label $shown" },
         )
     }
@@ -1348,10 +1338,11 @@ private fun SwitchRow(
     onChange: (Boolean) -> Unit,
     icon: ImageVector,
 ) {
+    val press = remember { MutableInteractionSource() }
     Card(
         modifier = Modifier.fillMaxWidth(),
         surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+            .toggleable(value = checked, interactionSource = press, indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -1365,7 +1356,7 @@ private fun SwitchRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            DuckerSwitch(checked = checked, onDrag = onChange)
+            DuckerSwitch(checked = checked, onDrag = onChange, pressed = press)
         }
     }
 }
@@ -1524,9 +1515,10 @@ private fun SettingsNavigationRow(
 /** A row of a settings group, like [SettingsNavigationRow], that holds a switch. */
 @Composable
 private fun SettingsSwitchRow(title: String, subtitle: String, icon: ImageVector, checked: Boolean, onChange: (Boolean) -> Unit) {
+    val press = remember { MutableInteractionSource() }
     Row(
         Modifier.fillMaxWidth().heightIn(min = 61.dp)
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+            .toggleable(value = checked, interactionSource = press, indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1536,7 +1528,7 @@ private fun SettingsSwitchRow(title: String, subtitle: String, icon: ImageVector
             Text(title, style = MaterialTheme.typography.bodyLarge.syllables())
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        DuckerSwitch(checked = checked, onDrag = onChange)
+        DuckerSwitch(checked = checked, onDrag = onChange, pressed = press)
     }
 }
 

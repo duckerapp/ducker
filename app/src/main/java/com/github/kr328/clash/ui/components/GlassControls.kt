@@ -1,5 +1,17 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Slider
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -41,15 +53,21 @@ import kotlin.math.abs
  * stretched by its speed. Elsewhere Material's switch.
  */
 @Composable
-internal fun DuckerSwitch(checked: Boolean, modifier: Modifier = Modifier, onDrag: ((Boolean) -> Unit)? = null) {
+internal fun DuckerSwitch(
+    checked: Boolean,
+    modifier: Modifier = Modifier,
+    onDrag: ((Boolean) -> Unit)? = null,
+    /** The row's presses: held, the thumb stands as a lens. */
+    pressed: InteractionSource? = null,
+) {
     val glass = LocalGlassBackdrop.current != null || LocalFrosted.current
     val bubble = remember(glass) { if (glass) bubbleShader() else null }
     if (bubble == null) Switch(checked = checked, onCheckedChange = null, modifier = modifier)
-    else GlassToggle(checked, bubble, modifier, onDrag)
+    else GlassToggle(checked, bubble, modifier, onDrag, pressed)
 }
 
 @Composable
-private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifier, onDrag: ((Boolean) -> Unit)?) {
+private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifier, onDrag: ((Boolean) -> Unit)?, pressed: InteractionSource?) {
     val scheme = MaterialTheme.colorScheme
     val dark = scheme.background.luminance() < 0.5f
     val off = if (dark) Color(0xFF787880).copy(alpha = 0.36f) else Color(0xFF787878).copy(alpha = 0.2f)
@@ -69,6 +87,11 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
     val held = remember { Animatable(0f) }
     val layer = rememberGraphicsLayer()
     val drag = rememberUpdatedState(onDrag)
+    val rowHeld = pressed?.collectIsPressedAsState()?.value == true
+
+    LaunchedEffect(rowHeld, motion) {
+        if (motion) held.animateTo(if (rowHeld) 1f else 0f, tween(if (rowHeld) LENS_IN_MS else LENS_OUT_MS))
+    }
 
     LaunchedEffect(checked) {
         val target = if (checked) 1f else 0f
@@ -135,8 +158,9 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
                 }
 
                 if (presence > 0.01f) {
-                    // Only the track, magnified: around it the lens is clear and the card shows through.
+                    // The card's light and the track, magnified and bent at the rim.
                     drawGlassBubble(layer, bubble, center, halfW, halfH, presence, base) {
+                        drawRect(base.copy(alpha = LENS_GROUND), Offset(-size.width, -size.height), Size(size.width * 3, size.height * 3))
                         drawRoundRect(lerp(off, on, p), cornerRadius = CornerRadius(radius))
                     }
                 }
@@ -152,3 +176,112 @@ private val PAD = 2.dp
 private const val LENS_SWELL = 1.5f
 private const val LENS_IN_MS = 120
 private const val LENS_OUT_MS = 220
+// How much of the screen's colour the lens bends at its rim: the glass card under it is about that dense.
+private const val LENS_GROUND = 0.6f
+
+/**
+ * A slider with Material's steps, speech and remote keys. The glass style (D-541): Kyant's liquid slider — a thin track in
+ * the accent up to the value, a white thumb that turns into a clear lens of the dock's kind while held or dragged,
+ * magnifying the track under it. Elsewhere Material's look in the app's colours.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun DuckerSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val glass = LocalGlassBackdrop.current != null || LocalFrosted.current
+    val bubble = remember(glass) { if (glass) bubbleShader() else null }
+    if (bubble == null) {
+        Slider(
+            value = value, onValueChange = onValueChange, valueRange = valueRange, steps = steps, enabled = enabled,
+            colors = SliderDefaults.colors(
+                thumbColor = scheme.primary,
+                activeTrackColor = scheme.primary,
+                activeTickColor = scheme.onPrimary,
+                inactiveTrackColor = scheme.surfaceContainerHighest,
+                inactiveTickColor = scheme.onSurfaceVariant,
+            ),
+            modifier = modifier,
+        )
+        return
+    }
+
+    val dark = scheme.background.luminance() < 0.5f
+    val off = if (dark) Color(0xFF787880).copy(alpha = 0.36f) else Color(0xFF787878).copy(alpha = 0.2f)
+    val on = chosenFill()
+    val base = scheme.background
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val dragged by interaction.collectIsDraggedAsState()
+    val motion = rememberCoroutineScope().coroutineContext.motionScale > 0f
+    val lens = remember { Animatable(0f) }
+    val layer = rememberGraphicsLayer()
+
+    LaunchedEffect(pressed || dragged, motion) {
+        if (!motion) lens.snapTo(0f)
+        else lens.animateTo(if (pressed || dragged) 1f else 0f, tween(if (pressed || dragged) LENS_IN_MS else LENS_OUT_MS))
+    }
+
+    // The track in the thumb's own place, for the lens: the accent to its middle, the rest after it.
+    fun DrawScope.track(start: Float, end: Float, split: Float, height: Float) {
+        val top = size.height / 2f - height / 2f
+        val corner = CornerRadius(height / 2f)
+        drawRoundRect(off, Offset(start, top), Size(end - start, height), corner)
+        val (from, to) = if (rtl) split to end else start to split
+        if (to > from) drawRoundRect(on, Offset(from, top), Size(to - from, height), corner)
+    }
+
+    Slider(
+        value = value, onValueChange = onValueChange, valueRange = valueRange, steps = steps, enabled = enabled,
+        interactionSource = interaction,
+        modifier = modifier.alpha(if (enabled) 1f else DISABLED_ALPHA),
+        thumb = {
+            Box(
+                Modifier.size(THUMB_WIDTH, THUMB_HEIGHT).drawBehind {
+                    val presence = lens.value
+                    val swell = 1f + (LENS_SWELL - 1f) * presence
+                    val halfW = size.width / 2f * swell
+                    val halfH = size.height / 2f * swell
+                    val center = Offset(size.width / 2f, size.height / 2f)
+                    if (presence < 0.99f) {
+                        val corner = CornerRadius(halfH)
+                        drawRoundRect(
+                            Color.Black.copy(alpha = 0.08f * (1f - presence)),
+                            Offset(center.x - halfW, center.y - halfH + 1.dp.toPx()), Size(2 * halfW, 2 * halfH), corner,
+                        )
+                        drawRoundRect(Color.White.copy(alpha = 1f - presence), Offset(center.x - halfW, center.y - halfH), Size(2 * halfW, 2 * halfH), corner)
+                    }
+                    if (presence > 0.01f) {
+                        // The card's light and the track, magnified and bent at the rim.
+                        drawGlassBubble(layer, bubble, center, halfW, halfH, presence, base) {
+                            drawRect(base.copy(alpha = LENS_GROUND), Offset(-size.width, -size.height), Size(size.width * 3, size.height * 3))
+                            track(-size.width, size.width * 2f, center.x, SLIDER_TRACK.toPx())
+                        }
+                    }
+                },
+            )
+        },
+        track = { state ->
+            Box(
+                Modifier.fillMaxWidth().height(THUMB_HEIGHT).drawBehind {
+                    val range = state.valueRange
+                    val fraction = if (range.endInclusive > range.start) {
+                        ((state.value - range.start) / (range.endInclusive - range.start)).coerceIn(0f, 1f)
+                    } else 0f
+                    val split = if (rtl) size.width * (1f - fraction) else size.width * fraction
+                    track(0f, size.width, split, SLIDER_TRACK.toPx())
+                },
+            )
+        },
+    )
+}
+
+private val SLIDER_TRACK = 6.dp
+private const val DISABLED_ALPHA = 0.5f
