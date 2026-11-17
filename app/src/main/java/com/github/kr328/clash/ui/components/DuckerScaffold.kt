@@ -1,5 +1,7 @@
 package com.github.kr328.clash.ui.components
 
+import android.os.Build
+
 import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.foundation.layout.RowScope
@@ -220,7 +222,7 @@ fun DuckerScaffold(
                 // The glass style: under a bottom sheet the screen blurs as the sheet comes out.
                 if (LocalGlassStyle.current.enabled) Modifier.graphicsLayer {
                     val shown = sheetGlass?.shown ?: 0f
-                    renderEffect = if (shown > 0.01f) BlurEffect(SHEET_BLUR.toPx() * shown, SHEET_BLUR.toPx() * shown) else null
+                    renderEffect = if (shown > 0.01f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) sheetBlurEffect(SHEET_BLUR.toPx(), shown) else null
                 } else Modifier,
             ),
         ) {

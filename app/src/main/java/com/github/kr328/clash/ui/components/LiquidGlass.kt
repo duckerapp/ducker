@@ -974,3 +974,24 @@ half4 main(float2 coord) {
     return mix(img.eval(coord), color, alpha);
 }
 """
+
+/**
+ * The screen under a sheet: a blur of the fixed [radius] laid over the sharp screen at [shown] opacity. A radius that
+ * grew with the sheet changed the blur's kernel every frame under a slow finger, and the text behind it shimmered.
+ */
+@RequiresApi(Build.VERSION_CODES.S)
+internal fun sheetBlurEffect(radius: Float, shown: Float): androidx.compose.ui.graphics.RenderEffect {
+    val blurred = RenderEffect.createColorFilterEffect(
+        android.graphics.ColorMatrixColorFilter(
+            floatArrayOf(
+                1f, 0f, 0f, 0f, 0f,
+                0f, 1f, 0f, 0f, 0f,
+                0f, 0f, 1f, 0f, 0f,
+                0f, 0f, 0f, shown, 0f,
+            ),
+        ),
+        RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.CLAMP),
+    )
+    return RenderEffect.createBlendModeEffect(RenderEffect.createOffsetEffect(0f, 0f), blurred, android.graphics.BlendMode.SRC_OVER)
+        .asComposeRenderEffect()
+}
