@@ -44,22 +44,21 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 /**
  * A switch that only shows [checked]; the row around it takes taps and speaks for it. [onDrag]: the thumb dragged by a
  * finger sets it. The glass style (D-541): Kyant's liquid toggle (AndroidLiquidGlass, Apache-2.0, see LiquidGlass.kt) —
- * a track in the accent when on, a thumb that turns into a clear lens of the dock's kind while it travels or is held,
- * stretched by its speed. Elsewhere Material's switch.
+ * a track in the accent when on, a white thumb under a clear lens of the dock's kind that swells under a finger and
+ * settles back on release, stretched by its speed (the owner, 18.11). Elsewhere Material's switch.
  */
 @Composable
 internal fun DuckerSwitch(
     checked: Boolean,
     modifier: Modifier = Modifier,
     onDrag: ((Boolean) -> Unit)? = null,
-    /** The row's presses: held, the thumb stands as a lens. */
+    /** The row's presses: held, the lens over the thumb swells. */
     pressed: InteractionSource? = null,
 ) {
     val glass = LocalGlassBackdrop.current != null || LocalFrosted.current
@@ -84,8 +83,7 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
     val density = LocalDensity.current
 
     val position = remember { Animatable(if (checked) 1f else 0f) }
-    // 0 — the white thumb, 1 — the clear lens.
-    val lens = remember { Animatable(0f) }
+    // The lens over the white thumb: 0 — its size, 1 — swollen under a finger.
     val held = remember { Animatable(0f) }
     val layer = rememberGraphicsLayer()
     val drag = rememberUpdatedState(onDrag)
@@ -104,12 +102,8 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
             position.snapTo(target)
             return@LaunchedEffect
         }
-        coroutineScope {
-            launch { lens.animateTo(1f, tween(LENS_IN_MS)) }
-            position.animateTo(target, spring(dampingRatio = 0.62f, stiffness = 420f))
-        }
+        position.animateTo(target, spring(dampingRatio = 0.62f, stiffness = 420f))
         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-        lens.animateTo(0f, tween(LENS_OUT_MS))
     }
 
     val dragState = rememberDraggableState { delta ->
@@ -136,9 +130,10 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
             )
             .drawBehind {
                 val p = position.value
-                val presence = maxOf(lens.value, held.value)
                 val radius = size.height / 2f
-                drawRoundRect(lerp(off, on, p), cornerRadius = CornerRadius(radius))
+                val trackColor = lerp(off, on, p)
+                val trackCorner = CornerRadius(radius)
+                drawRoundRect(trackColor, cornerRadius = trackCorner)
 
                 val pad = PAD.toPx()
                 val thumbW = THUMB_WIDTH.toPx()
@@ -146,34 +141,30 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
                 val travel = size.width - thumbW - 2 * pad
                 val x = pad + thumbW / 2f + travel * p
                 val center = Offset(if (rtl) size.width - x else x, size.height / 2f)
-                // Stretched along its way by its speed, as the dock's lens.
+                val thumb = lerp(Color.White, thumbOn, p)
+                val shadowDrop = 1.dp.toPx()
+                drawThumb(center, thumbW / 2f, thumbH / 2f, thumb, shadowDrop)
+
+                // Over the white thumb, always, a lens of the dock's kind: swollen under a finger, stretched by its speed.
                 val speed = (abs(position.velocity) * 0.04f).coerceAtMost(0.22f)
-                val swell = 1f + (LENS_SWELL - 1f) * presence
+                val swell = 1f + (LENS_SWELL - 1f) * held.value
                 val halfW = thumbW / 2f * swell * (1f + speed)
                 val halfH = thumbH / 2f * swell * (1f - speed * 0.5f)
-
-                if (presence < 0.99f) {
-                    val thumb = lerp(Color.White, thumbOn, p).copy(alpha = 1f - presence)
-                    val corner = CornerRadius(halfH)
-                    drawRoundRect(
-                        Color.Black.copy(alpha = 0.08f * (1f - presence)),
-                        Offset(center.x - halfW, center.y - halfH + 1.dp.toPx()), Size(2 * halfW, 2 * halfH), corner,
-                    )
-                    drawRoundRect(thumb, Offset(center.x - halfW, center.y - halfH), Size(2 * halfW, 2 * halfH), corner)
-                }
-
-                if (presence > 0.01f) {
-                    // Clear: the card's glass under it and the track, magnified and bent at the rim.
-                    val trackColor = lerp(off, on, p)
-                    val corner = CornerRadius(radius)
-                    val origin = Offset(at[0], at[1])
-                    drawGlassBubble(layer, bubble, center, halfW, halfH, presence, base) {
-                        under(origin)
-                        drawRoundRect(trackColor, cornerRadius = corner)
-                    }
+                val origin = Offset(at[0], at[1])
+                drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base) {
+                    under(origin)
+                    drawRoundRect(trackColor, cornerRadius = trackCorner)
+                    drawThumb(center, thumbW / 2f, thumbH / 2f, thumb, shadowDrop)
                 }
             },
     )
+}
+
+/** The white thumb, its own size whatever the lens over it does, on a faint shadow. */
+private fun DrawScope.drawThumb(center: Offset, halfW: Float, halfH: Float, color: Color, drop: Float) {
+    val corner = CornerRadius(halfH)
+    drawRoundRect(Color.Black.copy(alpha = 0.08f), Offset(center.x - halfW, center.y - halfH + drop), Size(2 * halfW, 2 * halfH), corner)
+    drawRoundRect(color, Offset(center.x - halfW, center.y - halfH), Size(2 * halfW, 2 * halfH), corner)
 }
 
 private val TRACK_WIDTH = 64.dp
@@ -187,8 +178,8 @@ private const val LENS_OUT_MS = 220
 
 /**
  * A slider with Material's steps, speech and remote keys. The glass style (D-541): Kyant's liquid slider — a thin track in
- * the accent up to the value, a white thumb that turns into a clear lens of the dock's kind while held or dragged,
- * magnifying the track under it. Elsewhere Material's look in the app's colours.
+ * the accent up to the value, a white thumb under a clear lens of the dock's kind that swells while held or dragged,
+ * magnifying the thumb and the track under it. Elsewhere Material's look in the app's colours.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -227,6 +218,7 @@ internal fun DuckerSlider(
     val pressed by interaction.collectIsPressedAsState()
     val dragged by interaction.collectIsDraggedAsState()
     val motion = rememberCoroutineScope().coroutineContext.motionScale > 0f
+    // The lens over the thumb: 0 — its size, 1 — swollen under a finger.
     val lens = remember { Animatable(0f) }
     val layer = rememberGraphicsLayer()
     val under = rememberPaneUnder()
@@ -255,28 +247,21 @@ internal fun DuckerSlider(
                 Modifier.size(THUMB_WIDTH, THUMB_HEIGHT)
                     .onGloballyPositioned { val p = it.positionInRoot(); at[0] = p.x; at[1] = p.y }
                     .drawBehind {
-                    val presence = lens.value
-                    val swell = 1f + (LENS_SWELL - 1f) * presence
+                    val center = Offset(size.width / 2f, size.height / 2f)
+                    val shadowDrop = 1.dp.toPx()
+                    drawThumb(center, size.width / 2f, size.height / 2f, Color.White, shadowDrop)
+                    // Over the white thumb, always, a lens of the dock's kind, swollen under a finger.
+                    val swell = 1f + (LENS_SWELL - 1f) * lens.value
                     val halfW = size.width / 2f * swell
                     val halfH = size.height / 2f * swell
-                    val center = Offset(size.width / 2f, size.height / 2f)
-                    if (presence < 0.99f) {
-                        val corner = CornerRadius(halfH)
-                        drawRoundRect(
-                            Color.Black.copy(alpha = 0.08f * (1f - presence)),
-                            Offset(center.x - halfW, center.y - halfH + 1.dp.toPx()), Size(2 * halfW, 2 * halfH), corner,
-                        )
-                        drawRoundRect(Color.White.copy(alpha = 1f - presence), Offset(center.x - halfW, center.y - halfH), Size(2 * halfW, 2 * halfH), corner)
-                    }
-                    if (presence > 0.01f) {
-                        // Clear: the card's glass under it and the track, magnified and bent at the rim.
-                        val origin = Offset(at[0], at[1])
-                        val thick = SLIDER_TRACK.toPx()
-                        val width = size.width
-                        drawGlassBubble(layer, bubble, center, halfW, halfH, presence, base) {
-                            under(origin)
-                            track(-width, width * 2f, center.x, thick)
-                        }
+                    val origin = Offset(at[0], at[1])
+                    val thick = SLIDER_TRACK.toPx()
+                    val width = size.width
+                    val height = size.height
+                    drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base) {
+                        under(origin)
+                        track(-width, width * 2f, center.x, thick)
+                        drawThumb(center, width / 2f, height / 2f, Color.White, shadowDrop)
                     }
                 },
             )
