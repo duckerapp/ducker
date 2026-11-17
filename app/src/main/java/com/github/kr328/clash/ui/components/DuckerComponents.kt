@@ -384,17 +384,11 @@ fun EmptyState(
 }
 
 /** How much of a glass card's own colour lies over the glass: enough for its text, little enough to see through. */
-internal const val GLASS_CARD_TINT = 0.55f
+internal val GLASS_CARD_TINT get() = GlassMaterial.Surface.tint
 
 /** The glass style's one frosted button: Home's card buttons, the pills and the subscription card's actions alike. */
 @Composable
-internal fun Modifier.glassButton(backdrop: GlassBackdrop?): Modifier = liquidGlass(
-    backdrop,
-    base = MaterialTheme.colorScheme.background,
-    tint = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-    shape = CircleShape,
-    blurBoost = INNER_BLUR,
-)
+internal fun Modifier.glassButton(backdrop: GlassBackdrop?): Modifier = glass(backdrop, GlassMaterial.Control, CircleShape)
 
 /**
  * A button on a glass card, frosted as [glassButton]. Material's Button sizes its modifier to the 48 dp touch target and
@@ -474,11 +468,8 @@ fun SearchField(
             .then(
                 when {
                     compact -> Modifier.background(MaterialTheme.colorScheme.surface, shape)
-                    glass != null -> Modifier.liquidGlass(
-                        glass,
-                        base = MaterialTheme.colorScheme.background,
-                        tint = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                    ).clip(shape)
+                    // The same glass as the cards it floats over.
+                    glass != null -> Modifier.glass(glass, GlassMaterial.Surface, shape).clip(shape)
                     else -> Modifier.clip(shape).background(MaterialTheme.colorScheme.surface)
                 },
             )
@@ -717,7 +708,9 @@ fun ScreenHeader(
             }
         } else {
             val line = lead.measure(Constraints.fixedWidth((width - gap - row.width).coerceAtLeast(0)))
-            val height = maxOf(line.height, row.height)
+            // At least a header button's height: a title with no action beside it (Profiles without the bell) stood
+            // higher than one beside the sort toggle or the bell, and moved when the bell came.
+            val height = maxOf(line.height, row.height, HEADER_ROW.roundToPx())
 
             layout(width, height) {
                 line.placeRelative(0, (height - line.height) / 2)
@@ -728,6 +721,7 @@ fun ScreenHeader(
 }
 
 private val HEADER_GAP = 8.dp
+private val HEADER_ROW = 48.dp
 
 /**
  * Окно ниже 480dp (граница компактной высоты у Material) — телефон боком или половина экрана.

@@ -12,6 +12,8 @@ import com.github.kr328.clash.ui.theme.BackdropTone
 import com.github.kr328.clash.ui.theme.LocalThemeDark
 import com.github.kr328.clash.ui.components.GlassCardButton
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.glass
+import com.github.kr328.clash.ui.components.GlassMaterial
 import com.github.kr328.clash.ui.components.LocalGlassStyle
 import com.github.kr328.clash.ui.components.heroWaveShader
 import com.github.kr328.clash.ui.components.heroWaveEffect
@@ -989,13 +991,11 @@ private fun HeroCard(
     val baseAlphaOn = glassAccentTint(dark)
     // Over an own picture as dense as the other cards: the thinner glass left the letters on leaves, rocks and a white sky
     // (F-388). The built-in gradients carry no detail and keep the lighter pane.
-    val baseAlphaOff = when {
-        glassStyle.backdrop == SettingsStore.BACKDROP_IMAGE -> GLASS_CARD_TINT
-        dark -> 0.28f
-        else -> 0.42f
-    }
+    // At rest the card is the same glass as every other pane (GlassMaterial.Surface), with the same response to the
+    // tint setting; only its connected fill is its own.
+    val baseAlphaOff = GlassMaterial.Surface.tint
     val alphaOn = if (tintFactor <= 1f) baseAlphaOn * tintFactor else baseAlphaOn + (1f - baseAlphaOn) * ((tintFactor - 1f) * 0.65f)
-    val alphaOff = if (tintFactor <= 1f) baseAlphaOff * tintFactor else baseAlphaOff + (0.85f - baseAlphaOff) * ((tintFactor - 1f) * 0.70f)
+    val alphaOff = (baseAlphaOff * tintFactor).coerceAtMost(0.92f)
     val tintOn = scheme.primaryContainer.copy(alpha = alphaOn.coerceIn(0f, 1f))
     val tintOff = scheme.surface.copy(alpha = alphaOff.coerceIn(0f, 1f))
 
@@ -1776,13 +1776,7 @@ private fun NodeRow(
         modifier = modifier.fillMaxWidth()
             .clip(if (glass) CircleShape else MaterialTheme.shapes.medium)
             .then(
-                if (glass) Modifier.liquidGlass(
-                    LocalGlassBackdrop.current,
-                    base = MaterialTheme.colorScheme.background,
-                    tint = LocalContentColor.current.copy(alpha = PLATE_ALPHA).compositeOver(cardTint),
-                    shape = CircleShape,
-                    blurBoost = INNER_BLUR,
-                ) else Modifier.background(LocalContentColor.current.copy(alpha = PLATE_ALPHA)),
+                if (glass) Modifier.glass(LocalGlassBackdrop.current, GlassMaterial.Control, CircleShape) else Modifier.background(LocalContentColor.current.copy(alpha = PLATE_ALPHA)),
             )
             .then(if (LocalTv.current) Modifier.ringCorner(NODE_ROW_CORNER) else Modifier)
             .clickable(onClick = onClick)
@@ -2436,12 +2430,7 @@ private fun FeaturesPill(onClick: () -> Unit, modifier: Modifier) {
         modifier = modifier
             .minimumInteractiveComponentSize()
             .then(
-                if (backdrop != null) Modifier.liquidGlass(
-                    backdrop,
-                    base = scheme.background,
-                    tint = scheme.surface.copy(alpha = GLASS_CARD_TINT),
-                    shape = CircleShape,
-                ) else Modifier.airShadow(CircleShape),
+                if (backdrop != null) Modifier.glass(backdrop, GlassMaterial.Surface, CircleShape) else Modifier.airShadow(CircleShape),
             )
             .clip(CircleShape)
             .then(if (backdrop != null) Modifier else Modifier.background(scheme.surface))

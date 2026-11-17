@@ -69,13 +69,7 @@ internal fun ProxyCheckButton(
         ) { if (active) onClick() }
     } else {
         Modifier
-            .liquidGlass(
-                backdrop,
-                base = MaterialTheme.colorScheme.background,
-                tint = fill.copy(alpha = 0.7f),
-                shape = CircleShape,
-                blurBoost = INNER_BLUR,
-            )
+            .glass(backdrop, GlassMaterial.Control, CircleShape)
             .clip(CircleShape)
             .background(container)
             // Keep focus on the remote while a check is running.

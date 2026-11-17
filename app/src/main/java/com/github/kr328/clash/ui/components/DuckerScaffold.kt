@@ -588,12 +588,7 @@ private fun FloatingDock(
                     drawLayer(dockLayer)
                 } else Modifier,
             )
-            .liquidGlass(
-                backdrop,
-                base = MaterialTheme.colorScheme.background,
-                tint = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
-                shape = shape,
-            ),
+            .glass(backdrop, GlassMaterial.Surface, shape),
         shape = shape,
         color = if (backdrop != null) Color.Transparent else MaterialTheme.colorScheme.surface,
     ) {

@@ -7,6 +7,8 @@ import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.GlassCardButton
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.glass
+import com.github.kr328.clash.ui.components.GlassMaterial
 import com.github.kr328.clash.ui.components.liquidGlass
 import com.github.kr328.clash.ui.components.GLASS_CARD_TINT
 import com.github.kr328.clash.ui.components.Symbols
@@ -412,12 +414,7 @@ fun SubscriptionsScreen(
                             // picture could not be read on any of the 17 pictures tried, nor on flat grey.
                             Box(
                                 Modifier.padding(start = ROW_INSET - LABEL_PAD, top = 16.dp, bottom = 4.dp)
-                                    .liquidGlass(
-                                        backdrop,
-                                        base = MaterialTheme.colorScheme.background,
-                                        tint = MaterialTheme.colorScheme.surface.copy(alpha = GLASS_CARD_TINT),
-                                        shape = CircleShape,
-                                    ),
+                                    .glass(backdrop, GlassMaterial.Surface, CircleShape),
                             ) {
                                 label(Modifier.padding(horizontal = LABEL_PAD, vertical = 4.dp))
                             }
@@ -509,8 +506,19 @@ private fun ActiveCard(
     // «Активна» is no longer written on the card (Q-83): its place and fill say it; TalkBack still hears it.
     val activeText = stringResource(R.string.ducker_active)
 
-    val container = if (profile.hwidBlocked) scheme.errorContainer else scheme.primaryContainer
-    val content = if (profile.hwidBlocked) scheme.onErrorContainer else scheme.onPrimaryContainer
+    // The glass style keeps the card in the theme's own glass, light on light and dark on dark (the owner, 17.11): an
+    // inverted pane stood apart from every other one. The mark under the name says which one is active instead.
+    val glassCard = LocalGlassBackdrop.current != null
+    val container = when {
+        profile.hwidBlocked -> scheme.errorContainer
+        glassCard -> scheme.surface
+        else -> scheme.primaryContainer
+    }
+    val content = when {
+        profile.hwidBlocked -> scheme.onErrorContainer
+        glassCard -> scheme.onSurface
+        else -> scheme.onPrimaryContainer
+    }
 
     Card(
         // Повторное касание по выбранной ничего не делает: смена профиля перезагружает конфиг
@@ -560,6 +568,13 @@ private fun ActiveCard(
                             // A step larger than in the rows.
                             style = LocalTextStyle.current.let { it.copy(fontSize = (it.fontSize.value + 1).sp) },
                         )
+
+                        if (glassCard && !shown.hwidBlocked) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Symbols.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp), tint = scheme.primary)
+                                Text(activeText, style = MaterialTheme.typography.labelSmall, color = scheme.primary)
+                            }
+                        }
 
                         // Домена под названием больше нет (D-102). Строка остаётся только для
                         // отказа — у него своя причина: лимит устройств и «панель требует
@@ -680,12 +695,7 @@ private fun ProfileRow(
                 }
                 .then(
                     if (glass) {
-                        Modifier.liquidGlass(
-                            backdrop,
-                            base = MaterialTheme.colorScheme.background,
-                            tint = scheme.surface.copy(alpha = scheme.surface.alpha * GLASS_CARD_TINT),
-                            shape = shape,
-                        )
+                        Modifier.glass(backdrop, GlassMaterial.Surface, shape)
                     } else {
                         Modifier.airShadow(shape)
                     }

@@ -995,3 +995,28 @@ internal fun sheetBlurEffect(radius: Float, shown: Float): androidx.compose.ui.g
     return RenderEffect.createBlendModeEffect(RenderEffect.createOffsetEffect(0f, 0f), blurred, android.graphics.BlendMode.SRC_OVER)
         .asComposeRenderEffect()
 }
+
+/**
+ * The glass style's materials, tuned here only: one glass everywhere (the owner, 17.11). [Surface] — panes lying on
+ * the backdrop: cards, the dock, the search, «Features», Home's card at rest. [Control] — controls on a pane: buttons,
+ * the node row, the delay check; denser and blurred more than the pane under them, so the two never merge.
+ */
+internal enum class GlassMaterial(val tint: Float, val blurBoost: Dp) {
+    Surface(0.55f, 0.dp),
+    Control(0.7f, INNER_BLUR),
+}
+
+/** A pane of [material] in the colour [color] (the material's own by default) over [backdrop]; null backdrop — none. */
+@Composable
+internal fun Modifier.glass(
+    backdrop: GlassBackdrop?,
+    material: GlassMaterial,
+    shape: Shape,
+    color: Color = if (material == GlassMaterial.Surface) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant,
+): Modifier = liquidGlass(
+    backdrop,
+    base = MaterialTheme.colorScheme.background,
+    tint = color.copy(alpha = color.alpha * material.tint),
+    shape = shape,
+    blurBoost = material.blurBoost,
+)
