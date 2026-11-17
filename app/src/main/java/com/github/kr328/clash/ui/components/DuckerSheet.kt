@@ -349,7 +349,8 @@ internal fun DuckerSheet(
         // с того места, где палец её отпустил.
         LaunchedEffect(open, height > 0f) {
             when {
-                height == 0f -> if (!open) finish()
+                // A kept window hidden before its first layout is never measured again: show it so it can be.
+                height == 0f -> if (!open) finish() else if (keep) window?.decorView?.visibility = View.VISIBLE
                 open -> {
                     if (keep) window?.decorView?.visibility = View.VISIBLE
                     exitVelocity = null
