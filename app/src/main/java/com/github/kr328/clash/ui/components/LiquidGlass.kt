@@ -976,25 +976,39 @@ half4 main(float2 coord) {
 """
 
 /**
- * The screen under a sheet: a blur of the fixed [radius] laid over the sharp screen at [shown] opacity. A radius that
- * grew with the sheet changed the blur's kernel every frame under a slow finger, and the text behind it shimmered.
+ * The screen under a sheet, blurred as it comes out: the blur grows through fixed steps of [radius] / [SHEET_STEPS] and
+ * crossfades between the two around [shown]. A radius that followed the sheet changed the blur's kernel every frame and
+ * the text behind it shimmered under a slow finger; one fixed radius faded in looked like soap (the owner, 17.11).
  */
 @RequiresApi(Build.VERSION_CODES.S)
 internal fun sheetBlurEffect(radius: Float, shown: Float): androidx.compose.ui.graphics.RenderEffect {
-    val blurred = RenderEffect.createColorFilterEffect(
-        android.graphics.ColorMatrixColorFilter(
-            floatArrayOf(
-                1f, 0f, 0f, 0f, 0f,
-                0f, 1f, 0f, 0f, 0f,
-                0f, 0f, 1f, 0f, 0f,
-                0f, 0f, 0f, shown, 0f,
+    val at = shown.coerceIn(0f, 1f) * SHEET_STEPS
+    val step = at.toInt().coerceAtMost(SHEET_STEPS - 1)
+    val part = at - step
+
+    fun blurAt(level: Int): RenderEffect = if (level == 0) RenderEffect.createOffsetEffect(0f, 0f)
+    else (radius * level / SHEET_STEPS).let { RenderEffect.createBlurEffect(it, it, Shader.TileMode.CLAMP) }
+
+    val lower = blurAt(step)
+    val effect = if (part < 0.004f) lower else RenderEffect.createBlendModeEffect(
+        lower,
+        RenderEffect.createColorFilterEffect(
+            android.graphics.ColorMatrixColorFilter(
+                floatArrayOf(
+                    1f, 0f, 0f, 0f, 0f,
+                    0f, 1f, 0f, 0f, 0f,
+                    0f, 0f, 1f, 0f, 0f,
+                    0f, 0f, 0f, part, 0f,
+                ),
             ),
+            blurAt(step + 1),
         ),
-        RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.CLAMP),
+        android.graphics.BlendMode.SRC_OVER,
     )
-    return RenderEffect.createBlendModeEffect(RenderEffect.createOffsetEffect(0f, 0f), blurred, android.graphics.BlendMode.SRC_OVER)
-        .asComposeRenderEffect()
+    return effect.asComposeRenderEffect()
 }
+
+private const val SHEET_STEPS = 6
 
 /**
  * The glass style's materials, tuned here only: one glass everywhere (the owner, 17.11). [Surface] — panes lying on
