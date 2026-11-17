@@ -1,6 +1,8 @@
 package com.github.kr328.clash
 
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.rememberOverscrollEffect
 import com.github.kr328.clash.ui.components.BounceOverscroll
 import com.github.kr328.clash.ui.components.glassBackground
@@ -1103,7 +1105,13 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                 // Лента под экраном поверх — листать невидимое незачем,
                                 // экран гаснет уже над нужной вкладкой.
                                 if (fromOverlay) pagerState.scrollToPage(tab)
-                                else pagerState.animateScrollToPage(tab)
+                                // On glass the page travels with the dock's lens, on its stiffness but without its
+                                // overshoot: one motion, slower than Air's (the owner, 17.11: Home→Profiles flew off).
+                                else pagerState.animateScrollToPage(
+                                    tab,
+                                    animationSpec = if (glassOn) spring(dampingRatio = 1f, stiffness = 260f)
+                                    else spring(stiffness = Spring.StiffnessMediumLow),
+                                )
                             }
                         }
                     },

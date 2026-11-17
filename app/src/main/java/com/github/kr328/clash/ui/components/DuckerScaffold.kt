@@ -1,5 +1,11 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.ui.graphics.drawscope.clipPath
+
+import androidx.compose.ui.geometry.RoundRect
+
+import androidx.compose.ui.graphics.Path
+
 import androidx.compose.runtime.mutableFloatStateOf
 
 import android.os.Build
@@ -109,7 +115,6 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -445,7 +450,8 @@ private fun FloatingDock(
             if (!resting) {
                 added = false
             } else if (!added) {
-                delay(ACTION_PAUSE_MS)
+                // The glass lens has just landed: the turn follows it at once.
+                delay(if (backdrop != null) GLASS_ACTION_PAUSE_MS else ACTION_PAUSE_MS)
                 added = true
                 haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
             }
@@ -453,14 +459,25 @@ private fun FloatingDock(
     }
 
     val turn = updateTransition(added, label = "action")
+    // How far the finger has pulled the lens past the first or the last tab, 0..1; it wobbles through zero on release.
+    val edge = remember { Animatable(0f) }
+    // The glass style's drop as «Подписки» turns into «+ Добавить»: a ring of light from the capsule, 0..1.
+    val splash = remember { Animatable(0f) }
 
     // Three shines over the highlight, then still: the call is made once, not repeated (D-91).
     val tabShine = remember { Animatable(0f) }
 
     LaunchedEffect(added, alone, motionEnabled) {
         tabShine.snapTo(0f)
+        splash.snapTo(0f)
 
         if (!added || alone || !motionEnabled) return@LaunchedEffect
+
+        if (backdrop != null) {
+            // On glass one drop of light instead of the shines: a ring leaves the capsule as it swells and settles.
+            splash.animateTo(1f, tween(SPLASH_MS, easing = FastOutSlowInEasing))
+            return@LaunchedEffect
+        }
 
         delay(ACTION_SHINE_DELAY_MS)
 
@@ -522,7 +539,8 @@ private fun FloatingDock(
 
     /** Half the bubble's width in a row [row] wide; the swap of grey and dark labels follows it, not the pill. */
     /** The finger's stretch, or the lens's own speed while it travels to a tapped tab. */
-    fun stretchNow() = maxOf(stretch.value, (drag.speed / 5000f).coerceAtMost(0.25f))
+    fun stretchNow() = (maxOf(stretch.value, (drag.speed / 5000f).coerceAtMost(0.25f)) + EDGE_STRETCH * edge.value)
+        .coerceAtLeast(-0.15f)
 
     fun bubbleHalf(row: Float) = dockSlotWidth(row) / 2f * (1f + 0.08f * bubble.value) * (1f + stretchNow())
 
@@ -615,7 +633,6 @@ private fun FloatingDock(
                         try {
                             scope.launch { bubble.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium)) }
 
-                            val tracker = VelocityTracker().apply { addPosition(down.uptimeMillis, down.position) }
                             var dragging = false
                             var tab = tabAt(dockPillOffset(width = width, position = position(), rtl = rtl) + slot / 2f)
 
@@ -623,8 +640,6 @@ private fun FloatingDock(
                                 val change = awaitPointerEvent(PointerEventPass.Initial).changes
                                     .firstOrNull { it.id == down.id } ?: break
                                 if (!change.pressed) break
-
-                                tracker.addPosition(change.uptimeMillis, change.position)
 
                                 if (!dragging && abs(change.position.x - down.position.x) > slop) {
                                     dragging = true
@@ -636,13 +651,16 @@ private fun FloatingDock(
                                     // Taken: the tab under the finger must not also take it as a tap.
                                     change.consume()
 
-                                    val x = clamp(change.position.x)
-                                    val speed = abs(tracker.calculateVelocity().x)
+                                    // Past the first or the last tab the lens follows less and less, as rubber does, and
+                                    // stretches toward the finger; the finger's own jittery speed no longer shapes it.
+                                    val raw = change.position.x
+                                    val x = clamp(raw)
+                                    val over = raw - x
+                                    val give = EDGE_GIVE.toPx()
+                                    val bent = over * give / (abs(over) + give)
 
-                                    drag.move(x)
-                                    scope.launch {
-                                        stretch.animateTo((speed / 5000f).coerceAtMost(0.25f), spring(stiffness = Spring.StiffnessMedium))
-                                    }
+                                    drag.move(x + bent)
+                                    scope.launch { edge.snapTo(abs(bent) / give) }
 
                                     val now = tabAt(x)
                                     if (now != tab) {
@@ -663,6 +681,8 @@ private fun FloatingDock(
                         } finally {
                             if (!released) drag.cancel()
                             scope.launch { stretch.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)) }
+                            // Let go at the edge, the drop wobbles back into shape.
+                            scope.launch { edge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 420f)) }
                             scope.launch {
                                 // A quick tap would stop the bubble before it showed: let it flash first.
                                 if (bubble.value < 0.7f) bubble.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 1000f))
@@ -678,7 +698,10 @@ private fun FloatingDock(
             // а вкладки гаснут, и гасить её вместе с ними нельзя.
             Box(
                 Modifier.matchParentSize().drawBehind {
-                    val rect = pill()
+                    val drop = splash.value
+                    val dropping = drop > 0f && drop < 1f
+                    // The capsule swells a little as the drop lands, and settles back.
+                    val rect = pill().let { if (dropping) it.inflate(it.height * SPLASH_SWELL * sin(PI.toFloat() * minOf(1f, drop * 2f))) else it }
                     val corner = CornerRadius(if (vertical) RAIL_CORNER.toPx() else rect.minDimension / 2f)
 
                     drawRoundRect(
@@ -698,6 +721,19 @@ private fun FloatingDock(
                             cornerRadius = corner,
                             style = Stroke(1.dp.toPx()),
                         )
+                    }
+
+                    if (dropping) {
+                        val outline = Path().apply { addRoundRect(RoundRect(rect, corner)) }
+
+                        clipPath(outline) {
+                            drawCircle(
+                                color = Color.White.copy(alpha = 0.55f * (1f - drop)),
+                                radius = lerp(rect.height * 0.25f, rect.width * 0.7f, drop),
+                                center = rect.center,
+                                style = Stroke((3.dp.toPx() * (1f - drop)).coerceAtLeast(0.5f)),
+                            )
+                        }
                     }
 
                     val t = tabShine.value
@@ -796,6 +832,26 @@ private fun FloatingDock(
             )
 
             if (glass) {
+                // A faint light around the labels under the moving lens, as if its glass gathered it (the owner, 17.11).
+                DockTabs(
+                    selected = current,
+                    content = Color.White,
+                    onSelect = null,
+                    turn = turn,
+                    actionLabel = null,
+                    vertical = vertical,
+                    modifier = Modifier.clearAndSetSemantics { }
+                        .graphicsLayer {
+                            val shown = bubble.value.coerceIn(0f, 1f)
+                            alpha = GLOW_ALPHA * shown
+                            renderEffect = if (shown > 0.01f) BlurEffect(GLOW_BLUR.toPx(), GLOW_BLUR.toPx()) else null
+                        }
+                        .drawWithContent {
+                            drawContent()
+                            drawRect(swapMask(), blendMode = BlendMode.DstIn)
+                        },
+                )
+
                 // Under the bubble the labels turn dark on clear glass, as the white ones on the highlight fade.
                 DockTabs(
                     selected = current,
@@ -905,6 +961,21 @@ private const val ACTION_TAB = 2
 
 /** How long the pager rests on it before it turns. */
 private const val ACTION_PAUSE_MS = 280L
+
+/** On glass the lens's landing already marks the arrival: the turn follows it at once. */
+private const val GLASS_ACTION_PAUSE_MS = 60L
+
+/** The glass drop: its length, and how much the capsule swells, of its height. */
+private const val SPLASH_MS = 700
+private const val SPLASH_SWELL = 0.06f
+
+/** How far the lens gives past the dock's end, and how much it stretches there. */
+private val EDGE_GIVE = 8.dp
+private const val EDGE_STRETCH = 0.2f
+
+/** The light around the labels under the lens. */
+private const val GLOW_ALPHA = 0.5f
+private val GLOW_BLUR = 5.dp
 
 /** Its shines: from the start of the turn to the first, between passes, and how many. */
 private const val ACTION_SHINE_DELAY_MS = 140L
