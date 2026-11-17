@@ -1,9 +1,7 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.sheetSurface
 import androidx.compose.ui.graphics.Color
-import com.github.kr328.clash.ui.components.glass
-import com.github.kr328.clash.ui.components.GlassMaterial
-import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -50,7 +48,6 @@ import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.FitLabel
 import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.labelWeights
-import com.github.kr328.clash.ui.components.airShadow
 import io.nayuki.qrcodegen.QrCode
 
 /**
@@ -269,14 +266,12 @@ internal fun SourceTile(
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(20.dp)
-    // On a glass sheet a tile is a control of glass on it, as the sheet's fields are.
-    val pane = LocalGlassBackdrop.current
     Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = if (pane != null) modifier.glass(pane, GlassMaterial.Control, shape) else modifier.airShadow(shape),
+        modifier = modifier.sheetSurface(shape),
         shape = shape,
-        color = if (pane != null) Color.Transparent else MaterialTheme.colorScheme.surface,
+        color = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Column(

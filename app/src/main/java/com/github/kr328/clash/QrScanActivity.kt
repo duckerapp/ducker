@@ -1,5 +1,7 @@
 package com.github.kr328.clash
 
+import androidx.compose.runtime.CompositionLocalProvider
+import com.github.kr328.clash.ui.components.LocalFrosted
 import com.github.kr328.clash.ui.components.Symbols
 import android.Manifest
 import android.content.Context
@@ -481,6 +483,8 @@ private fun ScanPanel(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, if (wide) Alignment.CenterVertically else Alignment.Top),
     ) {
+        // Its tiles as a frosted sheet's controls: the camera is not drawn where glass could show it through.
+        CompositionLocalProvider(LocalFrosted provides LocalGlassStyle.current.enabled) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.scan_title),
@@ -511,6 +515,7 @@ private fun ScanPanel(
                 onClick = onGallery,
                 modifier = Modifier.weight(1f),
             )
+        }
         }
     }
 }

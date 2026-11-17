@@ -586,6 +586,7 @@ internal fun DuckerSheet(
                             LocalContentColor provides MaterialTheme.colorScheme.onBackground,
                             LocalTvTyping provides typing,
                             LocalGlassExtraBlur provides if (pane != null) SHEET_BLUR else 0.dp,
+                            LocalFrosted provides (glass && pane == null),
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 if (titleAction == null) {

@@ -79,7 +79,7 @@ fun PillSegments(
         animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
         label = "pillPosition",
     )
-    val pill = scheme.primaryContainer
+    val pill = chosenFill()
     // Пульт (этап 6) входит в переключатель на выбранный сегмент, а не на ближайший к центру.
     val segments = remember(labels.size) { List(labels.size) { FocusRequester() } }
     val tv = LocalTv.current
@@ -96,9 +96,7 @@ fun PillSegments(
                 alpha = if (enabled) 1f else 0.5f
                 outsets = DuckerShadowOutsets
             }
-            .airShadow(CircleShape)
-            .clip(CircleShape)
-            .background(scheme.surface)
+            .sheetSurface(CircleShape)
             .padding(4.dp)
             // Пилюля рисуется, а не компонуется: едет каждый кадр, и перекладывать
             // ради этого сегменты незачем.
@@ -297,7 +295,7 @@ fun Pill(
                     val left = if (layoutDirection == LayoutDirection.Rtl) size.width - edge else 0f
                     clipRect(left = left, right = left + edge) { this@drawWithContent.drawContent() }
                 }
-                .background(scheme.primaryContainer),
+                .background(chosenFill()),
         )
     }
 }

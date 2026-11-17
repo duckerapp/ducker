@@ -51,3 +51,9 @@ internal class SheetGlass {
 
 internal val LocalSheetGlass = staticCompositionLocalOf<SheetGlass?> { null }
 
+/**
+ * A frosted panel of the glass style, with no screen to show through (a sheet over another one, the QR scanner's panel
+ * over the camera): its controls take the glass's tint and rim, see [sheetSurface].
+ */
+internal val LocalFrosted = staticCompositionLocalOf { false }
+

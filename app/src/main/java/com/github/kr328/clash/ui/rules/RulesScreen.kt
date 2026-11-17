@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.rules
 
+import com.github.kr328.clash.ui.components.chosenFill
 import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.machine
@@ -696,6 +697,7 @@ private fun AppPicker(
             }
 
             // A gap between the rows, or several marked one after another merge into one black block (D-326).
+            val chosenColor = chosenFill()
             LazyColumn(Modifier.fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 items(filtered, key = { it.packageName }) { app ->
                     val chosen = app.packageName in selected
@@ -727,7 +729,7 @@ private fun AppPicker(
                     Row(
                         modifier = Modifier.fillMaxWidth()
                             .clip(MaterialTheme.shapes.small)
-                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = fill))
+                            .background(chosenColor.copy(alpha = chosenColor.alpha * fill))
                             .then(if (app.packageName == marked) Modifier.focusRequester(markedFocus) else Modifier)
                             .then(if (app === filtered.first()) Modifier.focusRequester(first) else Modifier)
                             // No press wave: it is tinted for the unfilled row, played over the fresh fill

@@ -192,8 +192,26 @@ internal fun Modifier.airShadow(shape: Shape, fill: Color = MaterialTheme.colorS
 @Composable
 internal fun Modifier.sheetSurface(shape: Shape): Modifier {
     val backdrop = LocalGlassBackdrop.current
-    return if (backdrop != null) glass(backdrop, GlassMaterial.Control, shape).clip(shape)
-    else airShadow(shape).clip(shape).background(MaterialTheme.colorScheme.surface)
+    val scheme = MaterialTheme.colorScheme
+    return when {
+        backdrop != null -> glass(backdrop, GlassMaterial.Control, shape).clip(shape)
+        LocalFrosted.current -> clip(shape)
+            .background(scheme.surfaceVariant.copy(alpha = GlassMaterial.Control.tint))
+            .border(1.dp, glassRim(scheme.background), shape)
+        else -> airShadow(shape).clip(shape).background(scheme.surface)
+    }
+}
+
+/**
+ * The fill of a chosen segment, pill or row: on glass the accent tinted as the chosen subscription's card (F-536), not
+ * the solid black or white of Air.
+ */
+@Composable
+internal fun chosenFill(): Color {
+    val scheme = MaterialTheme.colorScheme
+    return if (LocalGlassBackdrop.current != null || LocalFrosted.current) {
+        scheme.primaryContainer.copy(alpha = glassAccentTint(scheme.background.luminance() < 0.5f))
+    } else scheme.primaryContainer
 }
 
 /**

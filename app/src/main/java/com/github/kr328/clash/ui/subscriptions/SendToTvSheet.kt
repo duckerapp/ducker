@@ -1,5 +1,9 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.github.kr328.clash.ui.components.LocalFrosted
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.sheetSurface
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.Symbols
@@ -62,15 +66,20 @@ fun SendToTvSheet(
         onDismiss = onDismiss,
         onClosed = onClosed,
     ) {
+        // The glass style: a list on a backing and a sheet's button, as the other sheets; Air keeps its plain rows.
+        val glass = LocalGlassBackdrop.current != null || LocalFrosted.current
+
         if (sent || profiles.isEmpty()) {
-            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+            if (glass) {
+                SheetButton(text = stringResource(R.string.done), busyText = "", busy = false, enabled = true, onClick = onDismiss)
+            } else TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.done))
             }
 
             return@DuckerSheet
         }
 
-        Column {
+        Column(if (glass) Modifier.sheetSurface(RoundedCornerShape(20.dp)).padding(4.dp) else Modifier) {
             profiles.forEach { profile ->
                 val selected = profile.uuid == chosen
 
