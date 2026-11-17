@@ -275,6 +275,31 @@ internal val LocalGlassExtraBlur = staticCompositionLocalOf { 0.dp }
  */
 internal class StillBackdrop(val version: Int, val pictures: Map<Int, android.graphics.BitmapShader>, val held: Boolean = false)
 
+/**
+ * What a glass pane here shows of the backdrop under it, for a lens over the pane (a switch's, a slider's): the pane's
+ * still picture and its veil, drawn at [position] in the window. Nothing where none is made: the lens is clear there.
+ */
+@Composable
+internal fun rememberPaneUnder(): (DrawScope.(position: Offset) -> Unit) {
+    val backdrop = LocalGlassBackdrop.current
+    val blur = with(LocalDensity.current) {
+        (MAX_BLUR.toPx() * (LocalGlassStyle.current.blur / 100f) + LocalGlassExtraBlur.current.toPx()).roundToInt()
+    }
+    val veil = MaterialTheme.colorScheme.surface.copy(alpha = GlassMaterial.Surface.tint)
+    return remember(backdrop, blur, veil) {
+        { position ->
+            val picture = backdrop?.still?.pictures?.get(blur)
+            if (picture != null) {
+                val size = backdrop.layer.size
+                translate(backdrop.origin.x - position.x, backdrop.origin.y - position.y) {
+                    drawRect(ShaderBrush(picture), size = androidx.compose.ui.geometry.Size(size.width.toFloat(), size.height.toFloat()))
+                }
+                drawRect(veil, Offset(-this.size.width, -this.size.height), this.size * 3f)
+            }
+        }
+    }
+}
+
 @Composable
 private fun stillBlurs(extra: Dp): List<Int> {
     val density = LocalDensity.current
@@ -764,7 +789,9 @@ private fun DrawScope.drawShaderBubble(
 
     layer.renderEffect = RenderEffect.createRuntimeShaderEffect(shader, "img").asComposeRenderEffect()
     layer.alpha = presence
-    layer.record(IntSize((2 * (halfWidth + margin)).toInt(), (2 * (halfHeight + margin)).toInt())) {
+    // A density of its own: recorded with this scope as its density, a size in dp read inside [under] asked this
+    // scope's drawing for it, which asked the scope again, until the stack ran out (the subscription interval slider).
+    layer.record(Density(density, fontScale), layoutDirection, IntSize((2 * (halfWidth + margin)).toInt(), (2 * (halfHeight + margin)).toInt())) {
         translate(-left, -top) { under() }
     }
 

@@ -1,5 +1,7 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.ui.draw.alpha
@@ -87,6 +89,8 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
     val held = remember { Animatable(0f) }
     val layer = rememberGraphicsLayer()
     val drag = rememberUpdatedState(onDrag)
+    val under = rememberPaneUnder()
+    val at = remember { floatArrayOf(0f, 0f) }
     val rowHeld = pressed?.collectIsPressedAsState()?.value == true
 
     LaunchedEffect(rowHeld, motion) {
@@ -116,6 +120,7 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
 
     Box(
         modifier.size(TRACK_WIDTH, TRACK_HEIGHT)
+            .onGloballyPositioned { val p = it.positionInRoot(); at[0] = p.x; at[1] = p.y }
             .then(
                 if (onDrag != null) Modifier.draggable(
                     dragState,
@@ -158,10 +163,13 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
                 }
 
                 if (presence > 0.01f) {
-                    // The card's light and the track, magnified and bent at the rim.
+                    // Clear: the card's glass under it and the track, magnified and bent at the rim.
+                    val trackColor = lerp(off, on, p)
+                    val corner = CornerRadius(radius)
+                    val origin = Offset(at[0], at[1])
                     drawGlassBubble(layer, bubble, center, halfW, halfH, presence, base) {
-                        drawRect(base.copy(alpha = LENS_GROUND), Offset(-size.width, -size.height), Size(size.width * 3, size.height * 3))
-                        drawRoundRect(lerp(off, on, p), cornerRadius = CornerRadius(radius))
+                        under(origin)
+                        drawRoundRect(trackColor, cornerRadius = corner)
                     }
                 }
             },
@@ -176,8 +184,6 @@ private val PAD = 2.dp
 private const val LENS_SWELL = 1.5f
 private const val LENS_IN_MS = 120
 private const val LENS_OUT_MS = 220
-// How much of the screen's colour the lens bends at its rim: the glass card under it is about that dense.
-private const val LENS_GROUND = 0.6f
 
 /**
  * A slider with Material's steps, speech and remote keys. The glass style (D-541): Kyant's liquid slider — a thin track in
@@ -223,6 +229,8 @@ internal fun DuckerSlider(
     val motion = rememberCoroutineScope().coroutineContext.motionScale > 0f
     val lens = remember { Animatable(0f) }
     val layer = rememberGraphicsLayer()
+    val under = rememberPaneUnder()
+    val at = remember { floatArrayOf(0f, 0f) }
 
     LaunchedEffect(pressed || dragged, motion) {
         if (!motion) lens.snapTo(0f)
@@ -244,7 +252,9 @@ internal fun DuckerSlider(
         modifier = modifier.alpha(if (enabled) 1f else DISABLED_ALPHA),
         thumb = {
             Box(
-                Modifier.size(THUMB_WIDTH, THUMB_HEIGHT).drawBehind {
+                Modifier.size(THUMB_WIDTH, THUMB_HEIGHT)
+                    .onGloballyPositioned { val p = it.positionInRoot(); at[0] = p.x; at[1] = p.y }
+                    .drawBehind {
                     val presence = lens.value
                     val swell = 1f + (LENS_SWELL - 1f) * presence
                     val halfW = size.width / 2f * swell
@@ -259,10 +269,13 @@ internal fun DuckerSlider(
                         drawRoundRect(Color.White.copy(alpha = 1f - presence), Offset(center.x - halfW, center.y - halfH), Size(2 * halfW, 2 * halfH), corner)
                     }
                     if (presence > 0.01f) {
-                        // The card's light and the track, magnified and bent at the rim.
+                        // Clear: the card's glass under it and the track, magnified and bent at the rim.
+                        val origin = Offset(at[0], at[1])
+                        val thick = SLIDER_TRACK.toPx()
+                        val width = size.width
                         drawGlassBubble(layer, bubble, center, halfW, halfH, presence, base) {
-                            drawRect(base.copy(alpha = LENS_GROUND), Offset(-size.width, -size.height), Size(size.width * 3, size.height * 3))
-                            track(-size.width, size.width * 2f, center.x, SLIDER_TRACK.toPx())
+                            under(origin)
+                            track(-width, width * 2f, center.x, thick)
                         }
                     }
                 },
