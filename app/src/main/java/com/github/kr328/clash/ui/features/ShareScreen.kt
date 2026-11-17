@@ -1,5 +1,9 @@
 package com.github.kr328.clash.ui.features
 
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
+import com.github.kr328.clash.ui.components.DuckerSwitch
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.os.Build
@@ -18,7 +22,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -68,10 +71,13 @@ fun ShareScreen(
 
         // One line, so the status under it moves nothing in the card (D-464).
         item {
+            val press = remember { MutableInteractionSource() }
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
-                    .toggleable(value = state.on, enabled = usable, role = Role.Switch, onValueChange = onTurn),
+                surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).toggleable(
+                    value = state.on, enabled = usable, interactionSource = press, indication = LocalIndication.current,
+                    role = Role.Switch, onValueChange = onTurn,
+                ),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -82,7 +88,7 @@ fun ShareScreen(
 
                     Text(stringResource(R.string.share_switch), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
 
-                    Switch(checked = state.on, onCheckedChange = null, enabled = usable)
+                    DuckerSwitch(checked = state.on, onDrag = onTurn, pressed = press, enabled = usable)
                 }
             }
         }
@@ -118,9 +124,13 @@ fun ShareScreen(
                         CopyRow(stringResource(R.string.share_port), state.port.toString())
 
                         if (!state.own) {
+                            val press = remember { MutableInteractionSource() }
                             Row(
                                 modifier = Modifier.fillMaxWidth()
-                                    .toggleable(value = state.password, role = Role.Switch, onValueChange = onPassword)
+                                    .toggleable(
+                                        value = state.password, interactionSource = press, indication = LocalIndication.current,
+                                        role = Role.Switch, onValueChange = onPassword,
+                                    )
                                     .padding(horizontal = 16.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -134,7 +144,7 @@ fun ShareScreen(
                                     )
                                 }
 
-                                Switch(checked = state.password, onCheckedChange = null)
+                                DuckerSwitch(checked = state.password, onDrag = onPassword, pressed = press)
                             }
                         }
 

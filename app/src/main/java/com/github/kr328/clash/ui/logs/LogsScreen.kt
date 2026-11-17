@@ -1,5 +1,8 @@
 package com.github.kr328.clash.ui.logs
 
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.github.kr328.clash.ui.components.DuckerSwitch
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.LocalTv
@@ -31,7 +34,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -132,10 +134,13 @@ fun LogsScreen(
 
         // Переключатель виден всегда, а не только когда выключено: иначе включить можно,
         // а выключить нечем — человек остаётся с подробным журналом навсегда.
+        val press = remember { MutableInteractionSource() }
         Card(
             modifier = Modifier.fillMaxWidth(),
-            surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
-                .toggleable(value = verbose, role = Role.Switch, onValueChange = onVerbose),
+            surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).toggleable(
+                value = verbose, interactionSource = press, indication = LocalIndication.current,
+                role = Role.Switch, onValueChange = onVerbose,
+            ),
         ) {
             Row(
                 modifier = Modifier.padding(14.dp),
@@ -156,7 +161,7 @@ fun LogsScreen(
                     )
                 }
 
-                Switch(checked = verbose, onCheckedChange = null)
+                DuckerSwitch(checked = verbose, onDrag = onVerbose, pressed = press)
             }
         }
 

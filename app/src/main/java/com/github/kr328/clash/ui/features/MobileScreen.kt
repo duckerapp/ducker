@@ -1,5 +1,8 @@
 package com.github.kr328.clash.ui.features
 
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.github.kr328.clash.ui.components.DuckerSwitch
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateFloatAsState
@@ -27,7 +30,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -125,14 +127,18 @@ fun MobileScreen(
         item { ScreenHeader(stringResource(R.string.mobile), onBack = onBack) }
 
         item {
+            // On with no subscription to switch to: the choice comes first, the switch follows it.
+            val turn: (Boolean) -> Unit = { on -> if (on && state.profileName == null) pickProfile() else onTurn(on) }
+            val press = remember { MutableInteractionSource() }
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                // On with no subscription to switch to: the choice comes first, the switch follows it.
                 surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).toggleable(
                     value = settings.on,
                     enabled = state.loaded,
+                    interactionSource = press,
+                    indication = LocalIndication.current,
                     role = Role.Switch,
-                    onValueChange = { on -> if (on && state.profileName == null) pickProfile() else onTurn(on) },
+                    onValueChange = turn,
                 ),
             ) {
                 Row(
@@ -151,7 +157,7 @@ fun MobileScreen(
                         )
                     }
 
-                    Switch(checked = settings.on, onCheckedChange = null, enabled = state.loaded)
+                    DuckerSwitch(checked = settings.on, onDrag = turn, pressed = press, enabled = state.loaded)
                 }
             }
         }
@@ -185,11 +191,14 @@ fun MobileScreen(
 
         // Only when the chosen subscription brings a provider's list (D-534): an edit turns it off, a tap brings it back.
         if (settings.preset) item {
+            val press = remember { MutableInteractionSource() }
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).toggleable(
                     value = settings.provider,
                     enabled = state.loaded,
+                    interactionSource = press,
+                    indication = LocalIndication.current,
                     role = Role.Switch,
                     onValueChange = onProvider,
                 ),
@@ -210,7 +219,7 @@ fun MobileScreen(
                         )
                     }
 
-                    Switch(checked = settings.provider, onCheckedChange = null, enabled = state.loaded)
+                    DuckerSwitch(checked = settings.provider, onDrag = onProvider, pressed = press, enabled = state.loaded)
                 }
             }
         }
