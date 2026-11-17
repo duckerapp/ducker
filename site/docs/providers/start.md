@@ -73,6 +73,48 @@ a node; with the VPN disabled, the request goes directly. If no address of the s
 answers, ducker tries once more directly and through the subscription's own node
 (see [Subscription mirrors](headers.md#subscription-mirrors)).
 
+## A list for the mobile network
+
+On **Features → Mobile network** ducker switches to a chosen subscription and node list when
+the phone leaves Wi-Fi. You can fill that list for your users: put the nodes that work on
+mobile data (for example, through operators' allowlists) in an ordinary group and name it
+in a top-level `ducker` key:
+
+```yaml
+ducker:
+  mobile-group: LTE
+
+proxy-groups:
+  - name: Proxy              # the main group: the first select group, shown on Home
+    type: select
+    proxies: [NL-1, DE-1, LTE-1, LTE-2]
+  - name: LTE
+    type: fallback           # any type; fallback also suits other apps
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    hidden: true             # optional: not shown on the Proxy tab
+    proxies: [LTE-1, LTE-2]
+```
+
+- **The list** is the group's nodes that the main group also has, in your order: ducker
+  switches the node of the main group, trying the list from the top and taking the first that
+  answers. If none of the nodes is in the main group but the group itself is, the list is the
+  group alone, and the group picks its node.
+- **When it applies.** A subscription with the key turns "Switch by network" on by itself
+  while the user has not set up the page. Settings the user made are not replaced. With
+  several such subscriptions, the first downloaded one sets it up.
+- **Updates.** While "Provider's list" is on, every update brings your current list. A user
+  who edits the list turns it off; turning it on brings your list back. A response without
+  the key empties the list and turns switching off; the key coming back turns it on again.
+- **`ducker-override-user: on`** turns "Provider's list" and switching back on at every
+  update, unless the user chose another subscription for the mobile network. The page is not
+  locked: the user can still turn switching off until the next update.
+- **If you cannot change the YAML,** send the group's name in the
+  [`ducker-mobile-group`](headers.md) header; the group must exist in the config. The key wins
+  over the header. Not applied on a TV.
+
+Other apps see an ordinary group and ignore the key. The config is not rewritten.
+
 ## Response headers
 
 ducker interprets standard subscription headers as follows:

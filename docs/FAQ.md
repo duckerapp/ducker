@@ -407,6 +407,8 @@ previous configuration. These recovery paths are not an explicit template select
 - **Home → Features → Mobile network:** choose a subscription and nodes for mobile
   data. Wi-Fi keeps the normal selection; a manual selection can override an automatic
   switch. Check the active subscription/node before diagnosing a routing difference.
+  A provider can fill the list: then "Provider's list" is on and follows its updates;
+  editing the list turns it off, and turning it on brings the provider's list back.
 - **My rules:** your site/app/address rules are considered before the provider's routing
   rules. App exclusions are separate: an app outside the Android VPN does not reach the
   core's routing rules. Start with one rule and check **Features → Connections**.

@@ -29,6 +29,10 @@ repository was closed; they are listed here for history. APK files are on the
 
 ## 0.4.51 — 2026-11-13
 
+- A provider can fill the "Mobile network" list, with a `ducker: {mobile-group: …}` key in the config or the
+  `ducker-mobile-group` header. While the page is not set up, such a subscription turns "Switch by network" on by
+  itself. The "Provider's list" switch keeps the provider's list current; editing the list turns it off, turning it
+  on brings it back.
 - Configuration templates: a link subscription can run on ducker's own configuration instead of the provider's. In
   Profiles, the subscription's “⋯” → “Configuration” → “ducker · Russia”: Russian sites and apps go direct, everything
   else through the VPN, and only the servers come from the subscription, its node providers too; its groups never
