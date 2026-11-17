@@ -89,6 +89,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             Log.d("User request close")
 
             stopping = true
+            // Asked off, whoever asked (the notification's button too): a toggle sent while this instance is still
+            // going down sees it off, and no restore brings it back (F-423).
+            ServiceStore(self).tunnelStartedAt = 0
             stops.trySend(Unit)
         }
     }
@@ -278,7 +281,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // The receiver and this both run on the main thread, so a start after a stop always sees it. stopSelf() takes
-        // back what the start asked of Android, and onDestroy brings up the next instance.
+        // back what the start asked of Android, and onDestroy brings up the next instance. A runtime that ends by
+        // itself sets [stopping] on its own thread: a start just before that joins this instance and hears its stop
+        // with the reason, which is right — starting again would only fail the same way.
         if (stopping) {
             restartWanted = true
 

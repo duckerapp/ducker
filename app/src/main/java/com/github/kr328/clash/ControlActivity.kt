@@ -7,6 +7,7 @@ import android.widget.Toast
 import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.common.util.intent
 import com.github.kr328.clash.remote.StatusClient
+import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.util.startClashService
 import com.github.kr328.clash.util.stopClashService
 
@@ -39,8 +40,11 @@ abstract class ControlActivity : Activity() {
         finish()
     }
 
-    /** A running service may still be loading its profile. */
-    private fun running(): Boolean = StatusClient(this).status().first
+    /**
+     * A running service may still be loading its profile. One asked off is not running, though Android may take seconds
+     * to destroy it: a toggle then means on (F-492).
+     */
+    private fun running(): Boolean = StatusClient(this).status().first && ServiceStore(this).tunnelStartedAt != 0L
 
     private fun startClash() {
         if (startClashService() != null) {
