@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.sheetSurface
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,7 +53,6 @@ import com.github.kr328.clash.ui.components.BrandAvatar
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.Symbols
-import com.github.kr328.clash.ui.components.airShadow
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.named
@@ -160,9 +160,7 @@ internal fun AnnouncementsSheet(
                     // One backing with inset lines, as the subscription's addresses (D-326).
                     Column(
                         modifier = Modifier.fillMaxWidth()
-                            .airShadow(RoundedCornerShape(20.dp))
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(MaterialTheme.colorScheme.surface)
+                            .sheetSurface(RoundedCornerShape(20.dp))
                             .padding(vertical = 4.dp),
                     ) {
                         shown.forEachIndexed { index, item ->

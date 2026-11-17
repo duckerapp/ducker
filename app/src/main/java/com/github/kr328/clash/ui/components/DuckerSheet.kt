@@ -185,9 +185,9 @@ internal fun DuckerSheet(
     titleAction: (@Composable () -> Unit)? = null,
     /**
      * The glass style: the screen under the sheet ([LocalScreenBackdrop]), which the sheet then shows through itself
-     * as a pane of glass, its controls as glass on it. Null — the frosted sheet of every other one.
+     * as a pane of glass, its controls as glass on it. Null (outside the app's scaffold) — a frosted sheet.
      */
-    backdrop: GlassBackdrop? = null,
+    backdrop: GlassBackdrop? = LocalScreenBackdrop.current,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     // Пока подписка загружается, панель не закрывается ни свайпом, ни «назад», ни касанием
@@ -350,7 +350,10 @@ internal fun DuckerSheet(
         // The glass style: the screen under the sheet blurs as it comes out.
         val glass = !tv && LocalGlassStyle.current.enabled
         val rim = glassRim(MaterialTheme.colorScheme.background)
-        val pane = if (glass) backdrop else null
+        // Over another glass sheet, frosted: its glass would show the screen under both, a hole through the lower sheet.
+        // Settled at each open, so it does not change while shown.
+        var nested by remember { mutableStateOf(false) }
+        val pane = if (glass && !nested) backdrop else null
         val sheetGlass = if (glass) LocalSheetGlass.current else null
         val glassOwner = remember { Any() }
 
@@ -358,7 +361,7 @@ internal fun DuckerSheet(
         // transparent window must never stay visible over the app once the sheet has gone.
         fun finish() {
             glassVisible = false
-            if (pane != null) sheetGlass?.want(glassOwner, false)
+            sheetGlass?.want(glassOwner, false)
             if (keep) {
                 focus.clearFocus(force = true)
                 window?.decorView?.visibility = View.GONE
@@ -376,7 +379,8 @@ internal fun DuckerSheet(
                     glassVisible = true
                     if (keep) window?.decorView?.visibility = View.VISIBLE
                     exitVelocity = null
-                    if (pane != null && sheetGlass != null) {
+                    nested = sheetGlass?.othersOpen(glassOwner) == true
+                    if (glass && backdrop != null && !nested && sheetGlass != null) {
                         sheetGlass.want(glassOwner, true)
                         // Drawn live for each pane, the screen cost every frame of the slide; a few frames' wait at most.
                         withTimeoutOrNull(STILL_WAIT_MS) { snapshotFlow { sheetGlass.ready }.first { it } }
@@ -384,6 +388,8 @@ internal fun DuckerSheet(
                     move(0f, tween(ENTER_MS, easing = FastOutSlowInEasing))
                 }
                 else -> {
+                    // A leaving sheet no longer counts as one under a new sheet (an editor giving way to its addresses).
+                    sheetGlass?.want(glassOwner, false)
                     val spec = exitVelocity?.let { sheetReleaseSpec(height - offset.coerceAtMost(height), it, EXIT_MS) }
                         ?: tween(EXIT_MS, easing = FastOutLinearInEasing)
                     exitVelocity = null
@@ -740,12 +746,14 @@ internal fun SheetField(
     val done = tvDone(next)
     val flat = airEdge()
     val edge = if (error) BorderStroke(1.dp, scheme.error) else flat
+    val pane = LocalGlassBackdrop.current?.takeIf { flat == null }
 
     Row(
         modifier = Modifier.fillMaxWidth()
-            .then(if (flat == null) Modifier.cardShadow(shape) else Modifier)
-            .clip(shape)
-            .background(scheme.surface)
+            .then(
+                if (pane != null) Modifier.glass(pane, GlassMaterial.Control, shape).clip(shape)
+                else Modifier.then(if (flat == null) Modifier.cardShadow(shape) else Modifier).clip(shape).background(scheme.surface),
+            )
             .then(edge?.let { Modifier.border(it, shape) } ?: Modifier)
             .then(row)
             .padding(start = 16.dp, end = 4.dp),

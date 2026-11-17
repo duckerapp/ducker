@@ -1,5 +1,9 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import androidx.compose.ui.graphics.Color
+import com.github.kr328.clash.ui.components.glass
+import com.github.kr328.clash.ui.components.GlassMaterial
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -265,12 +269,15 @@ internal fun SourceTile(
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(20.dp)
+    // On a glass sheet a tile is a control of glass on it, as the sheet's fields are.
+    val pane = LocalGlassBackdrop.current
     Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.airShadow(shape),
+        modifier = if (pane != null) modifier.glass(pane, GlassMaterial.Control, shape) else modifier.airShadow(shape),
         shape = shape,
-        color = MaterialTheme.colorScheme.surface,
+        color = if (pane != null) Color.Transparent else MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Column(
             modifier = Modifier.padding(vertical = 16.dp, horizontal = TILE_PADDING).alpha(if (enabled) 1f else 0.5f),

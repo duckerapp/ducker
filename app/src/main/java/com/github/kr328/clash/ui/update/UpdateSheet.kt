@@ -1,6 +1,6 @@
 package com.github.kr328.clash.ui.update
 
-import androidx.compose.foundation.background
+import com.github.kr328.clash.ui.components.sheetSurface
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,14 +11,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.SheetButton
-import com.github.kr328.clash.ui.components.airShadow
 import com.github.kr328.clash.ui.components.formatBytes
 import com.github.kr328.clash.update.Release
 import com.github.kr328.clash.update.UpdateError
@@ -183,9 +181,7 @@ private fun Notes(notes: Map<String, String>) {
                 text = text,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.fillMaxWidth()
-                    .airShadow(shape)
-                    .clip(shape)
-                    .background(MaterialTheme.colorScheme.surface)
+                    .sheetSurface(shape)
                     .padding(16.dp),
             )
         }

@@ -26,6 +26,9 @@ internal class SheetGlass {
 
     private val wanting = mutableSetOf<Any>()
 
+    /** Another glass pane sheet than [owner] is opening or open, not leaving. */
+    fun othersOpen(owner: Any): Boolean = wanting.any { it != owner }
+
     /** A glass pane sheet is opening or open: the screen under it is drawn still for its panes before it moves. */
     var wanted by mutableStateOf(false)
         private set

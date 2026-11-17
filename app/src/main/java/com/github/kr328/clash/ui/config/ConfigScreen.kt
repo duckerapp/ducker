@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.config
 
+import com.github.kr328.clash.ui.components.sheetSurface
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.SecureWindow
@@ -1067,9 +1068,7 @@ private fun SectionsSheet(text: String, onPick: (Int) -> Unit, onClosed: () -> U
 
                 Row(
                     modifier = Modifier.fillMaxWidth()
-                        .airShadow(RoundedCornerShape(20.dp))
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surface)
+                        .sheetSurface(RoundedCornerShape(20.dp))
                         .clickable(role = Role.Button) {
                             picked = line
                             open = false

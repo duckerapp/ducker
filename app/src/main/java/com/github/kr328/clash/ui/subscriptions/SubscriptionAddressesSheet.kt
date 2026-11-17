@@ -1,7 +1,7 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.sheetSurface
 import android.text.format.DateUtils
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +15,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -26,7 +25,6 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.service.model.SubscriptionAddress
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.Symbols
-import com.github.kr328.clash.ui.components.airShadow
 import java.text.DateFormat
 
 /**
@@ -65,9 +63,7 @@ fun SubscriptionAddressesSheet(
         // One backing with inset lines, as the settings index and «Мои правила» (D-326).
         Column(
             modifier = Modifier.fillMaxWidth()
-                .airShadow(RoundedCornerShape(20.dp))
-                .clip(RoundedCornerShape(20.dp))
-                .background(MaterialTheme.colorScheme.surface)
+                .sheetSurface(RoundedCornerShape(20.dp))
                 .padding(vertical = 4.dp),
         ) {
             addresses.forEachIndexed { index, address ->

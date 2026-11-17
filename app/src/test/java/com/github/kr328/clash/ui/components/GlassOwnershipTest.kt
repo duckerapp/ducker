@@ -175,6 +175,20 @@ class GlassOwnershipTest {
         assertFalse(sheets.wanted)
     }
 
+    @Test fun `a sheet sees another open one but not itself or one leaving`() {
+        val sheets = SheetGlass()
+        val editor = Any()
+        val confirmation = Any()
+        assertFalse(sheets.othersOpen(confirmation))
+        sheets.want(editor, true)
+        sheets.update(editor, 1f)
+        assertTrue(sheets.othersOpen(confirmation))
+        assertFalse(sheets.othersOpen(editor))
+        // Leaving: still on screen, no longer under a new sheet.
+        sheets.want(editor, false)
+        assertFalse(sheets.othersOpen(confirmation))
+    }
+
     @Test fun `host scopes and out of order disposal cannot clear another sheet`() {
         val first = SheetGlass()
         val second = SheetGlass()

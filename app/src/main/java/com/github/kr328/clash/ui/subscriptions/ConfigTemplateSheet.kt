@@ -1,7 +1,7 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.sheetSurface
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +28,6 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.ui.components.DuckerSheet
 import com.github.kr328.clash.ui.components.Symbols
-import com.github.kr328.clash.ui.components.airShadow
 import com.github.kr328.clash.ui.components.isolated
 
 /** The choices of «Конфигурация»: the service's registry (`ConfigTemplate.all`) with its words; "" — «Из подписки». */
@@ -83,9 +82,7 @@ internal fun ConfigTemplateSheet(
         // One backing with inset lines, as «Адреса подписки».
         Column(
             modifier = Modifier.fillMaxWidth()
-                .airShadow(RoundedCornerShape(20.dp))
-                .clip(RoundedCornerShape(20.dp))
-                .background(scheme.surface)
+                .sheetSurface(RoundedCornerShape(20.dp))
                 .padding(vertical = 4.dp),
         ) {
             OPTIONS.forEachIndexed { index, option ->

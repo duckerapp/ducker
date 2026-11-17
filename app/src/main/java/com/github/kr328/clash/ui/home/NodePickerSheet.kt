@@ -1,6 +1,5 @@
 package com.github.kr328.clash.ui.home
 
-import com.github.kr328.clash.ui.components.LocalScreenBackdrop
 import com.github.kr328.clash.ui.components.glass
 import com.github.kr328.clash.ui.components.GlassMaterial
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
@@ -118,8 +117,6 @@ internal fun NodePickerSheet(
         },
         scrollable = false, compact = true, keep = true,
         heightFraction = if (shortWindow) 1f else 0.80f,
-        // The glass style tries its glass sheet here first (the owner, 17.11).
-        backdrop = LocalScreenBackdrop.current,
     ) {
         PickerList(
             state = state, list = list, group = group, query = query, onQuery = { query = it },

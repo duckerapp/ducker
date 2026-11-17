@@ -188,6 +188,14 @@ internal fun airEdge(fill: Color = MaterialTheme.colorScheme.surface): BorderStr
 internal fun Modifier.airShadow(shape: Shape, fill: Color = MaterialTheme.colorScheme.surface): Modifier =
     airEdge(fill)?.let { border(it, shape) } ?: cardShadow(shape)
 
+/** A field, a row or a backing of rows on a sheet: a control of glass on a glass sheet, otherwise Air's filled surface. */
+@Composable
+internal fun Modifier.sheetSurface(shape: Shape): Modifier {
+    val backdrop = LocalGlassBackdrop.current
+    return if (backdrop != null) glass(backdrop, GlassMaterial.Control, shape).clip(shape)
+    else airShadow(shape).clip(shape).background(MaterialTheme.colorScheme.surface)
+}
+
 /**
  * Blurred [DuckerCardShadow] masks shared by every window. [dropShadow] caches masks per window, and
  * each [DuckerSheet] is a new dialog window, so every open blurred all its shadows again on the main

@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.sheetSurface
 import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.SecureWindow
@@ -11,7 +12,6 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,7 +43,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.LayerOutsets
@@ -62,7 +61,6 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.ui.components.SheetField
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.DuckerSheet
-import com.github.kr328.clash.ui.components.airShadow
 import com.github.kr328.clash.ui.components.ringAnchor
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -263,9 +261,7 @@ private fun ReachLines(reach: SubscriptionReach) {
 private fun SheetLink(icon: ImageVector, text: String, enabled: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth()
-            .airShadow(RoundedCornerShape(20.dp))
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surface)
+            .sheetSurface(RoundedCornerShape(20.dp))
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -476,9 +472,7 @@ private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Un
         modifier = modifier.fillMaxWidth()
             // On a TV the frame goes round the whole pill, not the slider inside its padding.
             .then(if (LocalTv.current) Modifier.ringAnchor(corner = 20.dp) { Rect(Offset.Zero, it.toSize()) } else Modifier)
-            .airShadow(RoundedCornerShape(20.dp))
-            .clip(RoundedCornerShape(20.dp))
-            .background(scheme.surface)
+            .sheetSurface(RoundedCornerShape(20.dp))
             .padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         Slider(
