@@ -160,6 +160,21 @@ class GlassOwnershipTest {
         assertEquals(0f, blur.shown)
     }
 
+    @Test fun `the screen's still pictures stay wanted while any glass sheet wants them`() {
+        val sheets = SheetGlass()
+        val kept = Any()
+        val confirmation = Any()
+        sheets.want(kept, true)
+        sheets.want(confirmation, true)
+        sheets.want(confirmation, false)
+        assertTrue(sheets.wanted)
+        // A sheet that leaves the composition releases its want with its blur.
+        sheets.remove(kept)
+        assertFalse(sheets.wanted)
+        sheets.want(kept, false)
+        assertFalse(sheets.wanted)
+    }
+
     @Test fun `host scopes and out of order disposal cannot clear another sheet`() {
         val first = SheetGlass()
         val second = SheetGlass()

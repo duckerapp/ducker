@@ -269,8 +269,23 @@ internal fun rememberGlassBackdrop(still: Boolean = false): GlassBackdrop? {
 /** Blur every pane in this scope adds to its own: the panes inside a glass sheet, so they are no clearer than it. */
 internal val LocalGlassExtraBlur = staticCompositionLocalOf { 0.dp }
 
-/** The backdrop as recorded at [version], drawn once per pane blur (in pixels) with the panes' colour lift. */
-internal class StillBackdrop(val version: Int, val pictures: Map<Int, android.graphics.BitmapShader>)
+/**
+ * The backdrop as recorded at [version], drawn once per pane blur (in pixels) with the panes' colour lift. [held]: shown
+ * after the backdrop has changed too, see [SheetStillPictures].
+ */
+internal class StillBackdrop(val version: Int, val pictures: Map<Int, android.graphics.BitmapShader>, val held: Boolean = false)
+
+@Composable
+private fun stillBlurs(extra: Dp): List<Int> {
+    val density = LocalDensity.current
+    val blur = LocalGlassStyle.current.blur
+    // Every blur a pane on this backdrop asks for: the panes, the controls on them, the power button.
+    return remember(blur, density, extra) {
+        with(density) {
+            listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (blur / 100f) + (it + extra).toPx()).roundToInt() }.distinct()
+        }
+    }
+}
 
 /**
  * A backdrop that stands still under moving panes (Home's, under the tabs) is drawn once, blurred for each kind of
@@ -279,22 +294,16 @@ internal class StillBackdrop(val version: Int, val pictures: Map<Int, android.gr
  * backdrop has rested after a change, and while the connect wave runs through it, the panes draw it live as before.
  */
 @Composable
-internal fun StillBackdropPictures(backdrop: GlassBackdrop, extra: Dp = 0.dp, active: Boolean = true) {
+internal fun StillBackdropPictures(backdrop: GlassBackdrop) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
 
     val graphics = LocalGraphicsContext.current
     val density = LocalDensity.current
     val style = LocalGlassStyle.current
-    // Every blur a pane on this backdrop asks for: the panes, the controls on them, the power button.
-    val blurs = remember(style.blur, density, extra) {
-        with(density) {
-            listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (style.blur / 100f) + (it + extra).toPx()).roundToInt() }.distinct()
-        }
-    }
+    val blurs = stillBlurs(0.dp)
 
-    LaunchedEffect(backdrop, blurs, style.vibrancy, active) {
+    LaunchedEffect(backdrop, blurs, style.vibrancy) {
         backdrop.still = null
-        if (!active) return@LaunchedEffect
         snapshotFlow { backdrop.version to backdrop.waveActive }.collectLatest { (version, wave) ->
             if (wave) return@collectLatest
             // A backdrop changing for a while (a theme's colours fading over) is drawn once it has settled.
@@ -304,6 +313,37 @@ internal fun StillBackdropPictures(backdrop: GlassBackdrop, extra: Dp = 0.dp, ac
 
             val pictures = blurs.associateWith { blur -> stillPicture(graphics, density, backdrop.layer, size, blur, style.vibrancy) }
             if (backdrop.version == version) backdrop.still = StillBackdrop(version, pictures)
+        }
+    }
+}
+
+/**
+ * The screen under a glass sheet, drawn still for the sheet's panes when it is asked to open, before it moves (F-532):
+ * the sheet and each of its rows had blurred their own copy of the screen every frame of the slide, 10-17 ms a frame on
+ * the OnePlus at 120 Hz. Kept between opens while the screen is the same, and held while the sheet is open though the
+ * screen changes under it (the tap's ripple, a number): blurred past reading, the older picture shows as well.
+ */
+@Composable
+internal fun SheetStillPictures(backdrop: GlassBackdrop, sheets: SheetGlass, extra: Dp) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+    val graphics = LocalGraphicsContext.current
+    val density = LocalDensity.current
+    val vibrancy = LocalGlassStyle.current.vibrancy
+    val blurs = stillBlurs(extra)
+
+    LaunchedEffect(backdrop, sheets, blurs, vibrancy) {
+        backdrop.still = null
+        snapshotFlow { sheets.wanted }.collectLatest { wanted ->
+            sheets.ready = false
+            if (!wanted) return@collectLatest
+            val version = backdrop.version
+            val size = backdrop.layer.size
+            if (backdrop.still?.version != version && size.width > 0 && size.height > 0) {
+                val pictures = blurs.associateWith { blur -> stillPicture(graphics, density, backdrop.layer, size, blur, vibrancy) }
+                backdrop.still = StillBackdrop(version, pictures, held = true)
+            }
+            sheets.ready = true
         }
     }
 }
@@ -433,7 +473,7 @@ internal fun Modifier.liquidGlass(
         val clip = Path().apply { addOutline(outline) }
 
         onDrawBehind {
-            val still = backdrop.still?.takeIf { it.version == backdrop.version && !backdrop.waveActive }?.pictures?.get(stillBlur)
+            val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && !backdrop.waveActive }?.pictures?.get(stillBlur)
 
             if (still == null) {
                 glass.record(paneSize) {

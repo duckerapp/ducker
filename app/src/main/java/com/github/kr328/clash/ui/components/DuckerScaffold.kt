@@ -68,7 +68,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -224,11 +223,8 @@ fun DuckerScaffold(
     // The glass style: the dock shows the screen under it through glass. Null — Air.
     val backdrop = rememberGlassBackdrop()
     val sheetGlass = LocalSheetGlass.current
-    // Under an open glass sheet the screen stands still: drawn once for the sheet's panes, see StillBackdropPictures.
-    if (backdrop != null) {
-        val sheetOpen by remember(sheetGlass) { derivedStateOf { (sheetGlass?.shown ?: 0f) > 0f } }
-        StillBackdropPictures(backdrop, extra = SHEET_BLUR, active = sheetOpen)
-    }
+    // Under an open glass sheet the screen stands still: drawn once for the sheet's panes, see SheetStillPictures.
+    if (backdrop != null && sheetGlass != null) SheetStillPictures(backdrop, sheetGlass, extra = SHEET_BLUR)
 
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { insets ->
         Box(

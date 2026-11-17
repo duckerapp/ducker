@@ -72,6 +72,8 @@ import androidx.compose.ui.graphics.luminance
 import androidx.core.view.WindowCompat
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.roundToInt
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
@@ -345,10 +347,18 @@ internal fun DuckerSheet(
 
         val focus = LocalFocusManager.current
 
+        // The glass style: the screen under the sheet blurs as it comes out.
+        val glass = !tv && LocalGlassStyle.current.enabled
+        val rim = glassRim(MaterialTheme.colorScheme.background)
+        val pane = if (glass) backdrop else null
+        val sheetGlass = if (glass) LocalSheetGlass.current else null
+        val glassOwner = remember { Any() }
+
         // A hidden window draws nothing and takes no touch, key, focus or accessibility: the fullscreen
         // transparent window must never stay visible over the app once the sheet has gone.
         fun finish() {
             glassVisible = false
+            if (pane != null) sheetGlass?.want(glassOwner, false)
             if (keep) {
                 focus.clearFocus(force = true)
                 window?.decorView?.visibility = View.GONE
@@ -366,6 +376,11 @@ internal fun DuckerSheet(
                     glassVisible = true
                     if (keep) window?.decorView?.visibility = View.VISIBLE
                     exitVelocity = null
+                    if (pane != null && sheetGlass != null) {
+                        sheetGlass.want(glassOwner, true)
+                        // Drawn live for each pane, the screen cost every frame of the slide; a few frames' wait at most.
+                        withTimeoutOrNull(STILL_WAIT_MS) { snapshotFlow { sheetGlass.ready }.first { it } }
+                    }
                     move(0f, tween(ENTER_MS, easing = FastOutSlowInEasing))
                 }
                 else -> {
@@ -416,20 +431,13 @@ internal fun DuckerSheet(
             }
         }
 
-        // The glass style: the screen under the sheet blurs as it comes out.
-        val glass = !tv && LocalGlassStyle.current.enabled
-        val rim = glassRim(MaterialTheme.colorScheme.background)
-        val pane = if (glass) backdrop else null
-
-        val sheetGlass = LocalSheetGlass.current
         if (glass && sheetGlass != null) {
-            val owner = remember { Any() }
-            LaunchedEffect(sheetGlass, owner) {
+            LaunchedEffect(sheetGlass, glassOwner) {
                 snapshotFlow {
                     if (glassVisible && height > 0f) (1f - offset / height).coerceIn(0f, 1f) else 0f
-                }.collect { sheetGlass.update(owner, it) }
+                }.collect { sheetGlass.update(glassOwner, it) }
             }
-            DisposableEffect(sheetGlass, owner) { onDispose { sheetGlass.remove(owner) } }
+            DisposableEffect(sheetGlass, glassOwner) { onDispose { sheetGlass.remove(glassOwner) } }
         }
 
         // Затемнение — отдельным слоем под панелью: касание панели до него не доходит.
@@ -617,6 +625,7 @@ internal fun DuckerSheet(
 }
 
 private const val ENTER_MS = 280
+private const val STILL_WAIT_MS = 120L
 private const val EXIT_MS = 220
 private const val LIFT_MS = 240
 
