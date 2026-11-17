@@ -1,5 +1,13 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -9,8 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Slider
@@ -89,11 +95,9 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
     val drag = rememberUpdatedState(onDrag)
     val under = rememberPaneUnder()
     val at = remember { floatArrayOf(0f, 0f) }
-    val rowHeld = pressed?.collectIsPressedAsState()?.value == true
-
-    LaunchedEffect(rowHeld, motion) {
-        if (motion) held.animateTo(if (rowHeld) 1f else 0f, tween(if (rowHeld) LENS_IN_MS else LENS_OUT_MS))
-    }
+    val touch = remember { LensTouch() }
+    LaunchedEffect(pressed) { pressed?.let { touch.watch(it) } }
+    LaunchedEffect(touch.count, touch.down, motion) { held.follow(touch, motion) }
 
     LaunchedEffect(checked) {
         val target = if (checked) 1f else 0f
@@ -115,14 +119,13 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
     Box(
         modifier.size(TRACK_WIDTH, TRACK_HEIGHT)
             .onGloballyPositioned { val p = it.positionInRoot(); at[0] = p.x; at[1] = p.y }
+            .fingerOn(touch)
             .then(
                 if (onDrag != null) Modifier.draggable(
                     dragState,
                     Orientation.Horizontal,
-                    onDragStarted = { if (motion) launch { held.animateTo(1f, tween(LENS_IN_MS)) } },
                     onDragStopped = {
                         val now = position.value >= 0.5f
-                        launch { held.animateTo(0f, tween(LENS_OUT_MS)) }
                         if (now != checked) drag.value?.invoke(now)
                         else position.animateTo(if (checked) 1f else 0f, spring(dampingRatio = 0.62f, stiffness = 420f))
                     },
@@ -151,13 +154,68 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
                 val halfW = thumbW / 2f * swell * (1f + speed)
                 val halfH = thumbH / 2f * swell * (1f - speed * 0.5f)
                 val origin = Offset(at[0], at[1])
-                drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base) {
+                drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base, zoom = 1f + LENS_ZOOM * held.value) {
                     under(origin)
                     drawRoundRect(trackColor, cornerRadius = trackCorner)
                     drawThumb(center, thumbW / 2f, thumbH / 2f, thumb, shadowDrop)
                 }
             },
     )
+}
+
+/**
+ * The fingers on a control and on the row that speaks for it. [count] counts touches: a row's short tap reports its press
+ * and release together, so [down] may never be seen true, and the lens must still swell once.
+ */
+private class LensTouch {
+    var count by mutableIntStateOf(0)
+    private var own by mutableStateOf(false)
+    private var row by mutableStateOf(false)
+    val down get() = own || row
+    var seen = 0
+
+    fun finger(on: Boolean) {
+        if (on) count++
+        own = on
+    }
+
+    suspend fun watch(source: InteractionSource) {
+        source.interactions.collect {
+            when (it) {
+                is PressInteraction.Press -> { count++; row = true }
+                is PressInteraction.Release, is PressInteraction.Cancel -> row = false
+            }
+        }
+    }
+}
+
+/** Swells while a finger is down, settles back after; a touch already gone still swells fully once. */
+private suspend fun Animatable<Float, *>.follow(touch: LensTouch, motion: Boolean) {
+    val touched = touch.count != touch.seen
+    touch.seen = touch.count
+    if (!motion) {
+        snapTo(0f)
+    } else if (touch.down) {
+        animateTo(1f, tween(LENS_IN_MS))
+    } else {
+        if (value < 1f && (value > 0f || touched)) animateTo(1f, tween((LENS_IN_MS * (1f - value)).toInt()))
+        animateTo(0f, tween(LENS_OUT_MS))
+    }
+}
+
+/** A finger on this, from its touch until it lifts, whatever gesture takes the touch meanwhile. */
+private fun Modifier.fingerOn(touch: LensTouch): Modifier = pointerInput(touch) {
+    awaitEachGesture {
+        awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        touch.finger(true)
+        try {
+            do {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+            } while (event.changes.any { it.pressed })
+        } finally {
+            touch.finger(false)
+        }
+    }
 }
 
 /** The white thumb, its own size whatever the lens over it does, on a faint shadow. */
@@ -172,7 +230,9 @@ private val TRACK_HEIGHT = 28.dp
 private val THUMB_WIDTH = 40.dp
 private val THUMB_HEIGHT = 24.dp
 private val PAD = 2.dp
-private const val LENS_SWELL = 1.5f
+// The lens grows, its picture barely: the thumb keeps room inside it (the owner, 18.11).
+private const val LENS_SWELL = 1.6f
+private const val LENS_ZOOM = 0.06f
 private const val LENS_IN_MS = 120
 private const val LENS_OUT_MS = 220
 
@@ -215,8 +275,7 @@ internal fun DuckerSlider(
     val base = scheme.background
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val dragged by interaction.collectIsDraggedAsState()
+    val touch = remember { LensTouch() }
     val motion = rememberCoroutineScope().coroutineContext.motionScale > 0f
     // The lens over the thumb: 0 — its size, 1 — swollen under a finger.
     val lens = remember { Animatable(0f) }
@@ -224,10 +283,7 @@ internal fun DuckerSlider(
     val under = rememberPaneUnder()
     val at = remember { floatArrayOf(0f, 0f) }
 
-    LaunchedEffect(pressed || dragged, motion) {
-        if (!motion) lens.snapTo(0f)
-        else lens.animateTo(if (pressed || dragged) 1f else 0f, tween(if (pressed || dragged) LENS_IN_MS else LENS_OUT_MS))
-    }
+    LaunchedEffect(touch.count, touch.down, motion) { lens.follow(touch, motion) }
 
     // The track in the thumb's own place, for the lens: the accent to its middle, the rest after it.
     fun DrawScope.track(start: Float, end: Float, split: Float, height: Float) {
@@ -241,7 +297,8 @@ internal fun DuckerSlider(
     Slider(
         value = value, onValueChange = onValueChange, valueRange = valueRange, steps = steps, enabled = enabled,
         interactionSource = interaction,
-        modifier = modifier.alpha(if (enabled) 1f else DISABLED_ALPHA),
+        // A finger anywhere on it: Material reports a press only once it knows it is no scroll, a tap all at once.
+        modifier = modifier.alpha(if (enabled) 1f else DISABLED_ALPHA).then(if (enabled) Modifier.fingerOn(touch) else Modifier),
         thumb = {
             Box(
                 Modifier.size(THUMB_WIDTH, THUMB_HEIGHT)
@@ -258,7 +315,7 @@ internal fun DuckerSlider(
                     val thick = SLIDER_TRACK.toPx()
                     val width = size.width
                     val height = size.height
-                    drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base) {
+                    drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base, zoom = 1f + LENS_ZOOM * lens.value) {
                         under(origin)
                         track(-width, width * 2f, center.x, thick)
                         drawThumb(center, width / 2f, height / 2f, Color.White, shadowDrop)

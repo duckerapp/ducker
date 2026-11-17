@@ -711,23 +711,34 @@ internal fun heroWaveEffect(shader: GlassWave, center: Offset, currentRadius: Fl
     shader.effect(center, currentRadius, waveWidth, strength, dispersion, highlight, alpha)
 
 internal interface GlassBubble {
-    fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, base: Color, under: DrawScope.() -> Unit)
+    fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, zoom: Float, base: Color, under: DrawScope.() -> Unit)
 }
 
 @Keep
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private class Api33GlassBubble : GlassBubble {
     private val shader = RuntimeShader(BUBBLE_SHADER)
-    override fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, base: Color, under: DrawScope.() -> Unit) {
-        scope.drawShaderBubble(layer, shader, center, halfWidth, halfHeight, presence, base, under)
+    override fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, zoom: Float, base: Color, under: DrawScope.() -> Unit) {
+        scope.drawShaderBubble(layer, shader, center, halfWidth, halfHeight, presence, zoom, base, under)
     }
 }
 
 internal fun bubbleShader(): GlassBubble? =
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) null else Api33GlassBubble()
 
-internal fun DrawScope.drawGlassBubble(layer: GraphicsLayer, shader: GlassBubble, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, base: Color, under: DrawScope.() -> Unit) =
-    shader.draw(this, layer, center, halfWidth, halfHeight, presence, base, under)
+internal fun DrawScope.drawGlassBubble(
+    layer: GraphicsLayer,
+    shader: GlassBubble,
+    center: Offset,
+    halfWidth: Float,
+    halfHeight: Float,
+    presence: Float,
+    base: Color,
+    /** How much the middle is magnified: the dock's by default; a switch's lens over its thumb, little. */
+    zoom: Float = 1f + BUBBLE_ZOOM * presence,
+    under: DrawScope.() -> Unit,
+) =
+    shader.draw(this, layer, center, halfWidth, halfHeight, presence, zoom, base, under)
 
 /**
  * A refractive liquid glass shockwave expanding from [center] with radius [currentRadius].
@@ -769,6 +780,7 @@ private fun DrawScope.drawShaderBubble(
     halfWidth: Float,
     halfHeight: Float,
     presence: Float,
+    zoom: Float,
     base: Color,
     under: DrawScope.() -> Unit,
 ) {
@@ -782,7 +794,7 @@ private fun DrawScope.drawShaderBubble(
     shader.setFloatUniform("center", halfWidth + margin, halfHeight + margin)
     shader.setFloatUniform("halfSize", halfWidth, halfHeight)
     shader.setFloatUniform("radius", halfHeight)
-    shader.setFloatUniform("zoom", 1f + BUBBLE_ZOOM * presence)
+    shader.setFloatUniform("zoom", zoom)
     shader.setFloatUniform("bezel", bezel)
     shader.setFloatUniform("strength", 0.28f)
     shader.setFloatUniform("spread", 0.12f)
