@@ -236,6 +236,8 @@ fun Pill(
 ) {
     val scheme = MaterialTheme.colorScheme
     val rest = if (onCard) scheme.surfaceVariant else scheme.surface
+    // The glass style: on the tabs every pill is the shared frosted button, on a card or off it.
+    val backdrop = LocalGlassBackdrop.current
     val selection by animateFloatAsState(if (selected) 1f else 0f, tween(PILL_FADE_MS), label = "pillSelection")
     val style = MaterialTheme.typography.labelLarge
     val action = when (role) {
@@ -251,7 +253,13 @@ fun Pill(
                 alpha = if (enabled) 1f else DISABLED_ALPHA
                 outsets = DuckerShadowOutsets
             }
-            .then(if (onCard) Modifier else Modifier.airShadow(CircleShape, rest))
+            .then(
+                when {
+                    backdrop != null -> Modifier.glassButton(backdrop)
+                    onCard -> Modifier
+                    else -> Modifier.airShadow(CircleShape, rest)
+                },
+            )
             .clip(CircleShape)
             .then(action),
         propagateMinConstraints = true,
@@ -277,7 +285,7 @@ fun Pill(
                 val left = if (layoutDirection == LayoutDirection.Rtl) 0f else edge
                 val right = if (layoutDirection == LayoutDirection.Rtl) size.width - edge else size.width
                 clipRect(left = left, right = right) { this@drawWithContent.drawContent() }
-            }.background(rest),
+            }.background(if (backdrop != null) Color.Transparent else rest),
         )
         // Reveal fill and its ink together, as in PillSegments: opposing color fades cross
         // at zero contrast. The second label is visual only and never sizes the pill.

@@ -10,6 +10,7 @@ import com.github.kr328.clash.ui.components.GLASS_CARD_TINT
 import com.github.kr328.clash.ui.theme.failureOn
 import com.github.kr328.clash.ui.theme.BackdropTone
 import com.github.kr328.clash.ui.theme.LocalThemeDark
+import com.github.kr328.clash.ui.components.GlassCardButton
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.LocalGlassStyle
 import com.github.kr328.clash.ui.components.heroWaveShader
@@ -2428,13 +2429,22 @@ private fun SubscriptionCard(
 @Composable
 private fun FeaturesPill(onClick: () -> Unit, modifier: Modifier) {
     val scheme = MaterialTheme.colorScheme
+    // The glass style: it lies on the backdrop as the cards do, so it is a pane of the same glass.
+    val backdrop = LocalGlassBackdrop.current
 
     Row(
         modifier = modifier
             .minimumInteractiveComponentSize()
-            .airShadow(CircleShape)
+            .then(
+                if (backdrop != null) Modifier.liquidGlass(
+                    backdrop,
+                    base = scheme.background,
+                    tint = scheme.surface.copy(alpha = GLASS_CARD_TINT),
+                    shape = CircleShape,
+                ) else Modifier.airShadow(CircleShape),
+            )
             .clip(CircleShape)
-            .background(scheme.surface)
+            .then(if (backdrop != null) Modifier else Modifier.background(scheme.surface))
             .clickable(role = Role.Button, onClick = onClick)
             .heightIn(min = 40.dp)
             .padding(start = 14.dp, end = 10.dp),
@@ -2494,28 +2504,24 @@ private fun CardPill(
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
-    // The glass style: on glass a frosted pill, blurred more than the card so the two do not merge.
-    val backdrop = LocalGlassBackdrop.current
+    // The glass style: the shared frosted button, blurred more than the card so the two do not merge.
+    if (LocalGlassBackdrop.current != null) {
+        GlassCardButton(onClick = onClick, modifier = modifier, enabled = enabled, content = content)
+        return
+    }
     val fill = MaterialTheme.colorScheme.surfaceVariant
-    val container = if (backdrop != null) Color.Transparent else fill
 
     Button(
         onClick = onClick,
         enabled = enabled,
         colors = ButtonDefaults.buttonColors(
-            containerColor = container,
+            containerColor = fill,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            disabledContainerColor = container,
+            disabledContainerColor = fill,
             disabledContentColor = MaterialTheme.colorScheme.onSurface,
         ),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-        modifier = modifier.heightIn(min = 40.dp).liquidGlass(
-            backdrop,
-            base = MaterialTheme.colorScheme.background,
-            tint = fill.copy(alpha = 0.7f),
-            shape = ButtonDefaults.shape,
-            blurBoost = INNER_BLUR,
-        ),
+        modifier = modifier.heightIn(min = 40.dp),
         content = content,
     )
 }

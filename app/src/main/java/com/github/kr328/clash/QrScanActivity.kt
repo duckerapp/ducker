@@ -93,6 +93,13 @@ import androidx.core.view.WindowCompat
 import com.github.kr328.clash.ui.subscriptions.SourceTile
 import com.github.kr328.clash.ui.subscriptions.TvLink
 import com.github.kr328.clash.ui.theme.DuckerTheme
+import com.github.kr328.clash.ui.components.GlassStyle
+import com.github.kr328.clash.ui.components.LocalGlassStyle
+import com.github.kr328.clash.ui.components.glassRim
+import com.github.kr328.clash.ui.components.glassSupported
+import com.github.kr328.clash.ui.settings.SettingsStore
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawOutline
 import kotlinx.coroutines.delay
 import zxingcpp.BarcodeReader
 import java.util.concurrent.Executors
@@ -210,8 +217,14 @@ class QrScanActivity : AppCompatActivity() {
             bindToLifecycle(this@QrScanActivity)
         }
 
+        // The glass style reaches this screen too, under Home's conditions: its panel is a glass sheet over the camera.
+        val glass = GlassStyle(
+            enabled = glassSupported && !packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) &&
+                SettingsStore(this).style == SettingsStore.STYLE_GLASS,
+        )
+
         setContent {
-            DuckerTheme {
+            DuckerTheme(glass = glass) {
                 var torch by remember { mutableStateOf(false) }
 
                 ScanScreen(
@@ -456,7 +469,14 @@ private fun ScanPanel(
 
     Column(
         // Под скруглёнными углами — то же затемнение, что над камерой, а не яркая камера.
-        modifier = modifier.background(Color.Black.copy(alpha = SCRIM)).clip(shape).background(scheme.background)
+        modifier = modifier.background(Color.Black.copy(alpha = SCRIM)).clip(shape)
+            .then(
+                // As a sheet of the glass style: the camera shows faintly through, light catches the edge.
+                if (LocalGlassStyle.current.enabled) Modifier.background(scheme.background.copy(alpha = 0.85f)).drawWithContent {
+                    drawContent()
+                    drawOutline(shape.createOutline(size, layoutDirection, this), glassRim(scheme.background), style = Stroke(1.dp.toPx()))
+                } else Modifier.background(scheme.background),
+            )
             .windowInsetsPadding(WindowInsets.safeDrawing.only(insets))
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, if (wide) Alignment.CenterVertically else Alignment.Top),

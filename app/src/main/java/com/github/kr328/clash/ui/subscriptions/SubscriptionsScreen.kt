@@ -5,6 +5,7 @@ import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.components.formatCount
+import com.github.kr328.clash.ui.components.GlassCardButton
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.liquidGlass
 import com.github.kr328.clash.ui.components.INNER_BLUR
@@ -1074,30 +1075,24 @@ private fun CardAction(
     enabled: Boolean = true,
     label: @Composable RowScope.() -> Unit,
 ) {
-    // The glass style: on glass a frosted button tinted by its colour, blurred more than the card.
-    val backdrop = LocalGlassBackdrop.current
-    val fill = if (backdrop != null) MaterialTheme.colorScheme.surfaceVariant else container
-    val buttonContent = if (backdrop != null) MaterialTheme.colorScheme.onSurface else content
-    val buttonContainer = if (backdrop != null) Color.Transparent else fill
+    // The glass style: the same frosted button as Home's card.
+    if (LocalGlassBackdrop.current != null) {
+        GlassCardButton(onClick = onClick, modifier = modifier, enabled = enabled, padding = 8.dp, content = label)
+        return
+    }
 
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = 48.dp).liquidGlass(
-            backdrop,
-            base = MaterialTheme.colorScheme.background,
-            tint = fill.copy(alpha = 0.7f),
-            shape = ButtonDefaults.shape,
-            blurBoost = INNER_BLUR,
-        ),
+        modifier = modifier.heightIn(min = 48.dp),
         contentPadding = PaddingValues(horizontal = 8.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = buttonContainer,
-            contentColor = buttonContent,
+            containerColor = container,
+            contentColor = content,
             // Выключается только «Обновить» на время обновления — и не сереет, как на главной:
             // кольцо и так говорит, что идёт.
-            disabledContainerColor = buttonContainer,
-            disabledContentColor = buttonContent,
+            disabledContainerColor = container,
+            disabledContentColor = content,
         ),
         content = label,
     )

@@ -107,6 +107,8 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
@@ -383,6 +385,46 @@ fun EmptyState(
 
 /** How much of a glass card's own colour lies over the glass: enough for its text, little enough to see through. */
 internal const val GLASS_CARD_TINT = 0.55f
+
+/** The glass style's one frosted button: Home's card buttons, the pills and the subscription card's actions alike. */
+@Composable
+internal fun Modifier.glassButton(backdrop: GlassBackdrop?): Modifier = liquidGlass(
+    backdrop,
+    base = MaterialTheme.colorScheme.background,
+    tint = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    shape = CircleShape,
+    blurBoost = INNER_BLUR,
+)
+
+/**
+ * A button on a glass card, frosted as [glassButton]. Material's Button sizes its modifier to the 48 dp touch target and
+ * clips its press to the 40 dp shape inside, so glass on that modifier showed a press that missed the pane; here the
+ * glass, the clip and the press share the visible 40 dp, and the touch target stays 48 dp around them.
+ */
+@Composable
+internal fun GlassCardButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    padding: Dp = 12.dp,
+    content: @Composable RowScope.() -> Unit,
+) {
+    Row(
+        modifier = modifier.minimumInteractiveComponentSize()
+            .heightIn(min = 40.dp)
+            .glassButton(LocalGlassBackdrop.current)
+            .clip(CircleShape)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = padding),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        CompositionLocalProvider(
+            LocalContentColor provides MaterialTheme.colorScheme.onSurface,
+            LocalTextStyle provides MaterialTheme.typography.labelLarge,
+        ) { content() }
+    }
+}
 
 /** A soft shadow separates the search surface; floating lift is read during shadow drawing. */
 @Composable

@@ -588,7 +588,9 @@ internal fun DuckerSheet(
                                 }
                             }
 
-                            content()
+                            // No glass on glass: a sheet opened from a tab would hand its cards the tab's backdrop,
+                            // which lies under the sheet; inside a sheet everything stays Air.
+                            CompositionLocalProvider(LocalGlassBackdrop provides null) { content() }
                         }
                     }
                 }

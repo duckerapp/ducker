@@ -289,20 +289,8 @@ fun ProxyScreen(
 
                         // With the VPN off too: the tab loads the profile into the core without the
                         // tunnel, and the core sorts that list by delay as well (D-319).
-                        if (tabBackdrop == null) {
-                            ProxySortToggle(state.sort, onSort)
-                        } else {
-                            // The glass style: on a small pane, as «Другие подписки»: the header's tone follows the
-                            // picture's top on average, and a dark rock or a blue shape could stand right behind it.
-                            Box(
-                                Modifier.liquidGlass(
-                                    tabBackdrop,
-                                    base = MaterialTheme.colorScheme.background,
-                                    tint = MaterialTheme.colorScheme.surface.copy(alpha = GLASS_CARD_TINT),
-                                    shape = CircleShape,
-                                ),
-                            ) { ProxySortToggle(state.sort, onSort) }
-                        }
+                        // Plain text in the glass style too: a text toggle gets no pane (the owner, 17.11).
+                        ProxySortToggle(state.sort, onSort)
                     }
                 }
 
