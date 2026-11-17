@@ -26,7 +26,12 @@ type GroupInfo struct {
 // Плата за это — участники групп, взятые из `proxy-providers`, здесь не видны:
 // в файле профиля их списка нет, он скачивается отдельно.
 func QueryGroups(profilePath string) []GroupInfo {
-	data, err := os.ReadFile(P.Join(profilePath, "config.yaml"))
+	return readGroups(P.Join(profilePath, "config.yaml"), false)
+}
+
+// readGroups is [QueryGroups] for one file; [hidden] keeps the groups marked `hidden: true`.
+func readGroups(file string, hidden bool) []GroupInfo {
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return []GroupInfo{}
 	}
@@ -54,7 +59,7 @@ func QueryGroups(profilePath string) []GroupInfo {
 		}
 
 		// Скрытые группы прячем и здесь: при поднятом туннеле ядро поступает так же.
-		if hidden, ok := group["hidden"].(bool); ok && hidden {
+		if skip, ok := group["hidden"].(bool); ok && skip && !hidden {
 			continue
 		}
 

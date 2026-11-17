@@ -213,6 +213,21 @@ class ServiceStore(context: Context) {
         defaultValue = "[]"
     )
 
+    /**
+     * «Список провайдера» (D-534): the list follows the chosen subscription's preset, brought by each of its updates.
+     * An edit of the list turns it off.
+     */
+    var mobileProvider by store.boolean(
+        key = "mobile_provider",
+        defaultValue = false
+    )
+
+    /** The person saved something on the page once: a provider's preset no longer sets the page up by itself (D-534). */
+    var mobileSetUp by store.boolean(
+        key = "mobile_set_up",
+        defaultValue = false
+    )
+
     /** The network kind switching last acted on or the person last picked on, a [NetworkKind] ordinal. */
     var mobileSettled by store.int(
         key = "mobile_settled",

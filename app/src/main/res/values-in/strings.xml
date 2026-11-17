@@ -642,6 +642,9 @@
     <string name="mobile_card_no_profile">Pilih langganan</string>
     <string name="mobile_switch">Beralih sesuai jaringan</string>
     <string name="mobile_switch_hint">Di luar Wi-Fi, pengaturan di bawah yang dipakai</string>
+    <string name="mobile_provider">Daftar penyedia</string>
+    <string name="mobile_provider_on">Diperbarui bersama langganan</string>
+    <string name="mobile_provider_off">Anda mengubahnya. Aktifkan untuk mengembalikan</string>
     <string name="mobile_wifi">Wi-Fi</string>
     <string name="mobile_wifi_hint">Seperti biasa: %1$s</string>
     <string name="mobile_wifi_none">Seperti biasa</string>

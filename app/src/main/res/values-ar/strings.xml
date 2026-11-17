@@ -682,6 +682,9 @@
     <string name="mobile_card_no_profile">اختر اشتراكًا</string>
     <string name="mobile_switch">التبديل حسب الشبكة</string>
     <string name="mobile_switch_hint">خارج Wi-Fi يُستخدم ما في الأسفل</string>
+    <string name="mobile_provider">قائمة المزوّد</string>
+    <string name="mobile_provider_on">تُحدَّث مع الاشتراك</string>
+    <string name="mobile_provider_off">لقد غيّرتها. فعّلها لاستعادتها</string>
     <string name="mobile_wifi">Wi-Fi</string>
     <string name="mobile_wifi_hint">كالمعتاد: %1$s</string>
     <string name="mobile_wifi_none">كالمعتاد</string>

@@ -27,7 +27,11 @@ type ProfileNetwork struct {
 }
 
 func rawDocument(profilePath string) map[string]any {
-	data, err := os.ReadFile(P.Join(profilePath, "config.yaml"))
+	return rawFile(P.Join(profilePath, "config.yaml"))
+}
+
+func rawFile(file string) map[string]any {
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil
 	}

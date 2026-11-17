@@ -280,6 +280,19 @@ Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryProfileNetwork(JNIEnv 
 }
 
 JNIEXPORT jstring JNICALL
+Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryMobilePreset(JNIEnv *env, jobject thiz,
+                                                                       jstring path, jstring header) {
+    TRACE_METHOD();
+
+    scoped_string _path = get_string(path);
+    scoped_string _header = get_string(header);
+
+    scoped_string response = queryMobilePreset(_path, _header);
+
+    return new_string(response);
+}
+
+JNIEXPORT jstring JNICALL
 Java_com_github_kr328_clash_core_bridge_Bridge_nativeQueryProfileGroups(JNIEnv *env, jobject thiz,
                                                                         jstring path) {
     TRACE_METHOD();

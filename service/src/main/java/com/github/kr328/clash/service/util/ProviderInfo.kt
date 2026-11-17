@@ -32,6 +32,10 @@ data class ProviderInfo(
     val localProxyOff: Boolean = false,
     /** `ducker-share: off` — keep «Раздача по Wi-Fi» closed (D-471). */
     val shareOff: Boolean = false,
+    /** `ducker-mobile-group` — the group for «Мобильная сеть» when the config's `ducker: {mobile-group}` names none (D-534). */
+    val mobileGroup: String = "",
+    /** The provider's «Мобильная сеть» list, worked out where the download is committed (D-534); empty — no preset. */
+    val mobilePreset: List<String> = emptyList(),
     val updateIntervalHours: Int = 0,
     /** `subscription-refill-date` — когда обнулится счётчик трафика, unix-секунды. */
     val refillAt: Long = 0,
@@ -116,6 +120,7 @@ data class ProviderInfo(
                 globalHidden = h["ducker-global"]?.trim()?.equals("off", true) == true,
                 localProxyOff = h["ducker-local-proxy"]?.trim()?.equals("off", true) == true,
                 shareOff = h["ducker-share"]?.trim()?.equals("off", true) == true,
+                mobileGroup = h["ducker-mobile-group"].decode().trim(),
                 updateIntervalHours = h["profile-update-interval"]?.trim()?.toIntOrNull()
                     ?.takeIf { it > 0 } ?: 0,
                 refillAt = h["subscription-refill-date"]?.trim()?.toLongOrNull() ?: 0,

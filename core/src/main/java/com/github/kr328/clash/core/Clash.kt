@@ -146,6 +146,13 @@ object Clash {
      * Группы из файла профиля. Ядро при этом ничего не запускает — ни слушателей,
      * ни провайдеров, — поэтому вызов работает и при выключенном туннеле.
      */
+    /** The provider's «Мобильная сеть» list of the subscription in [path] (D-534); [header] — `ducker-mobile-group`. */
+    fun queryMobilePreset(path: String, header: String): List<String> = try {
+        CoreJson.decodeFromString(ListSerializer(String.serializer()), Bridge.nativeQueryMobilePreset(path, header))
+    } catch (e: Exception) {
+        emptyList()
+    }
+
     fun queryProfileGroups(path: String): List<ProfileGroup> {
         return try {
             CoreJson.decodeFromString(

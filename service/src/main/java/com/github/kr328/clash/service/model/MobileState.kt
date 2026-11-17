@@ -9,7 +9,8 @@ import kotlinx.serialization.Serializable
  * «Мобильная сеть» for its page (D-423, D-424): [on] — «Переключение по сети»; [profile] — the subscription for the
  * mobile network, empty when not chosen; [nodes] — members of its main group to try, in order. [now] — the network
  * the phone is on. [wifi] — the subscription Wi-Fi brings back: the one saved when the mobile choice came, else the
- * active one; empty when there is neither.
+ * active one; empty when there is neither. [preset] — the chosen subscription brings a provider's list (D-534);
+ * [provider] — «Список провайдера» is on, and [nodes] are that list.
  */
 @Serializable
 data class MobileState(
@@ -18,6 +19,8 @@ data class MobileState(
     val nodes: List<String> = emptyList(),
     val now: NetworkKind = NetworkKind.None,
     val wifi: String = "",
+    val provider: Boolean = false,
+    val preset: Boolean = false,
 ) : Parcelable {
     /** What Home and the VPN notification say about it. */
     enum class Shown {

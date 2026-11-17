@@ -687,6 +687,9 @@
     <string name="mobile_card_no_profile">Choose a subscription</string>
     <string name="mobile_switch">Switch by network</string>
     <string name="mobile_switch_hint">Off Wi-Fi, what’s set below is used</string>
+    <string name="mobile_provider">Provider’s list</string>
+    <string name="mobile_provider_on">Updated with the subscription</string>
+    <string name="mobile_provider_off">You changed it. Turn on to bring it back</string>
     <string name="mobile_wifi">Wi-Fi</string>
     <string name="mobile_wifi_hint">As usual: %1$s</string>
     <string name="mobile_wifi_none">As usual</string>

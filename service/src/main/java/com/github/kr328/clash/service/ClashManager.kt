@@ -295,15 +295,22 @@ class ClashManager(private val context: Context) : IClashManager,
 
     override suspend fun queryMobile(): MobileState = MobileModule.state(context)
 
-    override suspend fun setMobile(on: Boolean, profile: String, nodes: List<String>): MobileState {
+    override suspend fun setMobile(on: Boolean, profile: String, nodes: List<String>, provider: Boolean): MobileState {
         val uuid = profile.takeIf { it.isNotEmpty() }?.let(java.util.UUID::fromString)
+        val preset = if (provider) MobileModule.presetOf(context, uuid) else emptyList()
+        val follow = preset.isNotEmpty()
+        val list = if (follow) preset else nodes
+
+        store.mobileSetUp = true
 
         // A sheet closed without a change, a node put back where it was: nothing to switch again.
-        if (on == store.mobileOn && uuid == store.mobileProfile && nodes == store.mobileNodes) return queryMobile()
+        if (on == store.mobileOn && uuid == store.mobileProfile && list == store.mobileNodes && follow == store.mobileProvider)
+            return queryMobile()
 
         store.mobileOn = on
         store.mobileProfile = uuid
-        store.mobileNodes = nodes
+        store.mobileNodes = list
+        store.mobileProvider = follow
 
         // Off: nothing is brought back or shown, with the VPN off too.
         if (!on) MobileModule.forget(context)

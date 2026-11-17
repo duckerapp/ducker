@@ -126,8 +126,11 @@ interface IClashManager {
     /** «Мобильная сеть» (D-423, D-424) for its page: the settings, the network now, the subscription Wi-Fi has. */
     suspend fun queryMobile(): MobileState
 
-    /** Saves the page's settings; on the mobile network a new choice applies at once. */
-    suspend fun setMobile(on: Boolean, profile: String, nodes: List<String>): MobileState
+    /**
+     * Saves the page's settings; on the mobile network a new choice applies at once. [provider] — «Список провайдера»:
+     * on, the list becomes [profile]'s preset (D-534) and [nodes] are not used; without a preset it stays off.
+     */
+    suspend fun setMobile(on: Boolean, profile: String, nodes: List<String>, provider: Boolean): MobileState
 
     /** Members of [profile]'s main group to pick from: the core's while it runs that subscription, else its file's. */
     suspend fun queryMobileNodes(profile: String): List<String>

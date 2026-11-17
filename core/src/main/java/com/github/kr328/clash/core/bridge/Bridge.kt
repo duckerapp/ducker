@@ -39,6 +39,7 @@ object Bridge {
     external fun nativeQueryProfileNetwork(path: String): String
 
     external fun nativeQueryProfileGroups(path: String): String
+    external fun nativeQueryMobilePreset(path: String, header: String): String
 
     external fun nativeFetchMissingProviders(path: String): Int
 

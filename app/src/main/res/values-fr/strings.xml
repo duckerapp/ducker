@@ -659,6 +659,9 @@
     <string name="mobile_card_no_profile">Choisissez un abonnement</string>
     <string name="mobile_switch">Changer selon le réseau</string>
     <string name="mobile_switch_hint">Hors Wi-Fi, ce qui est ci-dessous s’applique</string>
+    <string name="mobile_provider">Liste du fournisseur</string>
+    <string name="mobile_provider_on">Mise à jour avec l’abonnement</string>
+    <string name="mobile_provider_off">Vous l’avez modifiée. Activez pour la rétablir</string>
     <string name="mobile_wifi">Wi-Fi</string>
     <string name="mobile_wifi_hint">Comme d’habitude : %1$s</string>
     <string name="mobile_wifi_none">Comme d’habitude</string>

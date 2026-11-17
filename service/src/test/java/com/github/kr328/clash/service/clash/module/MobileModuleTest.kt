@@ -3,6 +3,7 @@ package com.github.kr328.clash.service.clash.module
 import com.github.kr328.clash.service.model.NetworkKind
 import com.github.kr328.clash.service.util.Failure
 import kotlinx.coroutines.runBlocking
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -103,5 +104,39 @@ class MobileModuleTest {
         assertEquals(10_000L, watchIn(1, screenOn = false))
         // Two misses in a row move on, one does not: a single lost check on a noisy mobile network is not a dead node.
         assertEquals(2, WATCH_MISSES)
+    }
+
+    private val s = UUID.fromString("00000000-0000-0000-0000-00000000000a")
+    private val t = UUID.fromString("00000000-0000-0000-0000-00000000000b")
+    private val lte = listOf("LTE-1", "LTE-2")
+    private val blank = MobileSetup(false, null, emptyList(), false)
+    private val preset = MobileSetup(true, s, lte, true)
+
+    @Test
+    fun `a preset sets up only a page nobody set up, and never takes another subscription's place`() {
+        assertEquals(preset, presetOutcome(blank, s, lte, override = false, free = true, setUp = false))
+        // The person chose «Не выбрана» themselves.
+        assertNull(presetOutcome(blank, s, lte, override = false, free = true, setUp = true))
+        // A second subscription with a preset after the first.
+        assertNull(presetOutcome(preset, t, listOf("X"), override = false, free = false, setUp = false))
+        // The override brings the provider's own settings back, not over another subscription the person chose.
+        assertNull(presetOutcome(MobileSetup(true, t, emptyList(), false), s, lte, override = true, free = false, setUp = true))
+        assertEquals(preset, presetOutcome(blank, s, lte, override = true, free = true, setUp = true))
+        assertEquals(preset, presetOutcome(MobileSetup(false, s, listOf("NL-1"), false), s, lte, override = true, free = false, setUp = true))
+        assertNull(presetOutcome(blank, s, emptyList(), override = true, free = true, setUp = false))
+    }
+
+    @Test
+    fun `with the provider's list on, updates bring its list, its withdrawal turns switching off and its return on`() {
+        assertEquals(preset.copy(nodes = listOf("LTE-3")), presetOutcome(preset, s, listOf("LTE-3"), override = false, free = false, setUp = true))
+        assertNull(presetOutcome(preset, s, lte, override = false, free = false, setUp = true))
+        // Switching turned off for a while stays off through an update.
+        assertNull(presetOutcome(preset.copy(on = false), s, lte, override = false, free = false, setUp = true))
+        val withdrawn = presetOutcome(preset, s, emptyList(), override = false, free = false, setUp = true)
+        assertEquals(MobileSetup(false, s, emptyList(), true), withdrawn)
+        assertNull(presetOutcome(withdrawn!!.copy(on = true), s, emptyList(), override = false, free = false, setUp = true))
+        assertEquals(preset, presetOutcome(withdrawn, s, lte, override = false, free = false, setUp = true))
+        // Edited by the person: updates leave the list alone.
+        assertNull(presetOutcome(preset.copy(nodes = listOf("LTE-2"), provider = false), s, lte, override = false, free = false, setUp = true))
     }
 }

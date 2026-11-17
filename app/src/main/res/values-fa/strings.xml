@@ -651,6 +651,9 @@
     <string name="mobile_card_no_profile">یک اشتراک انتخاب کنید</string>
     <string name="mobile_switch">تغییر بر اساس شبکه</string>
     <string name="mobile_switch_hint">بیرون از Wi-Fi، تنظیمات پایین به کار می‌رود</string>
+    <string name="mobile_provider">فهرست ارائه‌دهنده</string>
+    <string name="mobile_provider_on">همراه اشتراک به‌روز می‌شود</string>
+    <string name="mobile_provider_off">آن را تغییر دادید. برای بازگرداندن روشن کنید</string>
     <string name="mobile_wifi">Wi-Fi</string>
     <string name="mobile_wifi_hint">مثل همیشه: %1$s</string>
     <string name="mobile_wifi_none">مثل همیشه</string>

@@ -1607,6 +1607,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         MobileScreen(
                             state = mobileState,
                             onTurn = { mobileViewModel.turn(it) },
+                            onProvider = { mobileViewModel.turnProvider(it) },
                             onProfile = { mobileViewModel.pickProfile(it) },
                             onNodes = { mobileViewModel.setNodes(it) },
                             onMove = { from, to -> mobileViewModel.move(from, to) },

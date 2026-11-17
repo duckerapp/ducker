@@ -658,6 +658,9 @@
     <string name="mobile_card_no_profile">Elige una suscripción</string>
     <string name="mobile_switch">Cambiar según la red</string>
     <string name="mobile_switch_hint">Fuera del Wi-Fi se usa lo de abajo</string>
+    <string name="mobile_provider">Lista del proveedor</string>
+    <string name="mobile_provider_on">Se actualiza con la suscripción</string>
+    <string name="mobile_provider_off">La cambiaste. Actívala para recuperarla</string>
     <string name="mobile_wifi">Wi-Fi</string>
     <string name="mobile_wifi_hint">Como siempre: %1$s</string>
     <string name="mobile_wifi_none">Como siempre</string>

@@ -82,6 +82,7 @@ import com.github.kr328.clash.ui.components.DuckerCard as Card
 fun MobileScreen(
     state: MobilePage,
     onTurn: (Boolean) -> Unit,
+    onProvider: (Boolean) -> Unit,
     onProfile: (String) -> Unit,
     onNodes: (List<String>) -> Unit,
     onMove: (from: String, to: String) -> Unit,
@@ -179,6 +180,38 @@ fun MobileScreen(
                     now = settings.now == NetworkKind.Mobile,
                     onClick = if (state.loaded) pickProfile else null,
                 )
+            }
+        }
+
+        // Only when the chosen subscription brings a provider's list (D-534): an edit turns it off, a tap brings it back.
+        if (settings.preset) item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).toggleable(
+                    value = settings.provider,
+                    enabled = state.loaded,
+                    role = Role.Switch,
+                    onValueChange = onProvider,
+                ),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Symbols.Checklist, contentDescription = null, modifier = Modifier.size(24.dp))
+
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(stringResource(R.string.mobile_provider), style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            stringResource(if (settings.provider) R.string.mobile_provider_on else R.string.mobile_provider_off),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    Switch(checked = settings.provider, onCheckedChange = null, enabled = state.loaded)
+                }
             }
         }
 

@@ -214,6 +214,12 @@ func queryProfileNetwork(path C.c_string) *C.char {
 	return marshalJson(config.QueryNetwork(C.GoString(path)))
 }
 
+//export queryMobilePreset
+func queryMobilePreset(path, header C.c_string) *C.char {
+	defer panicguard.Recover("queryMobilePreset", failExport)
+	return marshalJson(config.QueryMobilePreset(C.GoString(path), C.GoString(header)))
+}
+
 //export queryProfileGroups
 func queryProfileGroups(path C.c_string) *C.char {
 	defer panicguard.Recover("queryProfileGroups", failExport)

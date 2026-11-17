@@ -3,6 +3,7 @@ package com.github.kr328.clash.service.clash.module
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -25,6 +26,8 @@ import com.github.kr328.clash.service.model.MobileState
 import com.github.kr328.clash.service.model.NetworkKind
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.Failure
+import com.github.kr328.clash.service.util.ProviderInfo
+import com.github.kr328.clash.service.util.importedDir
 import com.github.kr328.clash.service.util.sendSelectorChanged
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -36,6 +39,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.io.File
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -523,6 +527,39 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
             context.sendSelectorChanged()
         }
 
+        /**
+         * A download of [uuid] committed into [profileDir] (D-534): its provider's list is worked out and kept beside
+         * it, and the page takes it when [presetOutcome] says so. Not on a TV: it has no page (D-423).
+         */
+        suspend fun adopt(context: Context, uuid: UUID, profileDir: File) {
+            val info = ProviderInfo.read(profileDir)
+            val preset = Clash.queryMobilePreset(profileDir.absolutePath, info.mobileGroup)
+
+            if (preset != info.mobilePreset) ProviderInfo.write(profileDir, info.copy(mobilePreset = preset))
+
+            if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)) return
+
+            val store = ServiceStore(context)
+            val now = MobileSetup(store.mobileOn, store.mobileProfile, store.mobileNodes, store.mobileProvider)
+            val free = now.profile?.let { ImportedDao().exists(it) } != true
+            val next = presetOutcome(now, uuid, preset, info.overrideUser, free, store.mobileSetUp) ?: return
+
+            store.mobileOn = next.on
+            store.mobileProfile = next.profile
+            store.mobileNodes = next.nodes
+            store.mobileProvider = next.provider
+
+            Log.i("Mobile: the provider's list of $uuid, ${next.nodes.size} nodes, switching ${if (next.on) "on" else "off"}")
+
+            if (!next.on) forget(context)
+
+            active?.changed()
+        }
+
+        /** The provider's list of [uuid] as its last download left it. */
+        fun presetOf(context: Context, uuid: UUID?): List<String> =
+            uuid?.let { ProviderInfo.read(context.importedDir.resolve(it.toString())).mobilePreset }.orEmpty()
+
         /** For the page: the settings, the network now, and the subscription Wi-Fi has. */
         fun state(context: Context): MobileState {
             val store = ServiceStore(context)
@@ -531,6 +568,8 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
                 on = store.mobileOn,
                 profile = store.mobileProfile?.toString().orEmpty(),
                 nodes = store.mobileNodes,
+                provider = store.mobileProvider,
+                preset = presetOf(context, store.mobileProfile).isNotEmpty(),
                 now = active?.kind ?: kindNow(context),
                 wifi = (store.mobileBackProfile ?: store.activeProfile)?.toString().orEmpty(),
             )
@@ -606,6 +645,40 @@ private fun kindOf(capabilities: NetworkCapabilities?): NetworkKind = if (capabi
     )
 
 /** A metered network that is not the phone's own SIM is another phone's mobile internet, or marked so by hand (Q-116). */
+/** What «Мобильная сеть» holds, as [presetOutcome] weighs it. */
+internal data class MobileSetup(val on: Boolean, val profile: UUID?, val nodes: List<String>, val provider: Boolean)
+
+/**
+ * After a download of [uuid] with the provider's list [preset] (D-534): what the page holds next, null — it stays.
+ * [free] — no subscription chosen for the mobile network, or the chosen one deleted; [setUp] — the person saved on the
+ * page. A preset sets up a page nobody set up; `ducker-override-user: on` ([override]) brings it back over the person's
+ * edits, but not over another subscription they chose. With «Список провайдера» on, each update brings the current list;
+ * the list dropped turns switching off, and its return turns it on again.
+ */
+internal fun presetOutcome(
+    now: MobileSetup,
+    uuid: UUID,
+    preset: List<String>,
+    override: Boolean,
+    free: Boolean,
+    setUp: Boolean,
+): MobileSetup? {
+    val mine = now.profile == uuid
+
+    if (preset.isNotEmpty() && (free && !setUp || override && (free || mine)))
+        return MobileSetup(true, uuid, preset, true).takeIf { it != now }
+
+    if (!mine || !now.provider) return null
+
+    val next = when {
+        preset.isEmpty() -> if (now.nodes.isEmpty()) now else now.copy(on = false, nodes = emptyList())
+        now.nodes.isEmpty() -> now.copy(on = true, nodes = preset)
+        else -> now.copy(nodes = preset)
+    }
+
+    return next.takeIf { it != now }
+}
+
 internal fun networkKind(cellular: Boolean, metered: Boolean): NetworkKind =
     if (cellular || metered) NetworkKind.Mobile else NetworkKind.Wifi
 

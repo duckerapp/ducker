@@ -59,6 +59,9 @@ class MobileViewModel : ViewModel() {
 
     private var pump: Job? = null
 
+    /** The list as a drag found it: a drag that ends where it began is not an edit. */
+    private var dragged: List<String>? = null
+
     fun load(context: Context) {
         val began = epoch
         val app = context.applicationContext
@@ -103,16 +106,22 @@ class MobileViewModel : ViewModel() {
 
     fun turn(on: Boolean) = save { it.copy(on = on) }
 
+    /** «Список провайдера» (D-534): on brings the provider's list back with switching on; off keeps the list as it is. */
+    fun turnProvider(on: Boolean) = save { if (on) it.copy(on = true, provider = true) else it.copy(provider = false) }
+
     /**
-     * Another subscription: the list was of its nodes, it starts empty. The first choice turns the switch on; «Не
-     * выбрана» ([uuid] empty) turns it off — with nothing to switch to it would do nothing anyway.
+     * Another subscription: the list was of its nodes, it starts empty, or with its provider's list (D-534). The first
+     * choice turns the switch on; «Не выбрана» ([uuid] empty) turns it off — with nothing to switch to it would do
+     * nothing anyway.
      */
     fun pickProfile(uuid: String) {
         val current = _state.value.settings
 
         if (uuid == current.profile) return
 
-        save { it.copy(on = uuid.isNotEmpty() && (it.on || it.profile.isEmpty()), profile = uuid, nodes = emptyList()) }
+        save {
+            it.copy(on = uuid.isNotEmpty() && (it.on || it.profile.isEmpty()), profile = uuid, nodes = emptyList(), provider = true)
+        }
 
         _state.update { it.copy(members = null) }
 
@@ -125,10 +134,13 @@ class MobileViewModel : ViewModel() {
         }
     }
 
-    fun setNodes(nodes: List<String>) = save { it.copy(nodes = nodes) }
+    /** The person's own list: an edit turns «Список провайдера» off, a sheet closed without one does not. */
+    fun setNodes(nodes: List<String>) = save { it.copy(nodes = nodes, provider = it.provider && nodes == it.nodes) }
 
     /** A step of a drag: on screen only; [dropped] saves where it ended. */
     fun move(from: String, to: String) {
+        if (dragged == null) dragged = _state.value.settings.nodes
+
         _state.update { page ->
             val nodes = page.settings.nodes.toMutableList()
             val a = nodes.indexOf(from)
@@ -142,7 +154,13 @@ class MobileViewModel : ViewModel() {
         }
     }
 
-    fun dropped() = save { it }
+    fun dropped() {
+        val edited = dragged != null && dragged != _state.value.settings.nodes
+
+        dragged = null
+
+        save { if (edited) it.copy(provider = false) else it }
+    }
 
     private fun save(change: (MobileState) -> MobileState) {
         epoch++
@@ -153,7 +171,7 @@ class MobileViewModel : ViewModel() {
         _state.update { it.copy(settings = next) }
 
         viewModelScope.launch {
-            val saved = saving.withLock { ask { setMobile(next.on, next.profile, next.nodes) } } ?: return@launch
+            val saved = saving.withLock { ask { setMobile(next.on, next.profile, next.nodes, next.provider) } } ?: return@launch
 
             if (began == epoch) _state.update { it.copy(settings = saved) }
         }

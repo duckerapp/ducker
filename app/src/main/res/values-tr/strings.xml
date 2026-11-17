@@ -650,6 +650,9 @@
     <string name="mobile_card_no_profile">Bir abonelik seçin</string>
     <string name="mobile_switch">Ağa göre geçiş</string>
     <string name="mobile_switch_hint">Wi-Fi dışında aşağıdakiler kullanılır</string>
+    <string name="mobile_provider">Sağlayıcının listesi</string>
+    <string name="mobile_provider_on">Abonelikle birlikte güncellenir</string>
+    <string name="mobile_provider_off">Listeyi değiştirdiniz. Geri getirmek için açın</string>
     <string name="mobile_wifi">Wi-Fi</string>
     <string name="mobile_wifi_hint">Her zamanki gibi: %1$s</string>
     <string name="mobile_wifi_none">Her zamanki gibi</string>

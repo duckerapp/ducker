@@ -6,6 +6,7 @@ import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.common.util.backgroundScope
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.model.FetchStatus
+import com.github.kr328.clash.service.clash.module.MobileModule
 import com.github.kr328.clash.service.data.Imported
 import com.github.kr328.clash.service.data.ImportedDao
 import com.github.kr328.clash.service.data.Pending
@@ -146,6 +147,8 @@ object ProfileProcessor {
 
                         context.pendingDir.resolve(snapshot.uuid.toString()).deleteRecursively()
 
+                        MobileModule.adopt(context, snapshot.uuid, context.importedDir.resolve(snapshot.uuid.toString()))
+
                         context.sendProfileChanged(snapshot.uuid)
                     }
                 }
@@ -232,6 +235,8 @@ object ProfileProcessor {
                             )
                         }
 
+                        MobileModule.adopt(context, snapshot.uuid, context.importedDir.resolve(snapshot.uuid.toString()))
+
                         context.sendProfileChanged(snapshot.uuid)
                     }
                 }
@@ -286,6 +291,7 @@ object ProfileProcessor {
 
             dir.replaceWithCopyOf(context.processingDir)
             ConfigAppsStore(context).dropIfLocked(uuid, dir)
+            MobileModule.adopt(context, uuid, dir)
 
             // A name that is the old link's domain was given at adding, not by the person (D-117): it follows the
             // link, or it would read as the person's own and hide the provider's title.

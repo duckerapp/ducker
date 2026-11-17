@@ -642,6 +642,9 @@
     <string name="mobile_card_no_profile">选择一个订阅</string>
     <string name="mobile_switch">按网络切换</string>
     <string name="mobile_switch_hint">离开 Wi-Fi 时启用下方设置</string>
+    <string name="mobile_provider">服务商列表</string>
+    <string name="mobile_provider_on">随订阅一起更新</string>
+    <string name="mobile_provider_off">你已修改列表。开启可恢复</string>
     <string name="mobile_wifi">Wi-Fi</string>
     <string name="mobile_wifi_hint">照常：%1$s</string>
     <string name="mobile_wifi_none">照常</string>
