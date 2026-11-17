@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.settings
 
+import com.github.kr328.clash.ui.components.DuckerSwitch
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.GlassMaterial
 import com.github.kr328.clash.ui.components.chosenFill
@@ -67,7 +68,6 @@ import com.github.kr328.clash.update.UpdateState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -793,7 +793,7 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
                     )
                 }
 
-                Switch(checked = sendHwid, onCheckedChange = null)
+                DuckerSwitch(checked = sendHwid, onDrag = onSendHwid)
             }
 
             if (sendHwid) {
@@ -1003,7 +1003,7 @@ private fun InnerSwitch(
             )
         }
 
-        Switch(checked = checked, onCheckedChange = null)
+        DuckerSwitch(checked = checked, onDrag = onChange)
     }
 }
 
@@ -1365,7 +1365,7 @@ private fun SwitchRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            Switch(checked = checked, onCheckedChange = null)
+            DuckerSwitch(checked = checked, onDrag = onChange)
         }
     }
 }
@@ -1536,7 +1536,7 @@ private fun SettingsSwitchRow(title: String, subtitle: String, icon: ImageVector
             Text(title, style = MaterialTheme.typography.bodyLarge.syllables())
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Switch(checked = checked, onCheckedChange = null)
+        DuckerSwitch(checked = checked, onDrag = onChange)
     }
 }
 
