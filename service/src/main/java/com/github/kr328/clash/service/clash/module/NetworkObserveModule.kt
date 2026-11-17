@@ -1,7 +1,9 @@
 package com.github.kr328.clash.service.clash.module
 
 import android.app.Service
+import android.content.Intent
 import android.net.*
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.SystemClock
 import androidx.core.content.getSystemService
@@ -163,8 +165,12 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         // delay checks made before this moment say nothing about it (D-299).
         if (best != null) store.networkChangedAt = System.currentTimeMillis()
 
-        // При первом появлении сети закрывать нечего: соединений ещё нет.
-        if (previous == null) return
+        // При первом появлении сети закрывать нечего: соединений ещё нет. Но это смена сети, и шапка
+        // выгрузки её считает (F-517).
+        if (previous == null) {
+            Log.i("NetworkObserve best network null -> $best")
+            return
+        }
 
         Log.i("NetworkObserve best network $previous -> $best, closing connections")
 
@@ -185,7 +191,27 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         }
     }
 
+    /**
+     * A network gone because Wi-Fi was switched off looks in the log exactly like one that dropped (F-517).
+     * The Wi-Fi broadcast is sticky: the state at the tunnel's start comes first.
+     */
+    private fun logSwitch(intent: Intent) {
+        when (intent.action) {
+            WifiManager.WIFI_STATE_CHANGED_ACTION -> when (intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, -1)) {
+                WifiManager.WIFI_STATE_ENABLED -> Log.i("NetworkObserve Wi-Fi on")
+                WifiManager.WIFI_STATE_DISABLED -> Log.i("NetworkObserve Wi-Fi off")
+            }
+            Intent.ACTION_AIRPLANE_MODE_CHANGED ->
+                Log.i("NetworkObserve airplane mode ${if (intent.getBooleanExtra("state", false)) "on" else "off"}")
+        }
+    }
+
     override suspend fun run() {
+        val switches = receiveBroadcast(false) {
+            addAction(WifiManager.WIFI_STATE_CHANGED_ACTION)
+            addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
+        }
+
         register()
 
         try {
@@ -193,6 +219,11 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
                 val quit = select {
                     networks.onReceive {
                         enqueueEvent(it)
+
+                        false
+                    }
+                    switches.onReceive {
+                        logSwitch(it)
 
                         false
                     }
