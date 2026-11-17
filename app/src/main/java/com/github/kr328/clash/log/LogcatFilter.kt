@@ -11,6 +11,7 @@ import android.os.PowerManager
 import androidx.core.content.getSystemService
 import com.github.kr328.clash.core.model.LogMessage
 import com.github.kr328.clash.service.FlightRecorder
+import com.github.kr328.clash.service.util.privateDnsOf
 import com.github.kr328.clash.util.Vendor
 import com.github.kr328.clash.util.backgroundAllowed
 import com.github.kr328.clash.util.miuiAutostart
@@ -76,6 +77,21 @@ class LogcatFilter(output: Writer, private val context: Context) : BufferedWrite
         appendLine(
             "# Network: ${transports.ifEmpty { listOf("none") }.joinToString("+")}" +
                 ", data saver=${connectivity?.restrictBackgroundStatus?.let(::dataSaverOf)}",
+        )
+
+        // The phone's own network under the tunnel: its Private DNS and Android's check of it (D-528).
+        @Suppress("DEPRECATION")
+        val underlying = connectivity?.allNetworks?.firstOrNull { network ->
+            connectivity.getNetworkCapabilities(network)?.let {
+                !it.hasTransport(NetworkCapabilities.TRANSPORT_VPN) &&
+                    it.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            } == true
+        }
+        val validated = underlying?.let(connectivity::getNetworkCapabilities)
+            ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        appendLine(
+            "# Private DNS: ${privateDnsOf(context, underlying?.let(connectivity::getLinkProperties))}" +
+                ", network validated=${validated?.let { if (it) "yes" else "no" } ?: "no network"}",
         )
     }
 

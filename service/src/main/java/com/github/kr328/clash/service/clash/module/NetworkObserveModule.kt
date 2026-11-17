@@ -11,6 +11,7 @@ import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.asSocketAddressText
+import com.github.kr328.clash.service.util.privateDnsOf
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
@@ -34,7 +35,8 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
 
     private data class NetworkInfo(
         @Volatile var losingMs: Long = 0,
-        @Volatile var dnsList: List<InetAddress> = emptyList()
+        @Volatile var dnsList: List<InetAddress> = emptyList(),
+        @Volatile var validated: Boolean? = null,
     ) {
         fun isAvailable(): Boolean = losingMs < System.currentTimeMillis()
     }
@@ -85,12 +87,24 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
             // Целиком LinkProperties — около килобайта на строку, и меняется часто: самописец
             // забивался, а с ним адреса телефона (аудит, perf 2.5). Хватает интерфейса и DNS.
-            Log.i("NetworkObserve onLinkPropertiesChanged network=$network ${linkProperties.interfaceName} dns=${linkProperties.dnsServers}")
+            Log.i(
+                "NetworkObserve onLinkPropertiesChanged network=$network ${linkProperties.interfaceName} " +
+                    "dns=${linkProperties.dnsServers} private DNS: ${privateDnsOf(service, linkProperties)}"
+            )
             networkInfos[network]?.dnsList = linkProperties.dnsServers
             notifyDnsChange()
             notifyNetworkChange()
 
             networks.trySend(network)
+        }
+
+        // Android's own check of the network, which fails too when the Private DNS server does not answer (D-528).
+        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+            val info = networkInfos[network] ?: return
+            val validated = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            if (info.validated == validated) return
+            info.validated = validated
+            Log.i("NetworkObserve network $network validated: ${if (validated) "yes" else "no"}")
         }
 
         override fun onUnavailable() {
