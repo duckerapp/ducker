@@ -8,7 +8,6 @@ import com.github.kr328.clash.ui.components.formatCount
 import com.github.kr328.clash.ui.components.GlassCardButton
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.liquidGlass
-import com.github.kr328.clash.ui.components.INNER_BLUR
 import com.github.kr328.clash.ui.components.GLASS_CARD_TINT
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.TvLazyColumn

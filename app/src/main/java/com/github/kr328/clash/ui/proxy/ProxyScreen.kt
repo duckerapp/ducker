@@ -3,9 +3,6 @@ package com.github.kr328.clash.ui.proxy
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.isolated
-import androidx.compose.foundation.shape.CircleShape
-import com.github.kr328.clash.ui.components.GLASS_CARD_TINT
-import com.github.kr328.clash.ui.components.liquidGlass
 import com.github.kr328.clash.ui.theme.failureOn
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.Symbols

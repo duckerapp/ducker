@@ -1,5 +1,7 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.runtime.mutableFloatStateOf
+
 import android.os.Build
 
 import androidx.compose.ui.graphics.BlurEffect
@@ -493,6 +495,7 @@ private fun FloatingDock(
         if (android.os.Build.VERSION.SDK_INT >= 33 && backdrop != null && !vertical) DockLens() else null
     }
     var dockAt by remember { mutableStateOf(Offset.Zero) }
+    var rowWidth by remember { mutableFloatStateOf(0f) }
     val screen = MaterialTheme.colorScheme.background
 
     fun pillLeftAt(width: Float): Float =
@@ -518,7 +521,10 @@ private fun FloatingDock(
     val glass = backdrop != null && shader != null
 
     /** Half the bubble's width in a row [row] wide; the swap of grey and dark labels follows it, not the pill. */
-    fun bubbleHalf(row: Float) = dockSlotWidth(row) / 2f * (1f + 0.08f * bubble.value) * (1f + stretch.value)
+    /** The finger's stretch, or the lens's own speed while it travels to a tapped tab. */
+    fun stretchNow() = maxOf(stretch.value, (drag.speed / 5000f).coerceAtMost(0.25f))
+
+    fun bubbleHalf(row: Float) = dockSlotWidth(row) / 2f * (1f + 0.08f * bubble.value) * (1f + stretchNow())
 
     /** Where the labels change from grey to dark: under the bubble while it shows, else under the pill. */
     fun DrawScope.swapLeft() =
@@ -556,7 +562,7 @@ private fun FloatingDock(
                 val row = size.width - 2 * inset
                 val slot = dockSlotWidth(row)
                 val halfWidth = bubbleHalf(row)
-                val halfHeight = ((size.height - 2 * inset) / 2f + BUBBLE_RISE.toPx() * presence) * (1f - 0.35f * stretch.value)
+                val halfHeight = ((size.height - 2 * inset) / 2f + BUBBLE_RISE.toPx() * presence) * (1f - 0.35f * stretchNow())
 
                 drawGlassBubble(
                     layer = bubbleLayer!!,
@@ -593,6 +599,7 @@ private fun FloatingDock(
     ) {
         Box(
             Modifier.fillMaxWidth().padding(DOCK_PAD)
+                .onSizeChanged { rowWidth = it.width.toFloat() }
                 .then(if (glass && !vertical && !alone) Modifier.pointerInput(rtl) {
                     val slop = viewConfiguration.touchSlop
 
@@ -664,6 +671,8 @@ private fun FloatingDock(
                             scope.launch {
                                 // A quick tap would stop the bubble before it showed: let it flash first.
                                 if (bubble.value < 0.7f) bubble.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 1000f))
+                                // A tap's lens stays lifted until it has flowed to the new tab.
+                                drag.arrived()
                                 bubble.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow))
                             }
                         }
@@ -723,9 +732,17 @@ private fun FloatingDock(
                 content = MaterialTheme.colorScheme.onSurfaceVariant,
                 onSelect = if (alone) null else { index ->
                     val action = onAction
+                    val adds = index == ACTION_TAB && added && action != null
 
-                    drag.cancel()
-                    if (index == ACTION_TAB && added && action != null) action() else onSelect(index)
+                    if (glass && !vertical && !adds && index != current && rowWidth > 0f) {
+                        // The glass style: the lens flows from where it is to the tapped tab on its own time.
+                        val slot = dockSlotWidth(rowWidth)
+                        fun middle(at: Float) = dockPillOffset(width = rowWidth, position = at, rtl = rtl) + slot / 2f
+                        drag.travel(from = drag.center(middle(position())), to = middle(index.toFloat())) { middle(position()) }
+                    } else {
+                        drag.cancel()
+                    }
+                    if (adds) action() else onSelect(index)
                 },
                 turn = turn,
                 actionLabel = if (added) actionLabel else null,
