@@ -513,14 +513,17 @@ internal fun DuckerSheet(
                             tint = MaterialTheme.colorScheme.surface.copy(alpha = GlassMaterial.Surface.tint),
                             shape = sheetShape,
                             blurBoost = SHEET_BLUR,
+                            // The light catches the top and fades down the sides: cut off at the screen's bottom edge
+                            // it read as a stray stripe (the owner, 18.11).
+                            rimFade = SHEET_RIM_FADE,
                         )
                         else if (glass) Modifier
                             .background(MaterialTheme.colorScheme.background.copy(alpha = 0.85f), sheetShape)
                             .drawWithContent {
                                 drawContent()
-                                // Light catches the glass's top edge.
+                                // Light catches the glass's top edge and fades down its sides, as on the glass sheet.
                                 drawRoundRect(
-                                    rim,
+                                    rimFadeBrush(rim, SHEET_RIM_FADE.toPx(), 28.dp.toPx()),
                                     size = Size(size.width, size.height + 28.dp.toPx()),
                                     cornerRadius = CornerRadius(28.dp.toPx()),
                                     style = Stroke(1.dp.toPx()),
@@ -818,10 +821,20 @@ internal fun SheetButton(
     modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
-    // On a glass sheet a plain button is glass on it, as its other controls; a red or a filling one keeps its fill.
-    val pane = LocalGlassBackdrop.current?.takeIf { !danger && progress == null }
+    // On a glass sheet a plain button is glass on it, as its other controls; a filling one keeps its fill. A red one is
+    // glass too, with a red cast and a red label, on a frosted sheet as well: a solid red fill stood out of the glass
+    // (the owner, 18.11).
+    val backdrop = LocalGlassBackdrop.current?.takeIf { progress == null }
+    val redGlass = danger && progress == null && (backdrop != null || LocalFrosted.current)
+    val pane = backdrop?.takeIf { !danger }
     val container = if (danger) scheme.error else scheme.primaryContainer
-    val content = if (danger) scheme.onError else if (pane != null) scheme.onSurface else scheme.onPrimaryContainer
+    val content = when {
+        redGlass -> scheme.error
+        danger -> scheme.onError
+        pane != null -> scheme.onSurface
+        else -> scheme.onPrimaryContainer
+    }
+    val red = scheme.error.copy(alpha = RED_GLASS)
     val filling = busy && progress != null
 
     // Доля приходит рывками — по файлу, а первая, под конфиг, сразу большим куском. Мягкая
@@ -844,9 +857,17 @@ internal fun SheetButton(
                 alpha = if (enabled || busy) 1f else 0.4f
                 outsets = DuckerShadowOutsets
             }
-            .then(if (edge == null && pane == null) Modifier.cardShadow(CircleShape) else Modifier)
+            .then(if (edge == null && pane == null && !redGlass) Modifier.cardShadow(CircleShape) else Modifier)
             .clip(CircleShape)
-            .then(if (pane != null) Modifier.glass(pane, GlassMaterial.Control, CircleShape) else Modifier.background(back))
+            .then(
+                when {
+                    pane != null -> Modifier.glass(pane, GlassMaterial.Control, CircleShape)
+                    redGlass && backdrop != null -> Modifier.glass(backdrop, GlassMaterial.Control, CircleShape, color = red)
+                    redGlass -> Modifier.background(red.copy(alpha = red.alpha * GlassMaterial.Control.tint))
+                        .border(1.dp, glassRim(scheme.background), CircleShape)
+                    else -> Modifier.background(back)
+                },
+            )
             .then(
                 if (filling) {
                     (edge?.let { Modifier.border(it, CircleShape) } ?: Modifier)
@@ -929,3 +950,6 @@ private const val FILL_UP_MS = 250
 
 /** Смена цветов кнопки при входе в заливку и выходе из неё. */
 private const val FILL_FADE_MS = 200
+
+/** How red a red button's glass is, before the controls' tint. */
+private const val RED_GLASS = 0.5f

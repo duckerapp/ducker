@@ -1136,12 +1136,14 @@ private fun UpdateErrorCard(
             modifier = Modifier.padding(start = 14.dp, top = 14.dp, bottom = 14.dp, end = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // The badge's top level with the title's letters: centred on the first line it stood above the title (the
+            // owner, 18.11).
             Box(
-                modifier = Modifier.size(36.dp).clip(CircleShape).background(scheme.error.copy(alpha = 0.12f)),
+                modifier = Modifier.padding(top = 11.dp).size(32.dp).clip(CircleShape).background(scheme.error.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
                 // A bare mark in the round badge: the outlined circle drew a ring inside it.
-                Icon(Symbols.PriorityHigh, contentDescription = null, tint = scheme.error, modifier = Modifier.size(20.dp))
+                Icon(Symbols.PriorityHigh, contentDescription = null, tint = scheme.error, modifier = Modifier.size(18.dp))
             }
 
             Column(Modifier.weight(1f).padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

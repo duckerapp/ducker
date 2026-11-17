@@ -463,7 +463,7 @@ private fun FloatingDock(
                 // The glass lens has just landed: the turn follows it at once.
                 delay(if (backdrop != null) GLASS_ACTION_PAUSE_MS else ACTION_PAUSE_MS)
                 added = true
-                haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                haptic.performHapticFeedback(DOCK_TICK)
             }
         }
     }
@@ -689,7 +689,7 @@ private fun FloatingDock(
                                     val now = tabAt(x)
                                     if (now != tab) {
                                         tab = now
-                                        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                        haptic.performHapticFeedback(DOCK_TICK)
                                     }
                                 }
                             }
@@ -714,7 +714,7 @@ private fun FloatingDock(
                                 // «Подписки» the turn into «+ Добавить» ticks a moment later instead.
                                 val landed = drag.ride(position, dockSlotWidth(width))
                                 if (landed != null && !(landed == ACTION_TAB && actionNow != null)) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                    haptic.performHapticFeedback(DOCK_TICK)
                                 }
                                 bubble.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow))
                             }
@@ -971,6 +971,8 @@ private fun FloatingDock(
 }
 
 internal val SHEET_BLUR = 18.dp
+/** How far below a glass sheet's top corners the light on its rim fades out. */
+internal val SHEET_RIM_FADE = 160.dp
 
 /** How far the bubble swells over the dock's edges, above and below. */
 private val SWAP_FADE = 14.dp
@@ -996,6 +998,9 @@ private const val GLASS_ACTION_PAUSE_MS = 60L
 /** The glass drop: its length, and how much the capsule swells, of its height. */
 private const val SPLASH_MS = 700
 private const val SPLASH_SWELL = 0.06f
+
+/** The dock's ticks, as a tab changes: barely felt, the segment tick was too strong (the owner, 18.11). */
+private val DOCK_TICK = HapticFeedbackType.SegmentFrequentTick
 
 /** How far the lens gives past the dock's end, and how much it stretches there. */
 private val EDGE_GIVE = 8.dp

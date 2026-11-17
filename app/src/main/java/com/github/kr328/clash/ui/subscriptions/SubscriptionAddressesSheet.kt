@@ -91,7 +91,8 @@ private fun AddressRow(address: SubscriptionAddress) {
         modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(ICON_GAP),
     ) {
-        // On the line of the host, not in the middle of a tall row.
+        // On the line of the host, not in the middle of a tall row, and no taller than its letters: at 22 dp it stood
+        // out above and below them (the owner, 18.11).
         Icon(
             imageVector = when {
                 worked -> Symbols.CheckCircle
@@ -104,7 +105,7 @@ private fun AddressRow(address: SubscriptionAddress) {
                 worked -> scheme.onSurface
                 else -> scheme.onSurfaceVariant
             },
-            modifier = Modifier.padding(top = 1.dp).size(ICON_SIZE),
+            modifier = Modifier.padding(top = 3.dp).size(ICON_SIZE),
         )
 
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -154,7 +155,7 @@ private fun outcome(outcome: String, code: Int): String = when (outcome) {
     else -> stringResource(R.string.address_untried)
 }
 
-private val ICON_SIZE = 22.dp
+private val ICON_SIZE = 18.dp
 private val ICON_GAP = 14.dp
 
 /** Where the text starts: the lines between rows begin there. */

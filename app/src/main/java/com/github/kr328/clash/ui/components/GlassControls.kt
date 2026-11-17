@@ -23,9 +23,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +42,6 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -80,14 +76,14 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
     val dark = scheme.background.luminance() < 0.5f
     val off = if (dark) Color(0xFF787880).copy(alpha = 0.36f) else Color(0xFF787878).copy(alpha = 0.2f)
     val on = chosenFill()
-    // White on the light theme's black track, dark on the dark theme's white one.
-    val thumbOn = scheme.onPrimaryContainer
+    // White when on; off, grey on the dark theme, where a dark thumb on the light track read as a black blot (the owner,
+    // 18.11), and white on the light one.
+    val thumbOff = if (dark) THUMB_OFF_DARK else Color.White
     val base = scheme.background
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val motion = scope.coroutineContext.motionScale > 0f
-    val density = LocalDensity.current
 
     val position = remember { Animatable(if (checked) 1f else 0f) }
     // The lens over the white thumb: 0 — its size, 1 — swollen under a finger.
@@ -111,26 +107,44 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
     }
 
-    val dragState = rememberDraggableState { delta ->
-        val travel = with(density) { (TRACK_WIDTH - THUMB_WIDTH - PAD * 2).toPx() }
-        val step = (if (rtl) -delta else delta) / travel
-        scope.launch { position.snapTo((position.value + step).coerceIn(0f, 1f)) }
-    }
+    val checkedNow = rememberUpdatedState(checked)
 
     Box(
         modifier.size(TRACK_WIDTH, TRACK_HEIGHT)
             .onGloballyPositioned { val p = it.positionInRoot(); at[0] = p.x; at[1] = p.y }
             .then(if (enabled) Modifier.fingerOn(touch) else Modifier)
             .then(
-                if (onDrag != null) Modifier.draggable(
-                    dragState,
-                    Orientation.Horizontal,
-                    onDragStopped = {
+                // The switch takes its own taps and drags: left to the row, a tap on the switch lit the whole row (the
+                // owner, 18.11). A vertical move first is the list's scroll.
+                if (onDrag != null) Modifier.pointerInput(rtl) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown()
+                        down.consume()
+                        val slop = viewConfiguration.touchSlop
+                        val travel = (TRACK_WIDTH - THUMB_WIDTH - PAD * 2).toPx()
+                        var dragging = false
+                        while (true) {
+                            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: return@awaitEachGesture
+                            if (!change.pressed) {
+                                change.consume()
+                                if (!dragging) drag.value?.invoke(!checkedNow.value)
+                                break
+                            }
+                            val moved = change.position - down.position
+                            if (!dragging && abs(moved.y) > slop && abs(moved.y) > abs(moved.x)) return@awaitEachGesture
+                            if (!dragging && abs(moved.x) > slop) dragging = true
+                            if (!dragging) continue
+                            change.consume()
+                            val delta = change.position.x - change.previousPosition.x
+                            val step = (if (rtl) -delta else delta) / travel
+                            scope.launch { position.snapTo((position.value + step).coerceIn(0f, 1f)) }
+                        }
+                        if (!dragging) return@awaitEachGesture
                         val now = position.value >= 0.5f
-                        if (now != checked) drag.value?.invoke(now)
-                        else position.animateTo(if (checked) 1f else 0f, spring(dampingRatio = 0.62f, stiffness = 420f))
-                    },
-                ) else Modifier,
+                        if (now != checkedNow.value) drag.value?.invoke(now)
+                        else scope.launch { position.animateTo(if (now) 1f else 0f, spring(dampingRatio = 0.62f, stiffness = 420f)) }
+                    }
+                } else Modifier,
             )
             .drawBehind {
                 val p = position.value
@@ -145,7 +159,7 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
                 val travel = size.width - thumbW - 2 * pad
                 val x = pad + thumbW / 2f + travel * p
                 val center = Offset(if (rtl) size.width - x else x, size.height / 2f)
-                val thumb = lerp(Color.White, thumbOn, p)
+                val thumb = lerp(thumbOff, Color.White, p)
                 val shadowDrop = 1.dp.toPx()
                 drawThumb(center, thumbW / 2f, thumbH / 2f, thumb, shadowDrop)
 
@@ -230,6 +244,7 @@ private fun DrawScope.drawThumb(center: Offset, halfW: Float, halfH: Float, colo
     drawRoundRect(color, Offset(center.x - halfW, center.y - halfH), Size(2 * halfW, 2 * halfH), corner)
 }
 
+private val THUMB_OFF_DARK = Color(0xFFB4B4BA)
 private val TRACK_WIDTH = 64.dp
 private val TRACK_HEIGHT = 28.dp
 private val THUMB_WIDTH = 40.dp

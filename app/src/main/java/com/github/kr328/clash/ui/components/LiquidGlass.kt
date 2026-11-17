@@ -46,6 +46,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.layer.CompositingStrategy
 import androidx.compose.ui.graphics.Path
@@ -465,6 +466,8 @@ internal fun Modifier.liquidGlass(
     bendBoost: Float = 1f,
     /** How much brighter its rim catches the light. */
     rimBoost: Float = 1f,
+    /** How far below the top corners the rim light fades out; 0 — all around. A sheet's sides and bottom. */
+    rimFade: Dp = 0.dp,
     /** Its own veil instead of a flat [tint], drawn under the rim. */
     veil: (DrawScope.() -> Unit)? = null,
 ): Modifier {
@@ -545,10 +548,11 @@ internal fun Modifier.liquidGlass(
                 highlightShader.setFloatUniform("color", hAlpha, hAlpha, hAlpha, hAlpha)
                 highlightShader.setFloatUniform("angle", HIGHLIGHT_ANGLE)
                 highlightShader.setFloatUniform("falloff", HIGHLIGHT_FALLOFF)
+                highlightShader.setFloatUniform("fade", rimFade.toPx())
                 drawOutline(outline, highlightBrush, style = Stroke(1.2.dp.toPx()))
             } else {
                 val rimBase = if (base != Color.Transparent) base else screenBackground
-                drawOutline(outline, glassRim(rimBase), style = Stroke(1.dp.toPx()))
+                drawOutline(outline, rimFadeBrush(glassRim(rimBase), rimFade.toPx(), maxOf(radii[0], radii[1])), style = Stroke(1.dp.toPx()))
             }
         }
     }
@@ -821,6 +825,14 @@ private fun DrawScope.drawShaderBubble(
 /** How dense the accent colour lies over glass: Home's card when on, and a selected card. */
 internal fun glassAccentTint(dark: Boolean): Float = if (dark) 0.68f else 0.80f
 
+/**
+ * The rim [color], fading out over [fade] pixels below the top corners of radius [corner]; 0 — all around. The same
+ * fall as the highlight shader's, for a frosted sheet and a sheet with the highlight off.
+ */
+internal fun rimFadeBrush(color: Color, fade: Float, corner: Float): Brush =
+    if (fade <= 0f) SolidColor(color)
+    else Brush.verticalGradient(0f to color, 1f to color.copy(alpha = 0f), startY = corner, endY = corner + fade)
+
 /** The glass's edge: a light line on a light screen, barely there on a dark one. */
 internal fun glassRim(base: Color): Color =
     Color.White.copy(alpha = if (base.luminance() > 0.5f) 0.55f else 0.16f)
@@ -868,7 +880,13 @@ float2 gradSdRoundedRect(float2 coord, float2 halfSize, float radius) {
         float len = length(m);
         return (len > 0.0001) ? sign(coord) * (m / len) : float2(0.0);
     } else {
-        float2 w = max(cornerCoord + float2(radius), float2(0.0001));
+        float2 w = cornerCoord + float2(radius);
+        // Farther than the radius from both edges (always so beside a square corner): the nearest edge's normal. The
+        // clamped mix of both read as a diagonal, which left a sheet's lower half without its rim light on one side.
+        if (w.x <= 0.0001 && w.y <= 0.0001) {
+            return (cornerCoord.x > cornerCoord.y) ? float2(sign(coord.x), 0.0) : float2(0.0, sign(coord.y));
+        }
+        w = max(w, float2(0.0001));
         float len = length(w);
         return (len > 0.0001) ? sign(coord) * (w / len) : float2(0.0);
     }
@@ -992,6 +1010,8 @@ uniform float4 cornerRadii;
 uniform half4 color;
 uniform float angle;
 uniform float falloff;
+// Over this many pixels below the top corners the light fades out; 0 — all around.
+uniform float fade;
 
 $ROUNDED_RECT_SDF
 
@@ -1005,6 +1025,10 @@ half4 main(float2 coord) {
     float d = dot(grad, normal);
     float intensity = pow(abs(d), falloff);
     float rim = (d < 0.0) ? intensity : intensity * 0.35;
+    if (fade > 0.0) {
+        float top = max(cornerRadii.x, cornerRadii.y);
+        rim *= 1.0 - smoothstep(top, top + fade, coord.y);
+    }
     return color * rim;
 }
 """

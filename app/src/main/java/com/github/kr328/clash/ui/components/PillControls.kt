@@ -113,6 +113,8 @@ fun PillSegments(
     val glass = (LocalGlassBackdrop.current != null || LocalFrosted.current) && !tv
     val bubble = remember(glass) { if (glass) bubbleShader() else null }
     val lens = remember { Animatable(0f) }
+    // How far past the first or the last segment the finger is, pixels: the lens gives a little and stretches there.
+    val edge = remember { Animatable(0f) }
     val touch = remember { LensTouch() }
     val segmentsLayer = if (bubble != null) rememberGraphicsLayer() else null
     val bubbleLayer = if (bubble != null) rememberGraphicsLayer() else null
@@ -150,14 +152,20 @@ fun PillSegments(
 
                         val pad = PILL_PAD.toPx()
                         val (left, width) = pillSpan(spans, positionState.value)
-                        // Stretched by its speed, as the dock's lens.
-                        val stretch = (abs(positionState.velocity) * width / 5000f).coerceAtMost(0.25f)
+                        // Past the ends, as the dock's lens: it follows less and less, as rubber does, and stretches,
+                        // mostly at the very end; elsewhere stretched by its speed.
+                        val over = edge.value
+                        val give = PILL_EDGE_GIVE.toPx()
+                        val bent = over * give / (abs(over) + give)
+                        val reach = (abs(over) / (width / 2f)).coerceAtMost(1f)
+                        val stretch = ((abs(positionState.velocity) * width / 5000f).coerceAtMost(0.25f) + PILL_EDGE_STRETCH * reach * reach * reach)
+                            .coerceAtLeast(-0.15f)
                         val origin = Offset(at[0], at[1])
                         drawGlassBubble(
                             layer = bubbleLayer!!,
                             shader = bubble,
-                            center = Offset(pad + left + width / 2f, size.height / 2f),
-                            halfWidth = width / 2f * (1f + 0.08f * shown) * (1f + stretch),
+                            center = Offset(pad + left + width / 2f + bent, size.height / 2f),
+                            halfWidth = width / 2f * (1f + LENS_WIDEN * shown) * (1f + stretch),
                             halfHeight = (size.height / 2f - pad + LENS_RISE.toPx() * shown) * (1f - 0.35f * stretch),
                             presence = shown,
                             base = base,
@@ -170,7 +178,7 @@ fun PillSegments(
             )
             .sheetSurface(CircleShape)
             .padding(PILL_PAD)
-            .then(if (bubble != null && enabled) Modifier.pillDrag(touch, { spans }, positionState, motion, scope, selected, onSelect) else Modifier)
+            .then(if (bubble != null && enabled) Modifier.pillDrag(touch, { spans }, positionState, edge, motion, scope, selected, onSelect) else Modifier)
             // Пилюля рисуется, а не компонуется: едет каждый кадр, и перекладывать
             // ради этого сегменты незачем.
             .drawBehind {
@@ -280,13 +288,15 @@ fun PillSegments(
 }
 
 /**
- * The glass pill's drag: a finger moved sideways past the slop takes the pill (and the touch from the segment under it),
- * which follows it between the segments with a tick at each; let go, the nearest is chosen. A vertical move is a scroll.
+ * The glass pill's drag: a finger moved past the slop takes the pill (and the touch from the segment under it and from
+ * the list's scroll: on the pills it only goes sideways, the owner, 18.11), which follows it between the segments with a
+ * tick at each, giving at the ends ([edge]); let go, the nearest is chosen.
  */
 private fun Modifier.pillDrag(
     touch: LensTouch,
     spans: () -> FloatArray,
     position: Animatable<Float, *>,
+    edge: Animatable<Float, *>,
     motion: Boolean,
     scope: CoroutineScope,
     selected: Int,
@@ -301,22 +311,28 @@ private fun Modifier.pillDrag(
             val slop = viewConfiguration.touchSlop
             var moving = false
             var near = selectedNow
-            while (true) {
-                val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
-                if (!change.pressed) break
-                val dx = abs(change.position.x - down.position.x)
-                if (!moving && abs(change.position.y - down.position.y) > slop && dx <= slop) return@awaitEachGesture
-                if (!moving && dx > slop) moving = true
-                if (!moving) continue
+            try {
+                while (true) {
+                    val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
+                    if (!change.pressed) break
+                    if (!moving && (change.position - down.position).getDistance() > slop) moving = true
+                    if (!moving) continue
 
-                change.consume()
-                val to = positionAt(spans(), change.position.x)
-                scope.launch { if (motion) position.animateTo(to, FOLLOW_SPRING) else position.snapTo(to) }
-                val now = to.roundToInt()
-                if (now != near) {
-                    near = now
-                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    change.consume()
+                    val x = change.position.x
+                    val to = positionAt(spans(), x)
+                    scope.launch { if (motion) position.animateTo(to, FOLLOW_SPRING) else position.snapTo(to) }
+                    val ends = endMiddles(spans())
+                    scope.launch { edge.snapTo(if (motion) x - x.coerceIn(ends.first, ends.second) else 0f) }
+                    val now = to.roundToInt()
+                    if (now != near) {
+                        near = now
+                        haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    }
                 }
+            } finally {
+                // Let go at the end, the lens wobbles back into shape, as the dock's.
+                scope.launch { edge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 420f)) }
             }
             if (!moving) return@awaitEachGesture
 
@@ -326,6 +342,15 @@ private fun Modifier.pillDrag(
             else scope.launch { position.animateTo(picked.toFloat(), PILL_SPRING) }
         }
     }
+}
+
+/** The middles of the segments at either end, the smaller first: in a right-to-left layout the first is on the right. */
+private fun endMiddles(spans: FloatArray): Pair<Float, Float> {
+    val count = spans.size / 2
+    if (count == 0) return 0f to 0f
+    val a = spans[0] + spans[1] / 2f
+    val b = spans[(count - 1) * 2] + spans[(count - 1) * 2 + 1] / 2f
+    return minOf(a, b) to maxOf(a, b)
 }
 
 /** The inverse of [pillSpan]: where between the segments a pill centred at [x] stands; past the ends, the end. */
@@ -345,8 +370,13 @@ private val PILL_SPRING = spring<Float>(dampingRatio = 0.8f, stiffness = Spring.
 // The pill under a finger: close behind it, a little give.
 private val FOLLOW_SPRING = spring<Float>(dampingRatio = 0.85f, stiffness = 1400f)
 private val PILL_PAD = 4.dp
-// How far the lens swells over the track, above and below (the dock's is 10 dp over a taller row).
-private val LENS_RISE = 6.dp
+// How far the lens swells over the track, above and below, and how much wider than the pill: a little past the
+// track (the owner, 18.11), as the dock's.
+private val LENS_RISE = 10.dp
+private const val LENS_WIDEN = 0.12f
+// How far the lens gives past the end segments, and how much it stretches there: the dock's.
+private val PILL_EDGE_GIVE = 8.dp
+private const val PILL_EDGE_STRETCH = 0.2f
 
 /** The pill between the segments at [position]: left and width, from [spans] of [PillSegments]. */
 internal fun pillSpan(spans: FloatArray, position: Float): Pair<Float, Float> {
