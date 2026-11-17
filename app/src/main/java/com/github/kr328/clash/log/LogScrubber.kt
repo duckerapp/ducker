@@ -21,16 +21,39 @@ object LogScrubber {
 
     const val SERVER = "<server>"
 
+    /** What a hidden address and a node server become. */
+    open class Hide {
+        open fun ip(value: String): String = IP
+        open fun server(value: String): String = SERVER
+
+        companion object Plain : Hide()
+    }
+
+    /**
+     * One export's labels: the same address the same `<ip-N>`, the same server the same `<server-N>`, so a node
+     * failing and later working on the same label tells a silent node from a wrong address (F-517). The label says
+     * nothing about the address; a new export numbers anew.
+     */
+    class Labels : Hide() {
+        private val ips = HashMap<String, String>()
+        private val servers = HashMap<String, String>()
+
+        override fun ip(value: String) = ips.getOrPut(value.lowercase()) { "<ip-${ips.size + 1}>" }
+        override fun server(value: String) = servers.getOrPut(value.lowercase()) { "<server-${servers.size + 1}>" }
+    }
+
     /**
      * @param secrets точные значения, которые мы знаем сами: идентификатор устройства,
      * секрет API ядра. Их вырезаем по совпадению, без догадок.
      * @param servers адреса серверов узлов из профилей ([serversIn]). Домен узла по виду
      * не отличить от сайта, поэтому прячем по списку, целым словом (F-162).
+     * @param hide what replaces a hidden address or node server; the export gives each its own label (D-527).
      */
     fun scrub(
         text: String,
         secrets: Collection<String> = emptyList(),
         servers: Regex? = null,
+        hide: Hide = Hide.Plain,
     ): String {
         // Redact complete values before DNS handling or any line/tail splitting.
         // A diagnostic may contain a multiline YAML value or end inside a quote.
@@ -41,23 +64,23 @@ object LogScrubber {
             var position = 0
             for (failure in DNS_FAILED.findAll(safeText)) {
                 val address = requireNotNull(failure.groups[1])
-                append(scrubAddresses(safeText.substring(position, address.range.first), secrets, servers))
+                append(scrubAddresses(safeText.substring(position, address.range.first), secrets, servers, hide))
                 val kept = scrubCredentials(address.value, secrets)
-                append(servers?.replace(kept, SERVER) ?: kept)
+                append(servers?.replace(kept) { hide.server(it.value) } ?: kept)
                 position = address.range.last + 1
             }
-            append(scrubAddresses(safeText.substring(position), secrets, servers))
+            append(scrubAddresses(safeText.substring(position), secrets, servers, hide))
         }
     }
 
-    private fun scrubAddresses(text: String, secrets: Collection<String>, servers: Regex?): String {
+    private fun scrubAddresses(text: String, secrets: Collection<String>, servers: Regex?, hide: Hide): String {
         var result = scrubCredentials(text, secrets)
-        result = IPV6.replace(result) { if (keepIpv6(it.value)) it.value else IP }
+        result = IPV6.replace(result) { if (keepIpv6(it.value)) it.value else hide.ip(it.value) }
         // После ссылок — иначе `https://<server>/…` не узнать как ссылку и путь останется;
         // после IPv6 — `<server>:443:` он принял бы за адрес; до IPv4 — чтобы сервер,
         // заданный адресом, был виден как сервер.
-        if (servers != null) result = servers.replace(result, SERVER)
-        result = IPV4.replace(result) { if (keepIpv4(it.value)) it.value else IP }
+        if (servers != null) result = servers.replace(result) { hide.server(it.value) }
+        result = IPV4.replace(result) { if (keepIpv4(it.value)) it.value else hide.ip(it.value) }
 
         return result
     }

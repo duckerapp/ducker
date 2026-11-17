@@ -164,6 +164,23 @@ class LogScrubberTest {
     }
 
     @Test
+    fun `export labels keep one label per address across lines and show nothing of it`() {
+        val servers = LogScrubber.serversRegex(setOf("es.example.net", "de3.example.net"))
+        val labels = LogScrubber.Labels()
+        fun scrub(line: String) = LogScrubber.scrub(line, servers = servers, hide = labels)
+
+        assertEquals(
+            "error: <server-1>:443 connect error: dial tcp4 <ip-1>:443: i/o timeout",
+            scrub("error: es.example.net:443 connect error: dial tcp4 185.254.1.2:443: i/o timeout"),
+        )
+        assertEquals("<server-2>:443 via <ip-2>, 198.18.0.5 kept", scrub("de3.example.net:443 via 185.244.3.4, 198.18.0.5 kept"))
+        // Later, the first node on the same address and an IPv6 one.
+        assertEquals("<server-1>:443 via <ip-1>, <ip-3>", scrub("ES.example.net:443 via 185.254.1.2, 2a01:4f8::1"))
+        // Outside an export nothing changes.
+        assertEquals("<server>:443 via <ip>", LogScrubber.scrub("es.example.net:443 via 185.254.1.2", servers = servers))
+    }
+
+    @Test
     fun `сервер узла прячется целым словом, соседние домены остаются`() {
         val servers = LogScrubber.serversRegex(setOf("de2.example.net", "203.0.113.9"))
 

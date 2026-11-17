@@ -7,7 +7,9 @@ import java.io.IOException
 
 /** The same known secrets and node addresses for all exported diagnostics. */
 class ReportScrubber private constructor(private val secrets: List<String>, private val servers: Regex?) {
-    fun scrub(text: String): String = LogScrubber.scrub(text, secrets, servers)
+    private val labels = LogScrubber.Labels()
+
+    fun scrub(text: String): String = LogScrubber.scrub(text, secrets, servers, labels)
 
     companion object {
         private const val PROVIDER_LIMIT = 1024 * 1024L
