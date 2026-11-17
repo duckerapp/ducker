@@ -6,7 +6,6 @@ import androidx.compose.ui.geometry.RoundRect
 
 import androidx.compose.ui.graphics.Path
 
-import androidx.compose.runtime.mutableFloatStateOf
 
 import android.os.Build
 
@@ -69,9 +68,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -122,6 +123,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -222,6 +224,11 @@ fun DuckerScaffold(
     // The glass style: the dock shows the screen under it through glass. Null — Air.
     val backdrop = rememberGlassBackdrop()
     val sheetGlass = LocalSheetGlass.current
+    // Under an open glass sheet the screen stands still: drawn once for the sheet's panes, see StillBackdropPictures.
+    if (backdrop != null) {
+        val sheetOpen by remember(sheetGlass) { derivedStateOf { (sheetGlass?.shown ?: 0f) > 0f } }
+        StillBackdropPictures(backdrop, extra = SHEET_BLUR, active = sheetOpen)
+    }
 
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { insets ->
         Box(
@@ -240,6 +247,8 @@ fun DuckerScaffold(
             val side = if (rtl) bars.getRight(density, direction) else bars.getLeft(density, direction)
 
             Box(Modifier.fillMaxSize().glassSource(backdrop)) {
+            // A glass sheet over the screen shows this screen through itself.
+            CompositionLocalProvider(LocalScreenBackdrop provides backdrop) {
             content(
                 if (rail) {
                     PaddingValues(
@@ -262,6 +271,7 @@ fun DuckerScaffold(
                 },
                 insets,
             )
+            }
             }
 
             NavigationFade()
@@ -474,8 +484,14 @@ private fun FloatingDock(
         if (!added || alone || !motionEnabled) return@LaunchedEffect
 
         if (backdrop != null) {
-            // On glass one drop of light instead of the shines: a ring leaves the capsule as it swells and settles.
-            splash.animateTo(1f, tween(SPLASH_MS, easing = FastOutSlowInEasing))
+            // On glass drops of light instead of the shines: a ring leaves the capsule as it swells and settles, three
+            // times, as Air's shines, so the new button is noticed (the owner, 17.11).
+            repeat(ACTION_SHINES) { pass ->
+                if (pass > 0) delay(ACTION_SHINE_GAP_MS)
+
+                splash.snapTo(0f)
+                splash.animateTo(1f, tween(SPLASH_MS, easing = FastOutSlowInEasing))
+            }
             return@LaunchedEffect
         }
 
@@ -512,7 +528,9 @@ private fun FloatingDock(
         if (android.os.Build.VERSION.SDK_INT >= 33 && backdrop != null && !vertical) DockLens() else null
     }
     var dockAt by remember { mutableStateOf(Offset.Zero) }
-    var rowWidth by remember { mutableFloatStateOf(0f) }
+    // Read inside the dock's gesture, which outlives a recomposition.
+    val actionNow by rememberUpdatedState(onAction)
+    val motionNow by rememberUpdatedState(motionEnabled)
     val screen = MaterialTheme.colorScheme.background
 
     fun pillLeftAt(width: Float): Float =
@@ -612,9 +630,10 @@ private fun FloatingDock(
     ) {
         Box(
             Modifier.fillMaxWidth().padding(DOCK_PAD)
-                .onSizeChanged { rowWidth = it.width.toFloat() }
                 .then(if (glass && !vertical && !alone) Modifier.pointerInput(rtl) {
                     val slop = viewConfiguration.touchSlop
+                    // The lens's landing after the last gesture: a new touch takes the dock over from it.
+                    var settle: Job? = null
 
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -628,10 +647,11 @@ private fun FloatingDock(
                         }
                         fun middleOf(tab: Int) = dockPillOffset(width = width, position = tab.toFloat(), rtl = rtl) + slot / 2f
 
-                        drag.cancel()
+                        settle?.cancel()
                         var released = false
                         try {
-                            scope.launch { bubble.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium)) }
+                            // Without Android's animations a tap lifts no lens; a drag still shows it under the finger.
+                            if (motionNow) scope.launch { bubble.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium)) }
 
                             var dragging = false
                             var tab = tabAt(dockPillOffset(width = width, position = position(), rtl = rtl) + slot / 2f)
@@ -644,7 +664,8 @@ private fun FloatingDock(
                                 if (!dragging && abs(change.position.x - down.position.x) > slop) {
                                     dragging = true
                                     val from = dockPillOffset(width = width, position = position(), rtl = rtl) + slot / 2f
-                                    drag.begin(from)
+                                    drag.begin(drag.center(from))
+                                    if (!motionNow) scope.launch { bubble.snapTo(1f) }
                                 }
 
                                 if (dragging) {
@@ -683,11 +704,15 @@ private fun FloatingDock(
                             scope.launch { stretch.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)) }
                             // Let go at the edge, the drop wobbles back into shape.
                             scope.launch { edge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 420f)) }
-                            scope.launch {
+                            settle = scope.launch {
                                 // A quick tap would stop the bubble before it showed: let it flash first.
-                                if (bubble.value < 0.7f) bubble.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 1000f))
-                                // A tap's lens stays lifted until it has flowed to the new tab.
-                                drag.arrived()
+                                if (motionNow && bubble.value < 0.7f) launch { bubble.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 1000f)) }
+                                // A tap's lens rides on the page until it lands, then a tick (the owner, 17.11); on
+                                // «Подписки» the turn into «+ Добавить» ticks a moment later instead.
+                                val landed = drag.ride(position, dockSlotWidth(width))
+                                if (landed != null && !(landed == ACTION_TAB && actionNow != null)) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                }
                                 bubble.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow))
                             }
                         }
@@ -765,11 +790,9 @@ private fun FloatingDock(
                     val action = onAction
                     val adds = index == ACTION_TAB && added && action != null
 
-                    if (glass && !vertical && !adds && index != current && rowWidth > 0f) {
-                        // The glass style: the lens flows from where it is to the tapped tab on its own time.
-                        val slot = dockSlotWidth(rowWidth)
-                        fun middle(at: Float) = dockPillOffset(width = rowWidth, position = at, rtl = rtl) + slot / 2f
-                        drag.travel(from = drag.center(middle(position())), to = middle(index.toFloat())) { middle(position()) }
+                    if (glass && !vertical && !adds && index != current) {
+                        // The glass style: the lens rides on the page to the tapped tab, in step with it.
+                        drag.aim(index)
                     } else {
                         drag.cancel()
                     }
@@ -942,7 +965,7 @@ private fun FloatingDock(
     }
 }
 
-private val SHEET_BLUR = 18.dp
+internal val SHEET_BLUR = 18.dp
 
 /** How far the bubble swells over the dock's edges, above and below. */
 private val SWAP_FADE = 14.dp

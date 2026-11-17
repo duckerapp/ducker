@@ -1418,7 +1418,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         // The glass style: one backdrop under all three tabs, still as they move over it; their cards
                         // and buttons are glass over it. Air has none.
                         val wallpaper = glassOn && settingsState.glassBackdrop != SettingsStore.BACKDROP_NONE
-                        val backdrop = if (wallpaper) rememberGlassBackdrop() else null
+                        val backdrop = if (wallpaper) rememberGlassBackdrop(still = true) else null
                         val wallpaperWaveShader = remember(wallpaper) { if (wallpaper) heroWaveShader() else null }
                         val glassStyle = LocalGlassStyle.current
                         val density = LocalDensity.current

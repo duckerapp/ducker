@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -14,23 +15,24 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 /**
- * The glass dock's lens: led by the finger, or travelling to a tapped tab on its own time, then handed to the actual
- * pager with a finite residual, never a wait for an obsolete page.
+ * The glass dock's lens: led by the finger, then handed to the actual pager with a finite residual; after a tap it
+ * rides on the pager itself. Never a wait for an obsolete page.
  */
 internal class DockDrag(private val scope: CoroutineScope) {
     private var owned by mutableStateOf(false)
     private val follow = Animatable(0f)
     private var remainder by mutableFloatStateOf(0f)
     private var motion: Job? = null
-    private var travel: Job? = null
     private var generation = 0L
+    private var aim: Int? = null
+    private var pagerSpeed by mutableFloatStateOf(0f)
 
     /** The finger leads the lens. */
     var dragging by mutableStateOf(false)
         private set
 
     /** How fast the lens moves, pixels a second: it stretches with it. */
-    val speed: Float get() = if (owned) abs(follow.velocity) else 0f
+    val speed: Float get() = if (owned) abs(follow.velocity) else pagerSpeed
 
     fun center(pagerCenter: Float): Float = if (owned) follow.value else pagerCenter + remainder
 
@@ -54,30 +56,51 @@ internal class DockDrag(private val scope: CoroutineScope) {
         handOff(pagerCenter, follow.velocity)
     }
 
-    /**
-     * A tap: the lens lifts off [from], flows to [to] with a little overshoot and settles; then the pager, wherever it
-     * is by then, takes it over. Slower than the page on purpose: the switch is the dock's moment to be seen.
-     */
-    fun travel(from: Float, to: Float, pagerCenter: () -> Float) {
+    /** A tap sent the pager to [tab]: the lens rides on the pager to it, see [ride]. */
+    fun aim(tab: Int) {
         cancel()
-        owned = true
-        val ticket = generation
-        val job = scope.launch {
-            follow.snapTo(from)
-            follow.animateTo(to, spring(dampingRatio = TRAVEL_DAMPING, stiffness = TRAVEL_STIFFNESS))
-            if (generation == ticket) handOff(pagerCenter(), 0f)
-        }
-        travel = job
-        motion = job
+        aim = tab
     }
 
-    /** Waits for a tap's travel to arrive; returns at once without one. */
-    suspend fun arrived() {
-        travel?.join()
+    /**
+     * Rides the lens on the pager toward the tapped tab: it is wherever the page is, so the two cannot drift apart,
+     * and [speed] follows the page's own speed for the glass to stretch with. Returns the tab once the page has
+     * landed on it, or null when another gesture took the dock or the page came to rest elsewhere.
+     */
+    suspend fun ride(position: () -> Float, slot: Float): Int? {
+        // A tap's click lands in the same input pass as its release; allow one frame for it anyway.
+        val tab = aim ?: run { withFrameNanos { }; aim } ?: return null
+        var last = position()
+        var lastTime = withFrameNanos { it }
+        var still = 0L
+
+        try {
+            while (aim == tab) {
+                val now = withFrameNanos { it }
+                val at = position()
+                val seconds = (now - lastTime) / 1e9f
+
+                if (seconds > 0f) pagerSpeed += (abs(at - last) * slot / seconds - pagerSpeed) * SPEED_SMOOTHING
+                if (abs(at - tab) < LANDED) return tab
+
+                // The page went elsewhere (a swipe took it, or it was already there): stop once it rests.
+                still = if (at == last) still + (now - lastTime) else 0L
+                if (still > STILL_NS) return null
+
+                last = at
+                lastTime = now
+            }
+
+            return null
+        } finally {
+            pagerSpeed = 0f
+            if (aim == tab) aim = null
+        }
     }
 
     fun cancel() {
         supersede()
+        aim = null
         owned = false
         dragging = false
         remainder = 0f
@@ -103,10 +126,12 @@ internal class DockDrag(private val scope: CoroutineScope) {
         generation++
         motion?.cancel()
         motion = null
-        travel = null
     }
 }
 
-// About half a second to settle, with a slight overshoot: a drop of glass, not a slide.
-private const val TRAVEL_DAMPING = 0.72f
-private const val TRAVEL_STIFFNESS = 260f
+// Within this much of a page the lens has landed: a few pixels of the dock.
+private const val LANDED = 0.004f
+// The page has rested this long somewhere else than the tapped tab: the ride is over.
+private const val STILL_NS = 150_000_000L
+// Each frame's speed counts this much: frame times vary, and the glass should not flicker with them.
+private const val SPEED_SMOOTHING = 0.5f

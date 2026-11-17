@@ -1,5 +1,9 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlin.math.roundToInt
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.foundation.layout.offset
 import com.github.kr328.clash.ui.theme.BackdropTone
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -837,16 +841,62 @@ fun PullToRefresh(
         content()
 
         if (!keys) {
-            PullToRefreshDefaults.Indicator(
-                state = state,
-                // Only a refresh the pull asked for: a check from the group's button or one that starts by
-                // itself has its own progress, and a minute-long check kept the circle up as if stuck.
-                isRefreshing = pull.own && refreshing,
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = top),
+            // Only a refresh the pull asked for: a check from the group's button or one that starts by
+            // itself has its own progress, and a minute-long check kept the circle up as if stuck.
+            val shown = pull.own && refreshing
+            val backdrop = LocalGlassBackdrop.current
+
+            if (backdrop != null) {
+                GlassPullIndicator(state, shown, backdrop, Modifier.align(Alignment.TopCenter).padding(top = top))
+            } else {
+                PullToRefreshDefaults.Indicator(
+                    state = state,
+                    isRefreshing = shown,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = top),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The glass style's pull circle: a pane of the delay check's glass with its grey arrow, which turns as the list is
+ * pulled, and its ring while the refresh runs (the owner, 17.11). Placed as Material's: it comes down from above
+ * with the pull and rests at the threshold.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GlassPullIndicator(state: PullToRefreshState, refreshing: Boolean, backdrop: GlassBackdrop, modifier: Modifier) {
+    val tint = MaterialTheme.colorScheme.onSurfaceVariant
+    val travel = PullToRefreshDefaults.PositionalThreshold
+
+    Box(
+        modifier
+            // Placed, not drawn, lower: the glass reads its place on the screen from the layout.
+            .offset { IntOffset(0, (state.distanceFraction * travel.toPx() - PULL_CIRCLE.toPx()).roundToInt()) }
+            .size(PULL_CIRCLE)
+            .graphicsLayer { alpha = if (refreshing || state.distanceFraction > 0f) 1f else 0f }
+            .glass(backdrop, GlassMaterial.Control, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (refreshing) {
+            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = tint)
+        } else {
+            Icon(
+                Symbols.Refresh,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp).graphicsLayer {
+                    val pulled = state.distanceFraction.coerceIn(0f, 1f)
+                    rotationZ = pulled * 270f
+                    alpha = pulled
+                },
+                tint = tint,
             )
         }
     }
 }
+
+private val PULL_CIRCLE = 40.dp
 
 /**
  * The pull of [PullToRefresh], in place of Material's `pullToRefresh`. Distances as there: the circle

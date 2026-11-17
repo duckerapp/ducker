@@ -507,7 +507,7 @@ private fun ActiveCard(
     val activeText = stringResource(R.string.ducker_active)
 
     // The glass style keeps the card in the theme's own glass, light on light and dark on dark (the owner, 17.11): an
-    // inverted pane stood apart from every other one. The mark under the name says which one is active instead.
+    // inverted pane stood apart from every other one. Its place, the big card, says it is the active one (the owner, 17.11).
     val glassCard = LocalGlassBackdrop.current != null
     val container = when {
         profile.hwidBlocked -> scheme.errorContainer
@@ -568,13 +568,6 @@ private fun ActiveCard(
                             // A step larger than in the rows.
                             style = LocalTextStyle.current.let { it.copy(fontSize = (it.fontSize.value + 1).sp) },
                         )
-
-                        if (glassCard && !shown.hwidBlocked) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Icon(Symbols.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp), tint = scheme.primary)
-                                Text(activeText, style = MaterialTheme.typography.labelSmall, color = scheme.primary)
-                            }
-                        }
 
                         // Домена под названием больше нет (D-102). Строка остаётся только для
                         // отказа — у него своя причина: лимит устройств и «панель требует
@@ -972,10 +965,18 @@ private fun ActiveDetails(
                 }
             }
 
-            CardAction(onClick = onEdit, container = action, content = onAction,
-                modifier = (if (profile.local) first else Modifier).weight(1f)) {
-                Icon(Symbols.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                FitLabel(stringResource(R.string.edit), LocalTextStyle.current, Modifier.padding(start = 6.dp))
+            // On glass «Обновить» alone is wide and the pencil is round, as «⋯»: a labelled middle button stood off the
+            // card's centre and read as shifted (the owner, 17.11). A config of one's own has no «Обновить».
+            if (LocalGlassBackdrop.current != null && !profile.local) {
+                CardAction(onClick = onEdit, container = action, content = onAction, modifier = Modifier.width(48.dp)) {
+                    Icon(Symbols.Edit, contentDescription = stringResource(R.string.edit), modifier = Modifier.size(20.dp))
+                }
+            } else {
+                CardAction(onClick = onEdit, container = action, content = onAction,
+                    modifier = (if (profile.local) first else Modifier).weight(1f)) {
+                    Icon(Symbols.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    FitLabel(stringResource(R.string.edit), LocalTextStyle.current, Modifier.padding(start = 6.dp))
+                }
             }
 
             CardAction(onClick = onMenu, container = action, content = onAction, modifier = Modifier.width(48.dp)) {

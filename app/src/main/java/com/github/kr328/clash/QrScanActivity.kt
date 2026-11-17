@@ -486,6 +486,8 @@ private fun ScanPanel(
                 text = stringResource(R.string.scan_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
+                // The panel is a plain column, not a Surface: without a colour the title stayed black on dark.
+                color = scheme.onBackground,
             )
             Text(
                 text = stringResource(hint),

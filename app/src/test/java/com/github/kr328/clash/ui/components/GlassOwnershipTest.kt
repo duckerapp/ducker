@@ -6,9 +6,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class GlassOwnershipTest {
@@ -81,6 +83,49 @@ class GlassOwnershipTest {
             drag.release(250f)
             frames.advance(3)
             assertEquals(150f, drag.center(150f))
+            assertFalse(frames.clock.hasAwaiters)
+        }
+    }
+
+    @Test fun `a tapped lens rides on the pager and lands with it`() {
+        Frames(1f).use { frames ->
+            val drag = DockDrag(frames.scope)
+            var page = 0f
+            var landed: Int? = -1
+            var midSpeed = 0f
+            drag.aim(2)
+            frames.scope.launch { landed = drag.ride({ page }, 100f) }
+            frames.advance(2)
+            repeat(40) {
+                page = minOf(2f, page + 0.1f)
+                frames.advance()
+                if (it == 8) midSpeed = drag.speed
+                // One position for the page and the lens: they cannot drift apart.
+                assertEquals(page * 100f, drag.center(page * 100f))
+            }
+            assertEquals(2, landed)
+            assertTrue(midSpeed > 100f)
+            assertEquals(0f, drag.speed)
+            assertFalse(frames.clock.hasAwaiters)
+        }
+    }
+
+    @Test fun `a new gesture or a page resting elsewhere ends the ride`() {
+        Frames(1f).use { frames ->
+            val drag = DockDrag(frames.scope)
+            var landed: Int? = -1
+            drag.aim(1)
+            frames.scope.launch { landed = drag.ride({ 0.5f }, 100f) }
+            frames.advance(3)
+            drag.begin(50f)
+            frames.advance(2)
+            assertNull(landed)
+
+            landed = -1
+            drag.aim(2)
+            frames.scope.launch { landed = drag.ride({ 1f }, 100f) }
+            frames.advance(20)
+            assertNull(landed)
             assertFalse(frames.clock.hasAwaiters)
         }
     }

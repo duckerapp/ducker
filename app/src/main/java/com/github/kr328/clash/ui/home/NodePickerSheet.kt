@@ -1,5 +1,11 @@
 package com.github.kr328.clash.ui.home
 
+import com.github.kr328.clash.ui.components.LocalScreenBackdrop
+import com.github.kr328.clash.ui.components.glass
+import com.github.kr328.clash.ui.components.GlassMaterial
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.BlendMode
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.theme.failureOn
@@ -112,6 +118,8 @@ internal fun NodePickerSheet(
         },
         scrollable = false, compact = true, keep = true,
         heightFraction = if (shortWindow) 1f else 0.80f,
+        // The glass style tries its glass sheet here first (the owner, 17.11).
+        backdrop = LocalScreenBackdrop.current,
     ) {
         PickerList(
             state = state, list = list, group = group, query = query, onQuery = { query = it },
@@ -177,9 +185,13 @@ private fun PickerList(
     }
     Box(modifier.graphicsLayer { clip = true; shape = PickerViewport }.nestedScroll(search)) {
         val background = MaterialTheme.colorScheme.background
+        // On a glass sheet the rows fade out at the bottom instead: a band of the sheet's colour lay over the glass.
+        val glass = LocalGlassBackdrop.current
         LazyColumn(
             state = list, overscrollEffect = null,
-            modifier = Modifier.fillMaxSize().selectableGroup().drawWithCache {
+            modifier = Modifier.fillMaxSize().selectableGroup()
+                .then(if (glass != null) Modifier.graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen } else Modifier)
+                .drawWithCache {
                 val edge = 24.dp.toPx().coerceAtMost(size.height)
                 val brush = Brush.verticalGradient(
                     0f to background.copy(alpha = 0f), 1f to background,
@@ -197,6 +209,7 @@ private fun PickerList(
                         drawRect(
                             brush, topLeft = Offset(0f, size.height - edge), size = Size(size.width, edge),
                             alpha = (remaining / edge).coerceIn(0f, 1f),
+                            blendMode = if (glass != null) BlendMode.DstOut else BlendMode.SrcOver,
                         )
                     }
                 }
@@ -235,7 +248,7 @@ private fun PickerList(
         ) {
             SearchField(
                 query, onQuery, stringResource(R.string.proxy_search), modifier = Modifier.weight(1f),
-                compact = true,
+                compact = true, glass = LocalGlassBackdrop.current,
             )
             ProxyCheckButton(
                 checking = group != null && state.checking == group.name,
@@ -263,10 +276,14 @@ private fun PickerNode(node: NodeState, selected: Boolean, enabled: Boolean, onC
     val shape = RoundedCornerShape(20.dp)
     val content = if (selected) scheme.onPrimary else scheme.onSurface
     val fill = if (selected) scheme.primary else scheme.surface
+    // On a glass sheet a row is a control of glass on it; the chosen one keeps its fill, as the dock's highlight does.
+    val backdrop = LocalGlassBackdrop.current
+    val glass = backdrop != null && !selected
     Row(
         modifier = modifier.fillMaxWidth().heightIn(min = 56.dp)
-            .airShadow(shape, fill).clip(shape)
-            .background(fill)
+            .then(if (glass) Modifier.glass(backdrop, GlassMaterial.Control, shape) else Modifier.airShadow(shape, fill))
+            .clip(shape)
+            .then(if (glass) Modifier else Modifier.background(fill))
             .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),

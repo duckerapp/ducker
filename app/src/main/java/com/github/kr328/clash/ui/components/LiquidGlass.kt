@@ -62,6 +62,20 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.graphics.GraphicsContext
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalGraphicsContext
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlin.math.roundToInt
 
 /*
  * The liquid glass style, the second look beside Air (Settings → «Оформление» → «Стиль»). Phones with Android 13+
@@ -231,18 +245,97 @@ private fun Modifier.glassImage(version: Long, topDark: Boolean): Modifier {
 /** A source layer recorded when its draw node is invalidated and sampled again inside the glass. */
 class GlassBackdrop(val layer: GraphicsLayer) {
     var origin by mutableStateOf(Offset.Zero)
+    /** Counts recordings of [layer]: a still picture made from an older one no longer shows it. */
+    internal var version by mutableIntStateOf(0)
+    /** The backdrop drawn once per blur, see [StillBackdropPictures]; null — not made, or the backdrop has changed. */
+    internal var still by mutableStateOf<StillBackdrop?>(null)
     var waveCenter by mutableStateOf(Offset.Unspecified)
     var waveProgress by mutableFloatStateOf(0f)
     var waveActive by mutableStateOf(false)
 }
 
 @Composable
-internal fun rememberGlassBackdrop(): GlassBackdrop? {
+internal fun rememberGlassBackdrop(still: Boolean = false): GlassBackdrop? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || !LocalGlassStyle.current.enabled) return null
 
     val layer = rememberGraphicsLayer()
+    val backdrop = remember(layer) { GlassBackdrop(layer) }
 
-    return remember(layer) { GlassBackdrop(layer) }
+    if (still) StillBackdropPictures(backdrop)
+
+    return backdrop
+}
+
+/** Blur every pane in this scope adds to its own: the panes inside a glass sheet, so they are no clearer than it. */
+internal val LocalGlassExtraBlur = staticCompositionLocalOf { 0.dp }
+
+/** The backdrop as recorded at [version], drawn once per pane blur (in pixels) with the panes' colour lift. */
+internal class StillBackdrop(val version: Int, val pictures: Map<Int, android.graphics.BitmapShader>)
+
+/**
+ * A backdrop that stands still under moving panes (Home's, under the tabs) is drawn once, blurred for each kind of
+ * pane, and the panes take their part of it: each pane had blurred and bent its own copy of the backdrop in a layer
+ * of its own every frame, about 10 ms of the phone's graphics per frame while a page moved (OnePlus, 17.11). Until the
+ * backdrop has rested after a change, and while the connect wave runs through it, the panes draw it live as before.
+ */
+@Composable
+internal fun StillBackdropPictures(backdrop: GlassBackdrop, extra: Dp = 0.dp, active: Boolean = true) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+    val graphics = LocalGraphicsContext.current
+    val density = LocalDensity.current
+    val style = LocalGlassStyle.current
+    // Every blur a pane on this backdrop asks for: the panes, the controls on them, the power button.
+    val blurs = remember(style.blur, density, extra) {
+        with(density) {
+            listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (style.blur / 100f) + (it + extra).toPx()).roundToInt() }.distinct()
+        }
+    }
+
+    LaunchedEffect(backdrop, blurs, style.vibrancy, active) {
+        backdrop.still = null
+        if (!active) return@LaunchedEffect
+        snapshotFlow { backdrop.version to backdrop.waveActive }.collectLatest { (version, wave) ->
+            if (wave) return@collectLatest
+            // A backdrop changing for a while (a theme's colours fading over) is drawn once it has settled.
+            delay(STILL_SETTLE_MS)
+            val size = backdrop.layer.size
+            if (size.width <= 0 || size.height <= 0) return@collectLatest
+
+            val pictures = blurs.associateWith { blur -> stillPicture(graphics, density, backdrop.layer, size, blur, style.vibrancy) }
+            if (backdrop.version == version) backdrop.still = StillBackdrop(version, pictures)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private suspend fun stillPicture(
+    graphics: GraphicsContext,
+    density: Density,
+    source: GraphicsLayer,
+    size: IntSize,
+    blur: Int,
+    vibrancy: Int,
+): android.graphics.BitmapShader {
+    // Drawn smaller as the blur hides detail: sharp at none, a quarter of the pixels from a blur of 16.
+    val factor = when {
+        blur < 4 -> 1
+        blur < 16 -> 2
+        else -> 4
+    }
+    val layer = graphics.createGraphicsLayer()
+
+    try {
+        layer.renderEffect = paneLift(blur / factor.toFloat(), vibrancy)?.asComposeRenderEffect()
+        layer.record(density, LayoutDirection.Ltr, IntSize((size.width + factor - 1) / factor, (size.height + factor - 1) / factor)) {
+            scale(1f / factor, 1f / factor, pivot = Offset.Zero) { drawLayer(source) }
+        }
+
+        return android.graphics.BitmapShader(layer.toImageBitmap().asAndroidBitmap(), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+            .apply { setLocalMatrix(android.graphics.Matrix().apply { setScale(factor.toFloat(), factor.toFloat()) }) }
+    } finally {
+        graphics.releaseGraphicsLayer(layer)
+    }
 }
 
 /** Records what this draws into [backdrop] and shows it as before. */
@@ -251,6 +344,8 @@ internal fun Modifier.glassSource(backdrop: GlassBackdrop?): Modifier =
     else onGloballyPositioned { backdrop.origin = it.positionInRoot() }
         .drawWithContent {
             backdrop.layer.record { this@drawWithContent.drawContent() }
+            // Not a read of this draw: it would invalidate itself and draw again forever.
+            Snapshot.withoutReadObservation { backdrop.version++ }
             drawLayer(backdrop.layer)
         }
 
@@ -286,12 +381,22 @@ internal fun Modifier.liquidGlass(
     tint: Color,
     shape: Shape = CircleShape,
     blurBoost: Dp = 0.dp,
+    /** How much more it bends and splits light at the rim than the settings say: Home's card when connected. */
+    bendBoost: Float = 1f,
+    /** How much brighter its rim catches the light. */
+    rimBoost: Float = 1f,
+    /** Its own veil instead of a flat [tint], drawn under the rim. */
+    veil: (DrawScope.() -> Unit)? = null,
 ): Modifier {
     val style = LocalGlassStyle.current
     if (backdrop == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || !style.enabled) return this
+    val extra = LocalGlassExtraBlur.current
 
     val glass = rememberGraphicsLayer()
     val shader = remember { RuntimeShader(GLASS_SHADER) }
+    // The same glass drawn straight from a still backdrop's picture: no layer of its own, no blur of its own.
+    val stillShader = remember { RuntimeShader(GLASS_SHADER) }
+    val stillBrush = remember(stillShader) { ShaderBrush(stillShader) }
     val highlightShader = remember { RuntimeShader(HIGHLIGHT_SHADER) }
     val highlightBrush = remember(highlightShader) { ShaderBrush(highlightShader) }
     var position by remember { mutableStateOf(Offset.Zero) }
@@ -302,23 +407,33 @@ internal fun Modifier.liquidGlass(
         val margin = GLASS_MARGIN.toPx()
         val outline = shape.createOutline(size, layoutDirection, this)
         val radii = extractCornerRadii(outline, size)
-        val blur = MAX_BLUR.toPx() * blurPart + blurBoost.toPx()
-        val amount = MAX_REFRACTION_AMOUNT.toPx() * (style.refraction / 100f)
+        val blur = MAX_BLUR.toPx() * blurPart + (blurBoost + extra).toPx()
+        val amount = MAX_REFRACTION_AMOUNT.toPx() * (style.refraction / 100f) * bendBoost
+        val bent = if (bendBoost != 1f) style.copy(dispersion = (style.dispersion * bendBoost).roundToInt()) else style
 
-        glass.renderEffect = glassEffect(shader, margin, size.width, size.height, radii, BEZEL.toPx(), amount, blur, style)
+        glass.renderEffect = glassEffect(shader, margin, size.width, size.height, radii, BEZEL.toPx(), amount, blur, bent)
+        bend(stillShader, 0f, size.width, size.height, radii, BEZEL.toPx(), amount, bent)
+        val stillBlur = blur.roundToInt()
         val paneSize = IntSize((size.width + 2 * margin).toInt(), (size.height + 2 * margin).toInt())
         val clip = Path().apply { addOutline(outline) }
 
         onDrawBehind {
-            glass.record(paneSize) {
-                translate(backdrop.origin.x - position.x + margin, backdrop.origin.y - position.y + margin) {
-                    drawLayer(backdrop.layer)
+            val still = backdrop.still?.takeIf { it.version == backdrop.version && !backdrop.waveActive }?.pictures?.get(stillBlur)
+
+            if (still == null) {
+                glass.record(paneSize) {
+                    translate(backdrop.origin.x - position.x + margin, backdrop.origin.y - position.y + margin) {
+                        drawLayer(backdrop.layer)
+                    }
                 }
+            } else {
+                stillShader.setInputShader("img", still)
+                stillShader.setFloatUniform("shift", position.x - backdrop.origin.x, position.y - backdrop.origin.y)
             }
 
             clipPath(clip) {
                 drawRect(base)
-                translate(-margin, -margin) { drawLayer(glass) }
+                if (still == null) translate(-margin, -margin) { drawLayer(glass) } else drawRect(stillBrush)
                 val shadowAlpha = 0.12f * (style.depth / 100f)
                 if (shadowAlpha > 0.005f) {
                     val shadowHeight = minOf(16.dp.toPx(), size.height * 0.4f)
@@ -332,7 +447,9 @@ internal fun Modifier.liquidGlass(
                     )
                 }
                 val tintProgress = (style.tint / 50f).coerceIn(0f, 2f)
-                if (tintProgress > 0f && tint.alpha > 0f) {
+                if (veil != null) {
+                    veil()
+                } else if (tintProgress > 0f && tint.alpha > 0f) {
                     drawRect(tint.copy(alpha = (tint.alpha * tintProgress).coerceIn(0f, 0.92f)))
                 }
             }
@@ -341,7 +458,7 @@ internal fun Modifier.liquidGlass(
             if (style.highlight > 0) {
                 val isLight = (if (base != Color.Transparent) base else screenBackground).luminance() > 0.5f
                 // At 100 % on a light screen the rim is as white as it was drawn before the fix below.
-                val hAlpha = (if (isLight) 1f else 0.55f) * (style.highlight / 100f)
+                val hAlpha = ((if (isLight) 1f else 0.55f) * (style.highlight / 100f) * rimBoost).coerceAtMost(1f)
                 highlightShader.setFloatUniform("size", size.width, size.height)
                 highlightShader.setFloatUniform("cornerRadii", radii)
                 // Premultiplied, as the shader's output is: white at (1, 1, 1, a) added near-full white whatever a was.
@@ -363,6 +480,12 @@ internal val LocalGlassBackdrop = staticCompositionLocalOf<GlassBackdrop?> { nul
 /** How much more a button inside a glass card blurs, so it does not merge with the card around it. */
 internal val INNER_BLUR = 6.dp
 
+/** How much more again Home's power button blurs than a button on a card. */
+internal val POWER_BLUR_BOOST = 4.dp
+
+// How long a changed still backdrop rests before it is drawn again for the panes.
+private const val STILL_SETTLE_MS = 250L
+
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private fun glassEffect(
     shader: RuntimeShader,
@@ -375,40 +498,46 @@ private fun glassEffect(
     blur: Float,
     style: GlassStyle,
 ): androidx.compose.ui.graphics.RenderEffect {
-    val dispersionFrac = style.dispersion / 100f
-    val depthFrac = style.depth / 100f
-    val noiseFrac = style.noise / 100f
+    bend(shader, margin, width, height, cornerRadii, bezel, amount, style)
+    val bend = RenderEffect.createRuntimeShaderEffect(shader, "img")
+    val inner = paneLift(blur, style.vibrancy)
 
+    return (if (inner != null) RenderEffect.createChainEffect(bend, inner) else bend)
+        .asComposeRenderEffect()
+}
+
+/** The glass's bend near the rim, for a pane [width] × [height] whose layer starts [margin] before it. */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun bend(shader: RuntimeShader, margin: Float, width: Float, height: Float, cornerRadii: FloatArray, bezel: Float, amount: Float, style: GlassStyle) {
     shader.setFloatUniform("size", width, height)
     shader.setFloatUniform("offset", -margin, -margin)
+    shader.setFloatUniform("shift", 0f, 0f)
     shader.setFloatUniform("cornerRadii", cornerRadii)
     shader.setFloatUniform("refractionHeight", bezel)
     shader.setFloatUniform("refractionAmount", amount)
-    shader.setFloatUniform("depthEffect", depthFrac)
-    shader.setFloatUniform("chromaticAberration", dispersionFrac)
-    shader.setFloatUniform("noiseStrength", noiseFrac * 0.05f)
+    shader.setFloatUniform("depthEffect", style.depth / 100f)
+    shader.setFloatUniform("chromaticAberration", style.dispersion / 100f)
+    shader.setFloatUniform("noiseStrength", style.noise / 100f * 0.05f)
+}
 
-    val bend = RenderEffect.createRuntimeShaderEffect(shader, "img")
-
-    val sat = 1f + 0.45f * (style.vibrancy / 100f)
-    val vibrancy = if (sat > 1.001f) RenderEffect.createColorFilterEffect(
+/** What a pane does to the backdrop before bending it: blurs it by [blur] pixels and lifts its colour by [vibrancy] %. */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun paneLift(blur: Float, vibrancy: Int): RenderEffect? {
+    val sat = 1f + 0.45f * (vibrancy / 100f)
+    val colour = if (sat > 1.001f) RenderEffect.createColorFilterEffect(
         android.graphics.ColorMatrixColorFilter(
             android.graphics.ColorMatrix().apply { setSaturation(sat) }
         )
     ) else null
 
-    val inner = when {
-        blur >= 0.5f && vibrancy != null -> RenderEffect.createChainEffect(
+    return when {
+        blur >= 0.5f && colour != null -> RenderEffect.createChainEffect(
             RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.CLAMP),
-            vibrancy,
+            colour,
         )
         blur >= 0.5f -> RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.CLAMP)
-        vibrancy != null -> vibrancy
-        else -> null
+        else -> colour
     }
-
-    return (if (inner != null) RenderEffect.createChainEffect(bend, inner) else bend)
-        .asComposeRenderEffect()
 }
 
 /**
@@ -671,6 +800,10 @@ uniform float refractionAmount;
 uniform float depthEffect;
 uniform float chromaticAberration;
 uniform float noiseStrength;
+// Where the backdrop's point under this pane's origin lies: zero in a pane's own layer, the pane's place on a still picture.
+uniform float2 shift;
+
+half4 sample(float2 p) { return img.eval(p + shift); }
 
 $ROUNDED_RECT_SDF
 
@@ -684,7 +817,7 @@ half4 main(float2 coord) {
     float radius = radiusAt(centeredCoord, cornerRadii);
 
     float sd = sdRoundedRect(centeredCoord, halfSize, radius);
-    if (sd > 0.0) return img.eval(coord);
+    if (sd > 0.0) return sample(coord);
 
     // Uniform concentric bezel maintaining >= 45% inner corner curvature
     float bezel = min(refractionHeight, max(radius * 0.55, 2.0));
@@ -714,39 +847,39 @@ half4 main(float2 coord) {
 
         color = half4(0.0);
 
-        half4 red = img.eval(refractedCoord + dispersedCoord);
+        half4 red = sample(refractedCoord + dispersedCoord);
         color.r += red.r / 3.5;
         color.a += red.a / 7.0;
 
-        half4 orange = img.eval(refractedCoord + dispersedCoord * (2.0 / 3.0));
+        half4 orange = sample(refractedCoord + dispersedCoord * (2.0 / 3.0));
         color.r += orange.r / 3.5;
         color.g += orange.g / 7.0;
         color.a += orange.a / 7.0;
 
-        half4 yellow = img.eval(refractedCoord + dispersedCoord * (1.0 / 3.0));
+        half4 yellow = sample(refractedCoord + dispersedCoord * (1.0 / 3.0));
         color.r += yellow.r / 3.5;
         color.g += yellow.g / 3.5;
         color.a += yellow.a / 7.0;
 
-        half4 green = img.eval(refractedCoord);
+        half4 green = sample(refractedCoord);
         color.g += green.g / 3.5;
         color.a += green.a / 7.0;
 
-        half4 cyan = img.eval(refractedCoord - dispersedCoord * (1.0 / 3.0));
+        half4 cyan = sample(refractedCoord - dispersedCoord * (1.0 / 3.0));
         color.g += cyan.g / 3.5;
         color.b += cyan.b / 3.0;
         color.a += cyan.a / 7.0;
 
-        half4 blue = img.eval(refractedCoord - dispersedCoord * (2.0 / 3.0));
+        half4 blue = sample(refractedCoord - dispersedCoord * (2.0 / 3.0));
         color.b += blue.b / 3.0;
         color.a += blue.a / 7.0;
 
-        half4 purple = img.eval(refractedCoord - dispersedCoord);
+        half4 purple = sample(refractedCoord - dispersedCoord);
         color.r += purple.r / 7.0;
         color.b += purple.b / 3.0;
         color.a += purple.a / 7.0;
     } else {
-        color = img.eval(refractedCoord);
+        color = sample(refractedCoord);
     }
 
     if (noiseStrength > 0.0) {

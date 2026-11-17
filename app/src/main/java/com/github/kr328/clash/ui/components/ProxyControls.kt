@@ -97,8 +97,11 @@ internal fun ProxyCheckButton(
     ) {
         if (compact) {
             Box(
-                Modifier.size(44.dp).airShadow(CircleShape)
-                    .clip(CircleShape).background(MaterialTheme.colorScheme.surface),
+                Modifier.size(44.dp)
+                    .then(
+                        if (backdrop != null) Modifier.glass(backdrop, GlassMaterial.Control, CircleShape)
+                        else Modifier.airShadow(CircleShape).clip(CircleShape).background(MaterialTheme.colorScheme.surface),
+                    ),
                 contentAlignment = Alignment.Center,
             ) { indicator() }
         } else {

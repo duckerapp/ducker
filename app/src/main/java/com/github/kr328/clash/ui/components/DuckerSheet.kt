@@ -181,6 +181,11 @@ internal fun DuckerSheet(
      */
     keep: Boolean = false,
     titleAction: (@Composable () -> Unit)? = null,
+    /**
+     * The glass style: the screen under the sheet ([LocalScreenBackdrop]), which the sheet then shows through itself
+     * as a pane of glass, its controls as glass on it. Null — the frosted sheet of every other one.
+     */
+    backdrop: GlassBackdrop? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     // Пока подписка загружается, панель не закрывается ни свайпом, ни «назад», ни касанием
@@ -414,6 +419,7 @@ internal fun DuckerSheet(
         // The glass style: the screen under the sheet blurs as it comes out.
         val glass = !tv && LocalGlassStyle.current.enabled
         val rim = glassRim(MaterialTheme.colorScheme.background)
+        val pane = if (glass) backdrop else null
 
         val sheetGlass = LocalSheetGlass.current
         if (glass && sheetGlass != null) {
@@ -485,7 +491,16 @@ internal fun DuckerSheet(
                     .then(if (glass) Modifier else Modifier.shadow(8.dp, sheetShape, clip = false))
                     .clip(sheetShape)
                     .then(
-                        if (glass) Modifier
+                        // A pane of glass over the screen as blurred as the screen around it, its rim catching light as
+                        // Home's cards do (the owner, 17.11).
+                        if (pane != null) Modifier.liquidGlass(
+                            pane,
+                            base = MaterialTheme.colorScheme.background,
+                            tint = MaterialTheme.colorScheme.surface.copy(alpha = GlassMaterial.Surface.tint),
+                            shape = sheetShape,
+                            blurBoost = SHEET_BLUR,
+                        )
+                        else if (glass) Modifier
                             .background(MaterialTheme.colorScheme.background.copy(alpha = 0.85f), sheetShape)
                             .drawWithContent {
                                 drawContent()
@@ -556,6 +571,7 @@ internal fun DuckerSheet(
                         CompositionLocalProvider(
                             LocalContentColor provides MaterialTheme.colorScheme.onBackground,
                             LocalTvTyping provides typing,
+                            LocalGlassExtraBlur provides if (pane != null) SHEET_BLUR else 0.dp,
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 if (titleAction == null) {
@@ -588,9 +604,10 @@ internal fun DuckerSheet(
                                 }
                             }
 
-                            // No glass on glass: a sheet opened from a tab would hand its cards the tab's backdrop,
-                            // which lies under the sheet; inside a sheet everything stays Air.
-                            CompositionLocalProvider(LocalGlassBackdrop provides null) { content() }
+                            // A sheet opened from a tab would hand its cards the tab's backdrop, which lies under the
+                            // sheet: inside it everything is Air, unless the sheet is itself glass over the screen, whose
+                            // controls are then glass over the same screen.
+                            CompositionLocalProvider(LocalGlassBackdrop provides pane) { content() }
                         }
                     }
                 }
@@ -783,8 +800,10 @@ internal fun SheetButton(
     modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
+    // On a glass sheet a plain button is glass on it, as its other controls; a red or a filling one keeps its fill.
+    val pane = LocalGlassBackdrop.current?.takeIf { !danger && progress == null }
     val container = if (danger) scheme.error else scheme.primaryContainer
-    val content = if (danger) scheme.onError else scheme.onPrimaryContainer
+    val content = if (danger) scheme.onError else if (pane != null) scheme.onSurface else scheme.onPrimaryContainer
     val filling = busy && progress != null
 
     // Доля приходит рывками — по файлу, а первая, под конфиг, сразу большим куском. Мягкая
@@ -807,9 +826,9 @@ internal fun SheetButton(
                 alpha = if (enabled || busy) 1f else 0.4f
                 outsets = DuckerShadowOutsets
             }
-            .then(if (edge == null) Modifier.cardShadow(CircleShape) else Modifier)
+            .then(if (edge == null && pane == null) Modifier.cardShadow(CircleShape) else Modifier)
             .clip(CircleShape)
-            .background(back)
+            .then(if (pane != null) Modifier.glass(pane, GlassMaterial.Control, CircleShape) else Modifier.background(back))
             .then(
                 if (filling) {
                     (edge?.let { Modifier.border(it, CircleShape) } ?: Modifier)

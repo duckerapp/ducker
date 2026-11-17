@@ -14,6 +14,7 @@ import com.github.kr328.clash.ui.components.GlassCardButton
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.glass
 import com.github.kr328.clash.ui.components.GlassMaterial
+import com.github.kr328.clash.ui.components.POWER_BLUR_BOOST
 import com.github.kr328.clash.ui.components.LocalGlassStyle
 import com.github.kr328.clash.ui.components.heroWaveShader
 import com.github.kr328.clash.ui.components.heroWaveEffect
@@ -122,7 +123,6 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
@@ -996,8 +996,13 @@ private fun HeroCard(
     val baseAlphaOff = GlassMaterial.Surface.tint
     val alphaOn = if (tintFactor <= 1f) baseAlphaOn * tintFactor else baseAlphaOn + (1f - baseAlphaOn) * ((tintFactor - 1f) * 0.65f)
     val alphaOff = (baseAlphaOff * tintFactor).coerceAtMost(0.92f)
-    val tintOn = scheme.primaryContainer.copy(alpha = alphaOn.coerceIn(0f, 1f))
+    // On glass connected is clearer glass of the same colour, not a pane turned over to the accent (the owner, 17.11):
+    // its rim and bend grow stronger and the power button glows, see the card's veil below. Air keeps its fill.
+    val tintOn = if (isGlass) scheme.surface.copy(alpha = (alphaOff * GLASS_ON_CLEAR).coerceIn(0f, 1f))
+    else scheme.primaryContainer.copy(alpha = alphaOn.coerceIn(0f, 1f))
     val tintOff = scheme.surface.copy(alpha = alphaOff.coerceIn(0f, 1f))
+    // The glow's colour: the accent where the theme has one (the system's colours), else light.
+    val glowColor = scheme.primary.let { if (maxOf(it.red, it.green, it.blue) - minOf(it.red, it.green, it.blue) > 0.2f) it else Color.White }
 
     val cardPath = remember { Path() }
     val circlePath = remember { Path() }
@@ -1175,13 +1180,31 @@ private fun HeroCard(
                                 base = MaterialTheme.colorScheme.background,
                                 tint = Color.Transparent,
                                 shape = HeroInner,
-                            )
-                            .drawBehind {
+                                // The settled state's glass; the wave carries the change across the card first.
+                                bendBoost = if (settled) GLASS_ON_BEND else 1f,
+                                rimBoost = if (settled) GLASS_ON_RIM else 1f,
+                            ) {
                                 val curRadius = start + (reach - start).coerceAtLeast(0f) * wave.value
                                 val centerOffset = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f)
 
+                                // Connected, a soft light spreads from the power button over the clearer glass.
+                                fun state(on: Boolean, area: Path?) {
+                                    val tint = if (on) tintOn else tintOff
+                                    if (area == null) drawRect(tint) else drawPath(area, tint)
+                                    if (!on || !center.isSpecified) return
+
+                                    val radius = start * GLASS_GLOW_REACH
+                                    val glow = Brush.radialGradient(
+                                        0f to glowColor.copy(alpha = GLASS_GLOW_ALPHA),
+                                        1f to glowColor.copy(alpha = 0f),
+                                        center = center,
+                                        radius = radius,
+                                    )
+                                    if (area == null) drawCircle(glow, radius, center) else drawPath(area, glow)
+                                }
+
                                 if (settled == upper || wave.value <= 0f) {
-                                    drawRect(if (settled) tintOn else tintOff)
+                                    state(settled, null)
                                 } else {
                                     cardPath.reset()
                                     cardPath.addRect(Rect(0f, 0f, size.width, size.height))
@@ -1190,8 +1213,8 @@ private fun HeroCard(
                                     outsidePath.reset()
                                     outsidePath.op(cardPath, circlePath, PathOperation.Difference)
 
-                                    drawPath(outsidePath, if (settled) tintOn else tintOff)
-                                    drawPath(circlePath, if (upper) tintOn else tintOff)
+                                    state(settled, outsidePath)
+                                    state(upper, circlePath)
                                 }
                             }
                     } else Modifier
@@ -1368,7 +1391,8 @@ private fun HeroFace(
     val scheme = MaterialTheme.colorScheme
     val solidFill = if (running) scheme.primaryContainer else scheme.surface
     val fill = if (isGlass) Color.Transparent else solidFill
-    val ink = if (running) scheme.onPrimaryContainer else scheme.onSurface
+    // On glass the card does not turn over when connected: its letters keep the surface's colour.
+    val ink = if (running && !isGlass) scheme.onPrimaryContainer else scheme.onSurface
 
     CompositionLocalProvider(LocalContentColor provides ink) {
         Column(
@@ -1631,7 +1655,7 @@ private fun PowerButton(
                             base = Color.Transparent,
                             tint = face.copy(alpha = GLASS_BUTTON_SHADE).compositeOver(cardTint),
                             shape = CircleShape,
-                            blurBoost = INNER_BLUR + 4.dp,
+                            blurBoost = INNER_BLUR + POWER_BLUR_BOOST,
                         )
                     } else Modifier.background(face),
                 )
@@ -1749,6 +1773,13 @@ private const val BUTTON_FADE = 0.15f
 private const val GLASS_BUTTON_FADE = 0.28f
 /** How much of the card's letters' colour shades the glass power button, so it stands out of the card. */
 private const val GLASS_BUTTON_SHADE = 0.14f
+/** Connected on glass: how much of the resting veil stays, and how much more the rim bends and shines. */
+private const val GLASS_ON_CLEAR = 0.5f
+private const val GLASS_ON_BEND = 1.5f
+private const val GLASS_ON_RIM = 1.6f
+/** The connected glow: its strength at the button, and its reach in the button's radii. */
+private const val GLASS_GLOW_ALPHA = 0.35f
+private const val GLASS_GLOW_REACH = 2.6f
 private const val HINT_OUT_MS = 90
 private const val HINT_IN_MS = 150
 private const val RING_DELAY_MS = 150

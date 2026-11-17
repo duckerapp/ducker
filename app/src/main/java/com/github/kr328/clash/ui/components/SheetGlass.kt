@@ -24,3 +24,6 @@ internal class SheetGlass {
 }
 
 internal val LocalSheetGlass = staticCompositionLocalOf<SheetGlass?> { null }
+
+/** The screen under the tabs as recorded for the glass dock; a glass sheet over it shows it through itself. */
+internal val LocalScreenBackdrop = staticCompositionLocalOf<GlassBackdrop?> { null }
