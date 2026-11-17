@@ -91,29 +91,44 @@ const dnsWindow = 5 * time.Minute
 // dialWindow — короче, чем у DNS: по этим строкам видно, с какой минуты узел перестал отвечать.
 const dialWindow = time.Minute
 
-// burst — повторы одного ключа: с какого момента считаем, сколько пропустили, и последний пропущенный.
-type burst struct {
-	first, last time.Time
-	skipped     int
-	level       log.LogLevel
-	line        string
+// checkLimit — node check changes a minute, all nodes together (D-527): when the network goes, every node of a long
+// subscription stops answering at once, and thousands of them would wipe the recorder as the dial failures did.
+const checkLimit = 30
+
+// checkChange — a node's check answer changed (the fork's `adapter.go`, logCheck).
+func checkChange(payload string) bool {
+	return strings.HasPrefix(payload, "[Check] ")
 }
 
-// throttle пропускает первую строку ключа за окно, остальные считает. Число называет следующая
+// burst — повторы одного ключа: с какого момента считаем, сколько пропустили, и последний пропущенный.
+type burst struct {
+	first, last     time.Time
+	passed, skipped int
+	level           log.LogLevel
+	line            string
+}
+
+// throttle пропускает первые limit строк ключа за окно, остальные считает. Число называет следующая
 // пропущенная строка ключа, а если повторы кончились — закрывающая строка из [throttle.flush]:
 // иначе не видно, когда сбой прошёл.
 type throttle struct {
 	window time.Duration
+	limit  int
 	keys   map[string]*burst
 }
 
-func newThrottle(window time.Duration) *throttle {
-	return &throttle{window: window, keys: map[string]*burst{}}
+func newThrottle(window time.Duration, limit int) *throttle {
+	return &throttle{window: window, limit: limit, keys: map[string]*burst{}}
 }
 
 func (t *throttle) pass(key, line string, level log.LogLevel, now time.Time) (string, bool) {
 	b := t.keys[key]
 	if b != nil && now.Sub(b.first) < t.window {
+		if b.passed < t.limit {
+			b.passed++
+			b.last = now
+			return line, true
+		}
 		b.skipped++
 		b.last, b.level, b.line = now, level, line
 		return "", false
@@ -121,7 +136,7 @@ func (t *throttle) pass(key, line string, level log.LogLevel, now time.Time) (st
 	if b != nil && b.skipped > 0 {
 		line += fmt.Sprintf(" (+%d since %s)", b.skipped, b.first.Format("15:04:05"))
 	}
-	t.keys[key] = &burst{first: now, last: now}
+	t.keys[key] = &burst{first: now, last: now, passed: 1}
 	return line, true
 }
 

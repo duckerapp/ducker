@@ -110,7 +110,7 @@ func subscribeRecorder(remote unsafe.Pointer) {
 		sub := log.Subscribe()
 		defer stopLogSubscription(sub)
 
-		dns, dials := newThrottle(dnsWindow), newThrottle(dialWindow)
+		dns, dials, checks := newThrottle(dnsWindow, 1), newThrottle(dialWindow, 1), newThrottle(dialWindow, checkLimit)
 		// Only while a burst is open, so an idle tunnel is not woken.
 		var flushAt <-chan time.Time
 
@@ -144,6 +144,8 @@ func subscribeRecorder(remote unsafe.Pointer) {
 					payload, passed = dns.pass(key, line, msg.LogLevel, time.Now())
 				} else if key, ok := dialFailure(payload); ok {
 					payload, passed = dials.pass(key, payload, msg.LogLevel, time.Now())
+				} else if checkChange(payload) {
+					payload, passed = checks.pass("check", payload, msg.LogLevel, time.Now())
 				}
 				if passed && !send(msg.LogLevel, payload) {
 					return
@@ -151,14 +153,14 @@ func subscribeRecorder(remote unsafe.Pointer) {
 			case <-flushAt:
 				flushAt = nil
 				now := time.Now()
-				for _, b := range append(dns.flush(now), dials.flush(now)...) {
+				for _, b := range append(append(dns.flush(now), dials.flush(now)...), checks.flush(now)...) {
 					if !send(b.level, b.line) {
 						return
 					}
 				}
 			}
 
-			if flushAt == nil && len(dns.keys)+len(dials.keys) > 0 {
+			if flushAt == nil && len(dns.keys)+len(dials.keys)+len(checks.keys) > 0 {
 				flushAt = time.After(dialWindow)
 			}
 		}

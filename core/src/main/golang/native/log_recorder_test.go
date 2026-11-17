@@ -39,7 +39,7 @@ func TestDialFailureKey(t *testing.T) {
 }
 
 func TestThrottleBurst(t *testing.T) {
-	th := newThrottle(time.Minute)
+	th := newThrottle(time.Minute, 1)
 	start := time.Date(2026, 11, 17, 12, 8, 39, 0, time.Local)
 	passed := 0
 	// 36 минут без сети, отказ каждые 2 секунды: 1080 строк.
@@ -71,7 +71,7 @@ func TestThrottleBurst(t *testing.T) {
 }
 
 func TestThrottleCountsOnNextWindow(t *testing.T) {
-	th := newThrottle(5 * time.Minute)
+	th := newThrottle(5*time.Minute, 1)
 	at := time.Date(2026, 11, 17, 4, 0, 0, 0, time.Local)
 	th.pass("k", "a", log.DEBUG, at)
 	th.pass("k", "b", log.DEBUG, at.Add(time.Minute))
@@ -79,5 +79,27 @@ func TestThrottleCountsOnNextWindow(t *testing.T) {
 	line, ok := th.pass("k", "d", log.DEBUG, at.Add(5*time.Minute))
 	if !ok || line != "d (+2 since 04:00:00)" {
 		t.Fatalf("got %q %v", line, ok)
+	}
+}
+
+func TestThrottleLimit(t *testing.T) {
+	th := newThrottle(time.Minute, checkLimit)
+	at := time.Date(2026, 11, 17, 12, 8, 39, 0, time.Local)
+	passed := 0
+	// A long subscription loses the network: 8 000 nodes stop answering within 20 s.
+	for i := 0; i < 8000; i++ {
+		if _, ok := th.pass("check", "[Check] node stopped answering", log.WARNING, at.Add(time.Duration(i)*2500*time.Microsecond)); ok {
+			passed++
+		}
+	}
+	if passed != checkLimit {
+		t.Fatalf("passed %d, want %d", passed, checkLimit)
+	}
+	lines := th.flush(at.Add(2 * time.Minute))
+	if len(lines) != 1 || !strings.Contains(lines[0].line, "(+7970 since 12:08:39") {
+		t.Fatalf("closing line: %+v", lines)
+	}
+	if !checkChange("[Check] 🇪🇸  Barcelona answers again, 180 ms") || checkChange("Recheck `⚡ AUTO`") {
+		t.Fatal("checkChange")
 	}
 }
