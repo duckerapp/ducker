@@ -5,7 +5,6 @@ import "C"
 
 import (
 	"cfa/native/panicguard"
-	"fmt"
 	"strings"
 	"time"
 	"unsafe"
@@ -111,106 +110,57 @@ func subscribeRecorder(remote unsafe.Pointer) {
 		sub := log.Subscribe()
 		defer stopLogSubscription(sub)
 
-		dns := dnsThrottle{}
+		dns, dials := newThrottle(dnsWindow), newThrottle(dialWindow)
+		// Only while a burst is open, so an idle tunnel is not woken.
+		var flushAt <-chan time.Time
 
-		for msg := range sub {
-			if !recorded(msg.LogLevel, msg.Payload) {
-				continue
-			}
-
-			payload := msg.Payload
-			if key, line, ok := dnsFailure(payload); ok {
-				if payload, ok = dns.pass(key, line, time.Now()); !ok {
-					continue
-				}
-			}
-
+		send := func(level log.LogLevel, payload string) bool {
 			// Многострочное — распечатка настроек на сотню строк — в одну строку.
 			if i := strings.IndexByte(payload, '\n'); i >= 0 {
 				payload = payload[:i] + " (…)"
 			}
 
 			rMsg := &message{
-				Level:   msg.LogLevel.String(),
+				Level:   level.String(),
 				Message: payload,
 				Time:    time.Now().UnixNano() / 1000 / 1000,
 			}
 
-			if C.logcat_received(remote, marshalJson(rMsg)) != 0 {
-				break
+			return C.logcat_received(remote, marshalJson(rMsg)) == 0
+		}
+
+		for {
+			select {
+			case msg, open := <-sub:
+				if !open {
+					return
+				}
+				if !recorded(msg.LogLevel, msg.Payload) {
+					continue
+				}
+
+				payload, passed := msg.Payload, true
+				if key, line, ok := dnsFailure(payload); ok {
+					payload, passed = dns.pass(key, line, msg.LogLevel, time.Now())
+				} else if key, ok := dialFailure(payload); ok {
+					payload, passed = dials.pass(key, payload, msg.LogLevel, time.Now())
+				}
+				if passed && !send(msg.LogLevel, payload) {
+					return
+				}
+			case <-flushAt:
+				flushAt = nil
+				now := time.Now()
+				for _, b := range append(dns.flush(now), dials.flush(now)...) {
+					if !send(b.level, b.line) {
+						return
+					}
+				}
+			}
+
+			if flushAt == nil && len(dns.keys)+len(dials.keys) > 0 {
+				flushAt = time.After(dialWindow)
 			}
 		}
 	}(remote)
-}
-
-// recorded — что пишет самописец: ошибки и предупреждения всегда; info — без строки о
-// каждом соединении (их сотни, и в них адреса сайтов) и без перечней при загрузке
-// конфига — распечатки DNS построчно и списка провайдеров, около сотни строк на каждый
-// подъём туннеля; из отладочных — только мультиплекс и перепроверка узлов (D-105, D-110).
-func recorded(level log.LogLevel, payload string) bool {
-	switch level {
-	case log.ERROR, log.WARNING:
-		return true
-	case log.INFO:
-		connection := (strings.HasPrefix(payload, "[TCP] ") || strings.HasPrefix(payload, "[UDP] ")) &&
-			strings.Contains(payload, " match ")
-		listing := strings.HasPrefix(payload, " ") ||
-			strings.HasPrefix(payload, "Start initial provider") ||
-			strings.HasPrefix(payload, "Start initial compatible provider") ||
-			strings.HasPrefix(payload, "Geodata Loader mode") ||
-			strings.HasPrefix(payload, "Geosite Matcher implementation")
-		return !connection && !listing
-	case log.DEBUG:
-		_, _, dns := dnsFailure(payload)
-		return strings.HasPrefix(payload, "mux:") || strings.HasPrefix(payload, "Recheck") || dns
-	}
-	return false
-}
-
-// dnsFailure — отказ DNS (F-163): какой сервер не ответил и почему. Имя сайта в самописец
-// не пишем: у отказа отдельного сервера его нет (строка из своего mihomo, `dns/util.go`),
-// а из общего отказа запроса его вырезаем.
-func dnsFailure(payload string) (key, line string, ok bool) {
-	const failed = " failed: "
-	if rest, found := strings.CutPrefix(payload, "[DNS] "); found {
-		if server, _, found := strings.Cut(rest, failed); found && !strings.ContainsAny(server, " \t") {
-			return server, payload, true
-		}
-	}
-	if query, found := strings.CutPrefix(payload, "[DNS Server] Exchange "); found {
-		if _, reason, found := strings.Cut(query, failed); found {
-			return "exchange", "[DNS Server] Exchange failed: " + reason, true
-		}
-	}
-	return "", "", false
-}
-
-// dnsWindow — не чаще одной строки на сервер: мёртвый сервер в списке отказывает на каждый
-// запрос, и без этого забил бы самописец за минуты.
-const dnsWindow = 5 * time.Minute
-
-type dnsWindowState struct {
-	at      time.Time
-	skipped int
-}
-
-// dnsThrottle пропускает первый отказ сервера за окно, остальные считает и называет число
-// в следующей строке. ponytail: если отказы прекратились до конца окна, их число теряется;
-// нужно точнее — сбрасывать счётчики по таймеру.
-type dnsThrottle map[string]*dnsWindowState
-
-func (t dnsThrottle) pass(key, line string, now time.Time) (string, bool) {
-	s := t[key]
-	if s == nil {
-		s = &dnsWindowState{}
-		t[key] = s
-	} else if now.Sub(s.at) < dnsWindow {
-		s.skipped++
-		return "", false
-	}
-	if s.skipped > 0 {
-		line += fmt.Sprintf(" (+%d since %s)", s.skipped, s.at.Format("15:04:05"))
-	}
-	s.at, s.skipped = now, 0
-	return line, true
 }
