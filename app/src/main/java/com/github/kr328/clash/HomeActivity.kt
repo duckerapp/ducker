@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberOverscrollEffect
 import com.github.kr328.clash.ui.components.BounceOverscroll
 import com.github.kr328.clash.ui.components.glassBackground
 import com.github.kr328.clash.ui.components.glassSource
+import com.github.kr328.clash.ui.components.glassSourceChanges
 import com.github.kr328.clash.ui.components.rememberGlassBackdrop
 import com.github.kr328.clash.ui.components.heroWaveShader
 import com.github.kr328.clash.ui.components.heroWaveEffect
@@ -1426,6 +1427,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         if (wallpaper) {
                             Box(
                                 Modifier.fillMaxSize()
+                                    // A layer of its own: drawn in the screen's, the wallpaper was recorded again with
+                                    // every frame of the dock or the pages, its still pictures were made anew, and one
+                                    // made as the next tab switch began stopped the page for 20 ms (the owner, 17.11).
+                                    .graphicsLayer()
                                     .then(if (backdrop != null) Modifier.glassSource(backdrop) else Modifier)
                                     .graphicsLayer {
                                         val b = backdrop
@@ -1451,6 +1456,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                             renderEffect = null
                                         }
                                     }
+                                    .glassSourceChanges(backdrop)
                                     .glassBackground(settingsState.glassBackdrop, state.running),
                             )
                         }

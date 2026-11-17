@@ -338,16 +338,31 @@ private suspend fun stillPicture(
     }
 }
 
-/** Records what this draws into [backdrop] and shows it as before. */
+/**
+ * Records what this draws into [backdrop] and shows it as before. Kept across recompositions: a new modifier drew and
+ * recorded again, and the still pictures were made anew after every tab switch.
+ */
+@Composable
 internal fun Modifier.glassSource(backdrop: GlassBackdrop?): Modifier =
     if (backdrop == null) this
-    else onGloballyPositioned { backdrop.origin = it.positionInRoot() }
-        .drawWithContent {
-            backdrop.layer.record { this@drawWithContent.drawContent() }
-            // Not a read of this draw: it would invalidate itself and draw again forever.
-            Snapshot.withoutReadObservation { backdrop.version++ }
-            drawLayer(backdrop.layer)
-        }
+    else then(remember(backdrop) {
+        Modifier.onGloballyPositioned { backdrop.origin = it.positionInRoot() }
+            .drawWithContent {
+                backdrop.layer.record { this@drawWithContent.drawContent() }
+                // Not a read of this draw: it would invalidate itself and draw again forever.
+                Snapshot.withoutReadObservation { backdrop.version++ }
+                drawLayer(backdrop.layer)
+            }
+    })
+
+/**
+ * Inside a layer of a [glassSource]'s content: its drawing changed there (a picture loaded, colours fading over), which
+ * the source's own recording, holding the layer, shows without drawing again; the still pictures must be made anew.
+ */
+@Composable
+internal fun Modifier.glassSourceChanges(backdrop: GlassBackdrop?): Modifier =
+    if (backdrop == null) this
+    else then(remember(backdrop) { Modifier.drawBehind { Snapshot.withoutReadObservation { backdrop.version++ } } })
 
 internal fun extractCornerRadii(outline: Outline, size: Size): FloatArray {
     return when (outline) {
@@ -1147,11 +1162,11 @@ private const val SHEET_STEPS = 6
  * The glass style's materials, tuned here only: one glass everywhere (the owner, 17.11). [Surface] — panes lying on
  * the backdrop: cards, the dock, the search, «Features», Home's card at rest. [Control] — controls on a pane: buttons,
  * the node row, the delay check; clearer and blurred more than the pane under them, set off from it by their rim. At
- * 0.7 they read as grey buttons painted on the glass (the owner, 17.11).
+ * 0.7 they read as grey buttons painted on the glass, at 0.3 a little too light (the owner, 17.11).
  */
 internal enum class GlassMaterial(val tint: Float, val blurBoost: Dp) {
     Surface(0.55f, 0.dp),
-    Control(0.3f, INNER_BLUR),
+    Control(0.45f, INNER_BLUR),
 }
 
 /** A pane of [material] in the colour [color] (the material's own by default) over [backdrop]; null backdrop — none. */
