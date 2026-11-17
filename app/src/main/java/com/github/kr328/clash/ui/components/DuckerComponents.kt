@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -453,11 +454,14 @@ fun SearchField(
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val self = remember { FocusRequester() }
     val clear = remember { FocusRequester() }
+    // A compact field on a glass sheet is a control of glass on it, as the node rows are.
+    val compactGlass = compact && glass != null && edge == null
 
     Box(
         modifier = modifier.fillMaxWidth()
             .then(when {
                 edge != null -> Modifier.border(edge, shape)
+                compactGlass -> Modifier
                 compact -> Modifier.cardShadow(shape)
                 else -> Modifier.dropShadow(shape) {
                     val lift = shadowLift().coerceIn(0f, 1f)
@@ -471,6 +475,7 @@ fun SearchField(
             })
             .then(
                 when {
+                    compactGlass -> Modifier
                     compact -> Modifier.background(MaterialTheme.colorScheme.surface, shape)
                     // The same glass as the cards it floats over.
                     glass != null -> Modifier.glass(glass, GlassMaterial.Surface, shape).clip(shape)
@@ -482,6 +487,11 @@ fun SearchField(
             } else Modifier)
             .then(row),
     ) {
+        // Only the visible capsule, centred in the 48 dp row as CompactSearchShape is: the glass's rim follows its size.
+        if (compactGlass) Box(
+            Modifier.matchParentSize().wrapContentHeight().height(visualHeight).glass(glass, GlassMaterial.Control, CircleShape),
+        )
+
         // Decoration belongs to the input so its icon, padding and empty clear slot also accept taps.
         BasicTextField(
             value = value,
