@@ -327,7 +327,7 @@ class SubscriptionsViewModel : ViewModel() {
     fun openLink(given: InstallLink) {
         if (_state.value.busy) return
 
-        _state.update { it.copy(input = given.link, given = given, addError = "", linked = true).keyOf(given) }
+        _state.update { it.copy(input = given.link, given = given, addError = "", linked = true).keyOf(given, it.given) }
     }
 
     /**
@@ -342,7 +342,7 @@ class SubscriptionsViewModel : ViewModel() {
 
         // Со страницы провайдера подписку добавляют, чтобы включить, — как присланную с телефона.
         val activate = fromPhone || _state.value.linked
-        val key = _state.value.addKey.trim().takeIf { it.isNotEmpty() }
+        val key = _state.value.addedKey(raw)
         val given = _state.value.given?.takeIf { it.link == raw }
         val mirrors = given?.mirrors.orEmpty()
 
@@ -590,7 +590,7 @@ class SubscriptionsViewModel : ViewModel() {
 
             // Идёт своё добавление, руками, — дождаться: два разом не ведём.
             _state.first { !it.busy }
-            _state.update { it.copy(input = link.link, given = link, addError = "").keyOf(link) }
+            _state.update { it.copy(input = link.link, given = link, addError = "").keyOf(link, it.given) }
 
             add(app, fromPhone = true)
         }
@@ -640,7 +640,7 @@ class SubscriptionsViewModel : ViewModel() {
             // «Поделиться» and a provider's page may give the link with its mirrors (stage 21, package 3).
             val given = InstallLink.parse(text.trim())
 
-            return _state.update { it.copy(input = given?.link ?: text, given = given, addError = "").keyOf(given) }
+            return _state.update { it.copy(input = given?.link ?: text, given = given, addError = "").keyOf(given, it.given) }
         }
 
         _state.update {
@@ -1248,10 +1248,17 @@ internal val Profile.installLink: InstallLink
 
 /**
  * A link that came with a key fills the key field and shows it, as if pasted there; one without leaves what the
- * person typed (D-505).
+ * person typed (D-505), but not a key the [previous] link brought: that key belongs to its own subscription.
  */
-private fun SubscriptionsState.keyOf(given: InstallLink?): SubscriptionsState =
-    given?.key?.let { copy(addKey = it, addKeyShown = true) } ?: this
+internal fun SubscriptionsState.keyOf(given: InstallLink?, previous: InstallLink?): SubscriptionsState = when {
+    given?.key != null -> copy(addKey = given.key, addKeyShown = true)
+    previous?.key != null && addKey == previous.key -> copy(addKey = "")
+    else -> this
+}
+
+/** The key saved with [raw]: a key a link brought goes only with that link, not with one typed over it. */
+internal fun SubscriptionsState.addedKey(raw: String): String? =
+    addKey.trim().takeIf { it.isNotEmpty() && (it != given?.key || given.link == raw) }
 
 val Profile.shownName: String
     get() = if (name.isNotEmpty() && name != defaultName(source)) name else profileTitle.ifEmpty { name }
