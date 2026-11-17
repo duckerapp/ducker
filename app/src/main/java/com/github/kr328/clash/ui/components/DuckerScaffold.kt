@@ -485,7 +485,8 @@ private fun FloatingDock(
     val drag = remember(scope) { DockDrag(scope) }
     val dockLayer = if (backdrop != null && !vertical) rememberGraphicsLayer() else null
     val bubbleLayer = if (backdrop != null && !vertical) rememberGraphicsLayer() else null
-    val shader = remember(backdrop != null) { if (backdrop != null && !vertical) bubbleShader() else null }
+    // Keyed on vertical too: the layers above vanish on the rail, and a shader kept from the dock drew into them.
+    val shader = remember(backdrop != null, vertical) { if (backdrop != null && !vertical) bubbleShader() else null }
     val lens = remember(glassSupported, backdrop != null, vertical) {
         if (android.os.Build.VERSION.SDK_INT >= 33 && backdrop != null && !vertical) DockLens() else null
     }
