@@ -94,4 +94,14 @@ class MobileModuleTest {
         assertEquals(listOf(30_000L, 60_000L, 120_000L, 240_000L, 300_000L, 300_000L), (0..5).map(::recheckIn))
         assertEquals(RECHECK_MAX_MS, recheckIn(Int.MAX_VALUE))
     }
+
+    @Test
+    fun `the node in use is checked every minute on screen, every five in the pocket, a miss confirmed in seconds`() {
+        assertEquals(60_000L, watchIn(0, screenOn = true))
+        assertEquals(300_000L, watchIn(0, screenOn = false))
+        assertEquals(10_000L, watchIn(1, screenOn = true))
+        assertEquals(10_000L, watchIn(1, screenOn = false))
+        // Two misses in a row move on, one does not: a single lost check on a noisy mobile network is not a dead node.
+        assertEquals(2, WATCH_MISSES)
+    }
 }

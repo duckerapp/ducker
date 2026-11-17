@@ -42,7 +42,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * «Мобильная сеть» (D-353, D-355, D-423, D-424): off Wi-Fi, the subscription chosen for the mobile network becomes the
- * active one with the first node of its list that answers; back on Wi-Fi, what Wi-Fi had before.
+ * active one with the first node of its list that answers; back on Wi-Fi, what Wi-Fi had before. While it holds, the
+ * list's node in use is watched and gives way to the next that answers once it stops (D-533).
  *
  * Without haste (D-355): a new kind of network must hold a minute with the screen off — a weak Wi-Fi at the door comes
  * and goes — and seven seconds with it on; any change starts the count again. A pick of the person's own, a
@@ -122,11 +123,17 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
             var rechecks = 0
             var recheckAt = 0L
 
+            // While a node of the list is in use: its misses in a row, and when it is checked next (0 — not set yet).
+            var misses = 0
+            var watchAt = 0L
+
             while (true) {
                 if (changed) {
                     changed = false
                     rechecks = 0
                     recheckAt = 0
+                    misses = 0
+                    watchAt = 0
 
                     if (!settingsChanged(loaded)) failed = true
                 }
@@ -136,10 +143,13 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
                 val wait = mobileWait(now, settled, starting, failed, SystemClock.elapsedRealtime() - since, power?.isInteractive != false)
                 val clock = SystemClock.elapsedRealtime()
 
-                // None of the list answered at the switch, and it still holds: checked again, as a node often answers
-                // only seconds after the mobile network comes. Settled, so `wait` is UNTIL_WAKE here.
-                val silent = now == NetworkKind.Mobile && settled == NetworkKind.Mobile &&
-                    store.mobileShownNow == MobileState.Shown.NoneAnswered
+                // The mobile choice holds on the settled mobile network; `wait` is UNTIL_WAKE then. None of the list
+                // answered at the switch — checked again, as a node often answers only seconds after the network
+                // comes. One did — it is watched, and gives way to the next that answers once it stops (D-533).
+                val holding = now == NetworkKind.Mobile && settled == NetworkKind.Mobile
+                val shown = if (holding) store.mobileShownNow else MobileState.Shown.None
+                val silent = shown == MobileState.Shown.NoneAnswered
+                val watching = shown == MobileState.Shown.InEffect && store.mobileNodes.isNotEmpty()
 
                 if (!silent) {
                     rechecks = 0
@@ -148,11 +158,25 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
                     recheckAt = clock + recheckIn(rechecks)
                 }
 
-                if (silent && clock >= recheckAt) {
-                    recheck()
+                if (!watching) {
+                    misses = 0
+                    watchAt = 0
+                } else if (watchAt == 0L) {
+                    watchAt = clock + watchIn(misses, power?.isInteractive != false)
+                }
 
-                    rechecks++
-                    recheckAt = 0
+                val due = if (silent) recheckAt else if (watching) watchAt else 0L
+
+                if (due != 0L && clock >= due) {
+                    if (silent) {
+                        recheck()
+
+                        rechecks++
+                        recheckAt = 0
+                    } else {
+                        misses = watch(misses)
+                        watchAt = 0
+                    }
 
                     continue
                 }
@@ -163,10 +187,11 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
                         failed = false
                     }
 
-                    val screenOn = pause(screen, if (silent) recheckAt - clock else wait.coerceAtLeast(0))
+                    val screenOn = pause(screen, if (due != 0L) due - clock else wait.coerceAtLeast(0))
 
                     // The screen coming on is when the person wants the internet: the check goes now.
-                    if (silent && screenOn) recheckAt = SystemClock.elapsedRealtime()
+                    if (screenOn && silent) recheckAt = SystemClock.elapsedRealtime()
+                    if (screenOn && watching) watchAt = SystemClock.elapsedRealtime()
 
                     continue
                 }
@@ -293,7 +318,7 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
         return true
     }
 
-    /** Keeps the first of [list] that answers, the first being set already; none — it stays, and the note says so. */
+    /** Sets the first of [list] that answers; none — the node in use stays, and the note says so. */
     private suspend fun settle(main: String, list: List<String>, started: Int) {
         val answered = firstAnswering(list)
 
@@ -307,7 +332,8 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
             return
         }
 
-        if (answered != list.first()) pick(main, answered)
+        // Not always the first: after a fallback the one in use is further down the list.
+        if (answered != current(main)) pick(main, answered)
         if (store.mobileShown != MobileState.Shown.InEffect.ordinal) show(MobileState.Shown.InEffect)
     }
 
@@ -385,6 +411,31 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
 
         return done
     }
+
+    /**
+     * The list's node in use, checked; returns its misses in a row. At [WATCH_MISSES] the list is checked from the top
+     * and the first that answers is set — a node of the person's own, not of the list, is not watched.
+     */
+    private suspend fun watch(misses: Int): Int {
+        val started = epoch.incrementAndGet()
+        val main = mainGroup() ?: return 0
+        val members = members(main)
+        val list = store.mobileNodes.filter { it in members }
+        val node = current(main)?.takeIf { it in list } ?: return 0
+
+        if (withContext(Dispatchers.IO) { Clash.probeProxy(node).ok }) return 0
+        if (epoch.get() != started) return 0
+        if (misses + 1 < WATCH_MISSES) return misses + 1
+
+        Log.i("Mobile: $node stopped answering")
+
+        settle(main, list, started)
+
+        return 0
+    }
+
+    private fun current(group: String): String? =
+        runCatching { Clash.queryGroup(group, ProxySort.Default).now }.getOrNull()?.ifEmpty { null }
 
     /** The first of [list] that answers, in the person's order; the checks go a few at a time. */
     private suspend fun firstAnswering(list: List<String>): String? = coroutineScope {
@@ -607,6 +658,21 @@ internal fun recheckIn(done: Int): Long = (RECHECK_FIRST_MS shl done.coerceIn(0,
 
 internal const val RECHECK_FIRST_MS = 30_000L
 internal const val RECHECK_MAX_MS = 300_000L
+
+/**
+ * When the list's node in use is checked next: soon after a miss, to confirm it; else a minute with the screen on, five
+ * in the pocket — each check wakes the radio and spends mobile data, and the screen coming on checks at once.
+ */
+internal fun watchIn(misses: Int, screenOn: Boolean): Long = when {
+    misses > 0 -> WATCH_CONFIRM_MS
+    screenOn -> WATCH_MS
+    else -> WATCH_POCKET_MS
+}
+
+internal const val WATCH_MS = 60_000L
+internal const val WATCH_POCKET_MS = 300_000L
+internal const val WATCH_CONFIRM_MS = 10_000L
+internal const val WATCH_MISSES = 2
 
 /** Waits until [ready], looking every [pollMs], at most [timeoutMs]; false — it never was. */
 internal suspend fun awaitReady(timeoutMs: Long, pollMs: Long, ready: () -> Boolean): Boolean =
