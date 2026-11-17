@@ -15,6 +15,17 @@ repository was closed; they are listed here for history. APK files are on the
 - "About" is now the project's card: versions, the news channel and chat, source code, the core and the licence.
   "Support the project" holds the ways to donate: CryptoBot in Telegram or a wallet, with the coin and network
   to pick and the address to copy. The core version is shown without the build hash.
+- The `firefox` TLS fingerprint now matches the current Firefox 160 instead of Firefox 148, checked against the
+  browser itself on a computer and on Android. It no longer fails on servers that pick the P-256 key exchange.
+- `random` no longer picks the old iOS 14 fingerprint, which current REALITY servers turn away: about one core start
+  in six, every REALITY node with `random` failed to connect. `randomized` always offers the post-quantum key
+  exchange together with its key share.
+- REALITY nodes report version 26.11.10, the newest among Xray and its Jolymmiles fork, so a server that keeps old
+  clients out lets them in.
+- A node can set `udp-443: reject`: QUIC through it is refused at once, so browsers and apps switch to TCP instead
+  of waiting. For nodes that carry no UDP.
+- Subscriptions in URL-safe base64 or starting with a byte order mark now open. `vless://` and `vmess://` links keep
+  `pqv` (the ML-DSA-65 key of REALITY) and `vcn` (the name the certificate is checked against).
 
 ## 0.4.51 — 2026-11-13
 
