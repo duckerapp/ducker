@@ -681,7 +681,10 @@ private fun FloatingDock(
                                     val bent = over * give / (abs(over) + give)
 
                                     drag.move(x + bent)
-                                    scope.launch { edge.snapTo(abs(bent) / give) }
+                                    // Heavy: hardly any stretch near the tab, most of it at the dock's very edge (the
+                                    // owner, 17.11: it stretched at once and too easily).
+                                    val reach = (abs(over) / (slot / 2f)).coerceAtMost(1f)
+                                    scope.launch { edge.snapTo(reach * reach * reach) }
 
                                     val now = tabAt(x)
                                     if (now != tab) {
@@ -790,7 +793,9 @@ private fun FloatingDock(
                     val action = onAction
                     val adds = index == ACTION_TAB && added && action != null
 
-                    if (glass && !vertical && !adds && index != current) {
+                    // Where the page is, not the tab it last rested on: a tab tapped while the page still travelled
+                    // to another was taken for the current one, and the lens dropped mid-way (the owner, 17.11).
+                    if (glass && !vertical && !adds && position() != index.toFloat()) {
                         // The glass style: the lens rides on the page to the tapped tab, in step with it.
                         drag.aim(index)
                     } else {

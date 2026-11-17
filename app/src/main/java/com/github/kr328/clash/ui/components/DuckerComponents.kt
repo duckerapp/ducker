@@ -847,7 +847,7 @@ fun PullToRefresh(
             val backdrop = LocalGlassBackdrop.current
 
             if (backdrop != null) {
-                GlassPullIndicator(state, shown, backdrop, Modifier.align(Alignment.TopCenter).padding(top = top))
+                GlassPullIndicator(state, shown, backdrop, top, Modifier.align(Alignment.TopCenter).padding(top = top))
             } else {
                 PullToRefreshDefaults.Indicator(
                     state = state,
@@ -866,14 +866,19 @@ fun PullToRefresh(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GlassPullIndicator(state: PullToRefreshState, refreshing: Boolean, backdrop: GlassBackdrop, modifier: Modifier) {
+private fun GlassPullIndicator(state: PullToRefreshState, refreshing: Boolean, backdrop: GlassBackdrop, top: Dp, modifier: Modifier) {
     val tint = MaterialTheme.colorScheme.onSurfaceVariant
     val travel = PullToRefreshDefaults.PositionalThreshold
 
     Box(
         modifier
-            // Placed, not drawn, lower: the glass reads its place on the screen from the layout.
-            .offset { IntOffset(0, (state.distanceFraction * travel.toPx() - PULL_CIRCLE.toPx()).roundToInt()) }
+            // Placed, not drawn, lower: the glass reads its place on the screen from the layout. At rest it waits
+            // wholly above the screen, rim and all: it came down to the status bar and vanished there (the owner, 17.11).
+            .offset {
+                val pulled = state.distanceFraction
+                val hidden = (top + PULL_CIRCLE + PULL_RIM).toPx()
+                IntOffset(0, (pulled * (travel.toPx() - PULL_CIRCLE.toPx() + hidden) - hidden).roundToInt())
+            }
             .size(PULL_CIRCLE)
             .graphicsLayer { alpha = if (refreshing || state.distanceFraction > 0f) 1f else 0f }
             .glass(backdrop, GlassMaterial.Control, CircleShape),
@@ -897,6 +902,7 @@ private fun GlassPullIndicator(state: PullToRefreshState, refreshing: Boolean, b
 }
 
 private val PULL_CIRCLE = 40.dp
+private val PULL_RIM = 4.dp
 
 /**
  * The pull of [PullToRefresh], in place of Material's `pullToRefresh`. Distances as there: the circle

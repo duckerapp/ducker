@@ -3,6 +3,7 @@ package com.github.kr328.clash
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.animate
 import androidx.compose.foundation.rememberOverscrollEffect
 import com.github.kr328.clash.ui.components.BounceOverscroll
 import com.github.kr328.clash.ui.components.glassBackground
@@ -110,6 +111,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.toMutableStateList
@@ -887,6 +889,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // Вкладка, к которой едет лента на телевизоре.
                 var tvTarget by remember { mutableIntStateOf(0) }
                 var paging by remember { mutableStateOf<Job?>(null) }
+                val flight = remember { PageFlight() }
                 // Настройки или «Возможности» открыты кнопкой под доком, а не со страницы: focus returns to it.
                 var fromTool by remember { mutableStateOf<FocusRequester?>(null) }
                 // A TV asks before Back closes the app.
@@ -1107,11 +1110,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                 if (fromOverlay) pagerState.scrollToPage(tab)
                                 // On glass the page travels with the dock's lens, on its stiffness but without its
                                 // overshoot: one motion, slower than Air's (the owner, 17.11: Home→Profiles flew off).
-                                else pagerState.animateScrollToPage(
-                                    tab,
-                                    animationSpec = if (glassOn) spring(dampingRatio = 1f, stiffness = 260f)
-                                    else spring(stiffness = Spring.StiffnessMediumLow),
-                                )
+                                else if (glassOn) pagerState.glide(tab, flight)
+                                else pagerState.animateScrollToPage(tab, animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                             }
                         }
                     },
@@ -2588,4 +2588,39 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
         /** «Не сейчас» на карточке прячет её на неделю (D-109). */
         const val BACKGROUND_SNOOZE = 7L * 24 * 60 * 60 * 1000
     }
+}
+
+/** How fast the glass pager was going when a tap took it: the next glide goes on from that speed. */
+private class PageFlight {
+    var velocity = 0f
+    var at = 0L
+
+    /** The speed of a glide cut off a moment ago; a page at rest, or left by a swipe, starts from none. */
+    fun take(): Float = if (SystemClock.uptimeMillis() - at < FLIGHT_FRESH_MS) velocity else 0f
+}
+
+private const val FLIGHT_FRESH_MS = 50L
+
+/**
+ * The glass pager to [page], as [PagerState.animateScrollToPage] on the lens's stiffness, but from the speed a
+ * tap caught it at: a tab tapped while the page still travelled restarted it from rest, and it stopped dead before
+ * setting off again (the owner, 17.11: freezes as the tabs change).
+ */
+private suspend fun PagerState.glide(page: Int, flight: PageFlight) {
+    val pageSize = layoutInfo.pageSize + layoutInfo.pageSpacing
+    if (pageSize <= 0) return scrollToPage(page)
+
+    scroll {
+        val distance = (page - currentPage - currentPageOffsetFraction) * pageSize
+        var done = 0f
+
+        animate(0f, distance, flight.take(), spring(dampingRatio = 1f, stiffness = 260f)) { value, velocity ->
+            done += scrollBy(value - done)
+            flight.velocity = velocity
+            flight.at = SystemClock.uptimeMillis()
+        }
+    }
+    flight.at = 0L
+    // A fraction of a pixel short is still a page between two: the dock read it as moving.
+    if (currentPage != page || currentPageOffsetFraction != 0f) scrollToPage(page)
 }

@@ -1146,11 +1146,12 @@ private const val SHEET_STEPS = 6
 /**
  * The glass style's materials, tuned here only: one glass everywhere (the owner, 17.11). [Surface] — panes lying on
  * the backdrop: cards, the dock, the search, «Features», Home's card at rest. [Control] — controls on a pane: buttons,
- * the node row, the delay check; denser and blurred more than the pane under them, so the two never merge.
+ * the node row, the delay check; clearer and blurred more than the pane under them, set off from it by their rim. At
+ * 0.7 they read as grey buttons painted on the glass (the owner, 17.11).
  */
 internal enum class GlassMaterial(val tint: Float, val blurBoost: Dp) {
     Surface(0.55f, 0.dp),
-    Control(0.7f, INNER_BLUR),
+    Control(0.3f, INNER_BLUR),
 }
 
 /** A pane of [material] in the colour [color] (the material's own by default) over [backdrop]; null backdrop — none. */

@@ -1013,6 +1013,13 @@ private fun HeroCard(
     // What the circle holds: the state the wave goes to, and, once the change went back, the one it closes over.
     var upper by remember { mutableStateOf(active) }
     val wave = remember { Animatable(0f) }
+    // The connected glass's stronger bend and rim come in with the wave and go out with it: switched at its end,
+    // the picture in the card jumped in size and its rim lit at once (the owner, 17.11).
+    val connected by animateFloatAsState(
+        if (active) 1f else 0f,
+        tween(GLASS_ON_MS, easing = FastOutSlowInEasing),
+        label = "connected glass",
+    )
 
     var card by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var buttonCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
@@ -1180,9 +1187,8 @@ private fun HeroCard(
                                 base = MaterialTheme.colorScheme.background,
                                 tint = Color.Transparent,
                                 shape = HeroInner,
-                                // The settled state's glass; the wave carries the change across the card first.
-                                bendBoost = if (settled) GLASS_ON_BEND else 1f,
-                                rimBoost = if (settled) GLASS_ON_RIM else 1f,
+                                bendBoost = 1f + (GLASS_ON_BEND - 1f) * connected,
+                                rimBoost = 1f + (GLASS_ON_RIM - 1f) * connected,
                             ) {
                                 val curRadius = start + (reach - start).coerceAtLeast(0f) * wave.value
                                 val centerOffset = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f)
@@ -1777,6 +1783,7 @@ private const val GLASS_BUTTON_SHADE = 0.14f
 private const val GLASS_ON_CLEAR = 0.5f
 private const val GLASS_ON_BEND = 1.5f
 private const val GLASS_ON_RIM = 1.6f
+private const val GLASS_ON_MS = 900
 /** The connected glow: its strength at the button, and its reach in the button's radii. */
 private const val GLASS_GLOW_ALPHA = 0.35f
 private const val GLASS_GLOW_REACH = 2.6f
