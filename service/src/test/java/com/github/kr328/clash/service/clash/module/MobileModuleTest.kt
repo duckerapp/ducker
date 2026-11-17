@@ -1,10 +1,12 @@
 package com.github.kr328.clash.service.clash.module
 
 import com.github.kr328.clash.service.model.NetworkKind
+import com.github.kr328.clash.service.util.Failure
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** «Мобильная сеть» (D-423, D-424): which side a network is on, what a settled change does, how long it waits. */
@@ -73,5 +75,17 @@ class MobileModuleTest {
 
         assertFalse(awaitReady(timeoutMs = 100, pollMs = 5) { false })
         assertTrue(System.nanoTime() - started >= 100_000_000)
+    }
+
+    @Test
+    fun `a refused load ends the wait at once, a failed download or another subscription does not`() {
+        val target = "a"
+
+        assertEquals(true, loadOutcome(target, target, loaded = true, reason = null))
+        assertEquals(false, loadOutcome(target, target, loaded = false, reason = Failure.RELOAD + "bad yaml"))
+        assertNull(loadOutcome(target, target, loaded = false, reason = "DOWNLOAD_FAILED: timeout"))
+        assertNull(loadOutcome(target, "b", loaded = true, reason = null))
+        assertNull(loadOutcome(target, "b", loaded = false, reason = Failure.RELOAD + "bad yaml"))
+        assertNull(loadOutcome(target, null, loaded = true, reason = null))
     }
 }

@@ -24,6 +24,7 @@ import com.github.kr328.clash.service.data.SelectionDao
 import com.github.kr328.clash.service.model.MobileState
 import com.github.kr328.clash.service.model.NetworkKind
 import com.github.kr328.clash.service.store.ServiceStore
+import com.github.kr328.clash.service.util.Failure
 import com.github.kr328.clash.service.util.sendSelectorChanged
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -89,9 +90,10 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
             addAction(Intent.ACTION_SCREEN_ON)
         }
         // Bounded: only activate reads it, and it first drains the loads that came before. Only those pile up, so a
-        // full buffer drops only loads no switch waits for.
+        // full buffer drops only loads no switch waits for. A refused load comes as a failed update (`RELOAD_FAILED`).
         val loaded = receiveBroadcast(capacity = Channel.BUFFERED) {
             addAction(Intents.ACTION_PROFILE_LOADED)
+            addAction(Intents.ACTION_PROFILE_UPDATE_FAILED)
         }
 
         val watching = runCatching { connectivity.registerNetworkCallback(REQUEST, callback) }
@@ -302,14 +304,27 @@ class MobileModule(service: Service, private val configReady: () -> Boolean = { 
         ProfileProcessor.active(service, uuid)
 
         val done = withTimeoutOrNull(LOAD_WAIT_MS) {
-            while (loaded.receive().getStringExtra(Intents.EXTRA_UUID) != uuid.toString()) Unit
-        } != null
+            var outcome: Boolean? = null
+
+            while (outcome == null) {
+                val intent = loaded.receive()
+
+                outcome = loadOutcome(
+                    uuid.toString(),
+                    intent.getStringExtra(Intents.EXTRA_UUID),
+                    intent.action == Intents.ACTION_PROFILE_LOADED,
+                    intent.getStringExtra(Intents.EXTRA_FAIL_REASON),
+                )
+            }
+
+            outcome
+        } == true
 
         // A config the core refuses keeps the previous one running (D-207); its card names the error. The mark of the
         // active subscription goes back to it too: else Home named a subscription the core does not run, and the
         // next try took the mark for a done switch.
         if (!done) {
-            Log.w("Mobile: $uuid did not load")
+            Log.w("Mobile: $uuid refused or not loaded in time")
 
             if (epoch.get() == started && before != null && store.activeProfile == uuid) ProfileProcessor.active(service, before)
         }
@@ -522,6 +537,16 @@ internal fun mobileWait(
 
 internal const val UNTIL_WAKE = -1L
 
+/**
+ * What a broadcast says of [target]'s load: true — loaded; false — the core refused it and runs the previous one
+ * (`RELOAD_FAILED`), so nothing waits the minute out; null — about another subscription, or a failed download.
+ */
+internal fun loadOutcome(target: String, uuid: String?, loaded: Boolean, reason: String?): Boolean? = when {
+    uuid != target -> null
+    loaded -> true
+    reason?.startsWith(Failure.RELOAD) == true -> false
+    else -> null
+}
 /** Waits until [ready], looking every [pollMs], at most [timeoutMs]; false — it never was. */
 internal suspend fun awaitReady(timeoutMs: Long, pollMs: Long, ready: () -> Boolean): Boolean =
     withTimeoutOrNull(timeoutMs) { while (!ready()) delay(pollMs) } != null
