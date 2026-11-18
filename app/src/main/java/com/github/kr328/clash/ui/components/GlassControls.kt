@@ -125,10 +125,11 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
         launch { fill.animateTo(0f, tween(FILL_OUT_MS)) }
         launch { frost.animateTo(0f, tween(FROST_CLEAR_MS)) }
         held.follow(touch, motion, out = SWITCH_LENS_OUT_MS) {
-            // The lens settles once the thumb is home. A row's tap sets the switch a frame or two after the finger
-            // lifts: wait for that before asking where home is.
+            // The lens settles as the thumb comes home, not after the spring's last wobble: it hung there big and clear
+            // for ~280 ms where iOS's settles at once (the owner's video of ours beside iOS's, 18.11). A row's tap sets
+            // the switch a frame or two after the finger lifts: wait for that before asking where home is.
             repeat(2) { withFrameNanos { } }
-            snapshotFlow { !position.isRunning && position.value == if (checkedNow.value) 1f else 0f }.first { it }
+            snapshotFlow { abs(position.value - if (checkedNow.value) 1f else 0f) < HOME }.first { it }
             launch { frost.animateTo(1f, tween(SWITCH_LENS_OUT_MS)) }
         }
         if (touch.down) return@LaunchedEffect
@@ -151,7 +152,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
         }
         // The thumb never moves without its lens, whatever set it (the owner, 18.11): the move counts as a touch.
         touch.count++
-        position.animateTo(target, spring(dampingRatio = 0.62f, stiffness = 420f))
+        position.animateTo(target, THUMB_SPRING)
         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
     }
 
@@ -193,7 +194,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
                         pulling = false
                         val now = position.value >= 0.5f
                         if (now != checkedNow.value) drag.value?.invoke(now)
-                        else scope.launch { position.animateTo(if (now) 1f else 0f, spring(dampingRatio = 0.62f, stiffness = 420f)) }
+                        else scope.launch { position.animateTo(if (now) 1f else 0f, THUMB_SPRING) }
                     }
                 } else Modifier,
             )
@@ -337,6 +338,10 @@ private const val FILL_OUT_MS = 60
 private const val FROST_CLEAR_MS = 220
 private const val SWITCH_LENS_OUT_MS = 140
 private const val FILL_IN_MS = 150
+/** The thumb's ride: firmer than it was (0.62), so it lands without a visible bounce, as iOS's. */
+private val THUMB_SPRING = spring<Float>(dampingRatio = 0.8f, stiffness = 420f)
+/** Near enough home, in its travel, for the lens to start settling. */
+private const val HOME = 0.04f
 
 /**
  * A slider with Material's steps, speech and remote keys. The glass style (D-541): Kyant's liquid slider — a thin track in
