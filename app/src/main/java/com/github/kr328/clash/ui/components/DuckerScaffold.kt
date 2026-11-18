@@ -9,12 +9,14 @@ import androidx.compose.ui.graphics.Path
 
 import android.os.Build
 
-import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.runtime.State
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -72,7 +74,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -89,7 +90,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -110,24 +110,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.graphics.rememberGraphicsLayer
-import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.Spring
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.CompositingStrategy
 import com.github.kr328.clash.R
 import kotlin.math.sin
-import kotlin.math.floor
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlinx.coroutines.delay
@@ -354,14 +338,11 @@ private val FADE_RAMP = 60.dp
 internal fun navigationRoom(): Dp =
     WindowInsets.navigationBars.exclude(WindowInsets.ime).asPaddingValues().calculateBottomPadding()
 
-/** How much the glass highlight magnifies halfway between two tabs. */
-private const val LENS_ZOOM = 0.18f
-
 /** The TV's round button under its dock (D-97). */
 val ACTION_SIZE = 56.dp
 
 /** The dock's padding around its tabs. */
-private val DOCK_PAD = 4.dp
+internal val DOCK_PAD = 4.dp
 
 /**
  * The side dock: its gap to the start edge, its width, a tab's height and the highlight's corner. Narrow and tall:
@@ -396,18 +377,161 @@ private fun FloatingDock(
     backdrop: GlassBackdrop?,
     modifier: Modifier = Modifier,
 ) {
+    // The glass style's phone dock is its own, after iOS's (GlassDock); the side dock keeps this one on glass too.
+    if (backdrop != null && !vertical && glassSupported) {
+        GlassDock(selected, position, onSelect, onAction, actionLabel, single, onSingle, backdrop, modifier)
+        return
+    }
+
     // Upright, the dock and its highlight round their corners as the TV's side dock does: as pills, nearly square
     // tabs became circles, and the dock's round ends cut the highlight's.
     val shape = if (vertical) RoundedCornerShape(RAIL_CORNER + DOCK_PAD) else RoundedCornerShape(percent = 50)
     val pill = MaterialTheme.colorScheme.primaryContainer.let { if (backdrop != null) it.copy(alpha = 0.8f) else it }
     val onPill = MaterialTheme.colorScheme.onPrimaryContainer
+    val face = rememberDockFace(single, onAction, position, glass = backdrop != null)
+    val alone = single != null
 
+    // Brighter on the light theme's black highlight than on the dark theme's white one, as in the mockup.
+    val tabShineColor = onPill.copy(alpha = if (pill.luminance() < 0.5f) 0.38f else 0.2f)
+
+    val current = selected()
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val screen = MaterialTheme.colorScheme.background
+
+    // The highlight along the dock: across its width at the bottom, down its height at the side.
+    fun DrawScope.pill(): Rect {
+        val length = if (vertical) size.height else size.width
+        val start = lerp(dockPillOffset(length, position(), rtl = rtl && !vertical), 0f, face.merge)
+        val extent = lerp(dockSlotWidth(length), length, face.merge)
+
+        return if (vertical) Rect(Offset(0f, start), Size(size.width, extent))
+        else Rect(Offset(start, 0f), Size(extent, size.height))
+    }
+
+    Surface(
+        modifier = modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.widthIn(max = 420.dp)).airShadow(shape)
+            .glass(backdrop, GlassMaterial.Surface, shape),
+        shape = shape,
+        color = if (backdrop != null) Color.Transparent else MaterialTheme.colorScheme.surface,
+    ) {
+        Box(Modifier.fillMaxWidth().padding(DOCK_PAD)) {
+            // Подсветка — своим слоем под обеими копиями вкладок: при слиянии она растёт,
+            // а вкладки гаснут, и гасить её вместе с ними нельзя.
+            Box(
+                Modifier.matchParentSize().drawBehind {
+                    val drop = face.splash.value
+                    val dropping = drop > 0f && drop < 1f
+                    // The capsule swells a little as the drop lands, and settles back.
+                    val rect = pill().let { if (dropping) it.inflate(it.height * SPLASH_SWELL * sin(PI.toFloat() * minOf(1f, drop * 2f))) else it }
+                    val corner = CornerRadius(if (vertical) RAIL_CORNER.toPx() else rect.minDimension / 2f)
+
+                    drawRoundRect(color = pill, topLeft = rect.topLeft, size = rect.size, cornerRadius = corner)
+
+                    // On a dark theme the highlight is light itself and needs no rim.
+                    if (backdrop != null && screen.luminance() > 0.5f) {
+                        drawRoundRect(
+                            color = Color.White.copy(alpha = 0.25f),
+                            topLeft = rect.topLeft,
+                            size = rect.size,
+                            cornerRadius = corner,
+                            style = Stroke(1.dp.toPx()),
+                        )
+                    }
+
+                    if (dropping) drawSplash(rect, corner, drop)
+
+                    val t = face.tabShine.value
+
+                    if (t > 0f && t < 1f) {
+                        // The band is transparent outside itself, so the highlight's own shape clips it.
+                        val band = rect.width * 0.6f
+                        val x = rect.left - band + (rect.width + band * 2f) * t
+
+                        drawRoundRect(
+                            brush = Brush.linearGradient(
+                                colors = listOf(Color.Transparent, tabShineColor, Color.Transparent),
+                                start = Offset(x - band / 2f, rect.top),
+                                // A 15° slant, as in the mockup.
+                                end = Offset(x + band / 2f, rect.top + band * 0.27f),
+                            ),
+                            topLeft = rect.topLeft,
+                            size = rect.size,
+                            cornerRadius = corner,
+                        )
+                    }
+                },
+            )
+
+            DockTabs(
+                selected = current,
+                content = MaterialTheme.colorScheme.onSurfaceVariant,
+                onSelect = if (alone) null else { index ->
+                    val action = onAction
+                    if (index == ACTION_TAB && face.added && action != null) action() else onSelect(index)
+                },
+                turn = face.turn,
+                actionLabel = if (face.added) actionLabel else null,
+                vertical = vertical,
+                modifier = Modifier
+                    .then(if (alone) Modifier.clearAndSetSemantics { } else Modifier)
+                    .graphicsLayer { alpha = 1f - (face.merge * 2f).coerceIn(0f, 1f) },
+            )
+
+            DockTabs(
+                selected = current,
+                content = onPill,
+                onSelect = null,
+                turn = face.turn,
+                actionLabel = null,
+                vertical = vertical,
+                // Нажатия и озвучка живут в нижней копии: верхняя только перекрашивает,
+                // иначе TalkBack читал бы каждую вкладку дважды.
+                modifier = Modifier.clearAndSetSemantics { }
+                    .graphicsLayer { alpha = 1f - (face.merge * 2f).coerceIn(0f, 1f) }
+                    .drawWithContent {
+                        val rect = pill()
+
+                        clipRect(rect.left, rect.top, rect.right, rect.bottom) {
+                            this@drawWithContent.drawContent()
+                        }
+                    },
+            )
+
+            SingleFace(face, single, onSingle, vertical, shape, onPill)
+        }
+    }
+}
+
+/**
+ * What both phone docks show besides the tabs: the merge into one button while there is nothing to show (D-98), and
+ * «Подписки» turned into «+ Добавить» (D-390), with their shines. [merge] is read in drawing only.
+ */
+internal class DockFace(
+    private val merging: State<Float>,
+    /** The one button's words, kept while it turns back into the tabs. */
+    val label: String,
+    /** The shine over the one button. */
+    val shine: Animatable<Float, AnimationVector1D>,
+    /** «Подписки» reads «+ Добавить». */
+    val added: Boolean,
+    val turn: Transition<Boolean>,
+    /** The glass style's drop as «+ Добавить» comes: a ring of light from the capsule, 0..1. */
+    val splash: Animatable<Float, AnimationVector1D>,
+    /** Air's shines over the highlight as «+ Добавить» comes. */
+    val tabShine: Animatable<Float, AnimationVector1D>,
+) {
+    /** 0 — the tabs, 1 — the one button. */
+    val merge: Float get() = merging.value
+}
+
+@Composable
+internal fun rememberDockFace(single: String?, onAction: (() -> Unit)?, position: () -> Float, glass: Boolean): DockFace {
     val alone = single != null
 
     // 0 — три вкладки, 1 — одна кнопка во всю панель (D-98). Подсветка вкладки
     // расползается на всю ширину, вкладки гаснут, проявляется надпись; обратно — в обратном
     // порядке, и из кнопки снова вырастают вкладки. Читается только в отрисовке.
-    val merge by animateFloatAsState(
+    val merge = animateFloatAsState(
         targetValue = if (alone) 1f else 0f,
         animationSpec = tween(MERGE_MS, easing = FastOutSlowInEasing),
         label = "merge",
@@ -458,16 +582,13 @@ private fun FloatingDock(
                 added = false
             } else if (!added) {
                 // The glass lens has just landed: the turn follows it at once.
-                delay(if (backdrop != null) GLASS_ACTION_PAUSE_MS else ACTION_PAUSE_MS)
+                delay(if (glass) GLASS_ACTION_PAUSE_MS else ACTION_PAUSE_MS)
                 added = true
             }
         }
     }
 
     val turn = updateTransition(added, label = "action")
-    // How far the finger has pulled the lens past the first or the last tab, 0..1; it wobbles through zero on release.
-    val edge = remember { Animatable(0f) }
-    // The glass style's drop as «Подписки» turns into «+ Добавить»: a ring of light from the capsule, 0..1.
     val splash = remember { Animatable(0f) }
 
     // Three shines over the highlight, then still: the call is made once, not repeated (D-91).
@@ -479,7 +600,7 @@ private fun FloatingDock(
 
         if (!added || alone || !motionEnabled) return@LaunchedEffect
 
-        if (backdrop != null) {
+        if (glass) {
             // On glass drops of light instead of the shines: a ring leaves the capsule as it swells and settles, three
             // times, as Air's shines, so the new button is noticed (the owner, 17.11).
             repeat(ACTION_SHINES) { pass ->
@@ -501,472 +622,96 @@ private fun FloatingDock(
         }
     }
 
-    // Brighter on the light theme's black highlight than on the dark theme's white one, as in the mockup.
-    val tabShineColor = onPill.copy(alpha = if (pill.luminance() < 0.5f) 0.38f else 0.2f)
+    return DockFace(merge, lastLabel.value, shine, added, turn, splash, tabShine)
+}
 
-    val current = selected()
+/** The glass drop's ring of light leaving the capsule [rect], [drop] 0..1 of the way. */
+internal fun DrawScope.drawSplash(rect: Rect, corner: CornerRadius, drop: Float) {
+    val outline = Path().apply { addRoundRect(RoundRect(rect, corner)) }
 
-    // The lens and the bubble need the side the tabs run from outside a draw scope.
-    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-
-    // The glass style: held, the highlight swells into a clear bubble that follows the finger
-    // along the dock; let go, it picks the tab under it and settles back into the highlight.
-    val bubble = remember { Animatable(0f) }
-    val stretch = remember { Animatable(0f) }
-    // The highlight's middle in the row of tabs while the finger leads it, pixels.
-    val scope = rememberCoroutineScope()
-    val drag = remember(scope) { DockDrag(scope) }
-    val dockLayer = if (backdrop != null && !vertical) rememberGraphicsLayer() else null
-    val bubbleLayer = if (backdrop != null && !vertical) rememberGraphicsLayer() else null
-    // Keyed on vertical too: the layers above vanish on the rail, and a shader kept from the dock drew into them.
-    val shader = remember(backdrop != null, vertical) { if (backdrop != null && !vertical) bubbleShader() else null }
-    val lens = remember(glassSupported, backdrop != null, vertical) {
-        if (android.os.Build.VERSION.SDK_INT >= 33 && backdrop != null && !vertical) DockLens() else null
-    }
-    var dockAt by remember { mutableStateOf(Offset.Zero) }
-    // Read inside the dock's gesture, which outlives a recomposition.
-    val actionNow by rememberUpdatedState(onAction)
-    val motionNow by rememberUpdatedState(motionEnabled)
-    val screen = MaterialTheme.colorScheme.background
-
-    fun pillLeftAt(width: Float): Float =
-        drag.center(dockPillOffset(width = width, position = position(), rtl = rtl) + dockSlotWidth(width) / 2f) - dockSlotWidth(width) / 2f
-
-    fun DrawScope.pillLeft() = pillLeftAt(size.width)
-    // The highlight along the dock: across its width at the bottom, down its height at the side.
-    fun DrawScope.pill(): Rect {
-        val length = if (vertical) size.height else size.width
-        val start = lerp(
-            if (!vertical) pillLeftAt(length) else dockPillOffset(length, position(), rtl = false),
-            0f,
-            merge,
-        )
-        val extent = lerp(dockSlotWidth(length), length, merge)
-
-        return if (vertical) Rect(Offset(0f, start), Size(size.width, extent))
-        else Rect(Offset(start, 0f), Size(extent, size.height))
-    }
-
-    fun DrawScope.pillWidth() = pill().width
-
-    val glass = backdrop != null && shader != null
-
-    /** Half the bubble's width in a row [row] wide; the swap of grey and dark labels follows it, not the pill. */
-    /** The finger's stretch, or the lens's own speed while it travels to a tapped tab. */
-    fun stretchNow() = (maxOf(stretch.value, (drag.speed / 5000f).coerceAtMost(0.25f)) + EDGE_STRETCH * edge.value)
-        .coerceAtLeast(-0.15f)
-
-    fun bubbleHalf(row: Float) = dockSlotWidth(row) / 2f * (1f + 0.08f * bubble.value) * (1f + stretchNow())
-
-    /** Where the labels change from grey to dark: under the bubble while it shows, else under the pill. */
-    fun DrawScope.swapLeft() =
-        if (glass && bubble.value > 0.01f) pillLeft() + dockSlotWidth(size.width) / 2f - bubbleHalf(size.width) else pillLeft()
-
-    fun DrawScope.swapWidth() = if (glass && bubble.value > 0.01f) 2f * bubbleHalf(size.width) else pillWidth()
-
-    /** Opaque under the bubble, fading over [SWAP_FADE] at its sides: a hard edge read as doubled letters. */
-    fun DrawScope.swapMask(): Brush {
-        val left = swapLeft() / size.width
-        val right = (swapLeft() + swapWidth()) / size.width
-        val fade = SWAP_FADE.toPx() / size.width
-
-        return Brush.horizontalGradient(
-            0f to Color.Transparent,
-            left.coerceIn(0f, 1f) to Color.Transparent,
-            (left + fade).coerceIn(0f, 1f) to Color.Black,
-            (right - fade).coerceIn(0f, 1f) to Color.Black,
-            right.coerceIn(0f, 1f) to Color.Transparent,
-            1f to Color.Transparent,
+    clipPath(outline) {
+        drawCircle(
+            color = Color.White.copy(alpha = 0.55f * (1f - drop)),
+            radius = lerp(rect.height * 0.25f, rect.width * 0.7f, drop),
+            center = rect.center,
+            style = Stroke((3.dp.toPx() * (1f - drop)).coerceAtLeast(0.5f)),
         )
     }
+}
 
-    Box(
-        modifier
-            .onGloballyPositioned { dockAt = it.positionInRoot() }
-            .drawWithContent {
-                drawContent()
+/** The one button the dock turns into while there is nothing to show (D-98): «+» and [single]'s words, with its shine. */
+@Composable
+internal fun BoxScope.SingleFace(face: DockFace, single: String?, onSingle: () -> Unit, vertical: Boolean, shape: Shape, color: Color) {
+    if (face.label.isEmpty()) return
 
-                if (!glass) return@drawWithContent
-                val presence = bubble.value
-                if (presence < 0.01f) return@drawWithContent
+    val faceModifier = Modifier.matchParentSize()
+        .graphicsLayer { alpha = ((face.merge - 0.5f) * 2f).coerceIn(0f, 1f) }
+        .clip(shape)
+        .then(
+            if (single != null) Modifier.clickable(role = Role.Button, onClick = onSingle)
+            else Modifier.clearAndSetSemantics { },
+        )
+        .drawWithContent {
+            drawContent()
 
-                val inset = 4.dp.toPx()
-                val row = size.width - 2 * inset
-                val slot = dockSlotWidth(row)
-                val halfWidth = bubbleHalf(row)
-                val halfHeight = ((size.height - 2 * inset) / 2f + BUBBLE_RISE.toPx() * presence) * (1f - 0.35f * stretchNow())
+            val t = face.shine.value
 
-                drawGlassBubble(
-                    layer = bubbleLayer!!,
-                    shader = shader,
-                    center = Offset(inset + pillLeftAt(row) + slot / 2f, size.height / 2f),
-                    halfWidth = halfWidth,
-                    halfHeight = halfHeight,
-                    presence = presence,
-                    base = screen,
-                ) {
-                    drawRect(screen, Offset(-size.width, -size.height), Size(size.width * 3, size.height * 3))
-                    translate(backdrop.origin.x - dockAt.x, backdrop.origin.y - dockAt.y) { drawLayer(backdrop.layer) }
-                    drawLayer(dockLayer!!)
-                }
-            },
-    ) {
-    Surface(
-        modifier = Modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.widthIn(max = 420.dp)).airShadow(shape)
-            .then(
-                // What the bubble shows of the dock: the pane and the tabs, without the shadow.
-                if (glass) Modifier.drawWithContent {
-                    dockLayer!!.record { this@drawWithContent.drawContent() }
-                    drawLayer(dockLayer)
-                } else Modifier,
-            )
-            .glass(backdrop, GlassMaterial.Surface, shape),
-        shape = shape,
-        color = if (backdrop != null) Color.Transparent else MaterialTheme.colorScheme.surface,
-    ) {
-        Box(
-            Modifier.fillMaxWidth().padding(DOCK_PAD)
-                .then(if (glass && !vertical && !alone) Modifier.pointerInput(rtl) {
-                    val slop = viewConfiguration.touchSlop
-                    // The lens's landing after the last gesture: a new touch takes the dock over from it.
-                    var settle: Job? = null
+            if (t > 0f && t < 1f) {
+                val band = size.width * 0.4f
+                val x = -band + (size.width + band * 2f) * t
 
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                        val width = size.width.toFloat()
-                        val slot = dockSlotWidth(width)
-
-                        fun clamp(x: Float) = x.coerceIn(slot / 2f, width - slot / 2f)
-                        fun tabAt(x: Float): Int {
-                            val raw = (clamp(x) / slot).toInt().coerceIn(0, TABS - 1)
-                            return if (rtl) TABS - 1 - raw else raw
-                        }
-                        fun middleOf(tab: Int) = dockPillOffset(width = width, position = tab.toFloat(), rtl = rtl) + slot / 2f
-
-                        settle?.cancel()
-                        var released = false
-                        try {
-                            // Without Android's animations a tap lifts no lens; a drag still shows it under the finger.
-                            if (motionNow) scope.launch { bubble.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium)) }
-
-                            var dragging = false
-                            var tab = tabAt(dockPillOffset(width = width, position = position(), rtl = rtl) + slot / 2f)
-
-                            while (true) {
-                                val change = awaitPointerEvent(PointerEventPass.Initial).changes
-                                    .firstOrNull { it.id == down.id } ?: break
-                                if (!change.pressed) break
-
-                                if (!dragging && abs(change.position.x - down.position.x) > slop) {
-                                    dragging = true
-                                    val from = dockPillOffset(width = width, position = position(), rtl = rtl) + slot / 2f
-                                    drag.begin(drag.center(from))
-                                    if (!motionNow) scope.launch { bubble.snapTo(1f) }
-                                }
-
-                                if (dragging) {
-                                    // Taken: the tab under the finger must not also take it as a tap.
-                                    change.consume()
-
-                                    // Past the first or the last tab the lens follows less and less, as rubber does, and
-                                    // stretches toward the finger; the finger's own jittery speed no longer shapes it.
-                                    val raw = change.position.x
-                                    val x = clamp(raw)
-                                    val over = raw - x
-                                    val give = EDGE_GIVE.toPx()
-                                    val bent = over * give / (abs(over) + give)
-
-                                    drag.move(x + bent)
-                                    // Heavy: hardly any stretch near the tab, most of it at the dock's very edge (the
-                                    // owner, 17.11: it stretched at once and too easily).
-                                    val reach = (abs(over) / (slot / 2f)).coerceAtMost(1f)
-                                    scope.launch { edge.snapTo(reach * reach * reach) }
-
-                                    // No tick as the tab changes: the owner (18.11) found it irritating.
-                                    tab = tabAt(x)
-                                }
-                            }
-
-                            if (dragging) {
-                                val picked = tab
-
-                                onSelect(picked)
-                                drag.release(dockPillOffset(width, position(), rtl = rtl) + slot / 2f)
-                            }
-
-                            released = true
-                        } finally {
-                            if (!released) drag.cancel()
-                            scope.launch { stretch.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)) }
-                            // Let go at the edge, the drop wobbles back into shape.
-                            scope.launch { edge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 420f)) }
-                            settle = scope.launch {
-                                // A quick tap would stop the bubble before it showed: let it flash first.
-                                if (motionNow && bubble.value < 0.7f) launch { bubble.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 1000f)) }
-                                // A tap's lens rides on the page until it lands (the owner, 17.11); no tick (18.11).
-                                drag.ride(position, dockSlotWidth(width))
-                                bubble.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow))
-                            }
-                        }
-                    }
-                } else Modifier),
-        ) {
-            // Подсветка — своим слоем под обеими копиями вкладок: при слиянии она растёт,
-            // а вкладки гаснут, и гасить её вместе с ними нельзя.
-            Box(
-                Modifier.matchParentSize().drawBehind {
-                    val drop = splash.value
-                    val dropping = drop > 0f && drop < 1f
-                    // The capsule swells a little as the drop lands, and settles back.
-                    val rect = pill().let { if (dropping) it.inflate(it.height * SPLASH_SWELL * sin(PI.toFloat() * minOf(1f, drop * 2f))) else it }
-                    val corner = CornerRadius(if (vertical) RAIL_CORNER.toPx() else rect.minDimension / 2f)
-
-                    drawRoundRect(
-                        color = pill,
-                        topLeft = rect.topLeft,
-                        size = rect.size,
-                        cornerRadius = corner,
-                        alpha = 1f - bubble.value.coerceIn(0f, 1f),
-                    )
-
-                    // On a dark theme the highlight is light itself and needs no rim.
-                    if (backdrop != null && screen.luminance() > 0.5f) {
-                        drawRoundRect(
-                            color = Color.White.copy(alpha = 0.25f * (1f - bubble.value.coerceIn(0f, 1f))),
-                            topLeft = rect.topLeft,
-                            size = rect.size,
-                            cornerRadius = corner,
-                            style = Stroke(1.dp.toPx()),
-                        )
-                    }
-
-                    if (dropping) {
-                        val outline = Path().apply { addRoundRect(RoundRect(rect, corner)) }
-
-                        clipPath(outline) {
-                            drawCircle(
-                                color = Color.White.copy(alpha = 0.55f * (1f - drop)),
-                                radius = lerp(rect.height * 0.25f, rect.width * 0.7f, drop),
-                                center = rect.center,
-                                style = Stroke((3.dp.toPx() * (1f - drop)).coerceAtLeast(0.5f)),
-                            )
-                        }
-                    }
-
-                    val t = tabShine.value
-
-                    if (t > 0f && t < 1f) {
-                        // The band is transparent outside itself, so the highlight's own shape clips it.
-                        val band = rect.width * 0.6f
-                        val x = rect.left - band + (rect.width + band * 2f) * t
-
-                        drawRoundRect(
-                            brush = Brush.linearGradient(
-                                colors = listOf(Color.Transparent, tabShineColor, Color.Transparent),
-                                start = Offset(x - band / 2f, rect.top),
-                                // A 15° slant, as in the mockup.
-                                end = Offset(x + band / 2f, rect.top + band * 0.27f),
-                            ),
-                            topLeft = rect.topLeft,
-                            size = rect.size,
-                            cornerRadius = corner,
-                        )
-                    }
-                },
-            )
-
-            DockTabs(
-                selected = current,
-                content = MaterialTheme.colorScheme.onSurfaceVariant,
-                onSelect = if (alone) null else { index ->
-                    val action = onAction
-                    val adds = index == ACTION_TAB && added && action != null
-
-                    // Where the page is, not the tab it last rested on: a tab tapped while the page still travelled
-                    // to another was taken for the current one, and the lens dropped mid-way (the owner, 17.11).
-                    if (glass && !vertical && !adds && position() != index.toFloat()) {
-                        // The glass style: the lens rides on the page to the tapped tab, in step with it.
-                        drag.aim(index)
-                    } else {
-                        drag.cancel()
-                    }
-                    if (adds) action() else onSelect(index)
-                },
-                turn = turn,
-                actionLabel = if (added) actionLabel else null,
-                vertical = vertical,
-                modifier = Modifier
-                    .then(if (alone) Modifier.clearAndSetSemantics { } else Modifier)
-                    .graphicsLayer { alpha = 1f - (merge * 2f).coerceIn(0f, 1f) }
-                    .then(
-                        // Through the glass highlight this copy showed beside the magnified one: not under it.
-                        if (glass) Modifier.graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                            .drawWithContent {
-                                if (bubble.value > 0.01f) {
-                                    drawContent()
-                                    drawRect(swapMask(), blendMode = BlendMode.DstOut)
-                                } else {
-                                    val left = pillLeft()
-
-                                    clipRect(left, 0f, left + pillWidth(), size.height, ClipOp.Difference) {
-                                        this@drawWithContent.drawContent()
-                                    }
-                                }
-                            }
-                        else Modifier,
+                drawRect(
+                    Brush.linearGradient(
+                        colors = listOf(Color.Transparent, color.copy(alpha = 0.22f), Color.Transparent),
+                        start = Offset(x - band / 2f, 0f),
+                        end = Offset(x + band / 2f, size.height),
                     ),
-            )
-
-            DockTabs(
-                selected = current,
-                content = onPill,
-                onSelect = null,
-                turn = turn,
-                actionLabel = null,
-                vertical = vertical,
-                // Нажатия и озвучка живут в нижней копии: верхняя только перекрашивает,
-                // иначе TalkBack читал бы каждую вкладку дважды.
-                modifier = Modifier.clearAndSetSemantics { }
-                    .graphicsLayer {
-                        alpha = (1f - (merge * 2f).coerceIn(0f, 1f)) * (1f - bubble.value.coerceIn(0f, 1f))
-                        // On glass the highlight is a lens: between two tabs it magnifies the labels under it.
-                        if (glass && !drag.dragging && android.os.Build.VERSION.SDK_INT >= 33) {
-                            val at = position()
-                            val zoom = 1f + LENS_ZOOM * sin(PI.toFloat() * (at - floor(at)))
-                            val left = lerp(pillLeftAt(size.width), 0f, merge)
-                            val width = lerp(dockSlotWidth(size.width), size.width, merge)
-
-                            renderEffect = if (zoom > 1.002f) lens?.effect(left, width, size.height, zoom) else null
-                        } else renderEffect = null
-                    }
-                    .drawWithContent {
-                        val rect = pill()
-
-                        clipRect(rect.left, rect.top, rect.right, rect.bottom) {
-                            this@drawWithContent.drawContent()
-                        }
-                    },
-            )
-
-            if (glass) {
-                // A faint light around the labels under the moving lens, as if its glass gathered it (the owner, 17.11).
-                DockTabs(
-                    selected = current,
-                    content = Color.White,
-                    onSelect = null,
-                    turn = turn,
-                    actionLabel = null,
-                    vertical = vertical,
-                    modifier = Modifier.clearAndSetSemantics { }
-                        .graphicsLayer {
-                            val shown = bubble.value.coerceIn(0f, 1f)
-                            alpha = GLOW_ALPHA * shown
-                            renderEffect = if (shown > 0.01f) BlurEffect(GLOW_BLUR.toPx(), GLOW_BLUR.toPx()) else null
-                        }
-                        .drawWithContent {
-                            drawContent()
-                            drawRect(swapMask(), blendMode = BlendMode.DstIn)
-                        },
                 )
-
-                // Under the bubble the labels turn dark on clear glass, as the white ones on the highlight fade.
-                DockTabs(
-                    selected = current,
-                    content = MaterialTheme.colorScheme.onSurface,
-                    onSelect = null,
-                    turn = turn,
-                    actionLabel = null,
-                    vertical = vertical,
-                    modifier = Modifier.clearAndSetSemantics { }
-                        .graphicsLayer {
-                            alpha = bubble.value.coerceIn(0f, 1f)
-                            compositingStrategy = CompositingStrategy.Offscreen
-                        }
-                        .drawWithContent {
-                            drawContent()
-                            drawRect(swapMask(), blendMode = BlendMode.DstIn)
-                        },
-                )
-            }
-
-            if (lastLabel.value.isNotEmpty()) {
-                val face = Modifier.matchParentSize()
-                        .graphicsLayer { alpha = ((merge - 0.5f) * 2f).coerceIn(0f, 1f) }
-                        .clip(shape)
-                        .then(
-                            if (alone) Modifier.clickable(role = Role.Button, onClick = onSingle)
-                            else Modifier.clearAndSetSemantics { },
-                        )
-                        .drawWithContent {
-                            drawContent()
-
-                            val t = shine.value
-
-                            if (t > 0f && t < 1f) {
-                                val band = size.width * 0.4f
-                                val x = -band + (size.width + band * 2f) * t
-
-                                drawRect(
-                                    Brush.linearGradient(
-                                        colors = listOf(Color.Transparent, onPill.copy(alpha = 0.22f), Color.Transparent),
-                                        start = Offset(x - band / 2f, 0f),
-                                        end = Offset(x + band / 2f, size.height),
-                                    ),
-                                )
-                            }
-                        }
-
-                if (vertical) {
-                    // The side dock is narrow: the «+» over the words, which take two lines.
-                    Column(
-                        modifier = face.padding(6.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
-                    ) {
-                        Icon(Symbols.Add, contentDescription = null, tint = onPill, modifier = Modifier.size(22.dp))
-
-                        Text(
-                            text = single ?: lastLabel.value,
-                            color = onPill,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Center,
-                            maxLines = 3,
-                        )
-                    }
-                } else {
-                    Row(
-                        modifier = face,
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Symbols.Add, contentDescription = null, tint = onPill, modifier = Modifier.size(22.dp))
-
-                        Spacer(Modifier.width(8.dp))
-
-                        Text(
-                            text = single ?: lastLabel.value,
-                            color = onPill,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                        )
-                    }
-                }
             }
         }
-    }
+
+    if (vertical) {
+        // The side dock is narrow: the «+» over the words, which take two lines.
+        Column(
+            modifier = faceModifier.padding(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+        ) {
+            Icon(Symbols.Add, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
+
+            Text(
+                text = single ?: face.label,
+                color = color,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                maxLines = 3,
+            )
+        }
+    } else {
+        Row(
+            modifier = faceModifier,
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Symbols.Add, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
+
+            Spacer(Modifier.width(8.dp))
+
+            Text(
+                text = single ?: face.label,
+                color = color,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+        }
     }
 }
 
 internal val SHEET_BLUR = 18.dp
 /** How far below a glass sheet's top corners the light on its rim fades out. */
 internal val SHEET_RIM_FADE = 160.dp
-
-/** How far the bubble swells over the dock's edges, above and below. */
-private val SWAP_FADE = 14.dp
-
-private val BUBBLE_RISE = 10.dp
 
 /** Слияние вкладок в одну кнопку и обратно (D-98). */
 private const val MERGE_MS = 420
@@ -976,7 +721,7 @@ private const val SHINE_MS = 900
 private const val SHINE_PAUSE_MS = 4000L
 
 /** The tab that turns into «+ Добавить»: «Подписки» (D-390). */
-private const val ACTION_TAB = 2
+internal const val ACTION_TAB = 2
 
 /** How long the pager rests on it before it turns. */
 private const val ACTION_PAUSE_MS = 280L
@@ -986,15 +731,7 @@ private const val GLASS_ACTION_PAUSE_MS = 60L
 
 /** The glass drop: its length, and how much the capsule swells, of its height. */
 private const val SPLASH_MS = 700
-private const val SPLASH_SWELL = 0.06f
-
-/** How far the lens gives past the dock's end, and how much it stretches there. */
-private val EDGE_GIVE = 8.dp
-private const val EDGE_STRETCH = 0.2f
-
-/** The light around the labels under the lens. */
-private const val GLOW_ALPHA = 0.5f
-private val GLOW_BLUR = 5.dp
+internal const val SPLASH_SWELL = 0.06f
 
 /** Its shines: from the start of the turn to the first, between passes, and how many. */
 private const val ACTION_SHINE_DELAY_MS = 140L
@@ -1018,7 +755,7 @@ internal val DockTabItems = listOf(
  * несут подсветка и цвет.
  */
 @Composable
-private fun DockTabs(
+internal fun DockTabs(
     selected: Int,
     content: Color,
     onSelect: ((Int) -> Unit)?,

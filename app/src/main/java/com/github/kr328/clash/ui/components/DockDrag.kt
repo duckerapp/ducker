@@ -24,7 +24,7 @@ internal class DockDrag(private val scope: CoroutineScope) {
     private var remainder by mutableFloatStateOf(0f)
     private var motion: Job? = null
     private var generation = 0L
-    private var aim: Int? = null
+    private var aim by mutableStateOf<Int?>(null)
     private var pagerSpeed by mutableFloatStateOf(0f)
 
     /** The finger leads the lens. */
@@ -33,6 +33,9 @@ internal class DockDrag(private val scope: CoroutineScope) {
 
     /** How fast the lens moves, pixels a second: it stretches with it. */
     val speed: Float get() = if (owned) abs(follow.velocity) else pagerSpeed
+
+    /** Neither the finger nor a tap's ride leads the lens, and nothing is left of a hand-off: it is wherever the page is. */
+    val resting: Boolean get() = !owned && aim == null && remainder == 0f
 
     fun center(pagerCenter: Float): Float = if (owned) follow.value else pagerCenter + remainder
 

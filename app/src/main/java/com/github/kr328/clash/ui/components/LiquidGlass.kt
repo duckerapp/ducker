@@ -471,6 +471,11 @@ internal fun Modifier.liquidGlass(
     rimBoost: Float = 1f,
     /** How far below the top corners the rim light fades out; 0 — all around. A sheet's sides and bottom. */
     rimFade: Dp = 0.dp,
+    /**
+     * How much a layer around this pane scales it (the glass dock's breath): the picture is drawn back so the glass
+     * still shows what lies right under it; drawn plainly, it slid by the growth, ~40 px at the dock's far end.
+     */
+    zoom: (() -> Float)? = null,
     /** Its own veil instead of a flat [tint], drawn under the rim. */
     veil: (DrawScope.() -> Unit)? = null,
 ): Modifier {
@@ -504,12 +509,18 @@ internal fun Modifier.liquidGlass(
         val clip = Path().apply { addOutline(outline) }
 
         onDrawBehind {
-            val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && !backdrop.waveActive }?.pictures?.get(stillBlur)
+            val scaled = zoom?.invoke() ?: 1f
+            val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && !backdrop.waveActive && scaled == 1f }?.pictures?.get(stillBlur)
 
             if (still == null) {
                 glass.record(paneSize) {
-                    translate(backdrop.origin.x - position.x + margin, backdrop.origin.y - position.y + margin) {
-                        drawLayer(backdrop.layer)
+                    // [position] is where the scaled pane's corner lies; a point of it [scaled]× as far from there.
+                    translate(margin, margin) {
+                        scale(1f / scaled, 1f / scaled, pivot = Offset.Zero) {
+                            translate(backdrop.origin.x - position.x, backdrop.origin.y - position.y) {
+                                drawLayer(backdrop.layer)
+                            }
+                        }
                     }
                 }
             } else {
@@ -668,36 +679,6 @@ internal fun Modifier.glassVeil(backdrop: GlassBackdrop?, bar: Dp, color: Color)
     }
 }
 
-/**
- * The dock's retained lens shader. Effect snapshots are cached by their geometry and zoom uniforms.
- */
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
-@Keep
-internal class DockLens {
-    private val shader = RuntimeShader(LENS_SHADER)
-    private var lastLeft = Float.NaN
-    private var lastWidth = Float.NaN
-    private var lastHeight = Float.NaN
-    private var lastZoom = Float.NaN
-    private var snapshot: androidx.compose.ui.graphics.RenderEffect? = null
-
-    fun effect(left: Float, width: Float, height: Float, zoom: Float): androidx.compose.ui.graphics.RenderEffect? {
-        if (zoom <= 1.002f) return null
-        if (left != lastLeft || width != lastWidth || height != lastHeight || zoom != lastZoom) {
-            shader.setFloatUniform("center", left + width / 2f, height / 2f)
-            shader.setFloatUniform("halfSize", width / 2f, height / 2f)
-            shader.setFloatUniform("zoom", zoom)
-            // RenderEffect snapshots uniforms: retain the shader, refresh the snapshot when they change.
-            snapshot = RenderEffect.createRuntimeShaderEffect(shader, "img").asComposeRenderEffect()
-            lastLeft = left
-            lastWidth = width
-            lastHeight = height
-            lastZoom = zoom
-        }
-        return snapshot
-    }
-}
-
 /** Opaque to legacy callers: even a null RuntimeShader cast resolves the missing class on API26/28. */
 internal interface GlassWave {
     fun effect(center: Offset, radius: Float, width: Float, strength: Float, dispersion: Float, highlight: Float, alpha: Float): androidx.compose.ui.graphics.RenderEffect?
@@ -741,14 +722,64 @@ internal fun bubbleShader(): GlassBubble? =
  * [frost] 0…1 clouds it as it settles back into the thumb.
  */
 internal interface GlassLens {
-    fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, lift: Float, frost: Float, dark: Boolean, under: DrawScope.() -> Unit)
+    /** [drawFrom]: [LensLook.drawFrom] for this frame, so a moving lens can magnify more than a resting one. */
+    fun draw(
+        scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, lift: Float, frost: Float, dark: Boolean,
+        look: LensLook = LensLook.Switch, drawFrom: Float = look.drawFrom, under: DrawScope.() -> Unit,
+    )
+}
+
+/**
+ * How a [GlassLens] looks: its whole tuning in one place. Lengths are in the lens's half-height r. [Switch] is the
+ * switch's, fitted to the owner's iOS video (D-542, F-543): the reference the other lenses start from.
+ */
+internal data class LensLook(
+    /** The picture inside is drawn from (1 + this)× as far out, easing to none at the rim: above 0 it looks smaller, below 0 magnified. */
+    val drawFrom: Float,
+    /** How far the rim draws the surroundings in: the push outwards along its normal at the rim itself. */
+    val push: Float,
+    /** The push's share along the lens; across it stays whole. */
+    val pushAlong: Float,
+    /** How far red and blue part at the rim. */
+    val chroma: Float,
+    /** The band at the rim that mirrors what lies above or below it: along the sides, and at the ends. */
+    val bandSide: Float,
+    val bandEnd: Float,
+    /** How far beyond the band the mirror looks. */
+    val mirror: Float,
+    /** The thin dark line round the rim, its opacity. */
+    val ring: Float,
+    /** How much darker the glass gets towards its rim. */
+    val rimShade: Float,
+    /** How much lighter, towards white, the glass is than what lies under it. */
+    val lighten: Float,
+    /** The light lines along the top and bottom, on a dark and on a light screen. */
+    val shineDark: Float,
+    val shineLight: Float,
+    /** The shadow under the lens, on a dark and on a light screen. */
+    val shadowDark: Float,
+    val shadowLight: Float,
+    /** The blur it never loses, and the blur its frost adds. */
+    val clearBlur: Dp,
+    val frostBlur: Dp,
+) {
+    companion object {
+        val Switch = LensLook(
+            drawFrom = 0.12f, push = 0.3f, pushAlong = 0.6f, chroma = 0.1f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
+            ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shadowDark = 0.3f,
+            shadowLight = 0.12f, clearBlur = 0.3.dp, frostBlur = 6.dp,
+        )
+    }
 }
 
 @Keep
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private class Api33GlassLens : GlassLens {
     private val shader = RuntimeShader(LIQUID_LENS_SHADER)
-    override fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, lift: Float, frost: Float, dark: Boolean, under: DrawScope.() -> Unit) =
+    override fun draw(
+        scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, lift: Float, frost: Float, dark: Boolean,
+        look: LensLook, drawFrom: Float, under: DrawScope.() -> Unit,
+    ) =
         with(scope) {
             val margin = GLASS_MARGIN.toPx()
             val left = center.x - halfWidth - margin
@@ -758,15 +789,25 @@ private class Api33GlassLens : GlassLens {
             shader.setFloatUniform("halfSize", halfWidth, halfHeight)
             shader.setFloatUniform("radius", radius)
             shader.setFloatUniform("frost", frost)
-            shader.setFloatUniform("shine", if (dark) 0.18f else 0.6f)
-            shader.setFloatUniform("shadow", lift * if (dark) 0.3f else 0.12f)
+            shader.setFloatUniform("shine", if (dark) look.shineDark else look.shineLight)
+            shader.setFloatUniform("shadow", lift * if (dark) look.shadowDark else look.shadowLight)
             shader.setFloatUniform("shadowBlur", 0.25f * radius)
-                        shader.setFloatUniform("edge", 0.6.dp.toPx())
+            shader.setFloatUniform("edge", 0.6.dp.toPx())
             shader.setFloatUniform("inner", 0.15f * radius)
             shader.setFloatUniform("lift", lift)
+            shader.setFloatUniform("drawFrom", drawFrom)
+            shader.setFloatUniform("pushAmount", look.push)
+            shader.setFloatUniform("pushAlong", look.pushAlong)
+            shader.setFloatUniform("chromaAmount", look.chroma)
+            shader.setFloatUniform("bandSide", look.bandSide)
+            shader.setFloatUniform("bandEnd", look.bandEnd)
+            shader.setFloatUniform("mirrorReach", look.mirror)
+            shader.setFloatUniform("ringAlpha", look.ring)
+            shader.setFloatUniform("rimShade", look.rimShade)
+            shader.setFloatUniform("lighten", look.lighten)
             val lens = RenderEffect.createRuntimeShaderEffect(shader, "img")
             // Never quite clear: a touch of blur as the video's even when held.
-            val blur = LENS_CLEAR_BLUR.toPx() + frost * LENS_FROST_BLUR.toPx()
+            val blur = look.clearBlur.toPx() + frost * look.frostBlur.toPx()
             layer.renderEffect = (
                 if (blur < 0.5f) lens
                 else RenderEffect.createChainEffect(lens, RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.CLAMP))
@@ -781,9 +822,6 @@ private class Api33GlassLens : GlassLens {
 
 internal fun lensShader(): GlassLens? =
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) null else Api33GlassLens()
-
-private val LENS_CLEAR_BLUR = 0.3.dp
-private val LENS_FROST_BLUR = 6.dp
 
 internal fun DrawScope.drawGlassBubble(
     layer: GraphicsLayer,
@@ -1089,25 +1127,6 @@ half4 main(float2 coord) {
 """
 
 /**
- * Inside the pill the picture is taken nearer its middle, so it shows larger; the zoom eases to none at the
- * pill's ends, where the picture meets the one beside it — a flat zoom lost the letters there.
- */
-private const val LENS_SHADER = """
-uniform shader img;
-uniform float2 center;
-uniform float2 halfSize;
-uniform float zoom;
-
-half4 main(float2 coord) {
-    float2 p = coord - center;
-    if (abs(p.x) > halfSize.x || abs(p.y) > halfSize.y) return img.eval(coord);
-    float x = p.x / halfSize.x;
-    float z = 1.0 + (zoom - 1.0) * (1.0 - x * x);
-    return img.eval(center + p / z);
-}
-"""
-
-/**
  * The bubble: the middle magnified, easing to none at the ends; the rim takes the picture from just outside,
  * with full 7-spectral rainbow dispersion, as thick curved glass splits light at its edge.
  */
@@ -1223,6 +1242,16 @@ uniform float shadowBlur;
 uniform float edge;
 uniform float inner;
 uniform float lift;
+uniform float drawFrom;
+uniform float pushAmount;
+uniform float pushAlong;
+uniform float chromaAmount;
+uniform float bandSide;
+uniform float bandEnd;
+uniform float mirrorReach;
+uniform float ringAlpha;
+uniform float rimShade;
+uniform float lighten;
 
 float sdRoundedRect(float2 coord, float2 halfSize, float radius) {
     float2 cornerCoord = abs(coord) - (halfSize - float2(radius));
@@ -1260,7 +1289,7 @@ half4 main(float2 coord) {
     // and in under the top, leaving the rim above it light and the bottom clear. A thin dark line rings the rim.
     float2 o = p - float2(0.12, 0.3) * radius;
     float s = sdRoundedRect(o, halfSize, radius);
-    float ring = 0.6 * lift * (1.0 - clamp(max(d, 0.0) / (edge * 1.6), 0.0, 1.0));
+    float ring = ringAlpha * lift * (1.0 - clamp(max(d, 0.0) / (edge * 1.6), 0.0, 1.0));
     half4 shade = half4(0.0, 0.0, 0.0, max(shadow * (1.0 - smoothstep(-shadowBlur, shadowBlur, s)), ring));
     // The rim's pixels partly glass, partly shadow: a hard cut showed steps along the curve (the owner, 18.11).
     float cover = clamp(0.5 - d, 0.0, 1.0);
@@ -1270,7 +1299,7 @@ half4 main(float2 coord) {
     float t = clamp(depth / radius, 0.0, 1.0);
 
     float deep = smoothstep(0.0, 0.35, t);
-    float push = 0.3 * radius * pow(1.0 - t, 1.5);
+    float push = pushAmount * radius * pow(1.0 - t, 1.5);
     // Towards the ends the glass is thinner across: there the picture keeps its height and the dark bands from above
     // and below end in rounded tips short of the rim, as iOS's (the owner, 18.11).
     float intoEnd = max(abs(p.x) - (halfSize.x - radius), 0.0);
@@ -1284,9 +1313,9 @@ half4 main(float2 coord) {
     // back, it drew the dark beyond the track in at its top and bottom, "much black" as it settled where iOS's is soft
     // and milky (the owner's video of ours, 18.11).
     float bend = lift * lift;
-    float2 drawn = center + p + (p * float2(0.12 * deep, 0.12 * deep * across) + n * push * float2(0.6, pushAcross)) * bend;
+    float2 drawn = center + p + (p * float2(drawFrom * deep, drawFrom * deep * across) + n * push * float2(pushAlong, pushAcross)) * bend;
     float fringe = 1.0 - clamp(t / 0.25, 0.0, 1.0);
-    float2 chroma = n * (0.1 * radius * fringe * fringe * bend);
+    float2 chroma = n * (chromaAmount * radius * fringe * fringe * bend);
     half4 color = split(coord, drawn - coord, chroma);
 
     // The rim mirrors what lies above or below it along the refracted picture: at the ends, where the mirror's reach
@@ -1296,18 +1325,18 @@ half4 main(float2 coord) {
     // out to a line where the track curves away, as iOS's, not cut off. A thin line along the sides (0.04 r), thicker
     // from before the ends' curve (0.22 r); it looks 1.3× as far along as the picture does, so over the track's end its
     // colour has thinned away before the end's curve (the owner's second iOS video, 18.11).
-    float band = radius * (0.04 + 0.18 * smoothstep(-0.3, 0.5, (abs(p.x) - (halfSize.x - radius)) / radius));
+    float band = radius * (bandSide + (bandEnd - bandSide) * smoothstep(-0.3, 0.5, (abs(p.x) - (halfSize.x - radius)) / radius));
     float rim = 1.0 - clamp(depth / band, 0.0, 1.0);
     float2 shift = drawn - coord;
-    half4 mirror = split(coord, float2(shift.x + p.x * 0.3 * bend, -n.y * (0.9 * radius + band) * rim * bend), chroma * 0.15);
+    half4 mirror = split(coord, float2(shift.x + p.x * 0.3 * bend, -n.y * (mirrorReach * radius + band) * rim * bend), chroma * 0.15);
     color = mix(color, mirror, rim);
 
     color.rgb = mix(color.rgb, half3(color.a), frost * 0.25);
 
     // The glass a little lighter than what lies under it (+7 % towards white), and darker towards its rim: a soft
     // shade over its outer 0.6 r, down to 0.78 at the rim, measured on the owner's second iOS video (18.11).
-    color.rgb += (half3(color.a) - color.rgb) * 0.07;
-    color.rgb *= 1.0 - 0.28 * lift * exp(-s * s / (2.0 * inner * inner));
+    color.rgb += (half3(color.a) - color.rgb) * lighten;
+    color.rgb *= 1.0 - rimShade * lift * exp(-s * s / (2.0 * inner * inner));
     // A thin light line along the top and the bottom, none at the ends.
     float lobe = abs(n.y);
     float line = (1.0 - smoothstep(0.0, edge, depth)) * (0.1 + 0.9 * lobe * lobe) * shine;
