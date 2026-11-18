@@ -7,6 +7,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -148,13 +149,14 @@ internal object DockGlass {
     const val LENS_ASPECT = 1.39f
 
     /**
-     * A touch: the veil gone in 50 ms as the lens swells (180 ms, [follow]). Landed: the lens shrinks back in 260 ms,
+     * A touch: the veil, swelling with the lens in its shape, gone in 100 ms on the way (iOS's: it grows into the lens and
+     * fades out as it goes; ours went in a frame and left an empty ring, the owner, 18.11); the lens swells in 180 ms ([follow]). Landed: the lens shrinks back in 260 ms,
      * slowly at first, still glass, and softly into the veil, which returns over 220, most of it early. iOS's short tap
      * is one bubble, ~150 ms up past its held size and ~150 ms down, glass to the end; ours, 130 ms down from the start
      * at full speed and its bend gone first, seemed to die before it had come (the owner, 18.11, `IMG_0050.mp4`); at
      * 120 + 160 ms, ending at full speed, still abrupt («плавнее и длительней»).
      */
-    const val VEIL_OUT_MS = 50
+    const val VEIL_OUT_MS = 100
     const val LENS_IN_MS = 180
     const val LENS_OUT_MS = 260
     val LENS_OUT_EASING: Easing = CubicBezierEasing(0.5f, 0f, 0.3f, 1f)
@@ -182,6 +184,8 @@ internal object DockGlass {
      * 1.17 × as wide at ~270 ms from the touch, back by ~450 ms later (`ios-dock/appear/`); it grew to its size and stood.
      */
     const val SWELL_WIDE = 0.17f
+    /** And magnifies more at its peak (iOS's tap: the icon 1.08 × its held size), the rim then drawing out what lies at it. */
+    const val SWELL_ZOOM = 0.06f
     const val SWELL_FLAT = 0.05f
     const val SWELL_IN_MS = 270
     const val SWELL_OUT_MS = 450
@@ -223,7 +227,7 @@ internal object DockGlass {
     val Look = LensLook.Switch.copy(
         drawFrom = -0.13f, zoomEdge = 0.12f, push = 1.2f, pushPower = 6f, pushBand = 0.45f, pushAlong = 1.1f, pushAcross = 0.7f,
         pushEndFrom = 0.1f, pushEndTo = 0.6f,
-        chroma = 0.08f, disperse = 0.35f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
+        chroma = 0.08f, disperse = 0.35f, smear = 0.6f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
         shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }
@@ -308,7 +312,7 @@ internal fun GlassDock(
             touch.seen = touch.count
             return@LaunchedEffect
         }
-        launch { veil.animateTo(0f, tween(DockGlass.VEIL_OUT_MS)) }
+        launch { veil.animateTo(0f, tween(DockGlass.VEIL_OUT_MS, easing = LinearEasing)) }
         var back: Job? = null
         held.follow(touch, motion, out = DockGlass.LENS_OUT_MS, outEasing = DockGlass.LENS_OUT_EASING, inMs = DockGlass.LENS_IN_MS) {
             // A tap's click comes a frame or two after the finger lifts, and only then is the lens sent off: it must not
@@ -452,7 +456,7 @@ internal fun GlassDock(
                     val lift = sqrt(s)
                     lens.draw(
                         this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, lift, 0f, dark, DockGlass.Look,
-                        drawFrom = DockGlass.Look.drawFrom - DockGlass.MOVING_ZOOM * abs(speed()),
+                        drawFrom = DockGlass.Look.drawFrom - DockGlass.MOVING_ZOOM * abs(speed()) - DockGlass.SWELL_ZOOM * swell.value,
                     ) {
                         drawRect(screen, Offset(-whole.width, -whole.height), Size(whole.width * 3, whole.height * 3))
                         // The screen as it lies under the grown dock: [dockAt] is its grown corner (see liquidGlass's zoom).
@@ -493,11 +497,12 @@ internal fun GlassDock(
                     Box(
                         Modifier.matchParentSize()
                             .layout { measurable, constraints ->
-                                val rect = veilRect(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat())
+                                // In the lens's shape as it swells or shrinks: it grows into the lens and back out of it.
+                                val rect = chosen(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat())
                                 val placeable = measurable.measure(
                                     Constraints.fixed(rect.width.roundToInt().coerceAtLeast(0), rect.height.roundToInt().coerceAtLeast(0)),
                                 )
-                                layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(rect.left.roundToInt(), 0) }
+                                layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(rect.left.roundToInt(), rect.top.roundToInt()) }
                             }
                             .graphicsLayer {
                                 alpha = veil.value * DockGlass.VEIL_OPACITY
@@ -631,6 +636,8 @@ private fun Modifier.dockDrag(
         try {
             var dragging = false
             var tab = 0
+            var grab = 0f
+            var grabAt = 0f
 
             while (true) {
                 val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
@@ -638,14 +645,19 @@ private fun Modifier.dockDrag(
 
                 if (!dragging && abs(change.position.x - down.position.x) > slop) {
                     dragging = true
-                    drag.begin(drag.center(tabMiddle(width, position(), rtl)))
+                    val from = drag.center(tabMiddle(width, position(), rtl))
+                    drag.begin(from)
+                    // The lens sets off from where it is and comes under the finger over a tab's way: sent at once to the
+                    // finger — past the slop, off the tab's middle — it jumped as it tore away (the owner, 18.11).
+                    grab = from - change.position.x
+                    grabAt = change.position.x
                 }
 
                 if (dragging) {
                     // Taken: the tab under the finger must not also take it as a tap.
                     change.consume()
 
-                    val raw = change.position.x
+                    val raw = change.position.x + grab * (1f - (abs(change.position.x - grabAt) / slot).coerceAtMost(1f))
                     val x = clamp(raw)
                     val over = raw - x
                     val give = DockGlass.EDGE_GIVE.toPx()

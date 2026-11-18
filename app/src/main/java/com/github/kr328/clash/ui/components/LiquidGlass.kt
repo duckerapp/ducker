@@ -756,6 +756,8 @@ internal data class LensLook(
     /** How far red and blue part at the rim; [disperse] — and by this share of the rim's push, as the push carries them. */
     val chroma: Float,
     val disperse: Float,
+    /** Above 0, the rim's picture is spread over this share of its push along the normal: soft streaks, not sharp copies. */
+    val smear: Float,
     /** The band at the rim that mirrors what lies above or below it: along the sides, and at the ends. */
     val bandSide: Float,
     val bandEnd: Float,
@@ -780,7 +782,7 @@ internal data class LensLook(
 ) {
     companion object {
         val Switch = LensLook(
-            drawFrom = 0.12f, zoomEdge = 0.35f, push = 0.3f, pushPower = 1.5f, pushBand = 0f, pushAlong = 0.6f, pushAcross = 1f, pushEndFrom = 0.25f, pushEndTo = 0.7f, chroma = 0.1f, disperse = 0f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
+            drawFrom = 0.12f, zoomEdge = 0.35f, push = 0.3f, pushPower = 1.5f, pushBand = 0f, pushAlong = 0.6f, pushAcross = 1f, pushEndFrom = 0.25f, pushEndTo = 0.7f, chroma = 0.1f, disperse = 0f, smear = 0f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
             ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shineEnds = 0.1f, shadowDark = 0.3f,
             shadowLight = 0.12f, clearBlur = 0.3.dp, frostBlur = 6.dp,
         )
@@ -816,6 +818,7 @@ private class Api33GlassLens : GlassLens {
             shader.setFloatUniform("pushPower", look.pushPower)
             shader.setFloatUniform("pushBand", look.pushBand)
             shader.setFloatUniform("disperse", look.disperse)
+            shader.setFloatUniform("smear", look.smear)
             shader.setFloatUniform("zoomEdge", look.zoomEdge)
             shader.setFloatUniform("pushAcrossScale", look.pushAcross)
             shader.setFloatUniform("pushEnd", look.pushEndFrom, look.pushEndTo)
@@ -1270,6 +1273,7 @@ uniform float pushAlong;
 uniform float pushPower;
 uniform float pushBand;
 uniform float disperse;
+uniform float smear;
 uniform float zoomEdge;
 uniform float pushAcrossScale;
 uniform float2 pushEnd;
@@ -1349,6 +1353,15 @@ half4 main(float2 coord) {
     // The colours part with the rim's push, not the middle's magnification: iOS's middle is clean, its rim rainbow.
     float2 chroma = n * (chromaAmount * radius * fringe * fringe * bend) + rimShift * (disperse * bend);
     half4 color = split(coord, drawn - coord, chroma);
+    // What the rim takes in spread along its normal, five looks across the push: iOS's rim streaks are soft gradients
+    // of what lies at it, ours were sharp squeezed copies (the owner, 18.11).
+    if (smear > 0.0 && push > 0.5) {
+        float2 along = rimShift * (smear * bend);
+        float2 base = drawn - coord;
+        color += split(coord, base - along * 0.5, chroma) + split(coord, base - along * 0.25, chroma)
+            + split(coord, base + along * 0.25, chroma) + split(coord, base + along * 0.5, chroma);
+        color *= 0.2;
+    }
 
     // The rim mirrors what lies above or below it along the refracted picture: at the ends, where the mirror's reach
     // runs out, it meets the picture without a seam, and past the track's end it reflects nothing (the owner's iOS
