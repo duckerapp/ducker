@@ -7,7 +7,6 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.CoroutineScope
@@ -284,10 +283,16 @@ internal fun rememberGlassBackdrop(still: Boolean = false): GlassBackdrop? {
 internal val LocalGlassExtraBlur = staticCompositionLocalOf { 0.dp }
 
 /**
- * The backdrop as recorded at [version], drawn once per pane blur (in pixels) with the panes' colour lift. [held]: shown
- * after the backdrop has changed too, see [SheetStillPictures].
+ * The backdrop as recorded at [version], drawn once per pane blur (in pixels) and colour lift, keyed by [stillKey].
+ * [held]: shown after the backdrop has changed too, see [SheetStillPictures].
  */
 internal class StillBackdrop(val version: Int, val pictures: Map<Int, android.graphics.BitmapShader>, val held: Boolean = false)
+
+/**
+ * A still picture's key: its blur in pixels and its colour lift. By the blur alone, Home's pane glass and the dock (the
+ * dock's lift, [DockGlass.VIBRANCY]) were handed a picture of Appearance's lift, unlike their live one (F-550).
+ */
+internal fun stillKey(blur: Int, vibrancy: Int): Int = blur * 1000 + vibrancy
 
 /**
  * What a glass pane here shows of the backdrop under it, for a lens over the pane (a switch's, a slider's): the pane's
@@ -299,10 +304,11 @@ internal fun rememberPaneUnder(): (DrawScope.(position: Offset) -> Unit) {
     val blur = with(LocalDensity.current) {
         (MAX_BLUR.toPx() * (LocalGlassStyle.current.blur / 100f) + LocalGlassExtraBlur.current.toPx()).roundToInt()
     }
+    val vibrancy = LocalGlassStyle.current.vibrancy
     val veil = MaterialTheme.colorScheme.surface.copy(alpha = GlassMaterial.Surface.tint)
-    return remember(backdrop, blur, veil) {
+    return remember(backdrop, blur, vibrancy, veil) {
         { position ->
-            val picture = backdrop?.still?.pictures?.get(blur)
+            val picture = backdrop?.still?.pictures?.get(stillKey(blur, vibrancy))
             if (picture != null) {
                 val size = backdrop.layer.size
                 translate(backdrop.origin.x - position.x, backdrop.origin.y - position.y) {
@@ -317,16 +323,17 @@ internal fun rememberPaneUnder(): (DrawScope.(position: Offset) -> Unit) {
     }
 }
 
+/** Every blur (pixels) and colour lift a pane on this backdrop asks for: the panes, the controls on them, the power button. */
 @Composable
-private fun stillBlurs(extra: Dp): List<Int> {
+private fun stillLooks(extra: Dp, dock: Boolean): List<Pair<Int, Int>> {
     val density = LocalDensity.current
-    val blur = LocalGlassStyle.current.blur
-    // Every blur a pane on this backdrop asks for: the panes, the controls on them, the power button.
-    return remember(blur, density, extra) {
+    val style = LocalGlassStyle.current
+    return remember(style.blur, style.vibrancy, density, extra, dock) {
         with(density) {
-            // Also the dock's blur, which Home's pane glass takes too (F-550).
-            listOf(blur, DockGlass.BLUR).flatMap { b ->
-                listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (b / 100f) + (it + extra).toPx()).roundToInt() }
+            // Also the dock's look, which Home's pane glass takes too (F-550, [asDock]).
+            val looks = listOf(style.blur to style.vibrancy) + if (dock) listOf(DockGlass.BLUR to DockGlass.VIBRANCY) else emptyList()
+            looks.flatMap { (b, v) ->
+                listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (b / 100f) + (it + extra).toPx()).roundToInt() to v }
             }.distinct()
         }
     }
@@ -344,10 +351,9 @@ internal fun StillBackdropPictures(backdrop: GlassBackdrop) {
 
     val graphics = LocalGraphicsContext.current
     val density = LocalDensity.current
-    val style = LocalGlassStyle.current
-    val blurs = stillBlurs(0.dp)
+    val looks = stillLooks(0.dp, dock = true)
 
-    LaunchedEffect(backdrop, blurs, style.vibrancy) {
+    LaunchedEffect(backdrop, looks) {
         backdrop.still = null
         snapshotFlow { backdrop.version to backdrop.waveActive }.collectLatest { (version, wave) ->
             if (wave) return@collectLatest
@@ -356,7 +362,7 @@ internal fun StillBackdropPictures(backdrop: GlassBackdrop) {
             val size = backdrop.layer.size
             if (size.width <= 0 || size.height <= 0) return@collectLatest
 
-            val pictures = blurs.associateWith { blur -> stillPicture(graphics, density, backdrop.layer, size, blur, style.vibrancy) }
+            val pictures = looks.associate { (blur, vibrancy) -> stillKey(blur, vibrancy) to stillPicture(graphics, density, backdrop.layer, size, blur, vibrancy) }
             if (backdrop.version == version) backdrop.still = StillBackdrop(version, pictures)
         }
     }
@@ -374,10 +380,9 @@ internal fun SheetStillPictures(backdrop: GlassBackdrop, sheets: SheetGlass, ext
 
     val graphics = LocalGraphicsContext.current
     val density = LocalDensity.current
-    val vibrancy = LocalGlassStyle.current.vibrancy
-    val blurs = stillBlurs(extra)
+    val looks = stillLooks(extra, dock = false)
 
-    LaunchedEffect(backdrop, sheets, blurs, vibrancy) {
+    LaunchedEffect(backdrop, sheets, looks) {
         backdrop.still = null
         snapshotFlow { sheets.wanted }.collectLatest { wanted ->
             sheets.ready = false
@@ -385,7 +390,7 @@ internal fun SheetStillPictures(backdrop: GlassBackdrop, sheets: SheetGlass, ext
             val version = backdrop.version
             val size = backdrop.layer.size
             if (backdrop.still?.version != version && size.width > 0 && size.height > 0) {
-                val pictures = blurs.associateWith { blur -> stillPicture(graphics, density, backdrop.layer, size, blur, vibrancy) }
+                val pictures = looks.associate { (blur, vibrancy) -> stillKey(blur, vibrancy) to stillPicture(graphics, density, backdrop.layer, size, blur, vibrancy) }
                 backdrop.still = StillBackdrop(version, pictures, held = true)
             }
             sheets.ready = true
@@ -492,7 +497,7 @@ internal fun Modifier.liquidGlass(
      * still shows what lies right under it; drawn plainly, it slid by the growth, ~40 px at the dock's far end.
      */
     zoom: (() -> ScaleFactor)? = null,
-    /** The pane glass: a finger on it lights it up, see [glassPress]. */
+    /** The pane glass: a finger on it eases its tint, see [glassPress]. */
     press: GlassPress? = null,
     /** Its own veil instead of a flat [tint], drawn under the rim. */
     veil: (DrawScope.() -> Unit)? = null,
@@ -507,13 +512,15 @@ internal fun Modifier.liquidGlass(
     // The same glass drawn straight from a still backdrop's picture: no layer of its own, no blur of its own.
     val stillShader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
     val stillBrush = remember(stillShader) { ShaderBrush(stillShader) }
-    val highlightShader = remember { RuntimeShader(HIGHLIGHT_SHADER) }
-    val highlightBrush = remember(highlightShader) { ShaderBrush(highlightShader) }
-    // The pane glass's veil, thinner over the rim so the colours and the light line drawn in there show through: a flat
-    // tint drawn by it, an own [veil] masked by the second.
+    // The pane glass draws its own light line.
+    val highlightShader = remember(panes) { if (panes) null else RuntimeShader(HIGHLIGHT_SHADER) }
+    val highlightBrush = remember(highlightShader) { highlightShader?.let(::ShaderBrush) }
+    // The pane glass's veil, thinner over the rim so its roll and light line show through: a flat tint drawn by it, an
+    // own [veil] masked by the second.
+    val ownVeil = veil != null
     val veilShader = remember(panes) { if (panes) RuntimeShader(PANE_VEIL_SHADER) else null }
     val veilBrush = remember(veilShader) { veilShader?.let(::ShaderBrush) }
-    val maskShader = remember(panes) { if (panes) RuntimeShader(PANE_VEIL_SHADER) else null }
+    val maskShader = remember(panes, ownVeil) { if (panes && ownVeil) RuntimeShader(PANE_VEIL_SHADER) else null }
     val maskBrush = remember(maskShader) { maskShader?.let(::ShaderBrush) }
     var position by remember { mutableStateOf(Offset.Zero) }
     // How much the layers around it scale it (a pressed card around its button): measured, so its glass still shows what
@@ -566,7 +573,7 @@ internal fun Modifier.liquidGlass(
             val plain = scaled.scaleX == 1f && scaled.scaleY == 1f
             // The pane glass reads the still picture scaled as well: a press drew it live, and the spring's last swings
             // switched between the two every frame.
-            val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && !backdrop.waveActive && (plain || panes) }?.pictures?.get(stillBlur)
+            val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && !backdrop.waveActive && (plain || panes) }?.pictures?.get(stillKey(stillBlur, style.vibrancy))
             val pressed = press?.light() ?: 0f
 
             if (still == null) {
@@ -586,7 +593,7 @@ internal fun Modifier.liquidGlass(
                 if (panes) stillShader.setFloatUniform("zoom", scaled.scaleX, scaled.scaleY)
             }
 
-            // The pane glass: a faint dark line just outside the rim, under the light line inside it (iOS's, F-550).
+            // The pane glass: a faint dark line just outside the rim (iOS's, F-550).
             if (panes) drawOutline(outline, Color.Black.copy(alpha = PaneGlass.RING), style = Stroke(PaneGlass.RING_WIDTH.toPx()))
 
             clipPath(clip) {
@@ -605,7 +612,7 @@ internal fun Modifier.liquidGlass(
                     )
                 }
                 val tintProgress = (style.tint / 50f).coerceIn(0f, 2f)
-                // A press eases the tint, as the dock's (iOS: the tint, not the colour, F-550).
+                // A press eases the tint, gentler than the dock's (F-550).
                 val clear = 1f - PaneGlass.PRESS_CLEAR * pressed
                 if (veil != null) {
                     if (maskBrush != null) {
@@ -625,8 +632,8 @@ internal fun Modifier.liquidGlass(
             }
 
             // Specular directional highlight; the pane glass draws its own light line, coloured by what lies under it.
-            if (panes) {
-                // Drawn by the pane shader.
+            if (highlightShader == null || highlightBrush == null) {
+                // The pane glass: drawn by its shader.
             } else if (style.highlight > 0) {
                 val isLight = (if (base != Color.Transparent) base else screenBackground).luminance() > 0.5f
                 // At 100 % on a light screen the rim is as white as it was drawn before the fix below.
@@ -1624,9 +1631,9 @@ internal fun Modifier.glass(
 )
 
 /**
- * The pane glass, after iOS's Control Centre (the owner's video, 18.11; F-550): light milky glass whose rim draws in the
- * colours around it and carries a thin light line in their colour, a faint dark line outside it, and a press that swells
- * it like jelly and lights it up. Home first, while it is tuned; the other screens keep [GLASS_SHADER]'s glass.
+ * The pane glass, after iOS's Control Centre and then the dock (the owner, 18.11; F-550): the dock's dark glass whose
+ * rim rolls lighter and draws in the colours around it softly, a faint light line along it and a faint dark one outside,
+ * and a press that swells it like jelly and eases its tint. Home first; the other screens keep [GLASS_SHADER]'s glass.
  */
 internal val LocalGlassPanes = staticCompositionLocalOf { false }
 
@@ -1806,25 +1813,29 @@ internal fun Modifier.glassPress(press: GlassPress?, own: Boolean): Modifier {
             press.down()
             val slop = viewConfiguration.touchSlop
             var held = false
-            while (true) {
-                // The Main pass reaches it before the pager and the page's scroll above it, so a held pane keeps the move.
-                val change = awaitPointerEvent(PointerEventPass.Main).changes.firstOrNull { it.id == down.id } ?: break
-                if (!change.pressed) break
-                val way = change.position - down.position
-                if (!held) {
-                    if (change.isConsumed) break
-                    if (way.getDistance() > slop) {
-                        // Moved at once: a swipe for the tabs or a scroll, theirs.
-                        if (change.uptimeMillis - down.uptimeMillis < PaneGlass.HOLD_MS) break
-                        held = true
+            // Let go however the gesture ends: cancelled mid-press (the pane recomposed with a new key), it stayed swollen.
+            try {
+                while (true) {
+                    // The Main pass reaches it before the pager and the page's scroll above it, so a held pane keeps the move.
+                    val change = awaitPointerEvent(PointerEventPass.Main).changes.firstOrNull { it.id == down.id } ?: break
+                    if (!change.pressed) break
+                    val way = change.position - down.position
+                    if (!held) {
+                        if (change.isConsumed) break
+                        if (way.getDistance() > slop) {
+                            // Moved at once: a swipe for the tabs or a scroll, theirs.
+                            if (change.uptimeMillis - down.uptimeMillis < PaneGlass.HOLD_MS) break
+                            held = true
+                        }
+                    }
+                    if (held) {
+                        change.consume()
+                        press.pull(way)
                     }
                 }
-                if (held) {
-                    change.consume()
-                    press.pull(way)
-                }
+            } finally {
+                press.up()
             }
-            press.up()
         }
     }.graphicsLayer {
         val grow = (PaneGlass.PRESS_GROW.toPx() / size.width.coerceAtLeast(1f)).coerceIn(PaneGlass.GROW_MIN, PaneGlass.GROW_MAX)
@@ -1840,10 +1851,10 @@ internal fun Modifier.glassPress(press: GlassPress?, own: Boolean): Modifier {
 }
 
 /*
- * The pane glass (F-550): the blurred picture lifted towards white; within [band] of the rim it is drawn from up to
- * [push] beyond it, steepest at the rim as a circle's edge, red and blue parted, its colours more vivid; the rim lighter
- * at the top and darker at the bottom; a thin light line along it in the colour of what lies under it, brightest at the
- * top and the bottom.
+ * The pane glass (F-550): the blurred picture as it is; within [band] of the rim it is drawn from up to [push] beyond
+ * it, easing in towards the rim, red and blue parted, its colours a little livelier, the glass rolling lighter towards
+ * the rim, lighter at the top and darker at the bottom; a faint light line along it in the colour of what lies under it,
+ * brightest at the top and the bottom. [zoom]: the still picture read under a pane its layers scale.
  */
 private const val PANE_SHADER = """
 uniform shader img;
