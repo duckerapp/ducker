@@ -512,8 +512,8 @@ internal fun Modifier.liquidGlass(
     // The same glass drawn straight from a still backdrop's picture: no layer of its own, no blur of its own.
     val stillShader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
     val stillBrush = remember(stillShader) { ShaderBrush(stillShader) }
-    // The pane glass draws its own light line.
-    val highlightShader = remember(panes) { if (panes) null else RuntimeShader(HIGHLIGHT_SHADER) }
+    // The pane glass draws its own light line, unless it takes the dock's rim ([PaneGlass.DOCK_RIM]).
+    val highlightShader = remember(panes) { if (panes && !PaneGlass.DOCK_RIM) null else RuntimeShader(HIGHLIGHT_SHADER) }
     val highlightBrush = remember(highlightShader) { highlightShader?.let(::ShaderBrush) }
     // The pane glass's veil, thinner over the rim so its roll and light line show through: a flat tint drawn by it, an
     // own [veil] masked by the second.
@@ -631,13 +631,15 @@ internal fun Modifier.liquidGlass(
                 }
             }
 
-            // Specular directional highlight; the pane glass draws its own light line, coloured by what lies under it.
+            // Specular directional highlight; the pane glass draws its own light line, coloured by what lies under it, or
+            // the dock's rim at the dock's strength.
+            val highlight = if (panes) DockGlass.HIGHLIGHT else style.highlight
             if (highlightShader == null || highlightBrush == null) {
                 // The pane glass: drawn by its shader.
-            } else if (style.highlight > 0) {
+            } else if (highlight > 0) {
                 val isLight = (if (base != Color.Transparent) base else screenBackground).luminance() > 0.5f
                 // At 100 % on a light screen the rim is as white as it was drawn before the fix below.
-                val hAlpha = ((if (isLight) 1f else 0.55f) * (style.highlight / 100f) * rimBoost).coerceAtMost(1f)
+                val hAlpha = ((if (isLight) 1f else 0.55f) * (highlight / 100f) * rimBoost).coerceAtMost(1f)
                 highlightShader.setFloatUniform("size", size.width, size.height)
                 highlightShader.setFloatUniform("cornerRadii", radii)
                 // Premultiplied, as the shader's output is: white at (1, 1, 1, a) added near-full white whatever a was.
@@ -1671,6 +1673,12 @@ internal object PaneGlass {
      * (the owner, 18.11: «все равно не как докбар по цвету»).
      */
     const val ROLL = 0.1f
+    /**
+     * A trial (the owner, 19.11: «перенести кромку с докбара на элементы выше … если че откатим»): the dock's rim, the
+     * old glass's directional light line ([HIGHLIGHT_SHADER] at [DockGlass.HIGHLIGHT]), in place of the pane's own [LINE].
+     * False brings the pane's line back.
+     */
+    const val DOCK_RIM = true
     /** The light line along the rim, its strength and width. */
     const val LINE = 0.3f
     val LINE_WIDTH = 1.5.dp
@@ -1736,7 +1744,7 @@ private fun Density.paneBend(shader: RuntimeShader, margin: Float, width: Float,
     shader.setFloatUniform("vivid", PaneGlass.VIVID * (style.vibrancy / 40f))
     shader.setFloatUniform("roll", PaneGlass.ROLL)
     shader.setFloatUniform("zoom", 1f, 1f)
-    shader.setFloatUniform("line", PaneGlass.LINE * (style.highlight / 60f))
+    shader.setFloatUniform("line", if (PaneGlass.DOCK_RIM) 0f else PaneGlass.LINE * (style.highlight / 60f))
     shader.setFloatUniform("lineWidth", PaneGlass.LINE_WIDTH.toPx())
     shader.setFloatUniform("volume", PaneGlass.VOLUME * (style.depth / 30f))
     shader.setFloatUniform("noiseStrength", style.noise / 100f * 0.05f)
