@@ -1205,10 +1205,10 @@ half4 main(float2 coord) {
 /**
  * [GlassLens], fitted to the owner's iOS video frame by frame (lens half-height r, depth from the rim): inside, the
  * picture is drawn from 1.12× as far out, easing to 1× over the outer 0.35 r, plus a push outwards along the rim's
- * normal, 0.3 r × (1 − depth / r)^1.5 (its horizontal part × 0.3) — so the surroundings fill the top and bottom while
- * the ends stay nearly true; the vertical part of both fades as (cross-section / r)⁶ in the ends; the outer band
- * (0.12 r, up to 0.72 r at the ends) mirrors what lies inwards along the normal; red and blue part along the normal
- * near the rim, up to ±0.15 r.
+ * normal, 0.3 r × (1 − depth / r)^1.5 — so the surroundings fill the top and bottom while
+ * the ends stay nearly true; the vertical part of both fades as (cross-section / r)⁶ in the ends (the horizontal push
+ * there × 0.6); the outer 0.12 r mirrors what lies above or below it; red and blue part along the normal near the rim,
+ * up to ±0.15 r (±0.06 r in the mirror).
  */
 private const val LIQUID_LENS_SHADER = """
 uniform shader img;
@@ -1268,19 +1268,22 @@ half4 main(float2 coord) {
     // and below end in rounded tips short of the rim, as iOS's (the owner, 18.11).
     float intoEnd = max(abs(p.x) - (halfSize.x - radius), 0.0);
     float across = pow(sqrt(max(radius * radius - intoEnd * intoEnd, 0.0)) / radius, 6.0);
-    // Little push outwards at the ends: the colour under them reaches their rim (the owner's iOS screenshot, 18.11).
-    float2 drawn = center + p + p * float2(0.12 * inner, 0.12 * inner * across) + n * push * float2(0.3, across);
+    // Less push outwards at the ends: over the track its colour reaches their rim, dense; past the track's end they show
+    // the dark beyond (the owner's iOS screenshots, 18.11).
+    float2 drawn = center + p + p * float2(0.12 * inner, 0.12 * inner * across) + n * push * float2(0.6, across);
     float fringe = 1.0 - clamp(t / 0.25, 0.0, 1.0);
     float2 chroma = n * (0.15 * radius * fringe * fringe);
     half4 color = split(coord, drawn - coord, chroma);
 
-    // The rim rolls over: what lies inside wraps round it, widest at the ends, so the dark bands from above and below
-    // end short of them, rounded (the owner's iOS screenshot, 18.11). The mirror's reach eases in from the band's inner
-    // edge, without a seam.
-    float band = radius * (0.12 + 0.6 * pow(min(intoEnd / radius, 1.0), 0.7));
-    float rim = 1.0 - smoothstep(0.0, band, depth);
-    half4 mirror = split(coord, -n * ((0.28 * radius + band) * rim), chroma);
-    color = mix(color, half4(min(mirror.rgb * 1.15, half3(mirror.a)), mirror.a), rim * 0.85);
+    // The rim mirrors what lies above or below it, dense at the edge, along the refracted picture: at the ends, where
+    // the mirror's reach runs out, it meets the picture without a seam, and past the track's end it reflects nothing
+    // (the owner's iOS screenshots, 18.11). Mirrored inwards along the normal it lit both ends alike; widened there it
+    // grew horns over the track's end.
+    float band = 0.12 * radius;
+    float rim = 1.0 - smoothstep(0.5 * band, band, depth);
+    float2 shift = drawn - coord;
+    half4 mirror = split(coord, float2(shift.x, -n.y * (0.28 * radius + band) * rim), chroma * 0.4);
+    color = mix(color, mirror, rim);
 
     color.rgb = mix(color.rgb, half3(color.a), frost * 0.15);
 
