@@ -98,10 +98,13 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
     val position = remember { Animatable(if (checked) 1f else 0f) }
     // 0 — the white thumb; 1 — the lens, swollen under a finger.
     val held = remember { Animatable(0f) }
-    // Clouds the lens as it turns back into the thumb.
+    // Clouds the lens: as the white thumb turns into it, and as it turns back.
     val frost = remember { Animatable(0f) }
-    // The track's accent: it turns as the thumb passes the middle, in a soft fade, not along the way.
+    // 1 — the thumb's white; it clears as a touch turns the thumb into the lens and returns once the lens has settled.
+    val fill = remember { Animatable(1f) }
+    // The track's accent: it turns as the thumb sets off, along its ride; while dragged, as it passes the middle.
     val lit = remember { Animatable(if (checked) 1f else 0f) }
+    var pulling by remember { mutableStateOf(false) }
     val layer = rememberGraphicsLayer()
     val drag = rememberUpdatedState(onDrag)
     val under = rememberPaneUnder()
@@ -110,18 +113,30 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
     val checkedNow = rememberUpdatedState(checked)
     LaunchedEffect(pressed, enabled) { if (enabled) pressed?.let { touch.watch(it) } }
     LaunchedEffect(touch.count, touch.down, motion) {
-        if (motion) launch { frost.animateTo(0f, tween(LENS_IN_MS)) } else frost.snapTo(0f)
-        held.follow(touch, motion) {
-            // The lens rides clear the whole way and settles once the thumb is home. A row's tap sets the switch a
-            // frame or two after the finger lifts: wait for that before asking where home is.
+        if (!motion) {
+            frost.snapTo(0f)
+            fill.snapTo(1f)
+            held.follow(touch, motion)
+            return@LaunchedEffect
+        }
+        // As iOS's (the owner's second video, 18.11): the white clouds over at once into a frosted lens, which clears as
+        // it rides and while held; home, it frosts and shrinks back to the thumb's size, and then the white returns.
+        if (fill.value > 0.5f) frost.snapTo(1f)
+        launch { fill.animateTo(0f, tween(FILL_OUT_MS)) }
+        launch { frost.animateTo(0f, tween(FROST_CLEAR_MS)) }
+        held.follow(touch, motion, out = SWITCH_LENS_OUT_MS) {
+            // The lens settles once the thumb is home. A row's tap sets the switch a frame or two after the finger
+            // lifts: wait for that before asking where home is.
             repeat(2) { withFrameNanos { } }
             snapshotFlow { !position.isRunning && position.value == if (checkedNow.value) 1f else 0f }.first { it }
-            launch { frost.animateTo(1f, tween(LENS_OUT_MS)) }
+            launch { frost.animateTo(1f, tween(SWITCH_LENS_OUT_MS)) }
         }
+        if (touch.down) return@LaunchedEffect
+        fill.animateTo(1f, tween(FILL_IN_MS))
         frost.snapTo(0f)
     }
     LaunchedEffect(motion) {
-        snapshotFlow { position.value >= 0.5f }.collectLatest { now ->
+        snapshotFlow { if (pulling) position.value >= 0.5f else checkedNow.value }.collectLatest { now ->
             val target = if (now) 1f else 0f
             if (motion) lit.animateTo(target, tween(TRACK_FADE_MS, easing = FastOutSlowInEasing)) else lit.snapTo(target)
         }
@@ -163,7 +178,10 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
                                 if (!dragging) drag.value?.invoke(!checkedNow.value)
                                 break
                             }
-                            if (!dragging && (change.position - down.position).getDistance() > slop) dragging = true
+                            if (!dragging && (change.position - down.position).getDistance() > slop) {
+                                dragging = true
+                                pulling = true
+                            }
                             if (!dragging) continue
                             change.consume()
                             val delta = change.position.x - change.previousPosition.x
@@ -172,6 +190,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
                             scope.launch { position.snapTo(next) }
                         }
                         if (!dragging) return@awaitEachGesture
+                        pulling = false
                         val now = position.value >= 0.5f
                         if (now != checkedNow.value) drag.value?.invoke(now)
                         else scope.launch { position.animateTo(if (now) 1f else 0f, spring(dampingRatio = 0.62f, stiffness = 420f)) }
@@ -193,7 +212,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
                 val center = Offset(if (rtl) size.width - x else x, size.height / 2f)
                 val thumb = lerp(thumbOff, Color.White, lit.value)
                 val s = held.value
-                if (s <= 0f && frost.value <= 0f) {
+                if (s <= 0f && fill.value >= 1f) {
                     drawThumb(center, thumbW / 2f, thumbH / 2f, thumb, 1.dp.toPx())
                     return@drawBehind
                 }
@@ -211,9 +230,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
                     // The switch's size, not the lens layer's this scope has.
                     drawRoundRect(trackColor, Offset.Zero, trackSize, trackCorner)
                 }
-                // The thumb's white: gone once the lens is half grown, back as it settles.
-                val k = (s / 0.6f).coerceIn(0f, 1f)
-                val white = 1f - k * k * (3f - 2f * k)
+                val white = fill.value
                 if (white > 0f) {
                     drawRoundRect(thumb.copy(alpha = white), Offset(center.x - halfW, center.y - halfH), Size(2 * halfW, 2 * halfH), CornerRadius(halfH))
                 }
@@ -258,7 +275,7 @@ internal class LensTouch {
  * Swells while a finger is down, settles back after; a touch already gone still swells fully once. [rest]: what the
  * lens waits for, swollen, before it settles (a segment's lens, its landing).
  */
-internal suspend fun Animatable<Float, *>.follow(touch: LensTouch, motion: Boolean, rest: suspend () -> Unit = {}) {
+internal suspend fun Animatable<Float, *>.follow(touch: LensTouch, motion: Boolean, out: Int = LENS_OUT_MS, rest: suspend () -> Unit = {}) {
     if (!motion) {
         touch.seen = touch.count
         snapTo(0f)
@@ -270,7 +287,7 @@ internal suspend fun Animatable<Float, *>.follow(touch: LensTouch, motion: Boole
     touch.seen = touch.count
     if (touch.down) return
     rest()
-    animateTo(0f, tween(LENS_OUT_MS))
+    animateTo(0f, tween(out))
 }
 
 /** A finger on this, from its touch until it lifts, whatever gesture takes the touch meanwhile. */
@@ -312,8 +329,14 @@ private const val LENS_IN_MS = 120
 private const val LENS_OUT_MS = 220
 /** How far past an end the switch's thumb gives under a pulling finger: iOS's, about 8 dp in the owner's video. */
 private val TOGGLE_GIVE = 10.dp
-// iOS's 150 ms read as a jump past the middle (the owner, 18.11).
-private const val TRACK_FADE_MS = 400
+// Along the thumb's ride, from its start, as iOS's second video (18.11); 150 ms from the middle read as a jump.
+private const val TRACK_FADE_MS = 250
+// The tap as iOS's (the owner's second video, 18.11): the white gone in 60 ms, the frost cleared as the lens rides,
+// the lens home frosting and shrinking in 140 ms, then the white back in 150 ms.
+private const val FILL_OUT_MS = 60
+private const val FROST_CLEAR_MS = 220
+private const val SWITCH_LENS_OUT_MS = 140
+private const val FILL_IN_MS = 150
 
 /**
  * A slider with Material's steps, speech and remote keys. The glass style (D-541): Kyant's liquid slider — a thin track in
