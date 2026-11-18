@@ -144,10 +144,12 @@ class SettingsStore(context: Context) {
         get() = prefs.getInt(KEY_GLASS_TINT, if (photo) PHOTO_TINT else 50)
         set(value) = prefs.edit().putInt(KEY_GLASS_TINT, value).apply()
 
-    /** Returns the blur and the tuning to their defaults, which depend on the backdrop. */
+    /**
+     * Returns the tuning card's values to their defaults, which depend on the backdrop. Not the blur: it has a card of
+     * its own, and the tuning's reset took it too.
+     */
     fun resetGlassTuning() {
         prefs.edit()
-            .remove(KEY_GLASS_BLUR)
             .remove(KEY_GLASS_REFRACTION)
             .remove(KEY_GLASS_DISPERSION)
             .remove(KEY_GLASS_DEPTH)

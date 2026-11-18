@@ -47,8 +47,6 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.LayerOutsets
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -463,7 +461,6 @@ private fun Unfold(visible: Boolean, content: @Composable () -> Unit) {
 @Composable
 private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Unit, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
-    val haptics = LocalHapticFeedback.current
     val stop = STOPS.indices.minBy { abs(STOPS[it] - interval) }
     val shown = hoursLabel(interval)
 
@@ -478,10 +475,7 @@ private fun OwnSlider(interval: Long, enabled: Boolean, onInterval: (Long) -> Un
             value = stop.toFloat(),
             onValueChange = { value ->
                 val index = value.roundToInt().coerceIn(STOPS.indices)
-                if (index != stop) {
-                    haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-                    onInterval(STOPS[index])
-                }
+                if (index != stop) onInterval(STOPS[index])
             },
             valueRange = 0f..STOPS.lastIndex.toFloat(),
             steps = STOPS.size - 2,

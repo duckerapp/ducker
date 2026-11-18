@@ -24,8 +24,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.stateDescription
 import com.github.kr328.clash.ui.components.glassSupported
 import com.github.kr328.clash.ui.components.navigationRoom
@@ -1015,7 +1013,6 @@ private fun InnerSwitch(
 @Composable
 private fun GlassBlurCard(blur: Int, onBlur: (Int) -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    val haptics = LocalHapticFeedback.current
     val shown = if (blur == 0) stringResource(R.string.glass_blur_none) else "$blur %"
 
     Card(Modifier.fillMaxWidth()) {
@@ -1029,10 +1026,7 @@ private fun GlassBlurCard(blur: Int, onBlur: (Int) -> Unit) {
                 value = blur / 10f,
                 onValueChange = { value ->
                     val next = value.roundToInt().coerceIn(0, 10) * 10
-                    if (next != blur) {
-                        haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-                        onBlur(next)
-                    }
+                    if (next != blur) onBlur(next)
                 },
                 valueRange = 0f..10f,
                 steps = 9,
@@ -1141,7 +1135,6 @@ private fun GlassTuningSlider(
     onValueChange: (Int) -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
-    val haptics = LocalHapticFeedback.current
     val shown = if (value == 0) "0 %" else "$value %"
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1156,10 +1149,7 @@ private fun GlassTuningSlider(
             value = value / 5f,
             onValueChange = { v ->
                 val next = (v.roundToInt() * 5).coerceIn(0, 100)
-                if (next != value) {
-                    haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-                    onValueChange(next)
-                }
+                if (next != value) onValueChange(next)
             },
             valueRange = 0f..20f,
             steps = 19,

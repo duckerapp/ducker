@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -377,8 +378,19 @@ internal fun DuckerSlider(
     val glass = LocalGlassBackdrop.current != null || LocalFrosted.current
     val bubble = remember(glass) { if (glass) bubbleShader() else null }
     if (bubble == null) {
+        val haptics = LocalHapticFeedback.current
+        // Each step ticks here, as the glass slider's drag does: the screens ticked too, and on glass every step twice.
+        // Against the last value ticked: Material repeats a step's value until the screen catches up.
+        val ticked = remember { floatArrayOf(value) }
+        SideEffect { ticked[0] = value }
         Slider(
-            value = value, onValueChange = onValueChange, valueRange = valueRange, steps = steps, enabled = enabled,
+            value = value,
+            onValueChange = {
+                if (steps > 0 && it != ticked[0]) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                ticked[0] = it
+                onValueChange(it)
+            },
+            valueRange = valueRange, steps = steps, enabled = enabled,
             colors = SliderDefaults.colors(
                 thumbColor = scheme.primary,
                 activeTrackColor = scheme.primary,
