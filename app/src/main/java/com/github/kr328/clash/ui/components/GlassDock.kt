@@ -461,9 +461,13 @@ internal fun GlassDock(
                     val scale = dockScale()
                     scaleX = scale.scaleX
                     scaleY = scale.scaleY
-                    // Stretched from its far side: that side stays where the breath has it.
-                    translationX = sign(pullX()) * (scale.scaleX - z) * size.width / 2f
-                    translationY = sign(pullY()) * (scale.scaleY - z) * size.height / 2f
+                    // Stretched from its far side: that side stays where the breath and the squeeze across have it. By
+                    // the whole change of scale, the squeeze too, the shift jumped ~1 % of the dock as the pull across
+                    // touched or crossed zero (the owner, 18.11: «дерганье»).
+                    val x = abs(pullX())
+                    val y = abs(pullY())
+                    translationX = sign(pullX()) * z * x * (1f - DockGlass.PULL_SQUEEZE * y) * size.width / 2f
+                    translationY = sign(pullY()) * z * y * (1f - DockGlass.PULL_SQUEEZE * x) * size.height / 2f
                 }
                 .onGloballyPositioned { dockAt = it.positionInRoot() }
                 .drawWithContent {
