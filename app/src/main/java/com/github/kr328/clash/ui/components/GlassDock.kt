@@ -70,6 +70,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.pow
 import kotlin.math.sqrt
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -154,12 +155,15 @@ internal object DockGlass {
      * slowly at first, still glass, and softly into the veil, which returns over 220, most of it early. iOS's short tap
      * is one bubble, ~150 ms up past its held size and ~150 ms down, glass to the end; ours, 130 ms down from the start
      * at full speed and its bend gone first, seemed to die before it had come (the owner, 18.11, `IMG_0050.mp4`); at
-     * 120 + 160 ms, ending at full speed, still abrupt («плавнее и длительней»).
+     * 120 + 160 ms, ending at full speed, still abrupt («плавнее и длительней»). Shrinking, the veil gathers in the lens
+     * as it goes, ~(1 − lens)^1.5 ([veilShown]): back on its own 220 ms from the start, it was there before the lens had
+     * gone, and the lens, slow then fast (0.5, 0, 0.3, 1 over 260 ms), fell into it in a frame (the owner, 18.11:
+     * «подложка появляется, а не из линзы она как бы образуется»).
      */
     const val VEIL_OUT_MS = 100
     const val LENS_IN_MS = 180
-    const val LENS_OUT_MS = 260
-    val LENS_OUT_EASING: Easing = CubicBezierEasing(0.5f, 0f, 0.3f, 1f)
+    const val LENS_OUT_MS = 300
+    val LENS_OUT_EASING: Easing = CubicBezierEasing(0.3f, 0f, 0.3f, 1f)
     const val VEIL_IN_MS = 220
 
     /**
@@ -177,7 +181,9 @@ internal object DockGlass {
     val SLOT = 84.dp
     const val STRETCH = 0.2f
     const val SQUASH = 0.35f
-    const val MOVING_ZOOM = 0f
+    // ~1.27 at full speed: iOS's moving lens magnifies ~1.2-1.45 and takes the icons it crosses into itself (the owner,
+    // 18.11); 0 while the lens drew the dock in rather than magnifying it.
+    const val MOVING_ZOOM = 0.08f
 
     /**
      * A touch: the lens swells on past its size, wider and a little flatter, and settles back. iOS's App Store, held:
@@ -349,6 +355,12 @@ internal fun GlassDock(
 
     fun zoom() = 1f + DockGlass.BREATH * breath.value
 
+    // The veil as it shows: shrinking, it gathers inside the lens as the lens goes; otherwise its own.
+    fun veilShown(): Float {
+        val s = held.value
+        return if (held.targetValue < 0.5f && s > 0.001f) (1f - s).pow(1.5f) else veil.value
+    }
+
     // The geometry, in the row of tabs [row] wide and [h] high.
     fun slot(row: Float) = dockSlotWidth(row)
     fun middle(row: Float) = drag.center(dockPillOffset(row, position(), rtl = rtl) + slot(row) / 2f)
@@ -505,7 +517,7 @@ internal fun GlassDock(
                                 layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(rect.left.roundToInt(), rect.top.roundToInt()) }
                             }
                             .graphicsLayer {
-                                alpha = veil.value * DockGlass.VEIL_OPACITY
+                                alpha = veilShown() * DockGlass.VEIL_OPACITY
                                 // The capsule swells a little as «+ Добавить»'s drop lands, and settles back.
                                 val drop = face.splash.value
                                 if (drop > 0f && drop < 1f) {
@@ -518,7 +530,7 @@ internal fun GlassDock(
                                 }
                             }
                             .drawWithContent {
-                                if (veil.value < 0.003f) return@drawWithContent
+                                if (veilShown() < 0.003f) return@drawWithContent
                                 drawContent()
                                 val drop = face.splash.value
                                 if (drop > 0f && drop < 1f) drawSplash(Rect(Offset.Zero, size), CornerRadius(size.height / 2f), drop)
