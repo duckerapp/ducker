@@ -1674,9 +1674,8 @@ internal object PaneGlass {
      */
     const val ROLL = 0.1f
     /**
-     * A trial (the owner, 19.11: «перенести кромку с докбара на элементы выше … если че откатим»): the dock's rim, the
-     * old glass's directional light line ([HIGHLIGHT_SHADER] at [DockGlass.HIGHLIGHT]), in place of the pane's own [LINE].
-     * False brings the pane's line back.
+     * The dock's rim, the old glass's directional light line ([HIGHLIGHT_SHADER] at [DockGlass.HIGHLIGHT]), in place of
+     * the pane's own [LINE]: tried and kept by the owner (19.11: «мне нравится, оставим»). False brings the pane's line back.
      */
     const val DOCK_RIM = true
     /** The light line along the rim, its strength and width. */
