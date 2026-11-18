@@ -26,3 +26,14 @@ class PillSegmentsTest {
         assertEquals(2f, positionAt(rtl, -40f))
     }
 }
+
+class SliderValueTest {
+    @Test
+    fun aDragLandsOnTheNearestStep() {
+        // 1..24 hours in 23 steps between: every hour a step.
+        assertEquals(1f, sliderValue(0f, 1f..24f, 22))
+        assertEquals(24f, sliderValue(1f, 1f..24f, 22))
+        assertEquals(13f, sliderValue(0.52f, 1f..24f, 22))
+        assertEquals(0.5f, sliderValue(0.5f, 0f..1f, 0))
+    }
+}

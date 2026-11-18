@@ -97,10 +97,8 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -443,7 +441,6 @@ private fun FloatingDock(
     // where they came, and turns back as soon as the page moves (D-390). Until then a tap on it does nothing,
     // so a quick double tap does not open adding.
     var added by remember { mutableStateOf(false) }
-    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(onAction != null, alone) {
         // Merging into the one button keeps «+ Добавить» as it is: it grows into «+ Добавить подписку».
@@ -463,7 +460,6 @@ private fun FloatingDock(
                 // The glass lens has just landed: the turn follows it at once.
                 delay(if (backdrop != null) GLASS_ACTION_PAUSE_MS else ACTION_PAUSE_MS)
                 added = true
-                haptic.performHapticFeedback(DOCK_TICK)
             }
         }
     }
@@ -686,11 +682,8 @@ private fun FloatingDock(
                                     val reach = (abs(over) / (slot / 2f)).coerceAtMost(1f)
                                     scope.launch { edge.snapTo(reach * reach * reach) }
 
-                                    val now = tabAt(x)
-                                    if (now != tab) {
-                                        tab = now
-                                        haptic.performHapticFeedback(DOCK_TICK)
-                                    }
+                                    // No tick as the tab changes: the owner (18.11) found it irritating.
+                                    tab = tabAt(x)
                                 }
                             }
 
@@ -710,12 +703,8 @@ private fun FloatingDock(
                             settle = scope.launch {
                                 // A quick tap would stop the bubble before it showed: let it flash first.
                                 if (motionNow && bubble.value < 0.7f) launch { bubble.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 1000f)) }
-                                // A tap's lens rides on the page until it lands, then a tick (the owner, 17.11); on
-                                // «Подписки» the turn into «+ Добавить» ticks a moment later instead.
-                                val landed = drag.ride(position, dockSlotWidth(width))
-                                if (landed != null && !(landed == ACTION_TAB && actionNow != null)) {
-                                    haptic.performHapticFeedback(DOCK_TICK)
-                                }
+                                // A tap's lens rides on the page until it lands (the owner, 17.11); no tick (18.11).
+                                drag.ride(position, dockSlotWidth(width))
                                 bubble.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow))
                             }
                         }
@@ -998,9 +987,6 @@ private const val GLASS_ACTION_PAUSE_MS = 60L
 /** The glass drop: its length, and how much the capsule swells, of its height. */
 private const val SPLASH_MS = 700
 private const val SPLASH_SWELL = 0.06f
-
-/** The dock's ticks, as a tab changes: barely felt, the segment tick was too strong (the owner, 18.11). */
-private val DOCK_TICK = HapticFeedbackType.SegmentFrequentTick
 
 /** How far the lens gives past the dock's end, and how much it stretches there. */
 private val EDGE_GIVE = 8.dp

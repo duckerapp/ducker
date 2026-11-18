@@ -48,6 +48,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.roundToInt
+import androidx.compose.ui.composed
 
 /**
  * A switch that only shows [checked]; the row around it takes taps and speaks for it. [onDrag]: the thumb dragged by a
@@ -114,8 +116,8 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
             .onGloballyPositioned { val p = it.positionInRoot(); at[0] = p.x; at[1] = p.y }
             .then(if (enabled) Modifier.fingerOn(touch) else Modifier)
             .then(
-                // The switch takes its own taps and drags: left to the row, a tap on the switch lit the whole row (the
-                // owner, 18.11). A vertical move first is the list's scroll.
+                // The switch takes its own taps and drags: left to the row, a tap on the switch lit the whole row; and
+                // a finger on it never scrolls the list, it only moves the thumb sideways (the owner, 18.11).
                 if (onDrag != null) Modifier.pointerInput(rtl) {
                     awaitEachGesture {
                         val down = awaitFirstDown()
@@ -130,9 +132,7 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
                                 if (!dragging) drag.value?.invoke(!checkedNow.value)
                                 break
                             }
-                            val moved = change.position - down.position
-                            if (!dragging && abs(moved.y) > slop && abs(moved.y) > abs(moved.x)) return@awaitEachGesture
-                            if (!dragging && abs(moved.x) > slop) dragging = true
+                            if (!dragging && (change.position - down.position).getDistance() > slop) dragging = true
                             if (!dragging) continue
                             change.consume()
                             val delta = change.position.x - change.previousPosition.x
@@ -169,9 +169,11 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
                 val halfW = thumbW / 2f * swell * (1f + speed)
                 val halfH = thumbH / 2f * swell * (1f - speed * 0.5f)
                 val origin = Offset(at[0], at[1])
+                val trackSize = size
                 drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base, zoom = 1f + LENS_ZOOM * held.value) {
                     under(origin)
-                    drawRoundRect(trackColor, cornerRadius = trackCorner)
+                    // The switch's size, not the lens layer's this scope has.
+                    drawRoundRect(trackColor, Offset.Zero, trackSize, trackCorner)
                     drawThumb(center, thumbW / 2f, thumbH / 2f, thumb, shadowDrop)
                 }
             },
@@ -306,8 +308,8 @@ internal fun DuckerSlider(
     LaunchedEffect(touch.count, touch.down, motion) { lens.follow(touch, motion) }
 
     // The track in the thumb's own place, for the lens: the accent to its middle, the rest after it.
-    fun DrawScope.track(start: Float, end: Float, split: Float, height: Float) {
-        val top = size.height / 2f - height / 2f
+    fun DrawScope.track(start: Float, end: Float, split: Float, height: Float, middle: Float = size.height / 2f) {
+        val top = middle - height / 2f
         val corner = CornerRadius(height / 2f)
         drawRoundRect(off, Offset(start, top), Size(end - start, height), corner)
         val (from, to) = if (rtl) split to end else start to split
@@ -318,7 +320,8 @@ internal fun DuckerSlider(
         value = value, onValueChange = onValueChange, valueRange = valueRange, steps = steps, enabled = enabled,
         interactionSource = interaction,
         // A finger anywhere on it: Material reports a press only once it knows it is no scroll, a tap all at once.
-        modifier = modifier.alpha(if (enabled) 1f else DISABLED_ALPHA).then(if (enabled) Modifier.fingerOn(touch) else Modifier),
+        modifier = modifier.alpha(if (enabled) 1f else DISABLED_ALPHA)
+            .then(if (enabled) Modifier.fingerOn(touch).sliderDrag(valueRange, steps, rtl, value, onValueChange) else Modifier),
         thumb = {
             Box(
                 Modifier.size(THUMB_WIDTH, THUMB_HEIGHT)
@@ -337,7 +340,9 @@ internal fun DuckerSlider(
                     val height = size.height
                     drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base, zoom = 1f + LENS_ZOOM * lens.value) {
                         under(origin)
-                        track(-width, width * 2f, center.x, thick)
+                        // At the thumb's middle: this scope is the lens layer's, taller, and the line slid below the
+                        // lens, a gap in the scale under the held thumb (the owner, 18.11).
+                        track(-width, width * 2f, center.x, thick, center.y)
                         drawThumb(center, width / 2f, height / 2f, Color.White, shadowDrop)
                     }
                 },
@@ -356,6 +361,49 @@ internal fun DuckerSlider(
             )
         },
     )
+}
+
+/**
+ * The glass slider's own drag: past the slop a finger moves only the thumb, never the list (the owner, 18.11). Material's
+ * drag left that to the scroll. Material still takes the press (the thumb jumps there), keys and speech.
+ */
+private fun Modifier.sliderDrag(
+    range: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    rtl: Boolean,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+): Modifier = composed {
+    val haptics = LocalHapticFeedback.current
+    val now = rememberUpdatedState(value)
+    val change = rememberUpdatedState(onValueChange)
+    pointerInput(range, steps, rtl) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            val slop = viewConfiguration.touchSlop
+            var moving = false
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
+                if (!event.pressed) break
+                if (!moving && (event.position - down.position).getDistance() > slop) moving = true
+                if (!moving) continue
+                event.consume()
+                val thumb = THUMB_WIDTH.toPx()
+                val along = ((event.position.x - thumb / 2f) / (size.width - thumb)).coerceIn(0f, 1f)
+                val next = sliderValue(if (rtl) 1f - along else along, range, steps)
+                if (next != now.value) {
+                    if (steps > 0) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    change.value(next)
+                }
+            }
+        }
+    }
+}
+
+/** The value at [fraction] of [range], on one of its [steps] when it has them. */
+internal fun sliderValue(fraction: Float, range: ClosedFloatingPointRange<Float>, steps: Int): Float {
+    val f = if (steps > 0) (fraction * (steps + 1)).roundToInt() / (steps + 1).toFloat() else fraction
+    return range.start + (range.endInclusive - range.start) * f
 }
 
 private val SLIDER_TRACK = 6.dp
