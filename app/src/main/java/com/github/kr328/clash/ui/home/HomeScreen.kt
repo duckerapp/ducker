@@ -20,6 +20,7 @@ import com.github.kr328.clash.ui.components.heroWaveShader
 import com.github.kr328.clash.ui.components.heroWaveEffect
 import com.github.kr328.clash.ui.components.liquidGlass
 import com.github.kr328.clash.ui.components.LocalGlassPanes
+import com.github.kr328.clash.ui.components.PaneGlass
 import com.github.kr328.clash.ui.components.asDock
 import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.rememberGlassPress
@@ -1006,7 +1007,8 @@ private fun HeroCard(
     // tint setting; only its connected fill is its own.
     val baseAlphaOff = GlassMaterial.Surface.tint
     val alphaOn = if (tintFactor <= 1f) baseAlphaOn * tintFactor else baseAlphaOn + (1f - baseAlphaOn) * ((tintFactor - 1f) * 0.65f)
-    val alphaOff = (baseAlphaOff * tintFactor).coerceAtMost(0.92f)
+    // The pane glass's tint, as dense as on every other pane of it (F-550).
+    val alphaOff = (baseAlphaOff * tintFactor * if (LocalGlassPanes.current) PaneGlass.DENSER else 1f).coerceAtMost(0.92f)
     // On glass connected is clearer glass of the same colour, not a pane turned over to the accent (the owner, 17.11):
     // its rim and bend grow stronger and the power button glows, see the card's veil below. Air keeps its fill.
     val tintOn = if (isGlass) scheme.surface.copy(alpha = (alphaOff * GLASS_ON_CLEAR).coerceIn(0f, 1f))

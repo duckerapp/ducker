@@ -541,14 +541,11 @@ internal fun Modifier.liquidGlass(
         val amount = MAX_REFRACTION_AMOUNT.toPx() * (style.refraction / 100f) * bendBoost
         val bent = if (bendBoost != 1f) style.copy(dispersion = (style.dispersion * bendBoost).roundToInt()) else style
 
-        val lift = if (panes) paneLift(blur, style.vibrancy) else null
-        // The pane glass's live picture: rebuilt as a press changes the shader's uniforms, read when the effect is made.
-        fun paneEffect() = RenderEffect.createRuntimeShaderEffect(shader, "img").let { bend ->
-            (lift?.let { RenderEffect.createChainEffect(bend, it) } ?: bend).asComposeRenderEffect()
-        }
         if (panes) {
             paneBend(shader, margin, size.width, size.height, radii, bent, bendBoost)
-            glass.renderEffect = paneEffect()
+            val bend = RenderEffect.createRuntimeShaderEffect(shader, "img")
+            glass.renderEffect = (paneLift(blur, style.vibrancy)?.let { RenderEffect.createChainEffect(bend, it) } ?: bend)
+                .asComposeRenderEffect()
             paneBend(stillShader, 0f, size.width, size.height, radii, bent, bendBoost)
             veilShader?.let { paneVeil(it, size.width, size.height, radii) }
             maskShader?.let {
@@ -563,8 +560,6 @@ internal fun Modifier.liquidGlass(
         val paneSize = IntSize((size.width + 2 * margin).toInt(), (size.height + 2 * margin).toInt())
         val clip = Path().apply { addOutline(outline) }
         val paneBounds = androidx.compose.ui.geometry.Rect(Offset.Zero, size)
-        // The press the live picture's effect was made with.
-        var shownPress = 0f
 
         onDrawBehind {
             val scaled = zoom?.invoke() ?: layerScale
@@ -585,19 +580,11 @@ internal fun Modifier.liquidGlass(
                         }
                     }
                 }
-                if (panes && pressed != shownPress) {
-                    shader.setFloatUniform("press", pressed)
-                    glass.renderEffect = paneEffect()
-                }
             } else {
                 stillShader.setInputShader("img", still)
                 stillShader.setFloatUniform("shift", position.x - backdrop.origin.x, position.y - backdrop.origin.y)
-                if (panes) {
-                    stillShader.setFloatUniform("zoom", scaled.scaleX, scaled.scaleY)
-                    stillShader.setFloatUniform("press", pressed)
-                }
+                if (panes) stillShader.setFloatUniform("zoom", scaled.scaleX, scaled.scaleY)
             }
-            shownPress = pressed
 
             // The pane glass: a faint dark line just outside the rim, under the light line inside it (iOS's, F-550).
             if (panes) drawOutline(outline, Color.Black.copy(alpha = PaneGlass.RING), style = Stroke(PaneGlass.RING_WIDTH.toPx()))
@@ -628,7 +615,7 @@ internal fun Modifier.liquidGlass(
                         drawContext.canvas.restore()
                     } else veil()
                 } else if (tintProgress > 0f && tint.alpha > 0f) {
-                    val a = (tint.alpha * tintProgress * (if (panes) clear else 1f)).coerceIn(0f, 0.92f)
+                    val a = (tint.alpha * tintProgress * (if (panes) PaneGlass.DENSER * clear else 1f)).coerceIn(0f, 0.92f)
                     if (veilShader != null && veilBrush != null) {
                         // Premultiplied, as the shader's output is.
                         veilShader.setFloatUniform("color", tint.red * a, tint.green * a, tint.blue * a, a)
@@ -1688,13 +1675,16 @@ internal object PaneGlass {
     const val RING = 0.1f
     val RING_WIDTH = 1.dp
     /**
-     * A press eases the tint by [PRESS_CLEAR] and lifts the picture under it by [PRESS_BRIGHT] and its colours by
-     * [PRESS_SAT], over [PRESS_IN_MS] in and [PRESS_OUT_MS] back, as the dock's (the owner, 18.11: on iOS the tint eases,
-     * the backdrop a little brighter and richer; white over it read as washed out).
+     * The material's tint laid this much denser: the cards read lighter than the dock, whose glass is the same but whose
+     * wallpaper at the screen's foot is darker (F-550; the owner, 18.11: «докбар темнее чем карточки»).
      */
-    const val PRESS_CLEAR = 0.3f
-    const val PRESS_BRIGHT = 0.1f
-    const val PRESS_SAT = 0.25f
+    const val DENSER = 1.2f
+    /**
+     * A press eases the tint by [PRESS_CLEAR] over [PRESS_IN_MS] in and [PRESS_OUT_MS] back, as the dock's
+     * ([DockGlass.TINT_EASE]); lifting the picture's brightness and colours as well read as oversaturated beside the
+     * dock's restrained press (the owner, 18.11).
+     */
+    const val PRESS_CLEAR = DockGlass.TINT_EASE
     const val PRESS_IN_MS = 150
     const val PRESS_OUT_MS = 400
     /** It grows by this length, between these shares of its width. */
@@ -1732,9 +1722,6 @@ private fun Density.paneBend(shader: RuntimeShader, margin: Float, width: Float,
     shader.setFloatUniform("saturation", PaneGlass.SATURATION)
     shader.setFloatUniform("vivid", PaneGlass.VIVID * (style.vibrancy / 40f))
     shader.setFloatUniform("roll", PaneGlass.ROLL)
-    shader.setFloatUniform("pressBright", PaneGlass.PRESS_BRIGHT)
-    shader.setFloatUniform("pressSat", PaneGlass.PRESS_SAT)
-    shader.setFloatUniform("press", 0f)
     shader.setFloatUniform("zoom", 1f, 1f)
     shader.setFloatUniform("line", PaneGlass.LINE * (style.highlight / 60f))
     shader.setFloatUniform("lineWidth", PaneGlass.LINE_WIDTH.toPx())
@@ -1860,9 +1847,6 @@ uniform float line;
 uniform float lineWidth;
 uniform float volume;
 uniform float noiseStrength;
-uniform float press;
-uniform float pressBright;
-uniform float pressSat;
 // How much the layers around the pane scale it: a point of it lies this many times as far from its corner on the screen.
 uniform float2 zoom;
 
@@ -1898,8 +1882,7 @@ half4 main(float2 coord) {
 
     float rim = 1.0 - smoothstep(0.0, 1.0, t);
     half lum = dot(c.rgb, half3(0.299, 0.587, 0.114));
-    c.rgb = clamp(mix(half3(lum), c.rgb, half(saturation + vivid * rim + pressSat * press)), half3(0.0), half3(c.a));
-    c.rgb = min(c.rgb * half(1.0 + pressBright * press), half3(c.a));
+    c.rgb = clamp(mix(half3(lum), c.rgb, half(saturation + vivid * rim)), half3(0.0), half3(c.a));
     // The roll: lighter towards the rim, softly, as the glass curves away and catches the light.
     c.rgb += (half3(c.a) - c.rgb) * half(roll * u * u * u);
     c.rgb *= half(1.0 - volume * n.y * rim);
