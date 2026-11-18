@@ -396,11 +396,12 @@ internal fun GlassDock(
     // the lens's glass over all it shows), and the veil itself waits: under the lens its edge, drawn in by the rim,
     // showed a smaller blot growing out to the rim (the owner, 18.11: «наоборот растёт к линзе»).
     fun shrinking() = held.targetValue < 0.5f && held.value >= LENS_SHOWN
-    // Over the lens's last third the veil itself comes in under it and the filling goes: swapped at the end, the veil
-    // (blurred more, tinted otherwise) stepped in at once — unseen dark on dark, plain on a light screen (the owner, 18.11).
-    fun handover(): Float = 1f - (held.value / DockGlass.HANDOVER).coerceIn(0f, 1f)
+    // Over the lens's last third the lens itself fades out over the dock as the veil comes in under it: swapped at the
+    // end, the veil (blurred more, tinted otherwise) stepped in at once — unseen dark on dark, plain on a light screen —
+    // and the lens's resampled text and icons, softer, turned sharp in a frame (the owner, 18.11).
+    fun handover(): Float = if (shrinking()) 1f - (held.value / DockGlass.HANDOVER).coerceIn(0f, 1f) else 0f
     fun veilShown(): Float = if (shrinking()) handover() else veil.value
-    fun veilGathered(): Float = if (shrinking()) (1f - held.value).pow(1.3f) * (1f - handover()) else 0f
+    fun veilGathered(): Float = if (shrinking()) (1f - held.value).pow(1.3f) else 0f
 
     // The geometry, in the row of tabs [row] wide and [h] high.
     fun slot(row: Float) = dockSlotWidth(row)
@@ -517,6 +518,7 @@ internal fun GlassDock(
                             ring = ring * fade, irisLight = irisLight * fade,
                         )
                     }
+                    lensLayer.alpha = 1f - handover()
                     lens.draw(
                         this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, lift, 0f, dark, look,
                         drawFrom = DockGlass.Look.drawFrom - DockGlass.SWELL_ZOOM * swell.value,
