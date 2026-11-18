@@ -134,6 +134,8 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
             position.snapTo(target)
             return@LaunchedEffect
         }
+        // The thumb never moves without its lens, whatever set it (the owner, 18.11): the move counts as a touch.
+        touch.count++
         position.animateTo(target, spring(dampingRatio = 0.62f, stiffness = 420f))
         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
     }
@@ -257,17 +259,18 @@ internal class LensTouch {
  * lens waits for, swollen, before it settles (a segment's lens, its landing).
  */
 internal suspend fun Animatable<Float, *>.follow(touch: LensTouch, motion: Boolean, rest: suspend () -> Unit = {}) {
-    val touched = touch.count != touch.seen
-    touch.seen = touch.count
     if (!motion) {
+        touch.seen = touch.count
         snapTo(0f)
-    } else if (touch.down) {
-        animateTo(1f, tween(LENS_IN_MS))
-    } else {
-        if (value < 1f && (value > 0f || touched)) animateTo(1f, tween((LENS_IN_MS * (1f - value)).toInt()))
-        rest()
-        animateTo(0f, tween(LENS_OUT_MS))
+        return
     }
+    // A touch is seen only once the lens has swollen for it: marked seen at the start, a finger lifted before the swell's
+    // first frame restarted this with the lens still at 0 and nothing owed, and the thumb rode without it (the owner, 18.11).
+    if (value < 1f && (touch.down || touch.count != touch.seen || value > 0f)) animateTo(1f, tween((LENS_IN_MS * (1f - value)).toInt()))
+    touch.seen = touch.count
+    if (touch.down) return
+    rest()
+    animateTo(0f, tween(LENS_OUT_MS))
 }
 
 /** A finger on this, from its touch until it lifts, whatever gesture takes the touch meanwhile. */
