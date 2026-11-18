@@ -1,6 +1,18 @@
 package com.github.kr328.clash.ui.components
 
 import androidx.compose.ui.layout.ScaleFactor
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.CircleShape
@@ -477,25 +489,44 @@ internal fun Modifier.liquidGlass(
      * still shows what lies right under it; drawn plainly, it slid by the growth, ~40 px at the dock's far end.
      */
     zoom: (() -> ScaleFactor)? = null,
+    /** The pane glass: a finger on it lights it up, see [glassPress]. */
+    press: GlassPress? = null,
     /** Its own veil instead of a flat [tint], drawn under the rim. */
     veil: (DrawScope.() -> Unit)? = null,
 ): Modifier {
     val style = LocalGlassStyle.current
     if (backdrop == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || !style.enabled) return this
     val extra = LocalGlassExtraBlur.current
+    val panes = LocalGlassPanes.current
 
     val glass = rememberGraphicsLayer()
-    val shader = remember { RuntimeShader(GLASS_SHADER) }
+    val shader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
     // The same glass drawn straight from a still backdrop's picture: no layer of its own, no blur of its own.
-    val stillShader = remember { RuntimeShader(GLASS_SHADER) }
+    val stillShader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
     val stillBrush = remember(stillShader) { ShaderBrush(stillShader) }
     val highlightShader = remember { RuntimeShader(HIGHLIGHT_SHADER) }
     val highlightBrush = remember(highlightShader) { ShaderBrush(highlightShader) }
+    // The pane glass's veil, thinner over the rim so the colours and the light line drawn in there show through: a flat
+    // tint drawn by it, an own [veil] masked by the second.
+    val veilShader = remember(panes) { if (panes) RuntimeShader(PANE_VEIL_SHADER) else null }
+    val veilBrush = remember(veilShader) { veilShader?.let(::ShaderBrush) }
+    val maskShader = remember(panes) { if (panes) RuntimeShader(PANE_VEIL_SHADER) else null }
+    val maskBrush = remember(maskShader) { maskShader?.let(::ShaderBrush) }
     var position by remember { mutableStateOf(Offset.Zero) }
+    // How much the layers around it scale it (a pressed card around its button): measured, so its glass still shows what
+    // lies right under it without every caller passing [zoom].
+    var layerScale by remember { mutableFloatStateOf(1f) }
     val screenBackground = MaterialTheme.colorScheme.background
     val blurPart = style.blur / 100f
 
-    return onGloballyPositioned { position = it.positionInRoot() }.drawWithCache {
+    return onGloballyPositioned {
+        position = it.positionInRoot()
+        val width = it.size.width
+        if (width > 0) {
+            val s = (it.localToRoot(Offset(width.toFloat(), 0f)).x - position.x) / width
+            layerScale = if (kotlin.math.abs(s - 1f) < 0.0005f) 1f else s
+        }
+    }.drawWithCache {
         val margin = GLASS_MARGIN.toPx()
         val outline = shape.createOutline(size, layoutDirection, this)
         val radii = extractCornerRadii(outline, size)
@@ -503,14 +534,28 @@ internal fun Modifier.liquidGlass(
         val amount = MAX_REFRACTION_AMOUNT.toPx() * (style.refraction / 100f) * bendBoost
         val bent = if (bendBoost != 1f) style.copy(dispersion = (style.dispersion * bendBoost).roundToInt()) else style
 
-        glass.renderEffect = glassEffect(shader, margin, size.width, size.height, radii, BEZEL.toPx(), amount, blur, bent)
-        bend(stillShader, 0f, size.width, size.height, radii, BEZEL.toPx(), amount, bent)
+        if (panes) {
+            paneBend(shader, margin, size.width, size.height, radii, bent, bendBoost)
+            val bend = RenderEffect.createRuntimeShaderEffect(shader, "img")
+            glass.renderEffect = (paneLift(blur, style.vibrancy)?.let { RenderEffect.createChainEffect(bend, it) } ?: bend)
+                .asComposeRenderEffect()
+            paneBend(stillShader, 0f, size.width, size.height, radii, bent, bendBoost)
+            veilShader?.let { paneVeil(it, size.width, size.height, radii) }
+            maskShader?.let {
+                paneVeil(it, size.width, size.height, radii)
+                it.setFloatUniform("color", 1f, 1f, 1f, 1f)
+            }
+        } else {
+            glass.renderEffect = glassEffect(shader, margin, size.width, size.height, radii, BEZEL.toPx(), amount, blur, bent)
+            bend(stillShader, 0f, size.width, size.height, radii, BEZEL.toPx(), amount, bent)
+        }
         val stillBlur = blur.roundToInt()
         val paneSize = IntSize((size.width + 2 * margin).toInt(), (size.height + 2 * margin).toInt())
         val clip = Path().apply { addOutline(outline) }
+        val paneBounds = androidx.compose.ui.geometry.Rect(Offset.Zero, size)
 
         onDrawBehind {
-            val scaled = zoom?.invoke() ?: ScaleFactor(1f, 1f)
+            val scaled = zoom?.invoke() ?: ScaleFactor(layerScale, layerScale)
             val plain = scaled.scaleX == 1f && scaled.scaleY == 1f
             val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && !backdrop.waveActive && plain }?.pictures?.get(stillBlur)
 
@@ -530,11 +575,14 @@ internal fun Modifier.liquidGlass(
                 stillShader.setFloatUniform("shift", position.x - backdrop.origin.x, position.y - backdrop.origin.y)
             }
 
+            // The pane glass: a faint dark line just outside the rim, under the light line inside it (iOS's, F-550).
+            if (panes) drawOutline(outline, Color.Black.copy(alpha = PaneGlass.RING), style = Stroke(PaneGlass.RING_WIDTH.toPx()))
+
             clipPath(clip) {
                 drawRect(base)
                 if (still == null) translate(-margin, -margin) { drawLayer(glass) } else drawRect(stillBrush)
                 val shadowAlpha = 0.12f * (style.depth / 100f)
-                if (shadowAlpha > 0.005f) {
+                if (!panes && shadowAlpha > 0.005f) {
                     val shadowHeight = minOf(16.dp.toPx(), size.height * 0.4f)
                     drawRect(
                         Brush.verticalGradient(
@@ -547,14 +595,29 @@ internal fun Modifier.liquidGlass(
                 }
                 val tintProgress = (style.tint / 50f).coerceIn(0f, 2f)
                 if (veil != null) {
-                    veil()
+                    if (maskBrush != null) {
+                        drawContext.canvas.saveLayer(paneBounds, androidx.compose.ui.graphics.Paint())
+                        veil()
+                        drawRect(maskBrush, blendMode = BlendMode.DstIn)
+                        drawContext.canvas.restore()
+                    } else veil()
                 } else if (tintProgress > 0f && tint.alpha > 0f) {
-                    drawRect(tint.copy(alpha = (tint.alpha * tintProgress).coerceIn(0f, 0.92f)))
+                    val a = (tint.alpha * tintProgress * (if (panes) PaneGlass.VEIL else 1f)).coerceIn(0f, 0.92f)
+                    if (veilShader != null && veilBrush != null) {
+                        // Premultiplied, as the shader's output is.
+                        veilShader.setFloatUniform("color", tint.red * a, tint.green * a, tint.blue * a, a)
+                        drawRect(veilBrush)
+                    } else drawRect(tint.copy(alpha = a))
                 }
+                // A press lights the pane up a little, as iOS's (+19 % inside, F-550).
+                val pressed = press?.light() ?: 0f
+                if (pressed > 0f) drawRect(Color.White.copy(alpha = PaneGlass.PRESS_LIGHT * pressed))
             }
 
-            // Specular directional highlight
-            if (style.highlight > 0) {
+            // Specular directional highlight; the pane glass draws its own light line, coloured by what lies under it.
+            if (panes) {
+                // Drawn by the pane shader.
+            } else if (style.highlight > 0) {
                 val isLight = (if (base != Color.Transparent) base else screenBackground).luminance() > 0.5f
                 // At 100 % on a light screen the rim is as white as it was drawn before the fix below.
                 val hAlpha = ((if (isLight) 1f else 0.55f) * (style.highlight / 100f) * rimBoost).coerceAtMost(1f)
@@ -1540,10 +1603,225 @@ internal fun Modifier.glass(
     material: GlassMaterial,
     shape: Shape,
     color: Color = if (material == GlassMaterial.Surface) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant,
+    press: GlassPress? = null,
 ): Modifier = liquidGlass(
     backdrop,
     base = MaterialTheme.colorScheme.background,
     tint = color.copy(alpha = color.alpha * material.tint),
     shape = shape,
     blurBoost = material.blurBoost,
+    press = press,
 )
+
+/**
+ * The pane glass, after iOS's Control Centre (the owner's video, 18.11; F-550): light milky glass whose rim draws in the
+ * colours around it and carries a thin light line in their colour, a faint dark line outside it, and a press that swells
+ * it like jelly and lights it up. Home first, while it is tuned; the other screens keep [GLASS_SHADER]'s glass.
+ */
+internal val LocalGlassPanes = staticCompositionLocalOf { false }
+
+/**
+ * The pane glass's whole tuning. Lengths stay the same on any pane, as iOS's rim is as wide on a small button as on
+ * the player (F-550); the glass settings scale them around their defaults (refraction 50, dispersion 40, depth 30,
+ * highlight 60, vibrancy 40).
+ */
+internal object PaneGlass {
+    /** How wide the coloured rim is: the bend and the vivid colours ease out over it. */
+    val BAND = 10.dp
+    /** How far beyond the rim the rim's picture comes from, at the rim itself. */
+    val PUSH = 14.dp
+    /** How far red and blue part where the rim bends most. */
+    val CHROMA = 1.5.dp
+    /** How much more vivid the colours are at the rim than inside. */
+    const val VIVID = 0.7f
+    /** How much lighter, towards white, the whole pane is than what lies under it. */
+    const val LIGHTEN = 0.1f
+    /** The light line along the rim, its strength and width. */
+    const val LINE = 0.6f
+    val LINE_WIDTH = 1.2.dp
+    /** The rim lighter at the top and darker at the bottom: the glass's roll. */
+    const val VOLUME = 0.12f
+    /** The share of the material's tint laid over the pane glass, and how much of it the rim is spared. */
+    const val VEIL = 0.6f
+    const val SPARE = 0.7f
+    /** The faint dark line just outside the rim. */
+    const val RING = 0.25f
+    val RING_WIDTH = 1.5.dp
+    /** A press: the white laid over the pane, and how much it grows (by this length, between these shares). */
+    const val PRESS_LIGHT = 0.1f
+    val PRESS_GROW = 8.dp
+    const val GROW_MIN = 0.015f
+    const val GROW_MAX = 0.04f
+    /** iOS's player: +3 % in ~70 ms; let go, back past its size by half of that ~80 ms later (F-550). */
+    val PRESS_IN = spring<Float>(dampingRatio = 0.8f, stiffness = 1200f)
+    val PRESS_OUT = spring<Float>(dampingRatio = 0.4f, stiffness = 900f)
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun Density.paneBend(shader: RuntimeShader, margin: Float, width: Float, height: Float, cornerRadii: FloatArray, style: GlassStyle, boost: Float) {
+    shader.setFloatUniform("size", width, height)
+    shader.setFloatUniform("offset", -margin, -margin)
+    shader.setFloatUniform("shift", 0f, 0f)
+    shader.setFloatUniform("cornerRadii", cornerRadii)
+    shader.setFloatUniform("band", PaneGlass.BAND.toPx())
+    shader.setFloatUniform("push", PaneGlass.PUSH.toPx() * (style.refraction / 50f) * boost)
+    shader.setFloatUniform("chroma", PaneGlass.CHROMA.toPx() * (style.dispersion / 40f))
+    shader.setFloatUniform("vivid", PaneGlass.VIVID * (style.vibrancy / 40f))
+    shader.setFloatUniform("lighten", PaneGlass.LIGHTEN)
+    shader.setFloatUniform("line", PaneGlass.LINE * (style.highlight / 60f))
+    shader.setFloatUniform("lineWidth", PaneGlass.LINE_WIDTH.toPx())
+    shader.setFloatUniform("volume", PaneGlass.VOLUME * (style.depth / 30f))
+    shader.setFloatUniform("noiseStrength", style.noise / 100f * 0.05f)
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun Density.paneVeil(shader: RuntimeShader, width: Float, height: Float, cornerRadii: FloatArray) {
+    shader.setFloatUniform("size", width, height)
+    shader.setFloatUniform("cornerRadii", cornerRadii)
+    shader.setFloatUniform("band", PaneGlass.BAND.toPx())
+    shader.setFloatUniform("spare", PaneGlass.SPARE)
+    shader.setFloatUniform("lineWidth", PaneGlass.LINE_WIDTH.toPx())
+}
+
+/** A finger on a pane of the pane glass: 0 at rest, 1 pressed, below 0 for a moment as it springs back. */
+@Stable
+internal class GlassPress(private val scope: CoroutineScope) {
+    val amount = Animatable(0f)
+
+    /** How much the press lights the pane up. */
+    fun light(): Float = amount.value.coerceIn(0f, 1f)
+
+    fun down() {
+        scope.launch { amount.animateTo(1f, PaneGlass.PRESS_IN) }
+    }
+
+    fun up() {
+        scope.launch { amount.animateTo(0f, PaneGlass.PRESS_OUT) }
+    }
+}
+
+/** A press for a pane of the pane glass; null where it is not drawn (Air, older phones, the other screens for now). */
+@Composable
+internal fun rememberGlassPress(): GlassPress? {
+    val on = LocalGlassBackdrop.current != null && LocalGlassPanes.current && LocalGlassStyle.current.enabled && glassSupported
+    val scope = rememberCoroutineScope()
+    return remember(on, scope) { if (on) GlassPress(scope) else null }
+}
+
+/**
+ * Swells this pane under a finger and springs it back past its size as it is let go, like jelly. [own] — the touch is
+ * this pane's own button's: a card ([own] false) does not swell for a touch a button inside it took. Placed before the
+ * pane's [liquidGlass], whose glass then follows the growth.
+ */
+internal fun Modifier.glassPress(press: GlassPress?, own: Boolean): Modifier {
+    if (press == null) return this
+
+    return pointerInput(press, own) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Final)
+            if (!own && down.isConsumed) return@awaitEachGesture
+            press.down()
+            val slop = viewConfiguration.touchSlop
+            while (true) {
+                val change = awaitPointerEvent(PointerEventPass.Final).changes.firstOrNull { it.id == down.id } ?: break
+                if (!change.pressed) break
+                // The page scrolls under it, or the finger slides away: let go.
+                if ((change.isConsumed && change.positionChanged()) || (change.position - down.position).getDistance() > slop) break
+            }
+            press.up()
+        }
+    }.graphicsLayer {
+        val grow = (PaneGlass.PRESS_GROW.toPx() / size.width.coerceAtLeast(1f)).coerceIn(PaneGlass.GROW_MIN, PaneGlass.GROW_MAX)
+        val s = 1f + grow * press.amount.value
+        scaleX = s
+        scaleY = s
+    }
+}
+
+/*
+ * The pane glass (F-550): the blurred picture lifted towards white; within [band] of the rim it is drawn from up to
+ * [push] beyond it, steepest at the rim as a circle's edge, red and blue parted, its colours more vivid; the rim lighter
+ * at the top and darker at the bottom; a thin light line along it in the colour of what lies under it, brightest at the
+ * top and the bottom.
+ */
+private const val PANE_SHADER = """
+uniform shader img;
+uniform float2 size;
+uniform float2 offset;
+uniform float4 cornerRadii;
+uniform float2 shift;
+uniform float band;
+uniform float push;
+uniform float chroma;
+uniform float vivid;
+uniform float lighten;
+uniform float line;
+uniform float lineWidth;
+uniform float volume;
+uniform float noiseStrength;
+
+half4 sample(float2 p) { return img.eval(p + shift); }
+
+$ROUNDED_RECT_SDF
+
+float hash(float2 p) {
+    return fract(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453) - 0.5;
+}
+
+half4 main(float2 coord) {
+    float2 halfSize = size * 0.5;
+    float2 p = (coord + offset) - halfSize;
+    float radius = radiusAt(p, cornerRadii);
+    float sd = sdRoundedRect(p, halfSize, radius);
+    if (sd > 0.0) return sample(coord);
+
+    float depth = -sd;
+    float b = clamp(band, 1.0, max(min(halfSize.x, halfSize.y) * 0.6, 1.0));
+    float t = clamp(depth / b, 0.0, 1.0);
+    float2 n = gradSdRoundedRect(p, halfSize, min(radius * 1.5, min(halfSize.x, halfSize.y)));
+    float u = 1.0 - t;
+    float bent = 1.0 - sqrt(max(1.0 - u * u, 0.0));
+    float2 disp = n * (push * bent);
+    float2 split = n * (chroma * bent);
+
+    half4 c = sample(coord + disp);
+    c.r = sample(coord + disp * 1.06 + split).r;
+    c.b = sample(coord + disp * 0.94 - split).b;
+
+    float rim = 1.0 - smoothstep(0.0, 1.0, t);
+    half lum = dot(c.rgb, half3(0.299, 0.587, 0.114));
+    c.rgb = clamp(mix(half3(lum), c.rgb, half(1.0 + vivid * rim)), half3(0.0), half3(c.a));
+    c.rgb += (half3(c.a) - c.rgb) * half(lighten);
+    c.rgb *= half(1.0 - volume * n.y * rim);
+
+    float lw = 1.0 - smoothstep(0.0, lineWidth, depth);
+    float dir = 0.3 + 0.7 * pow(abs(dot(n, float2(-0.447, -0.894))), 1.5);
+    c.rgb = min(c.rgb + (c.rgb * 0.9 + half3(0.2) * c.a) * half(lw * line * dir), half3(c.a));
+
+    if (noiseStrength > 0.0) {
+        c.rgb = clamp(c.rgb + half3(hash(coord) * noiseStrength), half3(0.0), half3(c.a));
+    }
+    return c;
+}
+"""
+
+/** The pane glass's veil: [color], thinner over the rim's band by [spare] and gone over its light line. */
+private const val PANE_VEIL_SHADER = """
+uniform float2 size;
+uniform float4 cornerRadii;
+uniform float band;
+uniform float spare;
+uniform float lineWidth;
+uniform half4 color;
+
+$ROUNDED_RECT_SDF
+
+half4 main(float2 coord) {
+    float2 halfSize = size * 0.5;
+    float2 p = coord - halfSize;
+    float depth = max(-sdRoundedRect(p, halfSize, radiusAt(p, cornerRadii)), 0.0);
+    float b = clamp(band, 1.0, max(min(halfSize.x, halfSize.y) * 0.6, 1.0));
+    float keep = (1.0 - spare * (1.0 - smoothstep(0.0, 1.0, depth / b))) * smoothstep(0.0, lineWidth * 2.0, depth);
+    return color * half(keep);
+}
+"""

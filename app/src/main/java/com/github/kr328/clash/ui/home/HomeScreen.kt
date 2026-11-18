@@ -19,6 +19,10 @@ import com.github.kr328.clash.ui.components.LocalGlassStyle
 import com.github.kr328.clash.ui.components.heroWaveShader
 import com.github.kr328.clash.ui.components.heroWaveEffect
 import com.github.kr328.clash.ui.components.liquidGlass
+import com.github.kr328.clash.ui.components.LocalGlassPanes
+import com.github.kr328.clash.ui.components.PaneGlass
+import com.github.kr328.clash.ui.components.glassPress
+import com.github.kr328.clash.ui.components.rememberGlassPress
 import com.github.kr328.clash.ui.components.INNER_BLUR
 import com.github.kr328.clash.ui.components.glassAccentTint
 import com.github.kr328.clash.ui.components.Symbols
@@ -498,7 +502,11 @@ private fun HomeRegular(
     // On a TV the column comes all the way to its start near it, as the lazy lists do.
     val bring = remember(scroll) { tvBringIntoView(scroll) }
 
-    CompositionLocalProvider(LocalBringIntoViewSpec provides if (tv) bring else LocalBringIntoViewSpec.current) {
+    // The pane glass is tuned on Home first (F-550); the node sheet below keeps the other screens' glass.
+    CompositionLocalProvider(
+        LocalBringIntoViewSpec provides if (tv) bring else LocalBringIntoViewSpec.current,
+        LocalGlassPanes provides true,
+    ) {
         Column(
             modifier = modifier
                 // Во всю высоту, а не по содержимому: иначе касание в пустое место под
@@ -983,6 +991,8 @@ private fun HeroCard(
     // The glass style: the card is glass over Home's backdrop. Null backdrop — Air, the card as it always was.
     val isGlass = backdrop != null
     val waveShader = remember(isGlass) { if (isGlass) heroWaveShader() else null }
+    // The pane glass: a finger on the card, not on its buttons, swells it (F-550).
+    val heroPress = rememberGlassPress()
     val density = LocalDensity.current
 
     val scheme = MaterialTheme.colorScheme
@@ -995,7 +1005,8 @@ private fun HeroCard(
     // tint setting; only its connected fill is its own.
     val baseAlphaOff = GlassMaterial.Surface.tint
     val alphaOn = if (tintFactor <= 1f) baseAlphaOn * tintFactor else baseAlphaOn + (1f - baseAlphaOn) * ((tintFactor - 1f) * 0.65f)
-    val alphaOff = (baseAlphaOff * tintFactor).coerceAtMost(0.92f)
+    // The pane glass lays the same thinner veil as on every other pane (F-550).
+    val alphaOff = (baseAlphaOff * tintFactor * if (LocalGlassPanes.current) PaneGlass.VEIL else 1f).coerceAtMost(0.92f)
     // On glass connected is clearer glass of the same colour, not a pane turned over to the accent (the owner, 17.11):
     // its rim and bend grow stronger and the power button glows, see the card's veil below. Air keeps its fill.
     val tintOn = if (isGlass) scheme.surface.copy(alpha = (alphaOff * GLASS_ON_CLEAR).coerceIn(0f, 1f))
@@ -1169,7 +1180,8 @@ private fun HeroCard(
     Card(
         // Пока панель раскрывается или сворачивается, рамки пульта нет: фокус переходит сразу, а
         // узлы ещё не выехали — или плашка ещё под панелью (D-161).
-        modifier = modifier.fillMaxWidth().then(if (tv) Modifier.ringHold(progress.isRunning) else Modifier),
+        modifier = modifier.fillMaxWidth().then(if (tv) Modifier.ringHold(progress.isRunning) else Modifier)
+            .glassPress(heroPress, own = false),
         colors = CardDefaults.cardColors(
             containerColor = if (airEdge() != null) MaterialTheme.colorScheme.outlineVariant else Color.Transparent,
         ),
@@ -1189,6 +1201,7 @@ private fun HeroCard(
                                 shape = HeroInner,
                                 bendBoost = 1f + (GLASS_ON_BEND - 1f) * connected,
                                 rimBoost = 1f + (GLASS_ON_RIM - 1f) * connected,
+                                press = heroPress,
                             ) {
                                 val curRadius = start + (reach - start).coerceAtLeast(0f) * wave.value
                                 val centerOffset = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f)
@@ -2471,16 +2484,22 @@ private fun FeaturesPill(onClick: () -> Unit, modifier: Modifier) {
     val scheme = MaterialTheme.colorScheme
     // The glass style: it lies on the backdrop as the cards do, so it is a pane of the same glass.
     val backdrop = LocalGlassBackdrop.current
+    val press = rememberGlassPress()
 
     Row(
         modifier = modifier
             .minimumInteractiveComponentSize()
+            .glassPress(press, own = true)
             .then(
-                if (backdrop != null) Modifier.glass(backdrop, GlassMaterial.Surface, CircleShape) else Modifier.airShadow(CircleShape),
+                if (backdrop != null) Modifier.glass(backdrop, GlassMaterial.Surface, CircleShape, press = press) else Modifier.airShadow(CircleShape),
             )
             .clip(CircleShape)
             .then(if (backdrop != null) Modifier else Modifier.background(scheme.surface))
-            .clickable(role = Role.Button, onClick = onClick)
+            // The pane glass answers a press by swelling and lighting up, as iOS's, not with a ripple.
+            .then(
+                if (press != null) Modifier.clickable(interactionSource = null, indication = null, role = Role.Button, onClick = onClick)
+                else Modifier.clickable(role = Role.Button, onClick = onClick)
+            )
             .heightIn(min = 40.dp)
             .padding(start = 14.dp, end = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

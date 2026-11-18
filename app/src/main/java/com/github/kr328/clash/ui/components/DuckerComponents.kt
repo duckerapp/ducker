@@ -266,9 +266,11 @@ fun DuckerCard(
     // its shadow as its edge.
     val backdrop = LocalGlassBackdrop.current
     val glass = backdrop != null && colors.containerColor.alpha > 0f
+    val press = if (glass) rememberGlassPress() else null
 
     Card(
         modifier = modifier
+            .glassPress(press, own = false)
             .then(
                 when {
                     glass -> Modifier.liquidGlass(
@@ -282,6 +284,7 @@ fun DuckerCard(
                             } else GLASS_CARD_TINT,
                         ),
                         shape = shape,
+                        press = press,
                     )
                     edge != null -> Modifier
                     resizing -> Modifier.resizingShadow(shape)
@@ -434,12 +437,19 @@ internal fun GlassCardButton(
     padding: Dp = 12.dp,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val press = rememberGlassPress()
+
     Row(
         modifier = modifier.minimumInteractiveComponentSize()
             .heightIn(min = 40.dp)
-            .glassButton(LocalGlassBackdrop.current)
+            .glassPress(press.takeIf { enabled }, own = true)
+            .glass(LocalGlassBackdrop.current, GlassMaterial.Control, CircleShape, press = press)
             .clip(CircleShape)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            // The pane glass answers a press by swelling and lighting up, as iOS's, not with a ripple.
+            .then(
+                if (press != null) Modifier.clickable(interactionSource = null, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+                else Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            )
             .padding(horizontal = padding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
