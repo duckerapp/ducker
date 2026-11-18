@@ -23,6 +23,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -99,7 +100,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
     val held = remember { Animatable(0f) }
     // Clouds the lens as it turns back into the thumb.
     val frost = remember { Animatable(0f) }
-    // The track's accent: it turns as the thumb passes the middle, in a short fade, not along the way.
+    // The track's accent: it turns as the thumb passes the middle, in a soft fade, not along the way.
     val lit = remember { Animatable(if (checked) 1f else 0f) }
     val layer = rememberGraphicsLayer()
     val drag = rememberUpdatedState(onDrag)
@@ -122,7 +123,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
     LaunchedEffect(motion) {
         snapshotFlow { position.value >= 0.5f }.collectLatest { now ->
             val target = if (now) 1f else 0f
-            if (motion) lit.animateTo(target, tween(TRACK_FADE_MS)) else lit.snapTo(target)
+            if (motion) lit.animateTo(target, tween(TRACK_FADE_MS, easing = FastOutSlowInEasing)) else lit.snapTo(target)
         }
     }
 
@@ -306,7 +307,8 @@ private const val LENS_IN_MS = 120
 private const val LENS_OUT_MS = 220
 /** How far past an end the switch's thumb gives under a pulling finger: iOS's, about 8 dp in the owner's video. */
 private val TOGGLE_GIVE = 10.dp
-private const val TRACK_FADE_MS = 150
+// iOS's 150 ms read as a jump past the middle (the owner, 18.11).
+private const val TRACK_FADE_MS = 400
 
 /**
  * A slider with Material's steps, speech and remote keys. The glass style (D-541): Kyant's liquid slider — a thin track in
