@@ -289,6 +289,7 @@ internal suspend fun Animatable<Float, *>.follow(
     motion: Boolean,
     out: Int = LENS_OUT_MS,
     outEasing: Easing = FastOutSlowInEasing,
+    inMs: Int = LENS_IN_MS,
     rest: suspend () -> Unit = {},
 ) {
     if (!motion) {
@@ -298,7 +299,7 @@ internal suspend fun Animatable<Float, *>.follow(
     }
     // A touch is seen only once the lens has swollen for it: marked seen at the start, a finger lifted before the swell's
     // first frame restarted this with the lens still at 0 and nothing owed, and the thumb rode without it (the owner, 18.11).
-    if (value < 1f && (touch.down || touch.count != touch.seen || value > 0f)) animateTo(1f, tween((LENS_IN_MS * (1f - value)).toInt()))
+    if (value < 1f && (touch.down || touch.count != touch.seen || value > 0f)) animateTo(1f, tween((inMs * (1f - value)).toInt()))
     touch.seen = touch.count
     if (touch.down) return
     rest()

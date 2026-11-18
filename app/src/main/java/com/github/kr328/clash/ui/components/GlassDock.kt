@@ -3,7 +3,8 @@ package com.github.kr328.clash.ui.components
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.SpringSpec
@@ -21,6 +22,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -80,8 +82,14 @@ internal object DockGlass {
     /** The whole dock grows by this share under a finger (iOS: +4.6 % at the peak, +4.2 % held), about its middle. */
     const val BREATH = 0.045f
 
-    /** iOS's: the peak 170 ms after the touch, ~10 % past; let go, back past its size by ~10 % 200 ms later. */
+    /**
+     * iOS's: the peak 170 ms after the touch, ~10 % past; let go, back past its size by ~10 % 200 ms later. It breathes
+     * while the lens stands, not only the finger: on a short tap, the finger's ~60 ms, it rose and dropped back with the
+     * lens still at its peak (the owner, 18.11: «док бар начинает увеличиваться … и потом резко падает обратно»); and
+     * back more softly.
+     */
     val BREATH_SPRING: SpringSpec<Float> = spring(dampingRatio = 0.6f, stiffness = 500f)
+    val BREATH_BACK: SpringSpec<Float> = spring(dampingRatio = 0.75f, stiffness = 260f)
 
     /**
      * The dock's own glass, whatever Appearance's sliders say (the owner, 18.11): those sliders tune the cards. Over the
@@ -140,13 +148,16 @@ internal object DockGlass {
     const val LENS_ASPECT = 1.39f
 
     /**
-     * A touch: the veil gone in 50 ms as the lens swells (120 ms, [follow]). Landed: the lens shrinks back in 160 ms,
-     * slowly at first, still glass, then into the veil, which returns over 220, most of it early. iOS's short tap is one
-     * bubble, ~150 ms up past its held size and ~150 ms down, glass to the end; ours, 130 ms down from the start at
-     * full speed and its bend gone first, seemed to die before it had come (the owner, 18.11, `IMG_0050.mp4`).
+     * A touch: the veil gone in 50 ms as the lens swells (180 ms, [follow]). Landed: the lens shrinks back in 260 ms,
+     * slowly at first, still glass, and softly into the veil, which returns over 220, most of it early. iOS's short tap
+     * is one bubble, ~150 ms up past its held size and ~150 ms down, glass to the end; ours, 130 ms down from the start
+     * at full speed and its bend gone first, seemed to die before it had come (the owner, 18.11, `IMG_0050.mp4`); at
+     * 120 + 160 ms, ending at full speed, still abrupt («плавнее и длительней»).
      */
     const val VEIL_OUT_MS = 50
-    const val LENS_OUT_MS = 160
+    const val LENS_IN_MS = 180
+    const val LENS_OUT_MS = 260
+    val LENS_OUT_EASING: Easing = CubicBezierEasing(0.5f, 0f, 0.3f, 1f)
     const val VEIL_IN_MS = 220
 
     /**
@@ -205,10 +216,13 @@ internal object DockGlass {
      * iOS's is ~1.19 to its band, icon and label alike (`ios-dock/ios2/mag.png`). The rim's band (0.35 r) squeezes much
      * of what lies round it into itself, steepest at the rim, its colours parting with that push (`disperse`): iOS's rim
      * takes in much text, rainbow, its middle clean («контур вокруг линзы прям принимает на себя много текста»);
-     * colours parted by the whole shift fringed the middle too (`ios-dock/ours-rim.png`).
+     * colours parted by the whole shift fringed the middle too (`ios-dock/ours-rim.png`). Its ends take in more still
+     * (push 1.2 over 0.45 r, along ×1.1; across ×0.7 keeps the top and bottom bands as they were): on iOS's the text it
+     * comes to fills its edges thick («прям жирно становится внутри»; `ios-dock/ours-rim2.png`, now above, new below).
      */
     val Look = LensLook.Switch.copy(
-        drawFrom = -0.13f, zoomEdge = 0.12f, push = 0.8f, pushPower = 6f, pushBand = 0.35f, pushEndFrom = 0.1f, pushEndTo = 0.6f,
+        drawFrom = -0.13f, zoomEdge = 0.12f, push = 1.2f, pushPower = 6f, pushBand = 0.45f, pushAlong = 1.1f, pushAcross = 0.7f,
+        pushEndFrom = 0.1f, pushEndTo = 0.6f,
         chroma = 0.08f, disperse = 0.35f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
         shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
@@ -296,7 +310,7 @@ internal fun GlassDock(
         }
         launch { veil.animateTo(0f, tween(DockGlass.VEIL_OUT_MS)) }
         var back: Job? = null
-        held.follow(touch, motion, out = DockGlass.LENS_OUT_MS, outEasing = FastOutLinearInEasing) {
+        held.follow(touch, motion, out = DockGlass.LENS_OUT_MS, outEasing = DockGlass.LENS_OUT_EASING, inMs = DockGlass.LENS_IN_MS) {
             // A tap's click comes a frame or two after the finger lifts, and only then is the lens sent off: it must not
             // settle before it has gone. It settles as it lands, the page still on its way (iOS).
             repeat(2) { withFrameNanos { } }
@@ -316,15 +330,17 @@ internal fun GlassDock(
         swell.animateTo(0f, tween(DockGlass.SWELL_OUT_MS, easing = FastOutSlowInEasing))
     }
 
-    LaunchedEffect(touch.down, motion) {
+    // Under a finger, or while the lens stands for a touch already gone.
+    val lifted by remember { derivedStateOf { touch.down || held.targetValue > 0.5f } }
+    LaunchedEffect(lifted, motion) {
         if (!motion) {
             breath.snapTo(0f)
             ease.snapTo(0f)
             return@LaunchedEffect
         }
-        val to = if (touch.down) 1f else 0f
-        launch { breath.animateTo(to, DockGlass.BREATH_SPRING) }
-        ease.animateTo(to, tween(if (touch.down) DockGlass.TINT_IN_MS else DockGlass.TINT_OUT_MS))
+        val to = if (lifted) 1f else 0f
+        launch { breath.animateTo(to, if (lifted) DockGlass.BREATH_SPRING else DockGlass.BREATH_BACK) }
+        ease.animateTo(to, tween(if (lifted) DockGlass.TINT_IN_MS else DockGlass.TINT_OUT_MS))
     }
 
     fun zoom() = 1f + DockGlass.BREATH * breath.value
