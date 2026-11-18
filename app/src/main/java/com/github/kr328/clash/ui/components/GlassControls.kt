@@ -24,6 +24,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import kotlinx.coroutines.Job
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -124,6 +126,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
         if (fill.value > 0.5f) frost.snapTo(1f)
         launch { fill.animateTo(0f, tween(FILL_OUT_MS)) }
         launch { frost.animateTo(0f, tween(FROST_CLEAR_MS)) }
+        var whiten: Job? = null
         held.follow(touch, motion, out = SWITCH_LENS_OUT_MS) {
             // The lens settles as the thumb comes home, not after the spring's last wobble: it hung there big and clear
             // for ~280 ms where iOS's settles at once (the owner's video of ours beside iOS's, 18.11). A row's tap sets
@@ -131,9 +134,13 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
             repeat(2) { withFrameNanos { } }
             snapshotFlow { abs(position.value - if (checkedNow.value) 1f else 0f) < HOME }.first { it }
             launch { frost.animateTo(1f, tween(SWITCH_LENS_OUT_MS)) }
+            // The white comes in with the shrink, quickly at first, then slowly to the full white. Coming in after the
+            // shrink, it held at a milky grey and then jumped to white in four frames (the owner, slowed down, 18.11);
+            // iOS's rises along the shrink and creeps to white over ~0.3 s.
+            whiten = launch { fill.animateTo(1f, tween(FILL_IN_MS, easing = LinearOutSlowInEasing)) }
         }
         if (touch.down) return@LaunchedEffect
-        fill.animateTo(1f, tween(FILL_IN_MS, easing = FastOutSlowInEasing))
+        whiten?.join() ?: fill.animateTo(1f, tween(FILL_IN_MS, easing = LinearOutSlowInEasing))
         frost.snapTo(0f)
     }
     LaunchedEffect(motion) {
@@ -333,11 +340,11 @@ private val TOGGLE_GIVE = 10.dp
 // Along the thumb's ride, from its start, as iOS's second video (18.11); 150 ms from the middle read as a jump.
 private const val TRACK_FADE_MS = 250
 // The tap as iOS's (the owner's second video, 18.11): the white gone in 60 ms, the frost cleared as the lens rides,
-// the lens home frosting and shrinking in 140 ms, then the white back in 180 ms.
+// the lens home frosting and shrinking in 140 ms, the white coming back with it over 420 ms, most of it early.
 private const val FILL_OUT_MS = 60
 private const val FROST_CLEAR_MS = 220
 private const val SWITCH_LENS_OUT_MS = 140
-private const val FILL_IN_MS = 180
+private const val FILL_IN_MS = 420
 /** The thumb's ride: firmer than it was (0.62), so it lands without a visible bounce, as iOS's. */
 private val THUMB_SPRING = spring<Float>(dampingRatio = 0.8f, stiffness = 420f)
 /** Near enough home, in its travel, for the lens to start settling. */
