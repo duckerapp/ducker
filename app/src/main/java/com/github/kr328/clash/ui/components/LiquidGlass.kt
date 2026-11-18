@@ -783,7 +783,7 @@ internal fun lensShader(): GlassLens? =
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) null else Api33GlassLens()
 
 private val LENS_CLEAR_BLUR = 0.3.dp
-private val LENS_FROST_BLUR = 3.dp
+private val LENS_FROST_BLUR = 6.dp
 
 internal fun DrawScope.drawGlassBubble(
     layer: GraphicsLayer,
@@ -1280,9 +1280,13 @@ half4 main(float2 coord) {
     float pushAcross = 1.0 - smoothstep(0.25, 0.7, intoEnd / radius);
     // Less push outwards at the ends: over the track its colour reaches their rim, dense; past the track's end they show
     // the dark beyond (the owner's iOS screenshots, 18.11).
-    float2 drawn = center + p + p * float2(0.12 * deep, 0.12 * deep * across) + n * push * float2(0.6, pushAcross);
+    // The bend grows and fades with the lens: at the thumb's size it shows the track as it is. Bent fully as it shrank
+    // back, it drew the dark beyond the track in at its top and bottom, "much black" as it settled where iOS's is soft
+    // and milky (the owner's video of ours, 18.11).
+    float bend = lift * lift;
+    float2 drawn = center + p + (p * float2(0.12 * deep, 0.12 * deep * across) + n * push * float2(0.6, pushAcross)) * bend;
     float fringe = 1.0 - clamp(t / 0.25, 0.0, 1.0);
-    float2 chroma = n * (0.1 * radius * fringe * fringe);
+    float2 chroma = n * (0.1 * radius * fringe * fringe * bend);
     half4 color = split(coord, drawn - coord, chroma);
 
     // The rim mirrors what lies above or below it along the refracted picture: at the ends, where the mirror's reach
@@ -1295,10 +1299,10 @@ half4 main(float2 coord) {
     float band = radius * (0.04 + 0.18 * smoothstep(-0.3, 0.5, (abs(p.x) - (halfSize.x - radius)) / radius));
     float rim = 1.0 - clamp(depth / band, 0.0, 1.0);
     float2 shift = drawn - coord;
-    half4 mirror = split(coord, float2(shift.x + p.x * 0.3, -n.y * (0.9 * radius + band) * rim), chroma * 0.15);
+    half4 mirror = split(coord, float2(shift.x + p.x * 0.3 * bend, -n.y * (0.9 * radius + band) * rim * bend), chroma * 0.15);
     color = mix(color, mirror, rim);
 
-    color.rgb = mix(color.rgb, half3(color.a), frost * 0.15);
+    color.rgb = mix(color.rgb, half3(color.a), frost * 0.25);
 
     // The glass a little lighter than what lies under it (+7 % towards white), and darker towards its rim: a soft
     // shade over its outer 0.6 r, down to 0.78 at the rim, measured on the owner's second iOS video (18.11).

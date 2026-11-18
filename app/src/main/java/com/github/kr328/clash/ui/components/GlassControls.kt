@@ -133,7 +133,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
             launch { frost.animateTo(1f, tween(SWITCH_LENS_OUT_MS)) }
         }
         if (touch.down) return@LaunchedEffect
-        fill.animateTo(1f, tween(FILL_IN_MS))
+        fill.animateTo(1f, tween(FILL_IN_MS, easing = FastOutSlowInEasing))
         frost.snapTo(0f)
     }
     LaunchedEffect(motion) {
@@ -333,11 +333,11 @@ private val TOGGLE_GIVE = 10.dp
 // Along the thumb's ride, from its start, as iOS's second video (18.11); 150 ms from the middle read as a jump.
 private const val TRACK_FADE_MS = 250
 // The tap as iOS's (the owner's second video, 18.11): the white gone in 60 ms, the frost cleared as the lens rides,
-// the lens home frosting and shrinking in 140 ms, then the white back in 150 ms.
+// the lens home frosting and shrinking in 140 ms, then the white back in 180 ms.
 private const val FILL_OUT_MS = 60
 private const val FROST_CLEAR_MS = 220
 private const val SWITCH_LENS_OUT_MS = 140
-private const val FILL_IN_MS = 150
+private const val FILL_IN_MS = 180
 /** The thumb's ride: firmer than it was (0.62), so it lands without a visible bounce, as iOS's. */
 private val THUMB_SPRING = spring<Float>(dampingRatio = 0.8f, stiffness = 420f)
 /** Near enough home, in its travel, for the lens to start settling. */
