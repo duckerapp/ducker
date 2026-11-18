@@ -248,9 +248,18 @@ internal object DockGlass {
     val Look = LensLook.Switch.copy(
         drawFrom = -0.13f, zoomEdge = 0.12f, push = 1.2f, pushPower = 6f, pushBand = 0.45f, pushAlong = 1.1f, pushAcross = 0.7f,
         pushEndFrom = 0.1f, pushEndTo = 0.6f,
-        chroma = 0.08f, disperse = 0.35f, smear = 0.6f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.15f, shineEnds = 0.7f, irisDark = 0f, irisLight = 0.3f,
+        chroma = 0.08f, disperse = 0.35f, smear = 0.6f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.15f, shineEnds = 0.7f, irisDark = 0f, irisLight = 0.12f,
         shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
+
+    /**
+     * On a light screen the colours split half as much: the dark it draws in against the white pane split into a rainbow
+     * all round, and the rim's colours at 0.3 were too much (the owner, 18.11: «радуга очень агрессивная … все в радуге»).
+     */
+    val LookLight = Look.copy(chroma = 0.04f, disperse = 0.18f)
+
+    /** The share of the lens, shrinking, over which the veil takes over from its filling. */
+    const val HANDOVER = 0.3f
 }
 
 /**
@@ -387,8 +396,11 @@ internal fun GlassDock(
     // the lens's glass over all it shows), and the veil itself waits: under the lens its edge, drawn in by the rim,
     // showed a smaller blot growing out to the rim (the owner, 18.11: «наоборот растёт к линзе»).
     fun shrinking() = held.targetValue < 0.5f && held.value >= LENS_SHOWN
-    fun veilShown(): Float = if (shrinking()) 0f else veil.value
-    fun veilGathered(): Float = if (shrinking()) (1f - held.value).pow(1.3f) else 0f
+    // Over the lens's last third the veil itself comes in under it and the filling goes: swapped at the end, the veil
+    // (blurred more, tinted otherwise) stepped in at once — unseen dark on dark, plain on a light screen (the owner, 18.11).
+    fun handover(): Float = 1f - (held.value / DockGlass.HANDOVER).coerceIn(0f, 1f)
+    fun veilShown(): Float = if (shrinking()) handover() else veil.value
+    fun veilGathered(): Float = if (shrinking()) (1f - held.value).pow(1.3f) * (1f - handover()) else 0f
 
     // The geometry, in the row of tabs [row] wide and [h] high.
     fun slot(row: Float) = dockSlotWidth(row)
@@ -498,8 +510,12 @@ internal fun GlassDock(
                     // Its lightness and light line go with its last third too: whole to its last frame, they blinked
                     // out with it as the veil came back (the owner, 18.11: «мигание … при отпускании пальца»).
                     val fade = (s / 0.3f).coerceAtMost(1f)
-                    val look = if (fade >= 1f) DockGlass.Look else DockGlass.Look.run {
-                        copy(lighten = lighten * fade, shineDark = shineDark * fade, shineLight = shineLight * fade)
+                    val theme = if (dark) DockGlass.Look else DockGlass.LookLight
+                    val look = if (fade >= 1f) theme else theme.run {
+                        copy(
+                            lighten = lighten * fade, shineDark = shineDark * fade, shineLight = shineLight * fade,
+                            ring = ring * fade, irisLight = irisLight * fade,
+                        )
                     }
                     lens.draw(
                         this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, lift, 0f, dark, look,
