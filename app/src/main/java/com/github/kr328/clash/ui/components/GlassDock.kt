@@ -127,9 +127,13 @@ internal object DockGlass {
     /** The tabs' icons, a little larger than Air's 20 dp (the owner, 18.11); the labels unchanged. */
     val ICON = 23.dp
 
-    /** The lens, held: 1.30 × the veil's width and 1.26 × its height, a little over the dock's edges (iOS). */
-    const val LENS_WIDTH = 1.3f
-    const val LENS_HEIGHT = 1.26f
+    /**
+     * The lens, held: 1.15 × the dock's height, 1.45 × as wide as high, so it stands over the dock's edges all round and
+     * past its end over the first and last tab (the owner's friend's iOS video, 18.11: ~6.5 pt over a 63 pt dock). Sized
+     * from the veil, 1.30 × 1.26 of it, it barely left the dock (the owner, 18.11).
+     */
+    const val LENS_HEIGHT = 1.15f
+    const val LENS_ASPECT = 1.45f
 
     /**
      * A touch: the veil gone in 50 ms as the lens swells (120 ms, [follow]). Landed: the lens shrinks back in 130 ms,
@@ -156,27 +160,28 @@ internal object DockGlass {
     const val SQUASH = 0.35f
     const val MOVING_ZOOM = 0.1f
 
-    /** Past the first or the last tab: how far the lens gives, and how much it stretches there (F-528). */
+    /**
+     * Past the first or the last tab: how far the lens gives (F-528), and how much it draws in there, narrower and a
+     * little taller, as against a wall; stretched there, it did not read as iOS's (the owner, 18.11: «втягиваться, без
+     * фанатизма»).
+     */
     val EDGE_GIVE = 8.dp
-    const val EDGE_STRETCH = 0.2f
+    const val EDGE_STRETCH = -0.12f
 
     /** The labels change colour at the lens's sides over this much: a hard edge read as doubled letters. */
     val LABEL_FADE = 14.dp
 
     /**
-     * The lens's look: the switch's, but magnifying as iOS's (1.15 × held); its ends draw in the neighbours' labels rather
-     * than mirror a band (0.08 r, the switch's 0.22), its top and bottom bands thinner (push 0.25); colours split a
-     * little more, a brighter rim line, a fainter shadow. Fitted on a numpy copy of the shader beside iOS's held lens.
-     * No frost: clouded as it shrank, it turned to grey soap (the owner's video of ours, 18.11); iOS's stays clear and
-     * darkens as the veil returns under it. No blur at all: a touch of it read as failing eyesight on the labels; no
-     * shadow, under it or as the inner arc ([LensLook.rimShade]): iOS's dock lens has none, it is all bending (the
-     * owner, 18.11). The rim's draw-in falls off steeply ([LensLook.pushPower] 3, push 0.5): a narrow rim squeezes a wide
-     * strip of what lies outside, as iOS's, where the gentler 1.5 drew the neighbouring letters again at their own size,
-     * doubled («Prooxies», the owner's video of ours, 18.11).
+     * The lens's look, fitted on a numpy copy of the shader beside the iOS frames (`ios-dock/fit23.png`): it magnifies
+     * a little (1.1-1.15 held); its rim bends what lies under the lens out to the edge, steeply in a narrow band, so a
+     * label under it runs into the rim and the glass has a volume (the friend's video, 18.11). Drawing in what lay
+     * outside, as before, read as other effects, the neighbours' letters squeezed or doubled. A soft light rim all round
+     * (`shineEnds`), the dark ring faint, colours split at the rim; no shadow, inner arc, blur or frost (the owner, 18.11).
      */
     val Look = LensLook.Switch.copy(
-        drawFrom = -0.13f, push = 0.5f, pushPower = 3f, pushAlong = 1f, bandEnd = 0.08f, chroma = 0.12f, rimShade = 0f,
-        shineDark = 0.35f, shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
+        drawFrom = -0.12f, push = -0.22f, pushPower = 3f, pushAlong = 1f, bandSide = 0.04f, bandEnd = 0.08f,
+        chroma = 0.15f, ring = 0.15f, rimShade = 0f, lighten = 0.1f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
+        shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }
 
@@ -240,6 +245,7 @@ internal fun GlassDock(
     // The lens's speed, 0..1 of [DockGlass.SPEED_FULL], through [DockGlass.JELLY_SPRING]: below 0 it squashes.
     val jelly = remember { Animatable(0f) }
     val slotPx = with(LocalDensity.current) { DockGlass.SLOT.toPx() }
+    val padPx = with(LocalDensity.current) { DOCK_PAD.toPx() }
 
     LaunchedEffect(motion, slotPx) {
         if (!motion) return@LaunchedEffect
@@ -295,8 +301,10 @@ internal fun GlassDock(
     fun lensRect(row: Float, h: Float): Rect {
         val s = held.value
         val st = stretch()
-        val halfWidth = slot(row) / 2f * lerp(1f, DockGlass.LENS_WIDTH, s) * (1f + st)
-        val halfHeight = h / 2f * lerp(1f, DockGlass.LENS_HEIGHT, s) * (1f - DockGlass.SQUASH * st)
+        // From the veil to the lens: the lens sized by the dock's height, [h] and its padding.
+        val lensHalfHeight = (h / 2f + padPx) * DockGlass.LENS_HEIGHT
+        val halfWidth = lerp(slot(row) / 2f, lensHalfHeight * DockGlass.LENS_ASPECT, s) * (1f + st)
+        val halfHeight = lerp(h / 2f, lensHalfHeight, s) * (1f - DockGlass.SQUASH * st)
         val c = middle(row)
         return Rect(c - halfWidth, h / 2f - halfHeight, c + halfWidth, h / 2f + halfHeight)
     }

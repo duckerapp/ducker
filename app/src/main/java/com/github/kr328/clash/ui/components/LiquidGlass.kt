@@ -755,9 +755,10 @@ internal data class LensLook(
     val rimShade: Float,
     /** How much lighter, towards white, the glass is than what lies under it. */
     val lighten: Float,
-    /** The light lines along the top and bottom, on a dark and on a light screen. */
+    /** The light line along the rim, on a dark and on a light screen; [shineEnds] — its share at the ends. */
     val shineDark: Float,
     val shineLight: Float,
+    val shineEnds: Float,
     /** The shadow under the lens, on a dark and on a light screen. */
     val shadowDark: Float,
     val shadowLight: Float,
@@ -768,7 +769,7 @@ internal data class LensLook(
     companion object {
         val Switch = LensLook(
             drawFrom = 0.12f, push = 0.3f, pushPower = 1.5f, pushAlong = 0.6f, chroma = 0.1f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
-            ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shadowDark = 0.3f,
+            ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shineEnds = 0.1f, shadowDark = 0.3f,
             shadowLight = 0.12f, clearBlur = 0.3.dp, frostBlur = 6.dp,
         )
     }
@@ -808,6 +809,7 @@ private class Api33GlassLens : GlassLens {
             shader.setFloatUniform("ringAlpha", look.ring)
             shader.setFloatUniform("rimShade", look.rimShade)
             shader.setFloatUniform("lighten", look.lighten)
+            shader.setFloatUniform("shineEnds", look.shineEnds)
             val lens = RenderEffect.createRuntimeShaderEffect(shader, "img")
             // Never quite clear: a touch of blur as the video's even when held.
             val blur = look.clearBlur.toPx() + frost * look.frostBlur.toPx()
@@ -1256,6 +1258,7 @@ uniform float mirrorReach;
 uniform float ringAlpha;
 uniform float rimShade;
 uniform float lighten;
+uniform float shineEnds;
 
 float sdRoundedRect(float2 coord, float2 halfSize, float radius) {
     float2 cornerCoord = abs(coord) - (halfSize - float2(radius));
@@ -1343,7 +1346,7 @@ half4 main(float2 coord) {
     color.rgb *= 1.0 - rimShade * lift * exp(-s * s / (2.0 * inner * inner));
     // A thin light line along the top and the bottom, none at the ends.
     float lobe = abs(n.y);
-    float line = (1.0 - smoothstep(0.0, edge, depth)) * (0.1 + 0.9 * lobe * lobe) * shine;
+    float line = (1.0 - smoothstep(0.0, edge, depth)) * (shineEnds + (1.0 - shineEnds) * lobe * lobe) * shine;
     color.rgb = min(color.rgb + half3(line), half3(1.0));
     color.a = max(color.a, line);
     return mix(shade, color, cover);
