@@ -742,14 +742,20 @@ internal data class LensLook(
     val push: Float,
     /** How steeply the push falls off inwards: (1 − depth / r) to this power; steeper squeezes more into a narrower rim. */
     val pushPower: Float,
+    /**
+     * Above 0, the push falls off instead over this band of r as a circle's edge, steepest at the rim: much of what lies
+     * past it squeezed into the rim itself, the middle flat (iOS's dock lens); 0 — [pushPower]'s.
+     */
+    val pushBand: Float,
     /** The push's share along the lens and at its top and bottom. */
     val pushAlong: Float,
     val pushAcross: Float,
     /** Over which share of r into an end the push at the top and bottom fades: earlier, the drawn-in bands end sooner. */
     val pushEndFrom: Float,
     val pushEndTo: Float,
-    /** How far red and blue part at the rim. */
+    /** How far red and blue part at the rim; [disperse] — and by this share of the rim's push, as the push carries them. */
     val chroma: Float,
+    val disperse: Float,
     /** The band at the rim that mirrors what lies above or below it: along the sides, and at the ends. */
     val bandSide: Float,
     val bandEnd: Float,
@@ -774,7 +780,7 @@ internal data class LensLook(
 ) {
     companion object {
         val Switch = LensLook(
-            drawFrom = 0.12f, zoomEdge = 0.35f, push = 0.3f, pushPower = 1.5f, pushAlong = 0.6f, pushAcross = 1f, pushEndFrom = 0.25f, pushEndTo = 0.7f, chroma = 0.1f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
+            drawFrom = 0.12f, zoomEdge = 0.35f, push = 0.3f, pushPower = 1.5f, pushBand = 0f, pushAlong = 0.6f, pushAcross = 1f, pushEndFrom = 0.25f, pushEndTo = 0.7f, chroma = 0.1f, disperse = 0f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
             ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shineEnds = 0.1f, shadowDark = 0.3f,
             shadowLight = 0.12f, clearBlur = 0.3.dp, frostBlur = 6.dp,
         )
@@ -808,6 +814,8 @@ private class Api33GlassLens : GlassLens {
             shader.setFloatUniform("pushAmount", look.push)
             shader.setFloatUniform("pushAlong", look.pushAlong)
             shader.setFloatUniform("pushPower", look.pushPower)
+            shader.setFloatUniform("pushBand", look.pushBand)
+            shader.setFloatUniform("disperse", look.disperse)
             shader.setFloatUniform("zoomEdge", look.zoomEdge)
             shader.setFloatUniform("pushAcrossScale", look.pushAcross)
             shader.setFloatUniform("pushEnd", look.pushEndFrom, look.pushEndTo)
@@ -1260,6 +1268,8 @@ uniform float drawFrom;
 uniform float pushAmount;
 uniform float pushAlong;
 uniform float pushPower;
+uniform float pushBand;
+uniform float disperse;
 uniform float zoomEdge;
 uniform float pushAcrossScale;
 uniform float2 pushEnd;
@@ -1318,7 +1328,8 @@ half4 main(float2 coord) {
     float t = clamp(depth / radius, 0.0, 1.0);
 
     float deep = smoothstep(0.0, zoomEdge, t);
-    float push = pushAmount * radius * pow(1.0 - t, pushPower);
+    float inBand = clamp(1.0 - t / max(pushBand, 0.0001), 0.0, 1.0);
+    float push = pushAmount * radius * (pushBand > 0.0 ? 1.0 - sqrt(1.0 - inBand * inBand) : pow(1.0 - t, pushPower));
     // Towards the ends the glass is thinner across: there the picture keeps its height and the dark bands from above
     // and below end in rounded tips short of the rim, as iOS's (the owner, 18.11).
     float intoEnd = max(abs(p.x) - (halfSize.x - radius), 0.0);
@@ -1332,9 +1343,11 @@ half4 main(float2 coord) {
     // back, it drew the dark beyond the track in at its top and bottom, "much black" as it settled where iOS's is soft
     // and milky (the owner's video of ours, 18.11).
     float bend = lift * lift;
-    float2 drawn = center + p + (p * float2(drawFrom * deep, drawFrom * deep * across) + n * push * float2(pushAlong, pushAcross * pushAcrossScale)) * bend;
+    float2 rimShift = n * push * float2(pushAlong, pushAcross * pushAcrossScale);
+    float2 drawn = center + p + (p * float2(drawFrom * deep, drawFrom * deep * across) + rimShift) * bend;
     float fringe = 1.0 - clamp(t / 0.25, 0.0, 1.0);
-    float2 chroma = n * (chromaAmount * radius * fringe * fringe * bend);
+    // The colours part with the rim's push, not the middle's magnification: iOS's middle is clean, its rim rainbow.
+    float2 chroma = n * (chromaAmount * radius * fringe * fringe * bend) + rimShift * (disperse * bend);
     half4 color = split(coord, drawn - coord, chroma);
 
     // The rim mirrors what lies above or below it along the refracted picture: at the ends, where the mirror's reach

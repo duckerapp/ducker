@@ -23,6 +23,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import kotlinx.coroutines.Job
@@ -283,7 +284,13 @@ internal class LensTouch {
  * Swells while a finger is down, settles back after; a touch already gone still swells fully once. [rest]: what the
  * lens waits for, swollen, before it settles (a segment's lens, its landing).
  */
-internal suspend fun Animatable<Float, *>.follow(touch: LensTouch, motion: Boolean, out: Int = LENS_OUT_MS, rest: suspend () -> Unit = {}) {
+internal suspend fun Animatable<Float, *>.follow(
+    touch: LensTouch,
+    motion: Boolean,
+    out: Int = LENS_OUT_MS,
+    outEasing: Easing = FastOutSlowInEasing,
+    rest: suspend () -> Unit = {},
+) {
     if (!motion) {
         touch.seen = touch.count
         snapTo(0f)
@@ -295,7 +302,7 @@ internal suspend fun Animatable<Float, *>.follow(touch: LensTouch, motion: Boole
     touch.seen = touch.count
     if (touch.down) return
     rest()
-    animateTo(0f, tween(out))
+    animateTo(0f, tween(out, easing = outEasing))
 }
 
 /** A finger on this, from its touch until it lifts, whatever gesture takes the touch meanwhile. */

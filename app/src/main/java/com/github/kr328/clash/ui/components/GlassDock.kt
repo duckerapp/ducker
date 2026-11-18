@@ -3,6 +3,7 @@ package com.github.kr328.clash.ui.components
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.SpringSpec
@@ -139,11 +140,13 @@ internal object DockGlass {
     const val LENS_ASPECT = 1.39f
 
     /**
-     * A touch: the veil gone in 50 ms as the lens swells (120 ms, [follow]). Landed: the lens shrinks back in 130 ms,
-     * the veil returning over 220, most of it early (iOS: 100-130 ms and ~80 ms; a little slower to be seen).
+     * A touch: the veil gone in 50 ms as the lens swells (120 ms, [follow]). Landed: the lens shrinks back in 160 ms,
+     * slowly at first, still glass, then into the veil, which returns over 220, most of it early. iOS's short tap is one
+     * bubble, ~150 ms up past its held size and ~150 ms down, glass to the end; ours, 130 ms down from the start at
+     * full speed and its bend gone first, seemed to die before it had come (the owner, 18.11, `IMG_0050.mp4`).
      */
     const val VEIL_OUT_MS = 50
-    const val LENS_OUT_MS = 130
+    const val LENS_OUT_MS = 160
     const val VEIL_IN_MS = 220
 
     /**
@@ -197,10 +200,16 @@ internal object DockGlass {
      * The rim's draw-in kept to a narrow band (power 6, push 0.5; the middle ~1.12): reaching deep into the wide lens
      * at the switch's power 1.5 it pulled the top and bottom in and squashed the labels to ~0.75 of their height (the
      * owner, 18.11: «содержимое как-то ужимается»; `ios-dock/ours-squash.png`: device, copy, and the band kept narrow).
-     * Colours split harder at the rim (0.16): iOS's ends and bands glow in rainbow round what lies at them, ours barely.
+     * The magnification flat, ~1.15, out to the rim's band (`zoomEdge` 0.12): eased in over 0.35 r it was ~1.18 in the
+     * middle and ~1.0 by 0.75 r, a swollen middle (the owner, 18.11: «центр линзы дает заметное увеличение»), where
+     * iOS's is ~1.19 to its band, icon and label alike (`ios-dock/ios2/mag.png`). The rim's band (0.35 r) squeezes much
+     * of what lies round it into itself, steepest at the rim, its colours parting with that push (`disperse`): iOS's rim
+     * takes in much text, rainbow, its middle clean («контур вокруг линзы прям принимает на себя много текста»);
+     * colours parted by the whole shift fringed the middle too (`ios-dock/ours-rim.png`).
      */
     val Look = LensLook.Switch.copy(
-        drawFrom = -0.12f, push = 0.5f, pushPower = 6f, pushEndFrom = 0.1f, pushEndTo = 0.6f, chroma = 0.16f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
+        drawFrom = -0.13f, zoomEdge = 0.12f, push = 0.8f, pushPower = 6f, pushBand = 0.35f, pushEndFrom = 0.1f, pushEndTo = 0.6f,
+        chroma = 0.08f, disperse = 0.35f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
         shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }
@@ -287,7 +296,7 @@ internal fun GlassDock(
         }
         launch { veil.animateTo(0f, tween(DockGlass.VEIL_OUT_MS)) }
         var back: Job? = null
-        held.follow(touch, motion, out = DockGlass.LENS_OUT_MS) {
+        held.follow(touch, motion, out = DockGlass.LENS_OUT_MS, outEasing = FastOutLinearInEasing) {
             // A tap's click comes a frame or two after the finger lifts, and only then is the lens sent off: it must not
             // settle before it has gone. It settles as it lands, the page still on its way (iOS).
             repeat(2) { withFrameNanos { } }
@@ -422,9 +431,9 @@ internal fun GlassDock(
                     val rect = lensRect(row, h).translate(pad, pad)
                     val whole = size
                     val z = zoom()
-                    // Its bend, colours and mirror there from its first frames as it swells (iOS's), fading fast as it
-                    // shrinks back: the shader bends by lift².
-                    val lift = if (held.targetValue > 0.5f) sqrt(s) else s
+                    // Its bend, colours and mirror with its size, there from its first frames as it swells and to its last
+                    // as it shrinks (iOS's): the shader bends by lift².
+                    val lift = sqrt(s)
                     lens.draw(
                         this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, lift, 0f, dark, DockGlass.Look,
                         drawFrom = DockGlass.Look.drawFrom - DockGlass.MOVING_ZOOM * abs(speed()),
