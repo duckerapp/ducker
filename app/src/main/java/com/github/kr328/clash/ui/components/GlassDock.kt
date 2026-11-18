@@ -155,10 +155,10 @@ internal object DockGlass {
      * slowly at first, still glass, and softly into the veil, which returns over 220, most of it early. iOS's short tap
      * is one bubble, ~150 ms up past its held size and ~150 ms down, glass to the end; ours, 130 ms down from the start
      * at full speed and its bend gone first, seemed to die before it had come (the owner, 18.11, `IMG_0050.mp4`); at
-     * 120 + 160 ms, ending at full speed, still abrupt («плавнее и длительней»). Shrinking, the veil gathers in the lens
-     * as it goes, ~(1 − lens)^1.5 ([veilShown]): back on its own 220 ms from the start, it was there before the lens had
-     * gone, and the lens, slow then fast (0.5, 0, 0.3, 1 over 260 ms), fell into it in a frame (the owner, 18.11:
-     * «подложка появляется, а не из линзы она как бы образуется»).
+     * 120 + 160 ms, ending at full speed, still abrupt («плавнее и длительней»). Shrinking, the lens fills with the veil
+     * as it goes ([veilGathered]): back on its own 220 ms from the start, the veil was there before the lens had gone,
+     * and the lens, slow then fast (0.5, 0, 0.3, 1 over 260 ms), fell into it in a frame (the owner, 18.11: «подложка
+     * появляется, а не из линзы она как бы образуется»).
      */
     const val VEIL_OUT_MS = 100
     const val LENS_IN_MS = 180
@@ -170,7 +170,7 @@ internal object DockGlass {
      * At this speed, in tabs a second, the lens stretches fully along its way ([STRETCH]), squashes across ([SQUASH])
      * and magnifies more ([MOVING_ZOOM], in [LensLook.drawFrom]): iOS's lens on a quick tap.
      */
-    const val SPEED_FULL = 8f
+    const val SPEED_FULL = 5f
 
     /**
      * The lens's shape follows its speed through this spring: stopping, it squashes past round and gathers itself back
@@ -181,9 +181,9 @@ internal object DockGlass {
     val SLOT = 84.dp
     const val STRETCH = 0.2f
     const val SQUASH = 0.35f
-    // ~1.27 at full speed: iOS's moving lens magnifies ~1.2-1.45 and takes the icons it crosses into itself (the owner,
+    // ~1.3 at full speed (5 tabs a second; at 8 a finger's drag hardly bent it, the owner, 18.11): iOS's moving lens magnifies ~1.2-1.45 and takes the icons it crosses into itself (the owner,
     // 18.11); 0 while the lens drew the dock in rather than magnifying it.
-    const val MOVING_ZOOM = 0.08f
+    const val MOVING_ZOOM = 0.1f
 
     /**
      * A touch: the lens swells on past its size, wider and a little flatter, and settles back. iOS's App Store, held:
@@ -355,11 +355,12 @@ internal fun GlassDock(
 
     fun zoom() = 1f + DockGlass.BREATH * breath.value
 
-    // The veil as it shows: shrinking, it gathers inside the lens as the lens goes; otherwise its own.
-    fun veilShown(): Float {
-        val s = held.value
-        return if (held.targetValue < 0.5f && s > 0.001f) (1f - s).pow(1.5f) else veil.value
-    }
+    // Shrinking, the lens fills with the veil's shade as it goes, evenly from rim to rim ([veilGathered], drawn under
+    // the lens's glass over all it shows), and the veil itself waits: under the lens its edge, drawn in by the rim,
+    // showed a smaller blot growing out to the rim (the owner, 18.11: «наоборот растёт к линзе»).
+    fun shrinking() = held.targetValue < 0.5f && held.value > 0.001f
+    fun veilShown(): Float = if (shrinking()) 0f else veil.value
+    fun veilGathered(): Float = if (shrinking()) (1f - held.value).pow(1.3f) else 0f
 
     // The geometry, in the row of tabs [row] wide and [h] high.
     fun slot(row: Float) = dockSlotWidth(row)
@@ -478,6 +479,13 @@ internal fun GlassDock(
                         // The dock itself under the lens, its pane and veil as they are: drawn in, its edges come in along an
                         // arc with the wallpaper beyond (the owner, 18.11). The sharp wallpaper alone, magnified, was a fish-eye.
                         drawLayer(dockLayer)
+                        val gathered = veilGathered() * DockGlass.VEIL_OPACITY
+                        if (gathered > 0f) {
+                            val all = Size(whole.width * 3, whole.height * 3)
+                            val from = Offset(-whole.width, -whole.height)
+                            drawRect(paneTint, from, all, alpha = gathered)
+                            drawRect(veilShade, from, all, alpha = gathered)
+                        }
                         translate(pad, pad) { drawLayer(chosenLayer) }
                     }
                 },

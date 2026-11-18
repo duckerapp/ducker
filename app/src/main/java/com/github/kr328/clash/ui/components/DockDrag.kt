@@ -110,8 +110,12 @@ internal class DockDrag(private val scope: CoroutineScope) {
     }
 }
 
-/** The lens's flight to a tab: iOS's takes ~0.15 s and barely passes its place. */
-private val FLY_SPRING = spring<Float>(dampingRatio = 0.75f, stiffness = 600f)
+/**
+ * The lens's flight to a tab: iOS's takes ~0.15 s for a tab and barely passes its place. At 600 ours was there in
+ * ~0.11 s, before the lens had swollen (180 ms): from Home to Profiles it was hardly seen (the owner, 18.11). Landed
+ * within a pixel: to 0.01 px the softer spring's tail held the lens swollen ~0.75 s.
+ */
+private val FLY_SPRING = spring(dampingRatio = 0.75f, stiffness = 300f, visibilityThreshold = LANDED_PX)
 // Within this many pixels of the tab the page has come: the lens is the page's again.
 private const val LANDED_PX = 1f
 // The page has rested this long somewhere other than the tab: the flight is over.

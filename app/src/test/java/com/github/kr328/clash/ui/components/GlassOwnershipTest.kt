@@ -29,7 +29,11 @@ class GlassOwnershipTest {
             drag.move(180f)
             frames.advance(20)
             drag.fly(0f, 150f) { page }
-            frames.advance(30)
+            // The page on its way all the while: never still, it does not call the lens back.
+            repeat(40) {
+                page += 1f
+                frames.advance()
+            }
             // Landed ahead of the page: there, whatever the page says, and free to settle.
             assertEquals(150f, drag.center(page), 0.5f)
             assertTrue(drag.resting)
@@ -98,8 +102,8 @@ class GlassOwnershipTest {
                 frames.advance()
                 if (it == 3) midSpeed = drag.speed
             }
-            // ~0.19 s: the lens is about there, the page a third of the way.
-            assertTrue(drag.center(page) > 190f, "${drag.center(page)}")
+            // ~0.19 s: the lens nearly there, the page a third of the way.
+            assertTrue(drag.center(page) > 180f, "${drag.center(page)}")
             assertTrue(midSpeed > 500f)
             repeat(40) {
                 page = minOf(200f, page + 5f)
