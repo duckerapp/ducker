@@ -1680,20 +1680,26 @@ internal object PaneGlass {
      */
     const val DENSER = 1.2f
     /**
-     * A press eases the tint by [PRESS_CLEAR] over [PRESS_IN_MS] in and [PRESS_OUT_MS] back, as the dock's
-     * ([DockGlass.TINT_EASE]); lifting the picture's brightness and colours as well read as oversaturated beside the
-     * dock's restrained press (the owner, 18.11).
+     * A press eases the tint by [PRESS_CLEAR] over [PRESS_IN_MS] in and [PRESS_OUT_MS] back. Lifting the picture's
+     * brightness and colours read as oversaturated beside the dock's restrained press, and even the dock's 0.3 eased
+     * the cards' colours ×1.35-1.56 (the owner, 18.11: «сильновато тонировка спадает»); longer than the dock's 150 / 400,
+     * as the owner asked a smoother press.
      */
-    const val PRESS_CLEAR = DockGlass.TINT_EASE
-    const val PRESS_IN_MS = 150
-    const val PRESS_OUT_MS = 400
+    const val PRESS_CLEAR = 0.15f
+    const val PRESS_IN_MS = 260
+    const val PRESS_OUT_MS = 560
     /** It grows by this length, between these shares of its width. */
     val PRESS_GROW = 8.dp
     const val GROW_MIN = 0.015f
     const val GROW_MAX = 0.04f
-    /** iOS's player: +3 % in ~70 ms; let go, back past its size by half of that ~80 ms later (F-550). */
-    val PRESS_IN = spring<Float>(dampingRatio = 0.8f, stiffness = 1200f)
-    val PRESS_OUT = spring<Float>(dampingRatio = 0.4f, stiffness = 900f)
+    /**
+     * The dock's breath springs, so a pane swells as the dock does: iOS's player's +3 % in ~70 ms with a quick bounce
+     * (0.8 / 1200 in, 0.4 / 900 out) read as abrupt (the owner, 18.11: smoother, a little longer). A short tap still
+     * swells for [PRESS_LEAST_MS] before it goes back, as the dock's breath outlasts a 60 ms finger.
+     */
+    val PRESS_IN = DockGlass.BREATH_SPRING
+    val PRESS_OUT = DockGlass.BREATH_BACK
+    const val PRESS_LEAST_MS = 160L
     /**
      * Held this long, a finger that moves takes the pane along like the dock's jelly (the owner, 18.11); moving sooner,
      * it is a swipe for the tabs or a scroll. The pull: rubber-banded over [PULL_GIVE], moved up to [PULL_MOVE],
@@ -1750,9 +1756,14 @@ internal class GlassPress(private val scope: CoroutineScope) {
 
     fun light(): Float = ease.value
 
+    private var downAt = 0L
+    private var back: kotlinx.coroutines.Job? = null
+
     fun down() {
+        back?.cancel()
+        downAt = android.os.SystemClock.uptimeMillis()
         scope.launch { amount.animateTo(1f, PaneGlass.PRESS_IN) }
-        scope.launch { ease.animateTo(1f, androidx.compose.animation.core.tween(PaneGlass.PRESS_IN_MS)) }
+        scope.launch { ease.animateTo(1f, androidx.compose.animation.core.tween(PaneGlass.PRESS_IN_MS, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
     }
 
     fun pull(way: Offset) {
@@ -1761,10 +1772,13 @@ internal class GlassPress(private val scope: CoroutineScope) {
     }
 
     fun up() {
-        scope.launch { amount.animateTo(0f, PaneGlass.PRESS_OUT) }
-        scope.launch { ease.animateTo(0f, androidx.compose.animation.core.tween(PaneGlass.PRESS_OUT_MS)) }
         scope.launch { pullX.animateTo(0f, PaneGlass.PULL_BACK) }
         scope.launch { pullY.animateTo(0f, PaneGlass.PULL_BACK) }
+        back = scope.launch {
+            kotlinx.coroutines.delay((PaneGlass.PRESS_LEAST_MS - (android.os.SystemClock.uptimeMillis() - downAt)).coerceAtLeast(0L))
+            launch { amount.animateTo(0f, PaneGlass.PRESS_OUT) }
+            launch { ease.animateTo(0f, androidx.compose.animation.core.tween(PaneGlass.PRESS_OUT_MS, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+        }
     }
 }
 
