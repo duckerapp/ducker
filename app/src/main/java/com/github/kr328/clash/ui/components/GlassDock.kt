@@ -128,12 +128,13 @@ internal object DockGlass {
     val ICON = 23.dp
 
     /**
-     * The lens, held: 1.22 × the dock's height, 1.23 × as wide as high (iOS's 1.45 less 15 %, the owner, 18.11), so it stands over the dock's edges all round and
-     * past its end over the first and last tab (the owner's friend's iOS video, 18.11: ~6.5 pt over a 63 pt dock). Sized
-     * from the veil, 1.30 × 1.26 of it, it barely left the dock (the owner, 18.11).
+     * The lens, held: a capsule over the dock's edges all round and past its end over the first and last tab, ~1.08 ×
+     * the dock's height and 1.39 × as wide as high (iOS's App Store: ~1.06-1.08 and 1.5). Its straight top and bottom
+     * draw the dock's edges in flat, ending at the rim in rounded steps; nearly round (1.22 high, 1.23 wide), it bowed
+     * them into a barrel (the owner's sketch, 18.11). The width kept from that, iOS's less 15 % (the owner, 18.11).
      */
-    const val LENS_HEIGHT = 1.22f
-    const val LENS_ASPECT = 1.23f
+    const val LENS_HEIGHT = 1.08f
+    const val LENS_ASPECT = 1.39f
 
     /**
      * A touch: the veil gone in 50 ms as the lens swells (120 ms, [follow]). Landed: the lens shrinks back in 130 ms,
@@ -187,7 +188,7 @@ internal object DockGlass {
      * owner, 18.11: «содержимое как-то ужимается»; `ios-dock/ours-squash.png`: device, copy, and the band kept narrow).
      */
     val Look = LensLook.Switch.copy(
-        drawFrom = -0.12f, push = 0.5f, pushPower = 6f, chroma = 0.1f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
+        drawFrom = -0.12f, push = 0.5f, pushPower = 6f, pushEndFrom = 0.1f, pushEndTo = 0.6f, chroma = 0.1f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
         shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }

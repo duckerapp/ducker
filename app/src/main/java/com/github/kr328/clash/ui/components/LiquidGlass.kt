@@ -745,6 +745,9 @@ internal data class LensLook(
     /** The push's share along the lens and at its top and bottom. */
     val pushAlong: Float,
     val pushAcross: Float,
+    /** Over which share of r into an end the push at the top and bottom fades: earlier, the drawn-in bands end sooner. */
+    val pushEndFrom: Float,
+    val pushEndTo: Float,
     /** How far red and blue part at the rim. */
     val chroma: Float,
     /** The band at the rim that mirrors what lies above or below it: along the sides, and at the ends. */
@@ -771,7 +774,7 @@ internal data class LensLook(
 ) {
     companion object {
         val Switch = LensLook(
-            drawFrom = 0.12f, zoomEdge = 0.35f, push = 0.3f, pushPower = 1.5f, pushAlong = 0.6f, pushAcross = 1f, chroma = 0.1f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
+            drawFrom = 0.12f, zoomEdge = 0.35f, push = 0.3f, pushPower = 1.5f, pushAlong = 0.6f, pushAcross = 1f, pushEndFrom = 0.25f, pushEndTo = 0.7f, chroma = 0.1f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
             ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shineEnds = 0.1f, shadowDark = 0.3f,
             shadowLight = 0.12f, clearBlur = 0.3.dp, frostBlur = 6.dp,
         )
@@ -807,6 +810,7 @@ private class Api33GlassLens : GlassLens {
             shader.setFloatUniform("pushPower", look.pushPower)
             shader.setFloatUniform("zoomEdge", look.zoomEdge)
             shader.setFloatUniform("pushAcrossScale", look.pushAcross)
+            shader.setFloatUniform("pushEnd", look.pushEndFrom, look.pushEndTo)
             shader.setFloatUniform("chromaAmount", look.chroma)
             shader.setFloatUniform("bandSide", look.bandSide)
             shader.setFloatUniform("bandEnd", look.bandEnd)
@@ -1258,6 +1262,7 @@ uniform float pushAlong;
 uniform float pushPower;
 uniform float zoomEdge;
 uniform float pushAcrossScale;
+uniform float2 pushEnd;
 uniform float chromaAmount;
 uniform float bandSide;
 uniform float bandEnd;
@@ -1318,9 +1323,9 @@ half4 main(float2 coord) {
     // and below end in rounded tips short of the rim, as iOS's (the owner, 18.11).
     float intoEnd = max(abs(p.x) - (halfSize.x - radius), 0.0);
     float across = pow(sqrt(max(radius * radius - intoEnd * intoEnd, 0.0)) / radius, 6.0);
-    // The rim's push leaves off sooner, from a quarter of the way into an end: the dark bands from above and below end
+    // The rim's push leaves off sooner, from pushEnd.x of the way into an end (the switch: a quarter): the dark bands from above and below end
     // rounded, the picture curving round them like a horseshoe, not in an S (the owner, 18.11).
-    float pushAcross = 1.0 - smoothstep(0.25, 0.7, intoEnd / radius);
+    float pushAcross = 1.0 - smoothstep(pushEnd.x, pushEnd.y, intoEnd / radius);
     // Less push outwards at the ends: over the track its colour reaches their rim, dense; past the track's end they show
     // the dark beyond (the owner's iOS screenshots, 18.11).
     // The bend grows and fades with the lens: at the thumb's size it shows the track as it is. Bent fully as it shrank
