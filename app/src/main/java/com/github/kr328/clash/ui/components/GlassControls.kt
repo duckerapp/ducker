@@ -59,7 +59,7 @@ import androidx.compose.ui.composed
 /**
  * A switch that only shows [checked]; the row around it takes taps and speaks for it. [onDrag]: the thumb dragged by a
  * finger sets it. The glass style (D-541), after iOS's switch (the owner's video, 18.11): a track in the accent when on;
- * a touch turns the white thumb into a clear lens 1.6× its size, taller than the track, that rides to the other end,
+ * a touch turns the white thumb into a clear lens 1.5× its size, taller than the track, that rides to the other end,
  * gives like rubber past it, and as it settles clouds over and turns back into the white thumb. Elsewhere Material's
  * switch.
  */
@@ -201,7 +201,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
                 // Stretched along its way by its speed, and further as it is pulled past an end.
                 val past = (maxOf(p - 1f, -p, 0f) / give).coerceAtMost(1f)
                 val stretch = (abs(position.velocity) * 0.012f).coerceAtMost(0.08f) + past * 0.08f
-                val swell = 1f + (LENS_SWELL - 1f) * s
+                val swell = 1f + (SWITCH_LENS_SWELL - 1f) * s
                 val halfW = thumbW / 2f * swell * (1f + stretch)
                 val halfH = thumbH / 2f * swell * (1f - stretch * 0.5f)
                 val origin = Offset(at[0], at[1])
@@ -301,6 +301,8 @@ private val TRACK_HEIGHT = 28.dp
 private val THUMB_WIDTH = 40.dp
 // iOS's switch: the thumb 0.58 of the track wide (the owner's video, 18.11).
 private val SWITCH_THUMB_WIDTH = 37.dp
+// A little smaller than the video's 1.6×, against an iPhone in hand (the owner, 18.11).
+private const val SWITCH_LENS_SWELL = 1.5f
 private val THUMB_HEIGHT = 24.dp
 private val PAD = 2.dp
 // The lens grows, its picture barely: the thumb keeps room inside it (the owner, 18.11).
