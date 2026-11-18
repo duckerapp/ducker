@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.CircleShape
@@ -475,7 +476,7 @@ internal fun Modifier.liquidGlass(
      * How much a layer around this pane scales it (the glass dock's breath): the picture is drawn back so the glass
      * still shows what lies right under it; drawn plainly, it slid by the growth, ~40 px at the dock's far end.
      */
-    zoom: (() -> Float)? = null,
+    zoom: (() -> ScaleFactor)? = null,
     /** Its own veil instead of a flat [tint], drawn under the rim. */
     veil: (DrawScope.() -> Unit)? = null,
 ): Modifier {
@@ -509,14 +510,15 @@ internal fun Modifier.liquidGlass(
         val clip = Path().apply { addOutline(outline) }
 
         onDrawBehind {
-            val scaled = zoom?.invoke() ?: 1f
-            val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && !backdrop.waveActive && scaled == 1f }?.pictures?.get(stillBlur)
+            val scaled = zoom?.invoke() ?: ScaleFactor(1f, 1f)
+            val plain = scaled.scaleX == 1f && scaled.scaleY == 1f
+            val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && !backdrop.waveActive && plain }?.pictures?.get(stillBlur)
 
             if (still == null) {
                 glass.record(paneSize) {
                     // [position] is where the scaled pane's corner lies; a point of it [scaled]× as far from there.
                     translate(margin, margin) {
-                        scale(1f / scaled, 1f / scaled, pivot = Offset.Zero) {
+                        scale(1f / scaled.scaleX, 1f / scaled.scaleY, pivot = Offset.Zero) {
                             translate(backdrop.origin.x - position.x, backdrop.origin.y - position.y) {
                                 drawLayer(backdrop.layer)
                             }

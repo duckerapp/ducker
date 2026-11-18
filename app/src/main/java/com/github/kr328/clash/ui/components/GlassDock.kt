@@ -15,7 +15,6 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -60,14 +59,13 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -75,6 +73,7 @@ import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
 import kotlin.math.roundToInt
+import kotlin.math.sign
 import kotlin.math.sin
 import com.github.kr328.clash.R
 
@@ -169,23 +168,11 @@ internal object DockGlass {
     const val VEIL_IN_MS = 220
 
     /**
-     * At this speed, in tabs a second, the lens stretches fully along its way ([STRETCH]), squashes across ([SQUASH])
-     * and magnifies more ([MOVING_ZOOM], in [LensLook.drawFrom]): iOS's lens on a quick tap.
+     * Drawn in at an end ([EDGE_STRETCH]), the lens grows this much taller for what it loses in width. No stretch by
+     * its speed: once it ran (it never had, its speed unseen), a tap's flight stretched it hard; over three tabs there is
+     * no room to speed up (the owner, 18.11: «давай не будем заморачиваться с этим растягиванием»).
      */
-    const val SPEED_FULL = 5f
-
-    /**
-     * The lens's shape follows its speed through this spring: stopping, it squashes past round and gathers itself back
-     * («хочет расплыться, но потом собирается», the owner on iOS's, 18.11); following the speed at once, it went flat
-     * the moment the page stopped. [SLOT] turns the speed, pixels a second, into tabs a second outside a draw.
-     */
-    val JELLY_SPRING: SpringSpec<Float> = spring(dampingRatio = 0.4f, stiffness = 380f)
-    val SLOT = 84.dp
-    const val STRETCH = 0.2f
     const val SQUASH = 0.35f
-    // ~1.3 at full speed (5 tabs a second; at 8 a finger's drag hardly bent it, the owner, 18.11): iOS's moving lens magnifies ~1.2-1.45 and takes the icons it crosses into itself (the owner,
-    // 18.11); 0 while the lens drew the dock in rather than magnifying it.
-    const val MOVING_ZOOM = 0.1f
 
     /**
      * A touch: the lens swells on past its size, wider and a little flatter, and settles back. iOS's App Store, held:
@@ -207,16 +194,18 @@ internal object DockGlass {
     val EDGE_GIVE = 16.dp
 
     /**
-     * The dock and the lens lean after the finger, rubber-banded over [LEAN_GIVE] of its way: up or down, the dock
-     * [LEAN_DOCK_Y] of that, the lens [LEAN_LENS_Y] more; pulled past the first or last tab, the dock [LEAN_DOCK_X]
-     * across. iOS's (`IMG_0052.mp4`): ~4-6 % of its height up and down, ~1.7 % of its width at an end; ours a little
-     * bolder (the owner, 18.11: «чуть смелее»). Back on a soft spring, a little past.
+     * The dock stretches after the finger from its far side, never moving off its place: up or down by up to
+     * [PULL_Y] of its height, past the first or last tab by up to [PULL_X] of its width, narrower across by [PULL_SQUEEZE]
+     * of that; rubber-banded over [PULL_GIVE] of the finger's way. iOS's (`IMG_0053.mp4`): its top ~6 px up over a
+     * ~250 px dock as its side came ~9 px in, its far side still; at an end ~2 % wider towards the finger
+     * (`IMG_0052.mp4`). Shifting it whole, the lens with it, it floated off its place (the owner, 18.11). The lens is
+     * drawn in it and stretches with it. Back on a soft spring, a little past.
      */
-    val LEAN_GIVE = 40.dp
-    const val LEAN_DOCK_Y = 0.125f
-    const val LEAN_LENS_Y = 0.2f
-    const val LEAN_DOCK_X = 0.15f
-    val LEAN_BACK: SpringSpec<Float> = spring(dampingRatio = 0.45f, stiffness = 300f)
+    val PULL_GIVE = 60.dp
+    const val PULL_X = 0.025f
+    const val PULL_Y = 0.035f
+    const val PULL_SQUEEZE = 0.6f
+    val PULL_BACK: SpringSpec<Float> = spring(dampingRatio = 0.45f, stiffness = 300f)
     const val EDGE_STRETCH = -0.12f
 
     /** The labels change colour at the lens's sides over this much: a hard edge read as doubled letters. */
@@ -311,23 +300,14 @@ internal fun GlassDock(
     val ease = remember { Animatable(0f) }
     // How far the finger has pulled the lens past the first or the last tab, 0..1; it wobbles through zero on release.
     val edge = remember { Animatable(0f) }
-    // The finger off its touch, pixels: across (past the first or last tab) and up or down. The dock and the lens lean
-    // after it ([DockGlass.LEAN]).
+    // The finger off its touch, pixels: across (past the first or last tab) and up or down. The dock stretches after
+    // it ([DockGlass.PULL_GIVE]).
     val pullX = remember { Animatable(0f) }
     val pullY = remember { Animatable(0f) }
-    // The lens's speed, 0..1 of [DockGlass.SPEED_FULL], through [DockGlass.JELLY_SPRING]: below 0 it squashes.
-    val jelly = remember { Animatable(0f) }
     // A touch's swell past the lens's size, 0..1 ([DockGlass.SWELL_WIDE]).
     val swell = remember { Animatable(0f) }
-    val slotPx = with(LocalDensity.current) { DockGlass.SLOT.toPx() }
     val padPx = with(LocalDensity.current) { DOCK_PAD.toPx() }
-    val leanGivePx = with(LocalDensity.current) { DockGlass.LEAN_GIVE.toPx() }
-
-    LaunchedEffect(motion, slotPx) {
-        if (!motion) return@LaunchedEffect
-        snapshotFlow { (drag.speed / slotPx / DockGlass.SPEED_FULL).coerceIn(0f, 1f) }
-            .collectLatest { jelly.animateTo(it, DockGlass.JELLY_SPRING) }
-    }
+    val pullGivePx = with(LocalDensity.current) { DockGlass.PULL_GIVE.toPx() }
 
     LaunchedEffect(touch.count, touch.down, motion, drag.dragging) {
         if (!motion) {
@@ -374,8 +354,17 @@ internal fun GlassDock(
 
     fun zoom() = 1f + DockGlass.BREATH * breath.value
 
-    // The finger's way, rubber-banded: about itself at first, never past [DockGlass.LEAN_GIVE].
-    fun leanPx(pull: Float) = pull * leanGivePx / (abs(pull) + leanGivePx)
+    // The finger's way as a share of the most the dock stretches, signed, rubber-banded over [DockGlass.PULL_GIVE].
+    fun pulled(pull: Float, most: Float) = most * pull / (abs(pull) + pullGivePx)
+    fun pullX() = pulled(pullX.value, DockGlass.PULL_X)
+    fun pullY() = pulled(pullY.value, DockGlass.PULL_Y)
+    // The dock's scale: its breath, and its stretch after the finger, narrower across.
+    fun dockScale(): ScaleFactor {
+        val z = zoom()
+        val x = abs(pullX())
+        val y = abs(pullY())
+        return ScaleFactor(z * (1f + x) * (1f - DockGlass.PULL_SQUEEZE * y), z * (1f + y) * (1f - DockGlass.PULL_SQUEEZE * x))
+    }
 
     // Shrinking, the lens fills with the veil's shade as it goes, evenly from rim to rim ([veilGathered], drawn under
     // the lens's glass over all it shows), and the veil itself waits: under the lens its edge, drawn in by the rim,
@@ -392,9 +381,7 @@ internal fun GlassDock(
         val left = lerp(middle(row) - slot(row) / 2f, 0f, face.merge)
         return Rect(left, 0f, left + width, h)
     }
-    // How fast the lens moves, 0..1 of [DockGlass.SPEED_FULL], springy; below 0 as it gathers itself after a stop.
-    fun speed() = jelly.value.coerceIn(-0.5f, 1f)
-    fun stretch() = (DockGlass.STRETCH * speed() + DockGlass.EDGE_STRETCH * edge.value).coerceAtLeast(-0.15f)
+    fun stretch() = DockGlass.EDGE_STRETCH * edge.value
     fun lensRect(row: Float, h: Float): Rect {
         val s = held.value
         val st = stretch()
@@ -404,8 +391,7 @@ internal fun GlassDock(
         val halfWidth = lerp(slot(row) / 2f, lensHalfHeight * DockGlass.LENS_ASPECT * (1f + DockGlass.SWELL_WIDE * sw), s) * (1f + st)
         val halfHeight = lerp(h / 2f, lensHalfHeight * (1f - DockGlass.SWELL_FLAT * sw), s) * (1f - DockGlass.SQUASH * st)
         val c = middle(row)
-        val cy = h / 2f + leanPx(pullY.value) * DockGlass.LEAN_LENS_Y
-        return Rect(c - halfWidth, cy - halfHeight, c + halfWidth, cy + halfHeight)
+        return Rect(c - halfWidth, h / 2f - halfHeight, c + halfWidth, h / 2f + halfHeight)
     }
     // Where the labels are in the chosen colour: under the veil at rest, under the lens while it shows.
     fun chosen(row: Float, h: Float): Rect = lerp(veilRect(row, h), lensRect(row, h), held.value.coerceIn(0f, 1f))
@@ -470,17 +456,14 @@ internal fun GlassDock(
     CompositionLocalProvider(LocalGlassStyle provides style) {
         Box(
             modifier
-                // Laid out, not a layer's shift: the glass finds what lies under the dock where the dock is.
-                .offset {
-                    IntOffset(
-                        (leanPx(pullX.value) * DockGlass.LEAN_DOCK_X).roundToInt(),
-                        (leanPx(pullY.value) * DockGlass.LEAN_DOCK_Y).roundToInt(),
-                    )
-                }
                 .graphicsLayer {
                     val z = zoom()
-                    scaleX = z
-                    scaleY = z
+                    val scale = dockScale()
+                    scaleX = scale.scaleX
+                    scaleY = scale.scaleY
+                    // Stretched from its far side: that side stays where the breath has it.
+                    translationX = sign(pullX()) * (scale.scaleX - z) * size.width / 2f
+                    translationY = sign(pullY()) * (scale.scaleY - z) * size.height / 2f
                 }
                 .onGloballyPositioned { dockAt = it.positionInRoot() }
                 .drawWithContent {
@@ -493,7 +476,7 @@ internal fun GlassDock(
                     val h = size.height - 2 * pad
                     val rect = lensRect(row, h).translate(pad, pad)
                     val whole = size
-                    val z = zoom()
+                    val scale = dockScale()
                     // Its bend, colours and mirror with its size, there from its first frames as it swells and to its last
                     // as it shrinks (iOS's): the shader bends by lift².
                     val lift = sqrt(s)
@@ -505,11 +488,11 @@ internal fun GlassDock(
                     }
                     lens.draw(
                         this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, lift, 0f, dark, look,
-                        drawFrom = DockGlass.Look.drawFrom - DockGlass.MOVING_ZOOM * abs(speed()) - DockGlass.SWELL_ZOOM * swell.value,
+                        drawFrom = DockGlass.Look.drawFrom - DockGlass.SWELL_ZOOM * swell.value,
                     ) {
                         drawRect(screen, Offset(-whole.width, -whole.height), Size(whole.width * 3, whole.height * 3))
                         // The screen as it lies under the grown dock: [dockAt] is its grown corner (see liquidGlass's zoom).
-                        scale(1f / z, 1f / z, pivot = Offset.Zero) {
+                        scale(1f / scale.scaleX, 1f / scale.scaleY, pivot = Offset.Zero) {
                             translate(backdrop.origin.x - dockAt.x, backdrop.origin.y - dockAt.y) { drawLayer(backdrop.layer) }
                         }
                         // The dock itself under the lens, its pane and veil as they are: drawn in, its edges come in along an
@@ -538,7 +521,7 @@ internal fun GlassDock(
                         base = screen,
                         tint = paneTint,
                         shape = shape,
-                        zoom = ::zoom,
+                        zoom = ::dockScale,
                         veil = { drawPaneTint(size) },
                     ),
                 shape = shape,
@@ -592,7 +575,7 @@ internal fun GlassDock(
                                     drawRect(paneTint)
                                     drawRect(veilShade)
                                 },
-                                zoom = ::zoom,
+                                zoom = ::dockScale,
                             ),
                     )
 
@@ -742,8 +725,8 @@ private fun Modifier.dockDrag(
             if (!released) drag.cancel()
             // Let go at the edge, the lens wobbles back into shape, and the dock back into its place.
             scope.launch { edge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 420f)) }
-            scope.launch { pullX.animateTo(0f, DockGlass.LEAN_BACK) }
-            scope.launch { pullY.animateTo(0f, DockGlass.LEAN_BACK) }
+            scope.launch { pullX.animateTo(0f, DockGlass.PULL_BACK) }
+            scope.launch { pullY.animateTo(0f, DockGlass.PULL_BACK) }
         }
     }
 }
