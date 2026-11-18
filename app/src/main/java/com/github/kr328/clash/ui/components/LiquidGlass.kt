@@ -324,7 +324,10 @@ private fun stillBlurs(extra: Dp): List<Int> {
     // Every blur a pane on this backdrop asks for: the panes, the controls on them, the power button.
     return remember(blur, density, extra) {
         with(density) {
-            listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (blur / 100f) + (it + extra).toPx()).roundToInt() }.distinct()
+            // Also the dock's blur, which Home's pane glass takes too (F-550).
+            listOf(blur, DockGlass.BLUR).flatMap { b ->
+                listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (b / 100f) + (it + extra).toPx()).roundToInt() }
+            }.distinct()
         }
     }
 }
@@ -1641,6 +1644,12 @@ internal fun Modifier.glass(
 internal val LocalGlassPanes = staticCompositionLocalOf { false }
 
 /**
+ * The pane glass's settings: the dock's blur, tint and colour, so the cards and the dock read as one glass (the owner,
+ * 18.11: the cards stood out from the dock in clarity and tint); the other sliders still tune the cards.
+ */
+internal fun GlassStyle.asDock(): GlassStyle = copy(blur = DockGlass.BLUR, tint = DockGlass.TINT, vibrancy = DockGlass.VIBRANCY)
+
+/**
  * The pane glass's whole tuning. Lengths stay the same on any pane, as iOS's rim is as wide on a small button as on
  * the player (F-550); the glass settings scale them around their defaults (refraction 50, dispersion 40, depth 30,
  * highlight 60, vibrancy 40).
@@ -1648,26 +1657,27 @@ internal val LocalGlassPanes = staticCompositionLocalOf { false }
 internal object PaneGlass {
     /**
      * How wide the rim's roll is: over it the picture is drawn in from beyond the rim, its colours livelier, and the
-     * glass lighter towards the rim, as iOS's player: ~60 of 255 inside, ~75 a few points in, over ~8 pt (F-550).
+     * glass lighter towards the rim. iOS's player rolls over ~8 pt (F-550); at 9 dp ours read as a thin hard frame, so
+     * wider and softer (the owner, 18.11: the colour diffused wider at the edges). Small panes keep 0.6 of their half.
      */
-    val BAND = 9.dp
+    val BAND = 22.dp
     /** How far beyond the rim the rim's picture comes from, at the rim itself. */
     val PUSH = 14.dp
     /** How far red and blue part where the rim bends most. */
     val CHROMA = 1.5.dp
     /** How much livelier the colours are at the rim than inside. */
-    const val VIVID = 0.4f
+    const val VIVID = 0.35f
     /** How much lighter, towards white, the roll is at the rim. */
-    const val ROLL = 0.16f
+    const val ROLL = 0.12f
     /** The light line along the rim, its strength and width. */
-    const val LINE = 0.7f
-    val LINE_WIDTH = 1.dp
+    const val LINE = 0.3f
+    val LINE_WIDTH = 1.5.dp
     /** The roll lighter at the top and darker at the bottom. */
     const val VOLUME = 0.12f
     /** How much of the material's dark tint the rim is spared, so its roll and light show. */
     const val SPARE = 0.5f
     /** The faint dark line just outside the rim. */
-    const val RING = 0.18f
+    const val RING = 0.1f
     val RING_WIDTH = 1.dp
     /**
      * A press eases the tint by [PRESS_CLEAR] and lifts the picture under it by [PRESS_BRIGHT] and its colours by
@@ -1693,10 +1703,11 @@ internal object PaneGlass {
      */
     const val HOLD_MS = 160L
     val PULL_GIVE = 60.dp
-    val PULL_MOVE_X = 8.dp
-    val PULL_MOVE_Y = 6.dp
-    const val PULL_ALONG = 0.03f
-    const val PULL_ACROSS = 0.02f
+    // Half of the first pass's 8 / 6 dp and 3 / 2 %: they slid too far (the owner, 18.11).
+    val PULL_MOVE_X = 4.dp
+    val PULL_MOVE_Y = 3.dp
+    const val PULL_ALONG = 0.015f
+    const val PULL_ACROSS = 0.01f
     val PULL_FOLLOW = spring<Float>(dampingRatio = 0.42f, stiffness = 320f)
     val PULL_BACK = spring<Float>(dampingRatio = 0.38f, stiffness = 260f)
 }
@@ -1728,7 +1739,6 @@ private fun Density.paneVeil(shader: RuntimeShader, width: Float, height: Float,
     shader.setFloatUniform("cornerRadii", cornerRadii)
     shader.setFloatUniform("band", PaneGlass.BAND.toPx())
     shader.setFloatUniform("spare", PaneGlass.SPARE)
-    shader.setFloatUniform("lineWidth", PaneGlass.LINE_WIDTH.toPx())
 }
 
 /** A finger on a pane of the pane glass: it swells, its tint eases, and, held, it follows the finger a little. */
@@ -1866,7 +1876,9 @@ half4 main(float2 coord) {
     float t = clamp(depth / b, 0.0, 1.0);
     float2 n = gradSdRoundedRect(p, halfSize, min(radius * 1.5, min(halfSize.x, halfSize.y)));
     float u = 1.0 - t;
-    float bent = 1.0 - sqrt(max(1.0 - u * u, 0.0));
+    // Eased in over the band, not a circle's edge: that squeezed the drawn-in colours into a thin hard frame at the rim
+    // (the owner, 18.11: «как у виндоус 7»); spread wide, they diffuse inwards as iOS's.
+    float bent = u * u;
     float2 disp = n * (push * bent);
     float2 split = n * (chroma * bent);
 
@@ -1893,13 +1905,12 @@ half4 main(float2 coord) {
 }
 """
 
-/** The pane glass's veil: [color], thinner over the rim's band by [spare] and gone over its light line. */
+/** The pane glass's veil: [color], thinner over the rim's band by [spare]. */
 private const val PANE_VEIL_SHADER = """
 uniform float2 size;
 uniform float4 cornerRadii;
 uniform float band;
 uniform float spare;
-uniform float lineWidth;
 uniform half4 color;
 
 $ROUNDED_RECT_SDF
@@ -1909,7 +1920,8 @@ half4 main(float2 coord) {
     float2 p = coord - halfSize;
     float depth = max(-sdRoundedRect(p, halfSize, radiusAt(p, cornerRadii)), 0.0);
     float b = clamp(band, 1.0, max(min(halfSize.x, halfSize.y) * 0.6, 1.0));
-    float keep = (1.0 - spare * (1.0 - smoothstep(0.0, 1.0, depth / b))) * smoothstep(0.0, lineWidth * 2.0, depth);
+    // Thinned softly over the whole band, not cut away at the very rim: that bare strip read as a hard frame (the owner, 18.11).
+    float keep = 1.0 - spare * (1.0 - smoothstep(0.0, 1.0, depth / b));
     return color * half(keep);
 }
 """

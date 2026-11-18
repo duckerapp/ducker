@@ -20,6 +20,7 @@ import com.github.kr328.clash.ui.components.heroWaveShader
 import com.github.kr328.clash.ui.components.heroWaveEffect
 import com.github.kr328.clash.ui.components.liquidGlass
 import com.github.kr328.clash.ui.components.LocalGlassPanes
+import com.github.kr328.clash.ui.components.asDock
 import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.rememberGlassPress
 import com.github.kr328.clash.ui.components.INNER_BLUR
@@ -505,6 +506,7 @@ private fun HomeRegular(
     CompositionLocalProvider(
         LocalBringIntoViewSpec provides if (tv) bring else LocalBringIntoViewSpec.current,
         LocalGlassPanes provides true,
+        LocalGlassStyle provides LocalGlassStyle.current.asDock(),
     ) {
         Column(
             modifier = modifier
