@@ -775,6 +775,9 @@ internal data class LensLook(
     val shineDark: Float,
     val shineLight: Float,
     val shineEnds: Float,
+    /** Soft colours along the inside of the rim, turning with its angle, on a dark and on a light screen. */
+    val irisDark: Float,
+    val irisLight: Float,
     /** The shadow under the lens, on a dark and on a light screen. */
     val shadowDark: Float,
     val shadowLight: Float,
@@ -785,7 +788,7 @@ internal data class LensLook(
     companion object {
         val Switch = LensLook(
             drawFrom = 0.12f, zoomEdge = 0.35f, push = 0.3f, pushPower = 1.5f, pushBand = 0f, pushAlong = 0.6f, pushAcross = 1f, pushEndFrom = 0.25f, pushEndTo = 0.7f, chroma = 0.1f, disperse = 0f, smear = 0f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
-            ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shineEnds = 0.1f, shadowDark = 0.3f,
+            ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shineEnds = 0.1f, irisDark = 0f, irisLight = 0f, shadowDark = 0.3f,
             shadowLight = 0.12f, clearBlur = 0.3.dp, frostBlur = 6.dp,
         )
     }
@@ -832,6 +835,7 @@ private class Api33GlassLens : GlassLens {
             shader.setFloatUniform("rimShade", look.rimShade)
             shader.setFloatUniform("lighten", look.lighten)
             shader.setFloatUniform("shineEnds", look.shineEnds)
+            shader.setFloatUniform("iris", if (dark) look.irisDark else look.irisLight)
             val lens = RenderEffect.createRuntimeShaderEffect(shader, "img")
             // Never quite clear: a touch of blur as the video's even when held.
             val blur = look.clearBlur.toPx() + frost * look.frostBlur.toPx()
@@ -1287,6 +1291,7 @@ uniform float ringAlpha;
 uniform float rimShade;
 uniform float lighten;
 uniform float shineEnds;
+uniform float iris;
 
 float sdRoundedRect(float2 coord, float2 halfSize, float radius) {
     float2 cornerCoord = abs(coord) - (halfSize - float2(radius));
@@ -1384,6 +1389,15 @@ half4 main(float2 coord) {
     // shade over its outer 0.6 r, down to 0.78 at the rim, measured on the owner's second iOS video (18.11).
     color.rgb += (half3(color.a) - color.rgb) * lighten;
     color.rgb *= 1.0 - rimShade * lift * exp(-s * s / (2.0 * inner * inner));
+    // Soft colours along the inside of the rim, turning with its angle: yellow to the right, blue to the left, violet
+    // above, as iOS's on a light screen, where the picture under the rim is too plain to split into a rainbow of its
+    // own (the owner, 18.11: «не все так радужно»).
+    float irisBand = (1.0 - smoothstep(0.0, 0.12 * radius, depth)) * iris * lift;
+    if (irisBand > 0.0) {
+        float a = atan(n.y, n.x) + 1.047;
+        half3 hue = half3(0.5 + 0.5 * cos(a), 0.5 + 0.5 * cos(a - 2.094), 0.5 + 0.5 * cos(a + 2.094));
+        color.rgb = mix(color.rgb, hue * color.a, irisBand);
+    }
     // A thin light line along the top and the bottom, none at the ends.
     float lobe = abs(n.y);
     float line = (1.0 - smoothstep(0.0, edge, depth)) * (shineEnds + (1.0 - shineEnds) * lobe * lobe) * shine;

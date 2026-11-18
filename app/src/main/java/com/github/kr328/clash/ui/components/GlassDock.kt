@@ -114,6 +114,10 @@ internal object DockGlass {
      */
     const val TINT_EASE = 0.3f
     const val TINT_NEAR = 0.25f
+    // On a light screen much less: there the white tint is what makes the dock a pane, and easing it as on a dark one
+    // opened a dark hole round the lens and closed it again (the owner, 18.11: «резкие моменты»); iOS's stays white.
+    const val TINT_EASE_LIGHT = 0.08f
+    const val TINT_NEAR_LIGHT = 0.06f
     const val TINT_REACH = 1.2f
     const val TINT_IN_MS = 150
     const val TINT_OUT_MS = 400
@@ -125,7 +129,8 @@ internal object DockGlass {
      * 18.11: 35 % clearer, and no light at its edges — a backing, not a pane).
      */
     const val VEIL_SHADE_DARK = 0.22f
-    const val VEIL_SHADE_LIGHT = 0.06f
+    // Light: a pale grey a little under the white pane, as iOS's; at 0.06 over the tint drawn again it came out whiter.
+    const val VEIL_SHADE_LIGHT = 0.14f
     val VEIL_BLUR = 12.dp
     const val VEIL_OPACITY = 0.65f
 
@@ -237,11 +242,13 @@ internal object DockGlass {
      * colours parted by the whole shift fringed the middle too (`ios-dock/ours-rim.png`). Its ends take in more still
      * (push 1.2 over 0.45 r, along ×1.1; across ×0.7 keeps the top and bottom bands as they were): on iOS's the text it
      * comes to fills its edges thick («прям жирно становится внутри»; `ios-dock/ours-rim2.png`, now above, new below).
+     * On a light screen the rim light 0.15, not 0.8 (a thick white ring), and soft colours along the rim's inside
+     * (`irisLight`), as iOS's there (`ios-dock/light-rim.png`, before above); the dark screen's look unchanged.
      */
     val Look = LensLook.Switch.copy(
         drawFrom = -0.13f, zoomEdge = 0.12f, push = 1.2f, pushPower = 6f, pushBand = 0.45f, pushAlong = 1.1f, pushAcross = 0.7f,
         pushEndFrom = 0.1f, pushEndTo = 0.6f,
-        chroma = 0.08f, disperse = 0.35f, smear = 0.6f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
+        chroma = 0.08f, disperse = 0.35f, smear = 0.6f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.15f, shineEnds = 0.7f, irisDark = 0f, irisLight = 0.3f,
         shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }
@@ -437,7 +444,7 @@ internal fun GlassDock(
 
     /** The pane's tint over [whole], the dock's size: eased under a finger, and a little more around the lens. */
     fun DrawScope.drawPaneTint(whole: Size) {
-        val base = paneTint.alpha * (1f - DockGlass.TINT_EASE * ease.value)
+        val base = paneTint.alpha * (1f - (if (dark) DockGlass.TINT_EASE else DockGlass.TINT_EASE_LIGHT) * ease.value)
         val s = held.value.coerceIn(0f, 1f)
         val corner = CornerRadius(whole.height / 2f)
         if (s < LENS_SHOWN) {
@@ -448,7 +455,7 @@ internal fun GlassDock(
         val row = whole.width - 2 * pad
         val c = (pad + middle(row)) / whole.width
         val reach = slot(row) * DockGlass.TINT_REACH / whole.width
-        val low = base * (1f - DockGlass.TINT_NEAR * s)
+        val low = base * (1f - (if (dark) DockGlass.TINT_NEAR else DockGlass.TINT_NEAR_LIGHT) * s)
         fun tint(alpha: Float) = paneTint.copy(alpha = alpha)
         val brush = Brush.horizontalGradient(
             0f to tint(base),
