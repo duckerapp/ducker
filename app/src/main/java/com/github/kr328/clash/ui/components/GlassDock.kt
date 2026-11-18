@@ -128,12 +128,12 @@ internal object DockGlass {
     val ICON = 23.dp
 
     /**
-     * The lens, held: 1.22 × the dock's height, 1.45 × as wide as high, so it stands over the dock's edges all round and
+     * The lens, held: 1.22 × the dock's height, 1.23 × as wide as high (iOS's 1.45 less 15 %, the owner, 18.11), so it stands over the dock's edges all round and
      * past its end over the first and last tab (the owner's friend's iOS video, 18.11: ~6.5 pt over a 63 pt dock). Sized
      * from the veil, 1.30 × 1.26 of it, it barely left the dock (the owner, 18.11).
      */
     const val LENS_HEIGHT = 1.22f
-    const val LENS_ASPECT = 1.45f
+    const val LENS_ASPECT = 1.23f
 
     /**
      * A touch: the veil gone in 50 ms as the lens swells (120 ms, [follow]). Landed: the lens shrinks back in 130 ms,
@@ -182,9 +182,12 @@ internal object DockGlass {
      * little larger than life (`drawFrom` −0.08, ~1.08), the rim drawing in a little harder (push 0.35): at the switch's
      * +0.12 the labels under it came out ~0.87 of their size, «мелкотня» (the owner, 18.11), where iOS's are ~1.15
      * (App Store) and ~1.2 (Clash Lite); the arc of the dock's edges stays, drawn by the rim (`ios-dock/ours-zoom.png`).
+     * The rim's draw-in kept to a narrow band (power 6, push 0.5; the middle ~1.12): reaching deep into the wide lens
+     * at the switch's power 1.5 it pulled the top and bottom in and squashed the labels to ~0.75 of their height (the
+     * owner, 18.11: «содержимое как-то ужимается»; `ios-dock/ours-squash.png`: device, copy, and the band kept narrow).
      */
     val Look = LensLook.Switch.copy(
-        drawFrom = -0.08f, push = 0.35f, chroma = 0.1f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
+        drawFrom = -0.12f, push = 0.5f, pushPower = 6f, chroma = 0.1f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
         shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }
