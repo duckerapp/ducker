@@ -738,6 +738,8 @@ internal data class LensLook(
     val drawFrom: Float,
     /** How far the rim draws the surroundings in: the push outwards along its normal at the rim itself. */
     val push: Float,
+    /** How steeply the push falls off inwards: (1 − depth / r) to this power; steeper squeezes more into a narrower rim. */
+    val pushPower: Float,
     /** The push's share along the lens; across it stays whole. */
     val pushAlong: Float,
     /** How far red and blue part at the rim. */
@@ -765,7 +767,7 @@ internal data class LensLook(
 ) {
     companion object {
         val Switch = LensLook(
-            drawFrom = 0.12f, push = 0.3f, pushAlong = 0.6f, chroma = 0.1f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
+            drawFrom = 0.12f, push = 0.3f, pushPower = 1.5f, pushAlong = 0.6f, chroma = 0.1f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
             ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shadowDark = 0.3f,
             shadowLight = 0.12f, clearBlur = 0.3.dp, frostBlur = 6.dp,
         )
@@ -798,6 +800,7 @@ private class Api33GlassLens : GlassLens {
             shader.setFloatUniform("drawFrom", drawFrom)
             shader.setFloatUniform("pushAmount", look.push)
             shader.setFloatUniform("pushAlong", look.pushAlong)
+            shader.setFloatUniform("pushPower", look.pushPower)
             shader.setFloatUniform("chromaAmount", look.chroma)
             shader.setFloatUniform("bandSide", look.bandSide)
             shader.setFloatUniform("bandEnd", look.bandEnd)
@@ -1245,6 +1248,7 @@ uniform float lift;
 uniform float drawFrom;
 uniform float pushAmount;
 uniform float pushAlong;
+uniform float pushPower;
 uniform float chromaAmount;
 uniform float bandSide;
 uniform float bandEnd;
@@ -1299,7 +1303,7 @@ half4 main(float2 coord) {
     float t = clamp(depth / radius, 0.0, 1.0);
 
     float deep = smoothstep(0.0, 0.35, t);
-    float push = pushAmount * radius * pow(1.0 - t, 1.5);
+    float push = pushAmount * radius * pow(1.0 - t, pushPower);
     // Towards the ends the glass is thinner across: there the picture keeps its height and the dark bands from above
     // and below end in rounded tips short of the rim, as iOS's (the owner, 18.11).
     float intoEnd = max(abs(p.x) - (halfSize.x - radius), 0.0);
