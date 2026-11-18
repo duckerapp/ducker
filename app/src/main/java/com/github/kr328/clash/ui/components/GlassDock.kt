@@ -3,6 +3,7 @@ package com.github.kr328.clash.ui.components
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
@@ -65,6 +66,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.sqrt
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import com.github.kr328.clash.R
@@ -162,6 +164,15 @@ internal object DockGlass {
     const val MOVING_ZOOM = 0f
 
     /**
+     * A touch: the lens swells on past its size, wider and a little flatter, and settles back. iOS's App Store, held:
+     * 1.17 × as wide at ~270 ms from the touch, back by ~450 ms later (`ios-dock/appear/`); it grew to its size and stood.
+     */
+    const val SWELL_WIDE = 0.17f
+    const val SWELL_FLAT = 0.05f
+    const val SWELL_IN_MS = 270
+    const val SWELL_OUT_MS = 450
+
+    /**
      * Past the first or the last tab: how far the lens gives (F-528; iOS's goes ~13 pt past the dock's end under a finger,
      * so 16 dp, not 8), and how much it draws in there, narrower and a
      * little taller, as against a wall; stretched there, it did not read as iOS's (the owner, 18.11: «втягиваться, без
@@ -186,9 +197,10 @@ internal object DockGlass {
      * The rim's draw-in kept to a narrow band (power 6, push 0.5; the middle ~1.12): reaching deep into the wide lens
      * at the switch's power 1.5 it pulled the top and bottom in and squashed the labels to ~0.75 of their height (the
      * owner, 18.11: «содержимое как-то ужимается»; `ios-dock/ours-squash.png`: device, copy, and the band kept narrow).
+     * Colours split harder at the rim (0.16): iOS's ends and bands glow in rainbow round what lies at them, ours barely.
      */
     val Look = LensLook.Switch.copy(
-        drawFrom = -0.12f, push = 0.5f, pushPower = 6f, pushEndFrom = 0.1f, pushEndTo = 0.6f, chroma = 0.1f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
+        drawFrom = -0.12f, push = 0.5f, pushPower = 6f, pushEndFrom = 0.1f, pushEndTo = 0.6f, chroma = 0.16f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
         shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }
@@ -254,6 +266,8 @@ internal fun GlassDock(
     val edge = remember { Animatable(0f) }
     // The lens's speed, 0..1 of [DockGlass.SPEED_FULL], through [DockGlass.JELLY_SPRING]: below 0 it squashes.
     val jelly = remember { Animatable(0f) }
+    // A touch's swell past the lens's size, 0..1 ([DockGlass.SWELL_WIDE]).
+    val swell = remember { Animatable(0f) }
     val slotPx = with(LocalDensity.current) { DockGlass.SLOT.toPx() }
     val padPx = with(LocalDensity.current) { DOCK_PAD.toPx() }
 
@@ -282,6 +296,15 @@ internal fun GlassDock(
         }
         if (touch.down) return@LaunchedEffect
         back?.join() ?: veil.animateTo(1f, tween(DockGlass.VEIL_IN_MS, easing = LinearOutSlowInEasing))
+    }
+
+    LaunchedEffect(touch.count, motion) {
+        if (!motion || touch.count == 0) {
+            swell.snapTo(0f)
+            return@LaunchedEffect
+        }
+        swell.animateTo(1f, tween(DockGlass.SWELL_IN_MS, easing = LinearOutSlowInEasing))
+        swell.animateTo(0f, tween(DockGlass.SWELL_OUT_MS, easing = FastOutSlowInEasing))
     }
 
     LaunchedEffect(touch.down, motion) {
@@ -313,8 +336,9 @@ internal fun GlassDock(
         val st = stretch()
         // From the veil to the lens: the lens sized by the dock's height, [h] and its padding.
         val lensHalfHeight = (h / 2f + padPx) * DockGlass.LENS_HEIGHT
-        val halfWidth = lerp(slot(row) / 2f, lensHalfHeight * DockGlass.LENS_ASPECT, s) * (1f + st)
-        val halfHeight = lerp(h / 2f, lensHalfHeight, s) * (1f - DockGlass.SQUASH * st)
+        val sw = swell.value
+        val halfWidth = lerp(slot(row) / 2f, lensHalfHeight * DockGlass.LENS_ASPECT * (1f + DockGlass.SWELL_WIDE * sw), s) * (1f + st)
+        val halfHeight = lerp(h / 2f, lensHalfHeight * (1f - DockGlass.SWELL_FLAT * sw), s) * (1f - DockGlass.SQUASH * st)
         val c = middle(row)
         return Rect(c - halfWidth, h / 2f - halfHeight, c + halfWidth, h / 2f + halfHeight)
     }
@@ -398,8 +422,11 @@ internal fun GlassDock(
                     val rect = lensRect(row, h).translate(pad, pad)
                     val whole = size
                     val z = zoom()
+                    // Its bend, colours and mirror there from its first frames as it swells (iOS's), fading fast as it
+                    // shrinks back: the shader bends by lift².
+                    val lift = if (held.targetValue > 0.5f) sqrt(s) else s
                     lens.draw(
-                        this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, s, 0f, dark, DockGlass.Look,
+                        this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, lift, 0f, dark, DockGlass.Look,
                         drawFrom = DockGlass.Look.drawFrom - DockGlass.MOVING_ZOOM * abs(speed()),
                     ) {
                         drawRect(screen, Offset(-whole.width, -whole.height), Size(whole.width * 3, whole.height * 3))
