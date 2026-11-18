@@ -733,6 +733,59 @@ private class Api33GlassBubble : GlassBubble {
 internal fun bubbleShader(): GlassBubble? =
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) null else Api33GlassBubble()
 
+/**
+ * The switch's lens, after iOS's (the owner's video, 18.11): thick clear glass that draws the surroundings in from
+ * beyond its edge, so what lies under it looks smaller and the rim holds what lies outside; a thin band at the very rim
+ * mirrors what lies inside, in its colour; the colours split where the glass bends most; a light line along the
+ * edge, brightest on the diagonal; a soft shadow under it. [lift] 0…1 brings the shadow in as the lens grows;
+ * [frost] 0…1 clouds it as it settles back into the thumb.
+ */
+internal interface GlassLens {
+    fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, lift: Float, frost: Float, dark: Boolean, under: DrawScope.() -> Unit)
+}
+
+@Keep
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private class Api33GlassLens : GlassLens {
+    private val shader = RuntimeShader(LIQUID_LENS_SHADER)
+    override fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, lift: Float, frost: Float, dark: Boolean, under: DrawScope.() -> Unit) =
+        with(scope) {
+            val margin = GLASS_MARGIN.toPx()
+            val left = center.x - halfWidth - margin
+            val top = center.y - halfHeight - margin
+            val radius = minOf(halfWidth, halfHeight)
+            shader.setFloatUniform("center", halfWidth + margin, halfHeight + margin)
+            shader.setFloatUniform("halfSize", halfWidth, halfHeight)
+            shader.setFloatUniform("radius", radius)
+            shader.setFloatUniform("frost", frost)
+            shader.setFloatUniform("shine", if (dark) 0.3f else 0.7f)
+            shader.setFloatUniform("shadow", lift * if (dark) 0.4f else 0.14f)
+            shader.setFloatUniform("shadowBlur", LENS_SHADOW_BLUR.toPx())
+            shader.setFloatUniform("shadowDrop", LENS_SHADOW_DROP.toPx())
+            shader.setFloatUniform("edge", 0.6.dp.toPx())
+            val lens = RenderEffect.createRuntimeShaderEffect(shader, "img")
+            // Never quite clear: a touch of blur as the video's even when held.
+            val blur = LENS_CLEAR_BLUR.toPx() + frost * LENS_FROST_BLUR.toPx()
+            layer.renderEffect = (
+                if (blur < 0.5f) lens
+                else RenderEffect.createChainEffect(lens, RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.CLAMP))
+            ).asComposeRenderEffect()
+            layer.record(Density(density, fontScale), layoutDirection, IntSize((2 * (halfWidth + margin)).toInt(), (2 * (halfHeight + margin)).toInt())) {
+                translate(-left, -top) { under() }
+            }
+            // Unclipped: outside the lens the shader leaves only its shadow.
+            translate(left, top) { drawLayer(layer) }
+        }
+}
+
+internal fun lensShader(): GlassLens? =
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) null else Api33GlassLens()
+
+private val LENS_SHADOW_BLUR = 4.dp
+private val LENS_SHADOW_DROP = 1.5.dp
+private val LENS_CLEAR_BLUR = 0.3.dp
+private val LENS_FROST_BLUR = 3.dp
+
 internal fun DrawScope.drawGlassBubble(
     layer: GraphicsLayer,
     shader: GlassBubble,
@@ -1145,6 +1198,87 @@ half4 main(float2 coord) {
     color.b += purple.b / 3.0;
     color.a += purple.a / 7.0;
 
+    return color;
+}
+"""
+
+/**
+ * [GlassLens], fitted to the owner's iOS video frame by frame (lens half-height r, depth from the rim): inside, the
+ * picture is drawn from 1.12× as far out, easing to 1× over the outer 0.35 r, plus a push outwards along the rim's
+ * normal, 0.3 r × (1 − depth / r)^1.5 — so the surroundings fill the top and bottom while the ends stay nearly true;
+ * the outer band (0.12 r, up to 0.32 r at the ends) mirrors what lies above or below it, inwards; red and blue part
+ * along the normal near the rim, up to ±0.15 r.
+ */
+private const val LIQUID_LENS_SHADER = """
+uniform shader img;
+uniform float2 center;
+uniform float2 halfSize;
+uniform float radius;
+uniform float frost;
+uniform float shine;
+uniform float shadow;
+uniform float shadowBlur;
+uniform float shadowDrop;
+uniform float edge;
+
+float sdRoundedRect(float2 coord, float2 halfSize, float radius) {
+    float2 cornerCoord = abs(coord) - (halfSize - float2(radius));
+    float outside = length(max(cornerCoord, 0.0)) - radius;
+    float inside = min(max(cornerCoord.x, cornerCoord.y), 0.0);
+    return outside + inside;
+}
+
+float2 gradSdRoundedRect(float2 coord, float2 halfSize, float radius) {
+    float2 cornerCoord = abs(coord) - (halfSize - float2(radius));
+    if (cornerCoord.x >= 0.0 || cornerCoord.y >= 0.0) {
+        float2 m = max(cornerCoord, 0.0);
+        float len = length(m);
+        return (len > 0.0001) ? sign(coord) * (m / len) : float2(0.0);
+    } else {
+        float2 w = max(cornerCoord + float2(radius), float2(0.0001));
+        float len = length(w);
+        return (len > 0.0001) ? sign(coord) * (w / len) : float2(0.0);
+    }
+}
+
+// The picture at coord + shift, red and blue parted by ±chroma and ±6 % of the shift.
+half4 split(float2 coord, float2 shift, float2 chroma) {
+    half4 g = img.eval(coord + shift);
+    half r = img.eval(coord + shift * 1.06 + chroma).r;
+    half b = img.eval(coord + shift * 0.94 - chroma).b;
+    return half4(r, g.g, b, g.a);
+}
+
+half4 main(float2 coord) {
+    float2 p = coord - center;
+    float d = sdRoundedRect(p, halfSize, radius);
+    if (d > 0.0) {
+        float s = max(sdRoundedRect(p - float2(0.0, shadowDrop), halfSize, radius), 0.0);
+        return half4(0.0, 0.0, 0.0, shadow * exp(-s * s / (2.0 * shadowBlur * shadowBlur)));
+    }
+    float depth = -d;
+    float2 n = gradSdRoundedRect(p, halfSize, radius);
+    float t = clamp(depth / radius, 0.0, 1.0);
+
+    float inner = smoothstep(0.0, 0.35, t);
+    float push = 0.3 * radius * pow(1.0 - t, 1.5);
+    float2 drawn = center + p * (1.0 + 0.12 * inner) + n * push;
+    float fringe = 1.0 - clamp(t / 0.25, 0.0, 1.0);
+    float2 chroma = n * (0.15 * radius * fringe * fringe);
+    half4 color = split(coord, drawn - coord, chroma);
+
+    float ends = clamp((abs(p.x) - (halfSize.x - radius)) / radius, 0.0, 1.0);
+    float band = radius * (0.12 + 0.2 * ends);
+    float rim = 1.0 - smoothstep(0.0, band, depth);
+    half4 mirror = split(coord, float2(0.0, -n.y) * (0.28 * radius + band), chroma);
+    color = mix(color, half4(min(mirror.rgb * 1.15, half3(mirror.a)), mirror.a), rim * 0.85);
+
+    color.rgb = mix(color.rgb, half3(color.a), frost * 0.15);
+
+    float lobe = abs(dot(n, normalize(float2(1.0, -0.5))));
+    float line = (1.0 - smoothstep(0.0, edge, depth)) * (0.3 + 0.7 * lobe * lobe) * shine;
+    color.rgb = min(color.rgb + half3(line), half3(1.0));
+    color.a = max(color.a, line);
     return color;
 }
 """

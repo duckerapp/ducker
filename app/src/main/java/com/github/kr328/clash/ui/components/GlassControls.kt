@@ -47,33 +47,38 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.snapshotFlow
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import androidx.compose.ui.composed
 
 /**
  * A switch that only shows [checked]; the row around it takes taps and speaks for it. [onDrag]: the thumb dragged by a
- * finger sets it. The glass style (D-541): Kyant's liquid toggle (AndroidLiquidGlass, Apache-2.0, see LiquidGlass.kt) —
- * a track in the accent when on, a white thumb under a clear lens of the dock's kind that swells under a finger and
- * settles back on release, stretched by its speed (the owner, 18.11). Elsewhere Material's switch.
+ * finger sets it. The glass style (D-541), after iOS's switch (the owner's video, 18.11): a track in the accent when on;
+ * a touch turns the white thumb into a clear lens 1.6× its size, taller than the track, that rides to the other end,
+ * gives like rubber past it, and as it settles clouds over and turns back into the white thumb. Elsewhere Material's
+ * switch.
  */
 @Composable
 internal fun DuckerSwitch(
     checked: Boolean,
     modifier: Modifier = Modifier,
     onDrag: ((Boolean) -> Unit)? = null,
-    /** The row's presses: held, the lens over the thumb swells. */
+    /** The row's presses: held, the thumb turns into the lens. */
     pressed: InteractionSource? = null,
     enabled: Boolean = true,
 ) {
     val glass = LocalGlassBackdrop.current != null || LocalFrosted.current
-    val bubble = remember(glass) { if (glass) bubbleShader() else null }
-    if (bubble == null) Switch(checked = checked, onCheckedChange = null, modifier = modifier, enabled = enabled)
-    else GlassToggle(checked, bubble, modifier.alpha(if (enabled) 1f else DISABLED_ALPHA), onDrag.takeIf { enabled }, pressed, enabled)
+    val lens = remember(glass) { if (glass) lensShader() else null }
+    if (lens == null) Switch(checked = checked, onCheckedChange = null, modifier = modifier, enabled = enabled)
+    else GlassToggle(checked, lens, modifier.alpha(if (enabled) 1f else DISABLED_ALPHA), onDrag.takeIf { enabled }, pressed, enabled)
 }
 
 @Composable
-private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifier, onDrag: ((Boolean) -> Unit)?, pressed: InteractionSource?, enabled: Boolean) {
+private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, onDrag: ((Boolean) -> Unit)?, pressed: InteractionSource?, enabled: Boolean) {
     val scheme = MaterialTheme.colorScheme
     val dark = scheme.background.luminance() < 0.5f
     val off = if (dark) Color(0xFF787880).copy(alpha = 0.36f) else Color(0xFF787878).copy(alpha = 0.2f)
@@ -81,22 +86,45 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
     // White when on; off, grey on the dark theme, where a dark thumb on the light track read as a black blot (the owner,
     // 18.11), and white on the light one.
     val thumbOff = if (dark) THUMB_OFF_DARK else Color.White
-    val base = scheme.background
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val motion = scope.coroutineContext.motionScale > 0f
+    // How far past an end the thumb can be pulled, in its travel.
+    val give = TOGGLE_GIVE / (TRACK_WIDTH - SWITCH_THUMB_WIDTH - PAD * 2)
 
+    // The thumb's place along its travel: 0 off, 1 on, a little past either while pulled.
     val position = remember { Animatable(if (checked) 1f else 0f) }
-    // The lens over the white thumb: 0 — its size, 1 — swollen under a finger.
+    // 0 — the white thumb; 1 — the lens, swollen under a finger.
     val held = remember { Animatable(0f) }
+    // Clouds the lens as it turns back into the thumb.
+    val frost = remember { Animatable(0f) }
+    // The track's accent: it turns as the thumb passes the middle, in a short fade, not along the way.
+    val lit = remember { Animatable(if (checked) 1f else 0f) }
     val layer = rememberGraphicsLayer()
     val drag = rememberUpdatedState(onDrag)
     val under = rememberPaneUnder()
     val at = remember { floatArrayOf(0f, 0f) }
     val touch = remember { LensTouch() }
+    val checkedNow = rememberUpdatedState(checked)
     LaunchedEffect(pressed, enabled) { if (enabled) pressed?.let { touch.watch(it) } }
-    LaunchedEffect(touch.count, touch.down, motion) { held.follow(touch, motion) }
+    LaunchedEffect(touch.count, touch.down, motion) {
+        if (motion) launch { frost.animateTo(0f, tween(LENS_IN_MS)) } else frost.snapTo(0f)
+        held.follow(touch, motion) {
+            // The lens rides clear the whole way and settles once the thumb is home. A row's tap sets the switch a
+            // frame or two after the finger lifts: wait for that before asking where home is.
+            repeat(2) { withFrameNanos { } }
+            snapshotFlow { !position.isRunning && position.value == if (checkedNow.value) 1f else 0f }.first { it }
+            launch { frost.animateTo(1f, tween(LENS_OUT_MS)) }
+        }
+        frost.snapTo(0f)
+    }
+    LaunchedEffect(motion) {
+        snapshotFlow { position.value >= 0.5f }.collectLatest { now ->
+            val target = if (now) 1f else 0f
+            if (motion) lit.animateTo(target, tween(TRACK_FADE_MS)) else lit.snapTo(target)
+        }
+    }
 
     LaunchedEffect(checked) {
         val target = if (checked) 1f else 0f
@@ -108,8 +136,6 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
         position.animateTo(target, spring(dampingRatio = 0.62f, stiffness = 420f))
         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
     }
-
-    val checkedNow = rememberUpdatedState(checked)
 
     Box(
         modifier.size(TRACK_WIDTH, TRACK_HEIGHT)
@@ -123,8 +149,10 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
                         val down = awaitFirstDown()
                         down.consume()
                         val slop = viewConfiguration.touchSlop
-                        val travel = (TRACK_WIDTH - THUMB_WIDTH - PAD * 2).toPx()
+                        val travel = (TRACK_WIDTH - SWITCH_THUMB_WIDTH - PAD * 2).toPx()
                         var dragging = false
+                        // Where the finger would have the thumb, unbounded; past an end the thumb gives like rubber.
+                        var wanted = position.value
                         while (true) {
                             val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: return@awaitEachGesture
                             if (!change.pressed) {
@@ -136,8 +164,9 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
                             if (!dragging) continue
                             change.consume()
                             val delta = change.position.x - change.previousPosition.x
-                            val step = (if (rtl) -delta else delta) / travel
-                            scope.launch { position.snapTo((position.value + step).coerceIn(0f, 1f)) }
+                            wanted += (if (rtl) -delta else delta) / travel
+                            val next = rubber(wanted, give)
+                            scope.launch { position.snapTo(next) }
                         }
                         if (!dragging) return@awaitEachGesture
                         val now = position.value >= 0.5f
@@ -149,35 +178,51 @@ private fun GlassToggle(checked: Boolean, bubble: GlassBubble, modifier: Modifie
             .drawBehind {
                 val p = position.value
                 val radius = size.height / 2f
-                val trackColor = lerp(off, on, p)
+                val trackColor = lerp(off, on, lit.value)
                 val trackCorner = CornerRadius(radius)
                 drawRoundRect(trackColor, cornerRadius = trackCorner)
 
                 val pad = PAD.toPx()
-                val thumbW = THUMB_WIDTH.toPx()
+                val thumbW = SWITCH_THUMB_WIDTH.toPx()
                 val thumbH = THUMB_HEIGHT.toPx()
                 val travel = size.width - thumbW - 2 * pad
                 val x = pad + thumbW / 2f + travel * p
                 val center = Offset(if (rtl) size.width - x else x, size.height / 2f)
-                val thumb = lerp(thumbOff, Color.White, p)
-                val shadowDrop = 1.dp.toPx()
-                drawThumb(center, thumbW / 2f, thumbH / 2f, thumb, shadowDrop)
+                val thumb = lerp(thumbOff, Color.White, lit.value)
+                val s = held.value
+                if (s <= 0f && frost.value <= 0f) {
+                    drawThumb(center, thumbW / 2f, thumbH / 2f, thumb, 1.dp.toPx())
+                    return@drawBehind
+                }
 
-                // Over the white thumb, always, a lens of the dock's kind: swollen under a finger, stretched by its speed.
-                val speed = (abs(position.velocity) * 0.04f).coerceAtMost(0.22f)
-                val swell = 1f + (LENS_SWELL - 1f) * held.value
-                val halfW = thumbW / 2f * swell * (1f + speed)
-                val halfH = thumbH / 2f * swell * (1f - speed * 0.5f)
+                // Stretched along its way by its speed, and further as it is pulled past an end.
+                val past = (maxOf(p - 1f, -p, 0f) / give).coerceAtMost(1f)
+                val stretch = (abs(position.velocity) * 0.012f).coerceAtMost(0.08f) + past * 0.08f
+                val swell = 1f + (LENS_SWELL - 1f) * s
+                val halfW = thumbW / 2f * swell * (1f + stretch)
+                val halfH = thumbH / 2f * swell * (1f - stretch * 0.5f)
                 val origin = Offset(at[0], at[1])
                 val trackSize = size
-                drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base, zoom = 1f + LENS_ZOOM * held.value) {
+                lens.draw(this, layer, center, halfW, halfH, s, frost.value, dark) {
                     under(origin)
                     // The switch's size, not the lens layer's this scope has.
                     drawRoundRect(trackColor, Offset.Zero, trackSize, trackCorner)
-                    drawThumb(center, thumbW / 2f, thumbH / 2f, thumb, shadowDrop)
+                }
+                // The thumb's white: gone once the lens is half grown, back as it settles.
+                val k = (s / 0.6f).coerceIn(0f, 1f)
+                val white = 1f - k * k * (3f - 2f * k)
+                if (white > 0f) {
+                    drawRoundRect(thumb.copy(alpha = white), Offset(center.x - halfW, center.y - halfH), Size(2 * halfW, 2 * halfH), CornerRadius(halfH))
                 }
             },
     )
+}
+
+/** [x] past 0 or 1 by at most [over]: the further it is pulled, the less it moves. */
+internal fun rubber(x: Float, over: Float): Float = when {
+    x > 1f -> 1f + over * (x - 1f) / (x - 1f + over)
+    x < 0f -> -over * -x / (-x + over)
+    else -> x
 }
 
 /**
@@ -250,6 +295,8 @@ private val THUMB_OFF_DARK = Color(0xFFB4B4BA)
 private val TRACK_WIDTH = 64.dp
 private val TRACK_HEIGHT = 28.dp
 private val THUMB_WIDTH = 40.dp
+// iOS's switch: the thumb 0.58 of the track wide (the owner's video, 18.11).
+private val SWITCH_THUMB_WIDTH = 37.dp
 private val THUMB_HEIGHT = 24.dp
 private val PAD = 2.dp
 // The lens grows, its picture barely: the thumb keeps room inside it (the owner, 18.11).
@@ -257,6 +304,9 @@ private const val LENS_SWELL = 1.6f
 private const val LENS_ZOOM = 0.06f
 private const val LENS_IN_MS = 120
 private const val LENS_OUT_MS = 220
+/** How far past an end the switch's thumb gives under a pulling finger: iOS's, about 8 dp in the owner's video. */
+private val TOGGLE_GIVE = 10.dp
+private const val TRACK_FADE_MS = 150
 
 /**
  * A slider with Material's steps, speech and remote keys. The glass style (D-541): Kyant's liquid slider — a thin track in
