@@ -358,7 +358,7 @@ internal fun GlassDock(
     // Shrinking, the lens fills with the veil's shade as it goes, evenly from rim to rim ([veilGathered], drawn under
     // the lens's glass over all it shows), and the veil itself waits: under the lens its edge, drawn in by the rim,
     // showed a smaller blot growing out to the rim (the owner, 18.11: «наоборот растёт к линзе»).
-    fun shrinking() = held.targetValue < 0.5f && held.value > 0.001f
+    fun shrinking() = held.targetValue < 0.5f && held.value >= LENS_SHOWN
     fun veilShown(): Float = if (shrinking()) 0f else veil.value
     fun veilGathered(): Float = if (shrinking()) (1f - held.value).pow(1.3f) else 0f
 
@@ -421,7 +421,7 @@ internal fun GlassDock(
         val base = paneTint.alpha * (1f - DockGlass.TINT_EASE * ease.value)
         val s = held.value.coerceIn(0f, 1f)
         val corner = CornerRadius(whole.height / 2f)
-        if (s < 0.01f) {
+        if (s < LENS_SHOWN) {
             drawRoundRect(paneTint.copy(alpha = base), size = whole, cornerRadius = corner)
             return
         }
@@ -457,7 +457,7 @@ internal fun GlassDock(
                     drawContent()
 
                     val s = held.value
-                    if (lens == null || s < 0.01f) return@drawWithContent
+                    if (lens == null || s < LENS_SHOWN) return@drawWithContent
                     val pad = DOCK_PAD.toPx()
                     val row = size.width - 2 * pad
                     val h = size.height - 2 * pad
@@ -467,8 +467,14 @@ internal fun GlassDock(
                     // Its bend, colours and mirror with its size, there from its first frames as it swells and to its last
                     // as it shrinks (iOS's): the shader bends by lift².
                     val lift = sqrt(s)
+                    // Its lightness and light line go with its last third too: whole to its last frame, they blinked
+                    // out with it as the veil came back (the owner, 18.11: «мигание … при отпускании пальца»).
+                    val fade = (s / 0.3f).coerceAtMost(1f)
+                    val look = if (fade >= 1f) DockGlass.Look else DockGlass.Look.run {
+                        copy(lighten = lighten * fade, shineDark = shineDark * fade, shineLight = shineLight * fade)
+                    }
                     lens.draw(
-                        this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, lift, 0f, dark, DockGlass.Look,
+                        this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, lift, 0f, dark, look,
                         drawFrom = DockGlass.Look.drawFrom - DockGlass.MOVING_ZOOM * abs(speed()) - DockGlass.SWELL_ZOOM * swell.value,
                     ) {
                         drawRect(screen, Offset(-whole.width, -whole.height), Size(whole.width * 3, whole.height * 3))
@@ -483,7 +489,8 @@ internal fun GlassDock(
                         if (gathered > 0f) {
                             val all = Size(whole.width * 3, whole.height * 3)
                             val from = Offset(-whole.width, -whole.height)
-                            drawRect(paneTint, from, all, alpha = gathered)
+                            // Over the pane already tinted: the veil's shade alone, as the veil adds it (its tint again made
+                            // it lighter than the veil that takes over, a blink).
                             drawRect(veilShade, from, all, alpha = gathered)
                         }
                         translate(pad, pad) { drawLayer(chosenLayer) }
@@ -703,3 +710,6 @@ private fun Modifier.dockDrag(
         }
     }
 }
+
+// Below this the lens is not drawn: the veil shows again from the same frame, or the dock blinked with neither.
+private const val LENS_SHOWN = 0.01f
