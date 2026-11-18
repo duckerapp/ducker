@@ -736,12 +736,15 @@ internal interface GlassLens {
 internal data class LensLook(
     /** The picture inside is drawn from (1 + this)× as far out, easing to none at the rim: above 0 it looks smaller, below 0 magnified. */
     val drawFrom: Float,
+    /** Over how much of r from the rim that eases in: wide, the middle bulges like a fish-eye; narrow, a flat magnifier. */
+    val zoomEdge: Float,
     /** How far the rim draws the surroundings in: the push outwards along its normal at the rim itself. */
     val push: Float,
     /** How steeply the push falls off inwards: (1 − depth / r) to this power; steeper squeezes more into a narrower rim. */
     val pushPower: Float,
-    /** The push's share along the lens; across it stays whole. */
+    /** The push's share along the lens and at its top and bottom. */
     val pushAlong: Float,
+    val pushAcross: Float,
     /** How far red and blue part at the rim. */
     val chroma: Float,
     /** The band at the rim that mirrors what lies above or below it: along the sides, and at the ends. */
@@ -768,7 +771,7 @@ internal data class LensLook(
 ) {
     companion object {
         val Switch = LensLook(
-            drawFrom = 0.12f, push = 0.3f, pushPower = 1.5f, pushAlong = 0.6f, chroma = 0.1f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
+            drawFrom = 0.12f, zoomEdge = 0.35f, push = 0.3f, pushPower = 1.5f, pushAlong = 0.6f, pushAcross = 1f, chroma = 0.1f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
             ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shineEnds = 0.1f, shadowDark = 0.3f,
             shadowLight = 0.12f, clearBlur = 0.3.dp, frostBlur = 6.dp,
         )
@@ -802,6 +805,8 @@ private class Api33GlassLens : GlassLens {
             shader.setFloatUniform("pushAmount", look.push)
             shader.setFloatUniform("pushAlong", look.pushAlong)
             shader.setFloatUniform("pushPower", look.pushPower)
+            shader.setFloatUniform("zoomEdge", look.zoomEdge)
+            shader.setFloatUniform("pushAcrossScale", look.pushAcross)
             shader.setFloatUniform("chromaAmount", look.chroma)
             shader.setFloatUniform("bandSide", look.bandSide)
             shader.setFloatUniform("bandEnd", look.bandEnd)
@@ -1251,6 +1256,8 @@ uniform float drawFrom;
 uniform float pushAmount;
 uniform float pushAlong;
 uniform float pushPower;
+uniform float zoomEdge;
+uniform float pushAcrossScale;
 uniform float chromaAmount;
 uniform float bandSide;
 uniform float bandEnd;
@@ -1305,7 +1312,7 @@ half4 main(float2 coord) {
     float2 n = gradSdRoundedRect(p, halfSize, radius);
     float t = clamp(depth / radius, 0.0, 1.0);
 
-    float deep = smoothstep(0.0, 0.35, t);
+    float deep = smoothstep(0.0, zoomEdge, t);
     float push = pushAmount * radius * pow(1.0 - t, pushPower);
     // Towards the ends the glass is thinner across: there the picture keeps its height and the dark bands from above
     // and below end in rounded tips short of the rim, as iOS's (the owner, 18.11).
@@ -1320,7 +1327,7 @@ half4 main(float2 coord) {
     // back, it drew the dark beyond the track in at its top and bottom, "much black" as it settled where iOS's is soft
     // and milky (the owner's video of ours, 18.11).
     float bend = lift * lift;
-    float2 drawn = center + p + (p * float2(drawFrom * deep, drawFrom * deep * across) + n * push * float2(pushAlong, pushAcross)) * bend;
+    float2 drawn = center + p + (p * float2(drawFrom * deep, drawFrom * deep * across) + n * push * float2(pushAlong, pushAcross * pushAcrossScale)) * bend;
     float fringe = 1.0 - clamp(t / 0.25, 0.0, 1.0);
     float2 chroma = n * (chromaAmount * radius * fringe * fringe * bend);
     half4 color = split(coord, drawn - coord, chroma);

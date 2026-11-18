@@ -128,11 +128,11 @@ internal object DockGlass {
     val ICON = 23.dp
 
     /**
-     * The lens, held: 1.15 × the dock's height, 1.45 × as wide as high, so it stands over the dock's edges all round and
+     * The lens, held: 1.22 × the dock's height, 1.45 × as wide as high, so it stands over the dock's edges all round and
      * past its end over the first and last tab (the owner's friend's iOS video, 18.11: ~6.5 pt over a 63 pt dock). Sized
      * from the veil, 1.30 × 1.26 of it, it barely left the dock (the owner, 18.11).
      */
-    const val LENS_HEIGHT = 1.15f
+    const val LENS_HEIGHT = 1.22f
     const val LENS_ASPECT = 1.45f
 
     /**
@@ -158,30 +158,33 @@ internal object DockGlass {
     val SLOT = 84.dp
     const val STRETCH = 0.2f
     const val SQUASH = 0.35f
-    const val MOVING_ZOOM = 0.1f
+    const val MOVING_ZOOM = 0.03f
 
     /**
-     * Past the first or the last tab: how far the lens gives (F-528), and how much it draws in there, narrower and a
+     * Past the first or the last tab: how far the lens gives (F-528; iOS's goes ~13 pt past the dock's end under a finger,
+     * so 16 dp, not 8), and how much it draws in there, narrower and a
      * little taller, as against a wall; stretched there, it did not read as iOS's (the owner, 18.11: «втягиваться, без
      * фанатизма»).
      */
-    val EDGE_GIVE = 8.dp
+    val EDGE_GIVE = 16.dp
     const val EDGE_STRETCH = -0.12f
 
     /** The labels change colour at the lens's sides over this much: a hard edge read as doubled letters. */
     val LABEL_FADE = 14.dp
 
     /**
-     * The lens's look, fitted on a numpy copy of the shader beside the iOS frames (`ios-dock/fit23.png`): it magnifies
-     * a little (1.1-1.15 held); its rim bends what lies under the lens out to the edge, steeply in a narrow band, so a
-     * label under it runs into the rim and the glass has a volume (the friend's video, 18.11). Drawing in what lay
-     * outside, as before, read as other effects, the neighbours' letters squeezed or doubled. A soft light rim all round
-     * (`shineEnds`), the dark ring faint, colours split at the rim; no shadow, inner arc, blur or frost (the owner, 18.11).
+     * The lens's look, fitted on a numpy copy of the shader beside the friend's iOS frames (`ios-dock/friend/zabc.png`):
+     * a flat magnifier, ~1.17 across nearly its whole width (`zoomEdge` 0.12) — eased in from the rim over 0.35 r, the
+     * middle bulged like a fish-eye (the owner, 18.11) — and at the rim a narrow band (power 4) into which what lies
+     * just outside is squeezed, so a label crossing the edge clings to it and bends round it, mostly at the ends; little
+     * at the top and bottom (`pushAcross` 0.3), which drew in the text above the dock. Bending what lay under the lens
+     * outwards instead (F-547) and drawing in without the flat middle (F-546) both read as other effects. A soft light
+     * rim all round, the dark ring faint, colours split at the rim; no shadow, inner arc, blur or frost (the owner, 18.11).
      */
     val Look = LensLook.Switch.copy(
-        drawFrom = -0.12f, push = -0.22f, pushPower = 3f, pushAlong = 1f, bandSide = 0.04f, bandEnd = 0.08f,
-        chroma = 0.15f, ring = 0.15f, rimShade = 0f, lighten = 0.1f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
-        shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
+        drawFrom = -0.15f, zoomEdge = 0.12f, push = 0.45f, pushPower = 4f, pushAlong = 1f, pushAcross = 0.3f,
+        bandSide = 0.02f, bandEnd = 0.04f, chroma = 0.1f, ring = 0.1f, rimShade = 0f, lighten = 0.08f,
+        shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f, shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }
 
