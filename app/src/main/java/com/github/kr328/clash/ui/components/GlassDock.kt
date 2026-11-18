@@ -193,15 +193,21 @@ internal object DockGlass {
     val EDGE_GIVE = 16.dp
 
     /**
-     * The dock sways after the finger, a little and softly: up or down, or past the first or last tab across, by up to
-     * [PULL_MOST], rubber-banded over [PULL_GIVE] of the finger's way, chasing it on [PULL_FOLLOW] and back on
-     * [PULL_BACK], a little past. iOS's (`IMG_0053.mp4`): ~6 px over a ~250 px dock, its text and icons unstretched —
-     * «просто док чутка покачивается очень мягко, пружинисто» (the owner, 18.11). Shifted by up to 5 dp, the lens 8 dp,
-     * it floated off its place; stretched, text and icons with it, it looked wrong live. The lens is drawn in it and
-     * sways with it, no more.
+     * The dock follows the finger like jelly pulled: about its middle it moves towards the finger, stretches along the
+     * pull and narrows across, all of it, text and icons too, rubber-banded over the finger's way and chased on a soft
+     * spring. iOS's (`IMG_0054.mp4`, the finger up to the screen's top; `ios-dock/ios5/`): moved up ~7 % of its height,
+     * ~6 % taller, ~4-5 % narrower, its labels ~5 % narrower with it, the left tabs ~28 px in; past an end ~2 % across
+     * (`IMG_0052.mp4`). Stretched from its far side, unsprung and jerking, it looked wrong live; only moved, it was not
+     * iOS's (the owner, 18.11). The lens is drawn in it and goes with it.
      */
-    val PULL_GIVE = 60.dp
-    val PULL_MOST = 3.dp
+    val PULL_GIVE_Y = 150.dp
+    val PULL_GIVE_X = 40.dp
+    val PULL_MOVE_Y = 4.5.dp
+    val PULL_MOVE_X = 3.dp
+    const val PULL_ALONG_Y = 0.06f
+    const val PULL_ACROSS_Y = 0.045f
+    const val PULL_ALONG_X = 0.025f
+    const val PULL_ACROSS_X = 0.015f
     // Underdamped both ways, a jelly's bubble (the owner, 18.11: «как будто бульканье»).
     val PULL_FOLLOW: SpringSpec<Float> = spring(dampingRatio = 0.42f, stiffness = 320f)
     val PULL_BACK: SpringSpec<Float> = spring(dampingRatio = 0.38f, stiffness = 260f)
@@ -300,14 +306,16 @@ internal fun GlassDock(
     // How far the finger has pulled the lens past the first or the last tab, 0..1; it wobbles through zero on release.
     val edge = remember { Animatable(0f) }
     // The finger off its touch, pixels: across (past the first or last tab) and up or down. The dock stretches after
-    // it ([DockGlass.PULL_GIVE]).
+    // it ([DockGlass.PULL_GIVE_Y]).
     val pullX = remember { Animatable(0f) }
     val pullY = remember { Animatable(0f) }
     // A touch's swell past the lens's size, 0..1 ([DockGlass.SWELL_WIDE]).
     val swell = remember { Animatable(0f) }
     val padPx = with(LocalDensity.current) { DOCK_PAD.toPx() }
-    val pullGivePx = with(LocalDensity.current) { DockGlass.PULL_GIVE.toPx() }
-    val pullMostPx = with(LocalDensity.current) { DockGlass.PULL_MOST.toPx() }
+    val pullGiveXPx = with(LocalDensity.current) { DockGlass.PULL_GIVE_X.toPx() }
+    val pullGiveYPx = with(LocalDensity.current) { DockGlass.PULL_GIVE_Y.toPx() }
+    val pullMoveXPx = with(LocalDensity.current) { DockGlass.PULL_MOVE_X.toPx() }
+    val pullMoveYPx = with(LocalDensity.current) { DockGlass.PULL_MOVE_Y.toPx() }
 
     LaunchedEffect(touch.count, touch.down, motion, drag.dragging) {
         if (!motion) {
@@ -354,9 +362,19 @@ internal fun GlassDock(
 
     fun zoom() = 1f + DockGlass.BREATH * breath.value
 
-    // The finger's way to the dock's sway, pixels, rubber-banded over [DockGlass.PULL_GIVE].
-    fun sway(pull: Float) = pullMostPx * pull / (abs(pull) + pullGivePx)
-    fun dockScale() = zoom().let { ScaleFactor(it, it) }
+    // The finger's way, rubber-banded to −1..1.
+    fun pulledX() = pullX.value / (abs(pullX.value) + pullGiveXPx)
+    fun pulledY() = pullY.value / (abs(pullY.value) + pullGiveYPx)
+    // The dock's scale: its breath, stretched along the pull and narrowed across.
+    fun dockScale(): ScaleFactor {
+        val z = zoom()
+        val x = abs(pulledX())
+        val y = abs(pulledY())
+        return ScaleFactor(
+            z * (1f + DockGlass.PULL_ALONG_X * x) * (1f - DockGlass.PULL_ACROSS_Y * y),
+            z * (1f + DockGlass.PULL_ALONG_Y * y) * (1f - DockGlass.PULL_ACROSS_X * x),
+        )
+    }
 
     // Shrinking, the lens fills with the veil's shade as it goes, evenly from rim to rim ([veilGathered], drawn under
     // the lens's glass over all it shows), and the veil itself waits: under the lens its edge, drawn in by the rim,
@@ -449,11 +467,11 @@ internal fun GlassDock(
         Box(
             modifier
                 .graphicsLayer {
-                    val z = zoom()
-                    scaleX = z
-                    scaleY = z
-                    translationX = sway(pullX.value)
-                    translationY = sway(pullY.value)
+                    val scale = dockScale()
+                    scaleX = scale.scaleX
+                    scaleY = scale.scaleY
+                    translationX = pullMoveXPx * pulledX()
+                    translationY = pullMoveYPx * pulledY()
                 }
                 .onGloballyPositioned { dockAt = it.positionInRoot() }
                 .drawWithContent {
