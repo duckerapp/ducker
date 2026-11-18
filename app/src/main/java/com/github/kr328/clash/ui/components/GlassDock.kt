@@ -178,10 +178,13 @@ internal object DockGlass {
      * an arc with the wallpaper beyond them, and a label at its rim is squeezed and bends round it (the owner, 18.11:
      * «не увеличивать, а немного втягивать в себя»). Magnifying instead (F-545-F-548) gave a fish-eye whatever its
      * profile. A soft light rim all round, the dark ring faint, colours split a little; no shadow, inner arc, blur or
-     * frost (the owner, 18.11). Fitted on a numpy copy over our own dock (`ios-dock/ours-drawin.png`).
+     * frost (the owner, 18.11). Fitted on a numpy copy over our own dock (`ios-dock/ours-drawin.png`). Its middle a
+     * little larger than life (`drawFrom` −0.08, ~1.08), the rim drawing in a little harder (push 0.35): at the switch's
+     * +0.12 the labels under it came out ~0.87 of their size, «мелкотня» (the owner, 18.11), where iOS's are ~1.15
+     * (App Store) and ~1.2 (Clash Lite); the arc of the dock's edges stays, drawn by the rim (`ios-dock/ours-zoom.png`).
      */
     val Look = LensLook.Switch.copy(
-        chroma = 0.1f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
+        drawFrom = -0.08f, push = 0.35f, chroma = 0.1f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
         shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }
