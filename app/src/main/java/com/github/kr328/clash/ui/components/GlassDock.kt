@@ -73,7 +73,6 @@ import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
 import kotlin.math.roundToInt
-import kotlin.math.sign
 import kotlin.math.sin
 import com.github.kr328.clash.R
 
@@ -194,18 +193,18 @@ internal object DockGlass {
     val EDGE_GIVE = 16.dp
 
     /**
-     * The dock stretches after the finger from its far side, never moving off its place: up or down by up to
-     * [PULL_Y] of its height, past the first or last tab by up to [PULL_X] of its width, narrower across by [PULL_SQUEEZE]
-     * of that; rubber-banded over [PULL_GIVE] of the finger's way. iOS's (`IMG_0053.mp4`): its top ~6 px up over a
-     * ~250 px dock as its side came ~9 px in, its far side still; at an end ~2 % wider towards the finger
-     * (`IMG_0052.mp4`). Shifting it whole, the lens with it, it floated off its place (the owner, 18.11). The lens is
-     * drawn in it and stretches with it. Back on a soft spring, a little past.
+     * The dock sways after the finger, a little and softly: up or down, or past the first or last tab across, by up to
+     * [PULL_MOST], rubber-banded over [PULL_GIVE] of the finger's way, chasing it on [PULL_FOLLOW] and back on
+     * [PULL_BACK], a little past. iOS's (`IMG_0053.mp4`): ~6 px over a ~250 px dock, its text and icons unstretched —
+     * «просто док чутка покачивается очень мягко, пружинисто» (the owner, 18.11). Shifted by up to 5 dp, the lens 8 dp,
+     * it floated off its place; stretched, text and icons with it, it looked wrong live. The lens is drawn in it and
+     * sways with it, no more.
      */
     val PULL_GIVE = 60.dp
-    const val PULL_X = 0.025f
-    const val PULL_Y = 0.035f
-    const val PULL_SQUEEZE = 0.6f
-    val PULL_BACK: SpringSpec<Float> = spring(dampingRatio = 0.45f, stiffness = 300f)
+    val PULL_MOST = 3.dp
+    // Underdamped both ways, a jelly's bubble (the owner, 18.11: «как будто бульканье»).
+    val PULL_FOLLOW: SpringSpec<Float> = spring(dampingRatio = 0.42f, stiffness = 320f)
+    val PULL_BACK: SpringSpec<Float> = spring(dampingRatio = 0.38f, stiffness = 260f)
     const val EDGE_STRETCH = -0.12f
 
     /** The labels change colour at the lens's sides over this much: a hard edge read as doubled letters. */
@@ -308,6 +307,7 @@ internal fun GlassDock(
     val swell = remember { Animatable(0f) }
     val padPx = with(LocalDensity.current) { DOCK_PAD.toPx() }
     val pullGivePx = with(LocalDensity.current) { DockGlass.PULL_GIVE.toPx() }
+    val pullMostPx = with(LocalDensity.current) { DockGlass.PULL_MOST.toPx() }
 
     LaunchedEffect(touch.count, touch.down, motion, drag.dragging) {
         if (!motion) {
@@ -354,17 +354,9 @@ internal fun GlassDock(
 
     fun zoom() = 1f + DockGlass.BREATH * breath.value
 
-    // The finger's way as a share of the most the dock stretches, signed, rubber-banded over [DockGlass.PULL_GIVE].
-    fun pulled(pull: Float, most: Float) = most * pull / (abs(pull) + pullGivePx)
-    fun pullX() = pulled(pullX.value, DockGlass.PULL_X)
-    fun pullY() = pulled(pullY.value, DockGlass.PULL_Y)
-    // The dock's scale: its breath, and its stretch after the finger, narrower across.
-    fun dockScale(): ScaleFactor {
-        val z = zoom()
-        val x = abs(pullX())
-        val y = abs(pullY())
-        return ScaleFactor(z * (1f + x) * (1f - DockGlass.PULL_SQUEEZE * y), z * (1f + y) * (1f - DockGlass.PULL_SQUEEZE * x))
-    }
+    // The finger's way to the dock's sway, pixels, rubber-banded over [DockGlass.PULL_GIVE].
+    fun sway(pull: Float) = pullMostPx * pull / (abs(pull) + pullGivePx)
+    fun dockScale() = zoom().let { ScaleFactor(it, it) }
 
     // Shrinking, the lens fills with the veil's shade as it goes, evenly from rim to rim ([veilGathered], drawn under
     // the lens's glass over all it shows), and the veil itself waits: under the lens its edge, drawn in by the rim,
@@ -458,16 +450,10 @@ internal fun GlassDock(
             modifier
                 .graphicsLayer {
                     val z = zoom()
-                    val scale = dockScale()
-                    scaleX = scale.scaleX
-                    scaleY = scale.scaleY
-                    // Stretched from its far side: that side stays where the breath and the squeeze across have it. By
-                    // the whole change of scale, the squeeze too, the shift jumped ~1 % of the dock as the pull across
-                    // touched or crossed zero (the owner, 18.11: «дерганье»).
-                    val x = abs(pullX())
-                    val y = abs(pullY())
-                    translationX = sign(pullX()) * z * x * (1f - DockGlass.PULL_SQUEEZE * y) * size.width / 2f
-                    translationY = sign(pullY()) * z * y * (1f - DockGlass.PULL_SQUEEZE * x) * size.height / 2f
+                    scaleX = z
+                    scaleY = z
+                    translationX = sway(pullX.value)
+                    translationY = sway(pullY.value)
                 }
                 .onGloballyPositioned { dockAt = it.positionInRoot() }
                 .drawWithContent {
@@ -689,7 +675,8 @@ private fun Modifier.dockDrag(
                 val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
                 if (!change.pressed) break
                 val dy = change.position.y - down.position.y
-                scope.launch { pullY.snapTo(dy) }
+                // Chased on a spring that keeps its speed: the sway lags and gives like jelly.
+                scope.launch { pullY.animateTo(dy, DockGlass.PULL_FOLLOW) }
 
                 if (!dragging && abs(change.position.x - down.position.x) > slop) {
                     dragging = true
@@ -711,7 +698,7 @@ private fun Modifier.dockDrag(
                     val give = DockGlass.EDGE_GIVE.toPx()
 
                     drag.move(x + over * give / (abs(over) + give))
-                    scope.launch { pullX.snapTo(over) }
+                    scope.launch { pullX.animateTo(over, DockGlass.PULL_FOLLOW) }
                     // Heavy: hardly any stretch near the tab, most of it at the dock's very edge (the owner, 17.11).
                     val reach = (abs(over) / (slot / 2f)).coerceAtMost(1f)
                     scope.launch { edge.snapTo(reach * reach * reach) }
