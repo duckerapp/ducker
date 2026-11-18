@@ -1206,7 +1206,7 @@ half4 main(float2 coord) {
  * [GlassLens], fitted to the owner's iOS video frame by frame (lens half-height r, depth from the rim): inside, the
  * picture is drawn from 1.12× as far out, easing to 1× over the outer 0.35 r, plus a push outwards along the rim's
  * normal, 0.3 r × (1 − depth / r)^1.5 — so the surroundings fill the top and bottom while the ends stay nearly true;
- * the outer band (0.12 r, up to 0.32 r at the ends) mirrors what lies above or below it, inwards; red and blue part
+ * the vertical part of both fades as (cross-section / r)³ in the ends; the outer band (0.12 r, up to 0.32 r at the ends) mirrors what lies above or below it, inwards; red and blue part
  * along the normal near the rim, up to ±0.15 r.
  */
 private const val LIQUID_LENS_SHADER = """
@@ -1241,34 +1241,38 @@ float2 gradSdRoundedRect(float2 coord, float2 halfSize, float radius) {
     }
 }
 
-// The picture at coord + shift, red and blue parted by ±chroma and ±6 % of the shift.
+// The picture at coord + shift, red and blue parted by ±chroma and ±3 % of the shift.
 half4 split(float2 coord, float2 shift, float2 chroma) {
     half4 g = img.eval(coord + shift);
-    half r = img.eval(coord + shift * 1.06 + chroma).r;
-    half b = img.eval(coord + shift * 0.94 - chroma).b;
+    half r = img.eval(coord + shift * 1.03 + chroma).r;
+    half b = img.eval(coord + shift * 0.97 - chroma).b;
     return half4(r, g.g, b, g.a);
 }
 
 half4 main(float2 coord) {
     float2 p = coord - center;
     float d = sdRoundedRect(p, halfSize, radius);
-    if (d > 0.0) {
-        float s = max(sdRoundedRect(p - float2(0.0, shadowDrop), halfSize, radius), 0.0);
-        return half4(0.0, 0.0, 0.0, shadow * exp(-s * s / (2.0 * shadowBlur * shadowBlur)));
-    }
-    float depth = -d;
+    float s = max(sdRoundedRect(p - float2(0.0, shadowDrop), halfSize, radius), 0.0);
+    half4 shade = half4(0.0, 0.0, 0.0, shadow * exp(-s * s / (2.0 * shadowBlur * shadowBlur)));
+    // The rim's pixels partly glass, partly shadow: a hard cut showed steps along the curve (the owner, 18.11).
+    float cover = clamp(0.5 - d, 0.0, 1.0);
+    if (cover <= 0.0) return shade;
+    float depth = max(-d, 0.0);
     float2 n = gradSdRoundedRect(p, halfSize, radius);
     float t = clamp(depth / radius, 0.0, 1.0);
 
     float inner = smoothstep(0.0, 0.35, t);
     float push = 0.3 * radius * pow(1.0 - t, 1.5);
-    float2 drawn = center + p * (1.0 + 0.12 * inner) + n * push;
+    // Towards the ends the glass is thinner across: there the picture keeps its height and the dark bands from above
+    // and below end in rounded tips short of the rim, as iOS's (the owner, 18.11).
+    float intoEnd = max(abs(p.x) - (halfSize.x - radius), 0.0);
+    float across = pow(sqrt(max(radius * radius - intoEnd * intoEnd, 0.0)) / radius, 3.0);
+    float2 drawn = center + p + p * float2(0.12 * inner, 0.12 * inner * across) + n * push * float2(1.0, across);
     float fringe = 1.0 - clamp(t / 0.25, 0.0, 1.0);
     float2 chroma = n * (0.15 * radius * fringe * fringe);
     half4 color = split(coord, drawn - coord, chroma);
 
-    float ends = clamp((abs(p.x) - (halfSize.x - radius)) / radius, 0.0, 1.0);
-    float band = radius * (0.12 + 0.2 * ends);
+    float band = radius * (0.12 + 0.2 * min(intoEnd / radius, 1.0));
     float rim = 1.0 - smoothstep(0.0, band, depth);
     half4 mirror = split(coord, float2(0.0, -n.y) * (0.28 * radius + band), chroma);
     color = mix(color, half4(min(mirror.rgb * 1.15, half3(mirror.a)), mirror.a), rim * 0.85);
@@ -1279,7 +1283,7 @@ half4 main(float2 coord) {
     float line = (1.0 - smoothstep(0.0, edge, depth)) * (0.3 + 0.7 * lobe * lobe) * shine;
     color.rgb = min(color.rgb + half3(line), half3(1.0));
     color.a = max(color.a, line);
-    return color;
+    return mix(shade, color, cover);
 }
 """
 
