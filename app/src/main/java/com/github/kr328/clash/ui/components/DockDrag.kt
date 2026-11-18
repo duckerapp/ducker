@@ -30,8 +30,11 @@ internal class DockDrag(private val scope: CoroutineScope) {
     var flying by mutableStateOf(false)
         private set
 
-    /** How fast the lens moves, pixels a second: it stretches with it. */
-    val speed: Float get() = if (owned) abs(follow.velocity) else 0f
+    /**
+     * How fast the lens moves, pixels a second: it stretches with it. Read with its place, which is observable: the
+     * velocity alone is not, and a snapshotFlow of it saw only the 0 at a gesture's start — the lens never bent.
+     */
+    val speed: Float get() = if (owned && follow.value.isFinite()) abs(follow.velocity) else 0f
 
     /** Neither the finger nor a flight moves the lens: it may settle back into the veil. */
     val resting: Boolean get() = !dragging && !flying

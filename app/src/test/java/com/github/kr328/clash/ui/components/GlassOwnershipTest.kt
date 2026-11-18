@@ -1,11 +1,14 @@
 package com.github.kr328.clash.ui.components
 
 import androidx.compose.runtime.BroadcastFrameClock
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.MotionDurationScale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -112,6 +115,21 @@ class GlassOwnershipTest {
             assertEquals(0f, drag.speed)
             assertEquals(30f, drag.center(30f))
             assertFalse(frames.clock.hasAwaiters)
+        }
+    }
+
+    @Test fun `a flying lens's speed is seen as it changes`() {
+        Frames(1f).use { frames ->
+            val drag = DockDrag(frames.scope)
+            val seen = mutableListOf<Float>()
+            frames.scope.launch { snapshotFlow { drag.speed }.collect { seen += it } }
+            drag.fly(0f, 200f) { 0f }
+            repeat(6) {
+                frames.advance()
+                Snapshot.sendApplyNotifications()
+            }
+            // The velocity alone is not observable: the lens's stretch saw only the 0 at the start.
+            assertTrue(seen.any { it > 100f }, "$seen")
         }
     }
 
