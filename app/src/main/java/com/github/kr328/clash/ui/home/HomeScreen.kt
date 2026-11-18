@@ -1822,15 +1822,21 @@ private fun NodeRow(
     // in a row that failed, the same that brings the "нет связи" card. A check of the list that
     // one node did not answer does not put it here: the server may well be working (D-282).
     val delay = if (state.linkOk == false) DelayStore.NO_ANSWER else group?.delay ?: 0
+    // The pane glass: it swells under a finger as Update and Support do (the owner, 18.11).
+    val press = if (glass) rememberGlassPress() else null
 
     Row(
         modifier = modifier.fillMaxWidth()
+            .glassPress(press, own = true)
             .clip(if (glass) CircleShape else MaterialTheme.shapes.medium)
             .then(
-                if (glass) Modifier.glass(LocalGlassBackdrop.current, GlassMaterial.Control, CircleShape) else Modifier.background(LocalContentColor.current.copy(alpha = PLATE_ALPHA)),
+                if (glass) Modifier.glass(LocalGlassBackdrop.current, GlassMaterial.Control, CircleShape, press = press) else Modifier.background(LocalContentColor.current.copy(alpha = PLATE_ALPHA)),
             )
             .then(if (LocalTv.current) Modifier.ringCorner(NODE_ROW_CORNER) else Modifier)
-            .clickable(onClick = onClick)
+            .then(
+                if (press != null) Modifier.clickable(interactionSource = null, indication = null, onClick = onClick)
+                else Modifier.clickable(onClick = onClick)
+            )
             .padding(start = if (glass) 16.dp else 14.dp, end = if (glass) 12.dp else 10.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),

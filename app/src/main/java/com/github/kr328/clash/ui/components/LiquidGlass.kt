@@ -1665,17 +1665,25 @@ internal object PaneGlass {
     val PUSH = 14.dp
     /** How far red and blue part where the rim bends most. */
     val CHROMA = 1.5.dp
-    /** How much livelier the colours are at the rim than inside. */
-    const val VIVID = 0.35f
-    /** How much lighter, towards white, the roll is at the rim. */
-    const val ROLL = 0.12f
+    /**
+     * The colours inside the pane, as a share of the picture's: the dock's own (1), so the two read as one glass; and how
+     * much livelier they are at the rim.
+     */
+    const val SATURATION = 1f
+    const val VIVID = 0.15f
+    /**
+     * How much lighter, towards white, the roll is at the rim, falling off as (1 − t)³: over the whole band, (1 − t)²
+     * at 0.12, it laid a light haze over the cards' sides that read as the wallpaper's teal against the dark dock
+     * (the owner, 18.11: «все равно не как докбар по цвету»).
+     */
+    const val ROLL = 0.1f
     /** The light line along the rim, its strength and width. */
     const val LINE = 0.3f
     val LINE_WIDTH = 1.5.dp
     /** The roll lighter at the top and darker at the bottom. */
     const val VOLUME = 0.12f
-    /** How much of the material's dark tint the rim is spared, so its roll and light show. */
-    const val SPARE = 0.5f
+    /** How much of the material's dark tint the rim is spared, so its roll and light show; at 0.5 the cards were lighter than the dock. */
+    const val SPARE = 0.1f
     /** The faint dark line just outside the rim. */
     const val RING = 0.1f
     val RING_WIDTH = 1.dp
@@ -1721,6 +1729,7 @@ private fun Density.paneBend(shader: RuntimeShader, margin: Float, width: Float,
     shader.setFloatUniform("band", PaneGlass.BAND.toPx())
     shader.setFloatUniform("push", PaneGlass.PUSH.toPx() * (style.refraction / 50f) * boost)
     shader.setFloatUniform("chroma", PaneGlass.CHROMA.toPx() * (style.dispersion / 40f))
+    shader.setFloatUniform("saturation", PaneGlass.SATURATION)
     shader.setFloatUniform("vivid", PaneGlass.VIVID * (style.vibrancy / 40f))
     shader.setFloatUniform("roll", PaneGlass.ROLL)
     shader.setFloatUniform("pressBright", PaneGlass.PRESS_BRIGHT)
@@ -1844,6 +1853,7 @@ uniform float2 shift;
 uniform float band;
 uniform float push;
 uniform float chroma;
+uniform float saturation;
 uniform float vivid;
 uniform float roll;
 uniform float line;
@@ -1888,10 +1898,10 @@ half4 main(float2 coord) {
 
     float rim = 1.0 - smoothstep(0.0, 1.0, t);
     half lum = dot(c.rgb, half3(0.299, 0.587, 0.114));
-    c.rgb = clamp(mix(half3(lum), c.rgb, half(1.0 + vivid * rim + pressSat * press)), half3(0.0), half3(c.a));
+    c.rgb = clamp(mix(half3(lum), c.rgb, half(saturation + vivid * rim + pressSat * press)), half3(0.0), half3(c.a));
     c.rgb = min(c.rgb * half(1.0 + pressBright * press), half3(c.a));
     // The roll: lighter towards the rim, softly, as the glass curves away and catches the light.
-    c.rgb += (half3(c.a) - c.rgb) * half(roll * u * u);
+    c.rgb += (half3(c.a) - c.rgb) * half(roll * u * u * u);
     c.rgb *= half(1.0 - volume * n.y * rim);
 
     float lw = 1.0 - smoothstep(0.0, lineWidth, depth);
