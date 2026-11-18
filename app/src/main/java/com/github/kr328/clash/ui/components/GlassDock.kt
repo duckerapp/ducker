@@ -158,7 +158,7 @@ internal object DockGlass {
     val SLOT = 84.dp
     const val STRETCH = 0.2f
     const val SQUASH = 0.35f
-    const val MOVING_ZOOM = 0.03f
+    const val MOVING_ZOOM = 0f
 
     /**
      * Past the first or the last tab: how far the lens gives (F-528; iOS's goes ~13 pt past the dock's end under a finger,
@@ -173,18 +173,16 @@ internal object DockGlass {
     val LABEL_FADE = 14.dp
 
     /**
-     * The lens's look, fitted on a numpy copy of the shader beside the friend's iOS frames (`ios-dock/friend/zabc.png`):
-     * a flat magnifier, ~1.17 across nearly its whole width (`zoomEdge` 0.12) — eased in from the rim over 0.35 r, the
-     * middle bulged like a fish-eye (the owner, 18.11) — and at the rim a narrow band (power 4) into which what lies
-     * just outside is squeezed, so a label crossing the edge clings to it and bends round it, mostly at the ends; little
-     * at the top and bottom (`pushAcross` 0.3), which drew in the text above the dock. Bending what lay under the lens
-     * outwards instead (F-547) and drawing in without the flat middle (F-546) both read as other effects. A soft light
-     * rim all round, the dark ring faint, colours split at the rim; no shadow, inner arc, blur or frost (the owner, 18.11).
+     * The lens's look: the switch's (D-542), the accepted reference — a convex glass over the dock that makes what lies
+     * under it a little smaller and draws in what lies round it, so the dock's top and bottom edges come into it along
+     * an arc with the wallpaper beyond them, and a label at its rim is squeezed and bends round it (the owner, 18.11:
+     * «не увеличивать, а немного втягивать в себя»). Magnifying instead (F-545-F-548) gave a fish-eye whatever its
+     * profile. A soft light rim all round, the dark ring faint, colours split a little; no shadow, inner arc, blur or
+     * frost (the owner, 18.11). Fitted on a numpy copy over our own dock (`ios-dock/ours-drawin.png`).
      */
     val Look = LensLook.Switch.copy(
-        drawFrom = -0.15f, zoomEdge = 0.12f, push = 0.45f, pushPower = 4f, pushAlong = 1f, pushAcross = 0.3f,
-        bandSide = 0.02f, bandEnd = 0.04f, chroma = 0.1f, ring = 0.1f, rimShade = 0f, lighten = 0.08f,
-        shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f, shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
+        chroma = 0.1f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.8f, shineEnds = 0.7f,
+        shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }
 
@@ -231,6 +229,8 @@ internal fun GlassDock(
     val touch = remember { LensTouch() }
     val lens = remember { lensShader() }
     val lensLayer = rememberGraphicsLayer()
+    // What the lens shows of the dock: the pane, its veil and labels, its rim — the edge it bends into an arc.
+    val dockLayer = rememberGraphicsLayer()
     // The labels in the chosen colour, whole: under the lens everything is chosen, the neighbours it draws in too.
     val chosenLayer = rememberGraphicsLayer()
     var dockAt by remember { mutableStateOf(Offset.Zero) }
@@ -391,7 +391,6 @@ internal fun GlassDock(
                     val rect = lensRect(row, h).translate(pad, pad)
                     val whole = size
                     val z = zoom()
-                    val veilNow = veilRect(row, h).translate(pad, pad)
                     lens.draw(
                         this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, s, 0f, dark, DockGlass.Look,
                         drawFrom = DockGlass.Look.drawFrom - DockGlass.MOVING_ZOOM * abs(speed()),
@@ -401,19 +400,19 @@ internal fun GlassDock(
                         scale(1f / z, 1f / z, pivot = Offset.Zero) {
                             translate(backdrop.origin.x - dockAt.x, backdrop.origin.y - dockAt.y) { drawLayer(backdrop.layer) }
                         }
-                        // Clear glass over the pane: the pane's tint, not its blur nor its rim. Through the pane's blur the lens
-                        // showed an even smear, flat (the owner, 18.11), and the dock's rim drawn inside it.
-                        drawPaneTint(whole)
-                        // The veil coming back under the shrinking lens.
-                        if (veil.value > 0f) {
-                            drawRoundRect(veilShade.copy(alpha = veilShade.alpha * veil.value * DockGlass.VEIL_OPACITY), veilNow.topLeft, veilNow.size, CornerRadius(veilNow.height / 2f))
-                        }
+                        // The dock itself under the lens, its pane and veil as they are: drawn in, its edges come in along an
+                        // arc with the wallpaper beyond (the owner, 18.11). The sharp wallpaper alone, magnified, was a fish-eye.
+                        drawLayer(dockLayer)
                         translate(pad, pad) { drawLayer(chosenLayer) }
                     }
                 },
         ) {
             Surface(
                 modifier = Modifier.width(dockWidth).airShadow(shape)
+                    .drawWithContent {
+                        dockLayer.record { this@drawWithContent.drawContent() }
+                        drawLayer(dockLayer)
+                    }
                     .liquidGlass(
                         backdrop,
                         base = screen,
