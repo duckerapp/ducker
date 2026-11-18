@@ -293,9 +293,12 @@ internal fun rememberPaneUnder(): (DrawScope.(position: Offset) -> Unit) {
             if (picture != null) {
                 val size = backdrop.layer.size
                 translate(backdrop.origin.x - position.x, backdrop.origin.y - position.y) {
-                    drawRect(ShaderBrush(picture), size = androidx.compose.ui.geometry.Size(size.width.toFloat(), size.height.toFloat()))
+                    val whole = androidx.compose.ui.geometry.Size(size.width.toFloat(), size.height.toFloat())
+                    drawRect(ShaderBrush(picture), size = whole)
+                    // Over the whole picture: sized by the lens layer around the control's corner, the veil missed a
+                    // wide control's far end, and the lens over the last pill showed the bare wallpaper (the owner, 18.11).
+                    drawRect(veil, size = whole)
                 }
-                drawRect(veil, Offset(-this.size.width, -this.size.height), this.size * 3f)
             }
         }
     }

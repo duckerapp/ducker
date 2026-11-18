@@ -2405,7 +2405,15 @@ private fun SubscriptionCard(
             // и упиралась в «Обновить».
             if (profile.total > 0) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    ThinBar((used.toFloat() / profile.total).coerceIn(0f, 1f))
+                    // On glass in the card's ink, as on the subscription's card: the opaque grey track stood out of the glass
+                    // (the owner, 18.11). Air as it was.
+                    if (LocalGlassBackdrop.current != null) {
+                        ThinBar(
+                            fraction = (used.toFloat() / profile.total).coerceIn(0f, 1f),
+                            color = LocalContentColor.current,
+                            trackColor = LocalContentColor.current.copy(alpha = 0.15f),
+                        )
+                    } else ThinBar((used.toFloat() / profile.total).coerceIn(0f, 1f))
 
                     // Сколько израсходовано — под полосой, а не над ней: сначала видно
                     // саму полосу, потом цифры к ней.
