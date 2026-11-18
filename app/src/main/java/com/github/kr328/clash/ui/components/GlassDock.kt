@@ -12,7 +12,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -48,20 +48,25 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import com.github.kr328.clash.R
 
 /**
  * Every number of the glass dock, tuned here only. Fitted frame by frame to the owner's two iOS videos of the App
@@ -81,12 +86,26 @@ internal object DockGlass {
     const val LIGHT_OUT_MS = 400
 
     /**
-     * The chosen tab's veil at rest: black over the pane's own tint (iOS, dark: 15 against the pane's 29), on a dark and
-     * on a light screen, and blurred more than the pane, so its icon and label read whatever lies under it.
+     * The chosen tab's veil at rest: the screen under it blurred more than the pane's and a little darker, its colours
+     * kept (iOS over pictures); black over the pane's tint on a dark and on a light screen. At 0.45 it read as a black
+     * blot (the owner's video of ours, 18.11). [VEIL_OPACITY]: the whole veil shows the pane through it (the owner,
+     * 18.11: 35 % clearer, and no light at its edges — a backing, not a pane).
      */
-    const val VEIL_SHADE_DARK = 0.45f
-    const val VEIL_SHADE_LIGHT = 0.07f
-    val VEIL_BLUR = 8.dp
+    const val VEIL_SHADE_DARK = 0.22f
+    const val VEIL_SHADE_LIGHT = 0.06f
+    val VEIL_BLUR = 12.dp
+    const val VEIL_OPACITY = 0.65f
+
+    /**
+     * A tab's width: the widest label plus this, so labels stand about as far apart as the first one from the dock's
+     * end. Spread over the whole width, the tabs stood ~60 dp apart and the lens grew into a big flat oval (the owner,
+     * 18.11). The veil fills its tab, so it lies as far from the dock's ends as from its top and bottom; its shape comes
+     * out ~1.45 : 1, as iOS's.
+     */
+    val TAB_GAP = 36.dp
+
+    /** The tabs' icons, a little larger than Air's 20 dp (the owner, 18.11); the labels unchanged. */
+    val ICON = 23.dp
 
     /** The lens, held: 1.30 × the veil's width and 1.26 × its height, a little over the dock's edges (iOS). */
     const val LENS_WIDTH = 1.3f
@@ -105,7 +124,15 @@ internal object DockGlass {
      * and magnifies more ([MOVING_ZOOM], in [LensLook.drawFrom]): iOS's lens on a quick tap.
      */
     const val SPEED_FULL = 8f
-    const val STRETCH = 0.3f
+
+    /**
+     * The lens's shape follows its speed through this spring: stopping, it squashes past round and gathers itself back
+     * («хочет расплыться, но потом собирается», the owner on iOS's, 18.11); following the speed at once, it went flat
+     * the moment the page stopped. [SLOT] turns the speed, pixels a second, into tabs a second outside a draw.
+     */
+    val JELLY_SPRING: SpringSpec<Float> = spring(dampingRatio = 0.4f, stiffness = 380f)
+    val SLOT = 84.dp
+    const val STRETCH = 0.2f
     const val SQUASH = 0.35f
     const val MOVING_ZOOM = 0.1f
 
@@ -119,11 +146,15 @@ internal object DockGlass {
     /**
      * The lens's look: the switch's, but magnifying as iOS's (1.15 × held); its ends draw in the neighbours' labels rather
      * than mirror a band (0.08 r, the switch's 0.22), its top and bottom bands thinner (push 0.25); colours split a
-     * little more, a fainter shadow. Fitted on a numpy copy of the shader beside iOS's held lens.
+     * little more, a brighter rim line, a fainter shadow. Fitted on a numpy copy of the shader beside iOS's held lens.
+     * No frost: clouded as it shrank, it turned to grey soap (the owner's video of ours, 18.11); iOS's stays clear and
+     * darkens as the veil returns under it. No blur at all: a touch of it read as failing eyesight on the labels; no
+     * shadow, under it or as the inner arc ([LensLook.rimShade]): iOS's dock lens has none, it is all bending (the
+     * owner, 18.11).
      */
     val Look = LensLook.Switch.copy(
-        drawFrom = -0.13f, push = 0.25f, pushAlong = 1f, bandEnd = 0.08f, chroma = 0.12f,
-        shadowDark = 0.2f, shadowLight = 0.1f, frostBlur = 2.dp,
+        drawFrom = -0.13f, push = 0.25f, pushAlong = 1f, bandEnd = 0.08f, chroma = 0.14f, rimShade = 0f,
+        shineDark = 0.35f, shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 }
 
@@ -164,8 +195,6 @@ internal fun GlassDock(
     val touch = remember { LensTouch() }
     val lens = remember { lensShader() }
     val lensLayer = rememberGraphicsLayer()
-    // What the lens shows of the dock: the pane, the veil and the labels.
-    val dockLayer = rememberGraphicsLayer()
     // The labels in the chosen colour, whole: under the lens everything is chosen, the neighbours it draws in too.
     val chosenLayer = rememberGraphicsLayer()
     var dockAt by remember { mutableStateOf(Offset.Zero) }
@@ -175,36 +204,40 @@ internal fun GlassDock(
     val held = remember { Animatable(0f) }
     // The veil's presence: it clears as the lens swells and comes back as it settles.
     val veil = remember { Animatable(1f) }
-    val frost = remember { Animatable(0f) }
     // The dock's breath: 0 at rest, 1 grown and lightened under a finger.
     val breath = remember { Animatable(0f) }
     val light = remember { Animatable(0f) }
     // How far the finger has pulled the lens past the first or the last tab, 0..1; it wobbles through zero on release.
     val edge = remember { Animatable(0f) }
+    // The lens's speed, 0..1 of [DockGlass.SPEED_FULL], through [DockGlass.JELLY_SPRING]: below 0 it squashes.
+    val jelly = remember { Animatable(0f) }
+    val slotPx = with(LocalDensity.current) { DockGlass.SLOT.toPx() }
+
+    LaunchedEffect(motion, slotPx) {
+        if (!motion) return@LaunchedEffect
+        snapshotFlow { (drag.speed / slotPx / DockGlass.SPEED_FULL).coerceIn(0f, 1f) }
+            .collectLatest { jelly.animateTo(it, DockGlass.JELLY_SPRING) }
+    }
 
     LaunchedEffect(touch.count, touch.down, motion, drag.dragging) {
         if (!motion) {
             // Without Android's animations a tap lifts no lens; a drag still shows it under the finger.
             veil.snapTo(if (drag.dragging) 0f else 1f)
-            frost.snapTo(0f)
             held.snapTo(if (drag.dragging) 1f else 0f)
             touch.seen = touch.count
             return@LaunchedEffect
         }
         launch { veil.animateTo(0f, tween(DockGlass.VEIL_OUT_MS)) }
-        launch { frost.snapTo(0f) }
         var back: Job? = null
         held.follow(touch, motion, out = DockGlass.LENS_OUT_MS) {
             // A tap's click comes a frame or two after the finger lifts, and only then does the page set off: the lens
             // must not take the page still at rest for its landing.
             repeat(2) { withFrameNanos { } }
             snapshotFlow { drag.resting && positionNow().let { abs(it - it.roundToInt()) < LANDED } }.first { it }
-            launch { frost.animateTo(1f, tween(DockGlass.LENS_OUT_MS)) }
             back = launch { veil.animateTo(1f, tween(DockGlass.VEIL_IN_MS, easing = LinearOutSlowInEasing)) }
         }
         if (touch.down) return@LaunchedEffect
         back?.join() ?: veil.animateTo(1f, tween(DockGlass.VEIL_IN_MS, easing = LinearOutSlowInEasing))
-        frost.snapTo(0f)
     }
 
     LaunchedEffect(touch.down, motion) {
@@ -228,12 +261,12 @@ internal fun GlassDock(
         val left = lerp(middle(row) - slot(row) / 2f, 0f, face.merge)
         return Rect(left, 0f, left + width, h)
     }
-    // How fast the lens moves, 0..1 of [DockGlass.SPEED_FULL].
-    fun speed(row: Float) = (drag.speed / slot(row) / DockGlass.SPEED_FULL).coerceIn(0f, 1f)
-    fun stretch(row: Float) = (DockGlass.STRETCH * speed(row) + DockGlass.EDGE_STRETCH * edge.value).coerceAtLeast(-0.15f)
+    // How fast the lens moves, 0..1 of [DockGlass.SPEED_FULL], springy; below 0 as it gathers itself after a stop.
+    fun speed() = jelly.value.coerceIn(-0.5f, 1f)
+    fun stretch() = (DockGlass.STRETCH * speed() + DockGlass.EDGE_STRETCH * edge.value).coerceAtLeast(-0.15f)
     fun lensRect(row: Float, h: Float): Rect {
         val s = held.value
-        val st = stretch(row)
+        val st = stretch()
         val halfWidth = slot(row) / 2f * lerp(1f, DockGlass.LENS_WIDTH, s) * (1f + st)
         val halfHeight = h / 2f * lerp(1f, DockGlass.LENS_HEIGHT, s) * (1f - DockGlass.SQUASH * st)
         val c = middle(row)
@@ -258,6 +291,16 @@ internal fun GlassDock(
     }
 
     val chosenColor = scheme.primary
+    // The dock as wide as its tabs need: the widest label (or «+ Добавить») and [DockGlass.TAB_GAP] each; a narrow
+    // screen still squeezes it.
+    val labelStyle = dockLabelStyle()
+    val labels = DockTabItems.map { stringResource(it.first) } + stringResource(R.string.add)
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val dockWidth = remember(labels, labelStyle, density) {
+        val widest = labels.maxOf { measurer.measure(it, labelStyle, maxLines = 1, softWrap = false).size.width }
+        with(density) { (maxOf(widest.toDp(), DockGlass.ICON) + DockGlass.TAB_GAP) * TABS + DOCK_PAD * 2 }
+    }
     val paneTint = scheme.surface.copy(alpha = (GlassMaterial.Surface.tint * (style.tint / 50f).coerceIn(0f, 2f)).coerceIn(0f, 0.92f))
     val veilShade = Color.Black.copy(alpha = if (dark) DockGlass.VEIL_SHADE_DARK else DockGlass.VEIL_SHADE_LIGHT)
     val lightColor = Color.White.copy(alpha = if (dark) DockGlass.LIGHT_DARK else DockGlass.LIGHT_LIGHT)
@@ -277,29 +320,35 @@ internal fun GlassDock(
                 if (lens == null || s < 0.01f) return@drawWithContent
                 val pad = DOCK_PAD.toPx()
                 val row = size.width - 2 * pad
-                val rect = lensRect(row, size.height - 2 * pad).translate(pad, pad)
+                val h = size.height - 2 * pad
+                val rect = lensRect(row, h).translate(pad, pad)
                 val whole = size
                 val z = zoom()
+                val veilNow = veilRect(row, h).translate(pad, pad)
                 lens.draw(
-                    this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, s, frost.value, dark, DockGlass.Look,
-                    drawFrom = DockGlass.Look.drawFrom - DockGlass.MOVING_ZOOM * speed(row),
+                    this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, s, 0f, dark, DockGlass.Look,
+                    drawFrom = DockGlass.Look.drawFrom - DockGlass.MOVING_ZOOM * abs(speed()),
                 ) {
                     drawRect(screen, Offset(-whole.width, -whole.height), Size(whole.width * 3, whole.height * 3))
                     // The screen as it lies under the grown dock: [dockAt] is its grown corner (see liquidGlass's zoom).
                     scale(1f / z, 1f / z, pivot = Offset.Zero) {
                         translate(backdrop.origin.x - dockAt.x, backdrop.origin.y - dockAt.y) { drawLayer(backdrop.layer) }
                     }
-                    drawLayer(dockLayer)
+                    // Clear glass over the pane: the pane's tint and light, not its blur nor its rim. Through the pane's
+                    // blur the lens showed an even smear, flat (the owner, 18.11), and the dock's rim drawn inside it.
+                    val corner = CornerRadius(whole.height / 2f)
+                    drawRoundRect(paneTint, size = whole, cornerRadius = corner)
+                    if (light.value > 0f) drawRoundRect(lightColor.copy(alpha = lightColor.alpha * light.value), size = whole, cornerRadius = corner)
+                    // The veil coming back under the shrinking lens.
+                    if (veil.value > 0f) {
+                        drawRoundRect(veilShade.copy(alpha = veilShade.alpha * veil.value * DockGlass.VEIL_OPACITY), veilNow.topLeft, veilNow.size, CornerRadius(veilNow.height / 2f))
+                    }
                     translate(pad, pad) { drawLayer(chosenLayer) }
                 }
             },
     ) {
         Surface(
-            modifier = Modifier.widthIn(max = 420.dp).airShadow(shape)
-                .drawWithContent {
-                    dockLayer.record { this@drawWithContent.drawContent() }
-                    drawLayer(dockLayer)
-                }
+            modifier = Modifier.width(dockWidth).airShadow(shape)
                 .liquidGlass(
                     backdrop,
                     base = screen,
@@ -327,7 +376,7 @@ internal fun GlassDock(
                             layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(rect.left.roundToInt(), 0) }
                         }
                         .graphicsLayer {
-                            alpha = veil.value
+                            alpha = veil.value * DockGlass.VEIL_OPACITY
                             // The capsule swells a little as «+ Добавить»'s drop lands, and settles back.
                             val drop = face.splash.value
                             if (drop > 0f && drop < 1f) {
@@ -376,6 +425,7 @@ internal fun GlassDock(
                     turn = face.turn,
                     actionLabel = if (face.added) actionLabel else null,
                     vertical = false,
+                    iconSize = DockGlass.ICON,
                     modifier = Modifier
                         .then(if (alone) Modifier.clearAndSetSemantics { } else Modifier)
                         .graphicsLayer {
@@ -395,6 +445,7 @@ internal fun GlassDock(
                     turn = face.turn,
                     actionLabel = null,
                     vertical = false,
+                    iconSize = DockGlass.ICON,
                     // Presses and speech live in the copy below: this one only recolours.
                     modifier = Modifier.clearAndSetSemantics { }
                         .graphicsLayer {

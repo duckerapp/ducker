@@ -749,6 +749,10 @@ internal val DockTabItems = listOf(
     R.string.subscriptions_tab to Symbols.Article,
 )
 
+/** The tabs' labels: one weight for all, so both copies of the row match to the pixel. */
+@Composable
+internal fun dockLabelStyle(): TextStyle = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
+
 /**
  * Один ряд вкладок. Обе копии обязаны совпадать по метрике до пикселя, иначе обрезанная
  * поедет относительно нижней, — поэтому жирность подписи одна на все вкладки, а выбор
@@ -765,8 +769,9 @@ internal fun DockTabs(
     /** Top to bottom, in the side dock. */
     vertical: Boolean,
     modifier: Modifier = Modifier,
+    iconSize: Dp = 20.dp,
 ) {
-    val style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
+    val style = dockLabelStyle()
     val selectedWord = stringResource(R.string.tab_selected)
 
     val group = modifier.fillMaxWidth()
@@ -811,12 +816,12 @@ internal fun DockTabs(
             verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
         ) {
             if (index == ACTION_TAB) {
-                ActionFace(turn, icon, name, style, content)
+                ActionFace(turn, icon, name, style, content, iconSize)
             } else {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(iconSize),
                     tint = content,
                 )
 
@@ -848,7 +853,7 @@ internal fun DockTabs(
  * in step to the pixel.
  */
 @Composable
-private fun ActionFace(turn: Transition<Boolean>, icon: ImageVector, label: String, style: TextStyle, content: Color) {
+private fun ActionFace(turn: Transition<Boolean>, icon: ImageVector, label: String, style: TextStyle, content: Color, iconSize: Dp) {
     // The mockup's timings: «Подписки» goes in 180 ms; «+ Добавить» comes 60 ms later and goes back in 160 ms.
     val gone by turn.animateFloat({ tween(180, easing = StandardEasing) }, label = "gone") { if (it) 1f else 0f }
     val faded by turn.animateFloat({ tween(140) }, label = "faded") { if (it) 1f else 0f }
@@ -872,7 +877,7 @@ private fun ActionFace(turn: Transition<Boolean>, icon: ImageVector, label: Stri
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(20.dp).graphicsLayer {
+            modifier = Modifier.size(iconSize).graphicsLayer {
                 alpha = 1f - faded
                 rotationZ = gone * 90f
                 scaleX = lerp(1f, 0.4f, gone)
@@ -884,7 +889,7 @@ private fun ActionFace(turn: Transition<Boolean>, icon: ImageVector, label: Stri
         Icon(
             imageVector = Symbols.Add,
             contentDescription = null,
-            modifier = Modifier.size(20.dp).graphicsLayer {
+            modifier = Modifier.size(iconSize).graphicsLayer {
                 alpha = shown
                 rotationZ = (1f - plus) * -90f
                 scaleX = lerp(0.4f, 1f, plus)
