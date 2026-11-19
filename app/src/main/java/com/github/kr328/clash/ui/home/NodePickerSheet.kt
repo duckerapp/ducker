@@ -1,8 +1,12 @@
 package com.github.kr328.clash.ui.home
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.layout.layout
 import com.github.kr328.clash.ui.components.glass
 import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.glassSourceOver
+import com.github.kr328.clash.ui.components.rememberPaneUnder
+import com.github.kr328.clash.ui.components.LocalGlassExtraBlur
 import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.rememberGlassBackdrop
 import com.github.kr328.clash.ui.components.rememberGlassPress
@@ -193,12 +197,24 @@ private fun PickerList(
         // The floating search shows the rows moving under it on the screen, as Proxies' does (F-552): live only while it
         // floats off its place, else the screen's still picture.
         val listBackdrop = if (glass != null) rememberGlassBackdrop() else null
+        val sheet = rememberPaneUnder()
         val floating by remember(density) {
             derivedStateOf { reveal.value > 0f && with(density) { searchPlace().let { (slot, floating) -> floating > slot } } }
         }
         LazyColumn(
             state = list, overscrollEffect = null,
-            modifier = Modifier.fillMaxSize().glassSourceOver(listBackdrop, glass).selectableGroup()
+            modifier = Modifier.fillMaxSize()
+                // Wider than the room by the viewport's overhang, the rows where they were: its own layer (the fade
+                // below) cut a row's sides as it swelled under a finger (the owner, 19.11).
+                .layout { measurable, constraints ->
+                    val over = ROW_OVERHANG.roundToPx()
+                    val wide = constraints.maxWidth + 2 * over
+                    val placeable = measurable.measure(constraints.copy(minWidth = wide, maxWidth = wide))
+                    layout(constraints.maxWidth, placeable.height) { placeable.place(-over, 0) }
+                }
+                // The sheet as it looks with its rows on it, for the floating search and check.
+                .glassSourceOver(listBackdrop, glass, beneath = sheet)
+                .selectableGroup()
                 .then(if (glass != null) Modifier.graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen } else Modifier)
                 .drawWithCache {
                 val edge = 24.dp.toPx().coerceAtMost(size.height)
@@ -223,7 +239,7 @@ private fun PickerList(
                     }
                 }
             },
-            contentPadding = PaddingValues(vertical = 12.dp),
+            contentPadding = PaddingValues(horizontal = ROW_OVERHANG, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = PICKER_SEARCH_KEY) { Spacer(Modifier.fillMaxWidth().height(with(density) { searchHeight.toDp() })) }
@@ -249,30 +265,40 @@ private fun PickerList(
                 }
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().onSizeChanged { searchHeight = it.height.toFloat() }
-                .offset { val (slot, floating) = searchPlace(); IntOffset(0, maxOf(slot, floating)) }
-                .semantics { traversalIndex = -1f },
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
+        // Floating, the search and the check show the sheet and the rows under them, through their own blur alone; at
+        // their place, the screen under the sheet as the other panes on it do.
+        CompositionLocalProvider(
+            LocalGlassBackdrop provides if (floating && listBackdrop != null) listBackdrop else glass,
+            LocalGlassExtraBlur provides if (floating && listBackdrop != null) 0.dp else LocalGlassExtraBlur.current,
         ) {
-            SearchField(
-                query, onQuery, stringResource(R.string.proxy_search), modifier = Modifier.weight(1f),
-                compact = true, glass = if (floating && listBackdrop != null) listBackdrop else glass,
-            )
-            ProxyCheckButton(
-                checking = group != null && state.checking == group.name,
-                enabled = group != null && state.canCheck && state.checking == null,
-                onClick = { group?.let { onCheck(it.name) } }, size = 48.dp,
-                compact = true,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().onSizeChanged { searchHeight = it.height.toFloat() }
+                    .offset { val (slot, floating) = searchPlace(); IntOffset(0, maxOf(slot, floating)) }
+                    .semantics { traversalIndex = -1f },
+                horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SearchField(
+                    query, onQuery, stringResource(R.string.proxy_search), modifier = Modifier.weight(1f),
+                    compact = true, glass = LocalGlassBackdrop.current,
+                )
+                ProxyCheckButton(
+                    checking = group != null && state.checking == group.name,
+                    enabled = group != null && state.canCheck && state.checking == null,
+                    onClick = { group?.let { onCheck(it.name) } }, size = 48.dp,
+                    compact = true,
+                )
+            }
         }
     }
 }
 
+/** How far the rows' layer reaches past them on each side: room for a row's swell and pull and its rim. */
+private val ROW_OVERHANG = 16.dp
+
 /** Keep the floating row inside the list while allowing card shadows to overhang sideways. */
 private object PickerViewport : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
-        val overhang = with(density) { 16.dp.toPx() }
+        val overhang = with(density) { ROW_OVERHANG.toPx() }
         return Outline.Rectangle(Rect(-overhang, 0f, size.width + overhang, size.height))
     }
 }

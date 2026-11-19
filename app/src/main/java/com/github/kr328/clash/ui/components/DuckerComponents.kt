@@ -34,6 +34,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.asPaddingValues
@@ -190,16 +191,34 @@ internal fun Modifier.airShadow(shape: Shape, fill: Color = MaterialTheme.colorS
 
 /** A field, a row or a backing of rows on a sheet: a control of glass on a glass sheet, otherwise Air's filled surface. */
 @Composable
-internal fun Modifier.sheetSurface(shape: Shape): Modifier {
+internal fun Modifier.sheetSurface(shape: Shape, press: GlassPress? = null): Modifier {
     val backdrop = LocalGlassBackdrop.current
     val scheme = MaterialTheme.colorScheme
     return when {
-        backdrop != null -> glass(backdrop, GlassMaterial.Control, shape).clip(shape)
+        backdrop != null -> glass(backdrop, GlassMaterial.Control, shape, press = press).clip(shape)
         LocalFrosted.current -> clip(shape)
             .background(scheme.surfaceVariant.copy(alpha = GlassMaterial.Control.tint))
             .border(1.dp, glassRim(scheme.background), shape)
         else -> airShadow(shape).clip(shape).background(scheme.surface)
     }
+}
+
+/**
+ * A [sheetSurface] that is a button itself (a source tile, a link row on a sheet): on the pane glass it swells under a
+ * finger as Home's buttons do, without a ripple; elsewhere the usual ripple.
+ */
+@Composable
+internal fun Modifier.sheetButton(shape: Shape, enabled: Boolean = true, onClick: () -> Unit): Modifier {
+    val press = rememberGlassPress()
+    return glassPress(press?.takeIf { enabled }, own = true)
+        .sheetSurface(shape, press)
+        .clickable(
+            interactionSource = null,
+            indication = if (press != null) null else LocalIndication.current,
+            enabled = enabled,
+            role = Role.Button,
+            onClick = onClick,
+        )
 }
 
 /**

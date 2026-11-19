@@ -1,7 +1,8 @@
 package com.github.kr328.clash.ui.subscriptions
 
-import com.github.kr328.clash.ui.components.sheetSurface
-import androidx.compose.ui.graphics.Color
+import com.github.kr328.clash.ui.components.sheetButton
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalContentColor
 import com.github.kr328.clash.ui.components.Symbols
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -266,16 +266,10 @@ internal fun SourceTile(
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(20.dp)
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.sheetSurface(shape),
-        shape = shape,
-        color = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-    ) {
+    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Column(
-            modifier = Modifier.padding(vertical = 16.dp, horizontal = TILE_PADDING).alpha(if (enabled) 1f else 0.5f),
+            modifier = modifier.sheetButton(shape, enabled, onClick)
+                .padding(vertical = 16.dp, horizontal = TILE_PADDING).alpha(if (enabled) 1f else 0.5f),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {

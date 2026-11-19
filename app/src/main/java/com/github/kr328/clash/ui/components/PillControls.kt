@@ -130,10 +130,13 @@ fun PillSegments(
         }
     }
     val presence = { if (bubble != null) lens.value else 0f }
+    // The pane glass: the whole control swells while a finger is on it, as the dock breathes under its lens.
+    val press = rememberGlassPress()
 
     Layout(
         modifier = modifier.fillMaxWidth()
             .height(52.dp)
+            .glassPress(press?.takeIf { enabled }, own = true, follow = false)
             // Dimmed together with its shadow, which would show through the faded surface.
             .graphicsLayer {
                 alpha = if (enabled) 1f else 0.5f
@@ -177,7 +180,7 @@ fun PillSegments(
                     }
                 else Modifier,
             )
-            .sheetSurface(CircleShape)
+            .sheetSurface(CircleShape, press)
             .padding(PILL_PAD)
             .then(if (bubble != null && enabled) Modifier.pillDrag(touch, { spans }, positionState, edge, motion, scope, selected, onSelect) else Modifier)
             // Пилюля рисуется, а не компонуется: едет каждый кадр, и перекладывать
@@ -209,6 +212,8 @@ fun PillSegments(
                         .clip(CircleShape)
                         .selectable(
                             selected = on,
+                            interactionSource = null,
+                            indication = if (press != null) null else LocalIndication.current,
                             enabled = enabled,
                             role = Role.RadioButton,
                             onClick = {

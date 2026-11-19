@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.sheetButton
 import com.github.kr328.clash.ui.components.DuckerSlider
 import com.github.kr328.clash.ui.components.sheetSurface
 import com.github.kr328.clash.ui.components.formatCount
@@ -8,7 +9,6 @@ import com.github.kr328.clash.ui.components.SecureWindow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.clickable
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -49,7 +49,6 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
@@ -258,8 +257,7 @@ private fun ReachLines(reach: SubscriptionReach) {
 private fun SheetLink(icon: ImageVector, text: String, enabled: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth()
-            .sheetSurface(RoundedCornerShape(20.dp))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .sheetButton(RoundedCornerShape(20.dp), enabled, onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

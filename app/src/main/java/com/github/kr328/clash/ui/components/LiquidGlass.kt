@@ -308,7 +308,10 @@ internal fun rememberPaneUnder(): (DrawScope.(position: Offset) -> Unit) {
         (MAX_BLUR.toPx() * (LocalGlassStyle.current.blur / 100f) + LocalGlassExtraBlur.current.toPx()).roundToInt()
     }
     val vibrancy = LocalGlassStyle.current.vibrancy
-    val veil = MaterialTheme.colorScheme.surface.copy(alpha = GlassMaterial.Surface.tint)
+    // As dense as the pane glass lays it ([PaneGlass.DENSER]), so what a lens or a floating search shows is the sheet as seen.
+    val veil = MaterialTheme.colorScheme.surface.copy(
+        alpha = GlassMaterial.Surface.tint * if (LocalGlassPanes.current) PaneGlass.DENSER else 1f,
+    )
     return remember(backdrop, blur, vibrancy, veil) {
         { position ->
             val picture = backdrop?.still?.pictures?.get(stillKey(blur, vibrancy))
@@ -458,16 +461,25 @@ internal fun Modifier.glassSource(backdrop: GlassBackdrop?): Modifier =
  * which read as frozen glass (the owner, 19.11). Its panes draw it live, as the list moves.
  */
 @Composable
-internal fun Modifier.glassSourceOver(backdrop: GlassBackdrop?, under: GlassBackdrop?): Modifier {
+internal fun Modifier.glassSourceOver(
+    backdrop: GlassBackdrop?,
+    under: GlassBackdrop?,
+    /**
+     * Drawn beneath the content instead of [under] as it is, at the content's place in the window: on a sheet the sheet
+     * as it looks ([rememberPaneUnder]), so a floating search shows the sheet and its rows, not the bare screen below.
+     */
+    beneath: (DrawScope.(position: Offset) -> Unit)? = null,
+): Modifier {
     if (backdrop == null || under == null) return glassSource(backdrop)
     val content = rememberGraphicsLayer()
 
-    return then(remember(backdrop, under, content) {
+    return then(remember(backdrop, under, content, beneath) {
         Modifier.onGloballyPositioned { backdrop.origin = it.positionInRoot() }
             .drawWithContent {
                 content.record { this@drawWithContent.drawContent() }
                 backdrop.layer.record {
-                    translate(under.origin.x - backdrop.origin.x, under.origin.y - backdrop.origin.y) { drawLayer(under.layer) }
+                    if (beneath != null) beneath(backdrop.origin)
+                    else translate(under.origin.x - backdrop.origin.x, under.origin.y - backdrop.origin.y) { drawLayer(under.layer) }
                     drawLayer(content)
                 }
                 // Not a read of this draw: it would invalidate itself and draw again forever.
@@ -1874,8 +1886,8 @@ internal fun rememberGlassPress(): GlassPress? {
  * [own] — the touch is this pane's own button's: a card ([own] false) does not swell for a touch a button inside it
  * took. Placed before the pane's [liquidGlass], whose glass then follows it.
  */
-internal fun Modifier.glassPress(press: GlassPress?, own: Boolean): Modifier =
-    if (press == null) this else pressTouch(press, own, PointerEventPass.Final).glassPressSwell(press)
+internal fun Modifier.glassPress(press: GlassPress?, own: Boolean, follow: Boolean = true): Modifier =
+    if (press == null) this else pressTouch(press, own, PointerEventPass.Final, follow).glassPressSwell(press)
 
 /**
  * A pane that is a button itself (a node's card, a group's header, a subscription's row): [glassPressSwell] before its
@@ -1886,8 +1898,12 @@ internal fun Modifier.glassPress(press: GlassPress?, own: Boolean): Modifier =
 internal fun Modifier.glassPressOwnTouch(press: GlassPress?): Modifier =
     if (press == null) this else pressTouch(press, own = false, PointerEventPass.Main)
 
-private fun Modifier.pressTouch(press: GlassPress, own: Boolean, pass: PointerEventPass): Modifier =
-    pointerInput(press, own, pass) {
+/**
+ * [follow] false: it stays swollen while the finger is down, whatever it does, and never takes the move — for a
+ * control that a finger drags itself (the segments' lens), as the dock breathes while its lens is dragged.
+ */
+private fun Modifier.pressTouch(press: GlassPress, own: Boolean, pass: PointerEventPass, follow: Boolean = true): Modifier =
+    pointerInput(press, own, pass, follow) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = pass)
             if (!own && down.isConsumed) return@awaitEachGesture
@@ -1900,6 +1916,7 @@ private fun Modifier.pressTouch(press: GlassPress, own: Boolean, pass: PointerEv
                     // The Main pass reaches it before the pager and the page's scroll above it, so a held pane keeps the move.
                     val change = awaitPointerEvent(PointerEventPass.Main).changes.firstOrNull { it.id == down.id } ?: break
                     if (!change.pressed) break
+                    if (!follow) continue
                     val way = change.position - down.position
                     if (!held) {
                         if (change.isConsumed) break
