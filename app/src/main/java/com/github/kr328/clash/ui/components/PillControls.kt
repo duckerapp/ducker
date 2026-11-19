@@ -390,12 +390,20 @@ private fun DrawScope.drawDockLens(
     under: DrawScope.() -> Unit,
 ) {
     val fade = (shown / 0.3f).coerceAtMost(1f)
-    val theme = if (dark) DockGlass.Look else DockGlass.LookLight
+    val theme = if (dark) SEGMENT_LOOK else SEGMENT_LOOK_LIGHT
     val look = if (fade >= 1f) theme else theme.run {
         copy(lighten = lighten * fade, shineDark = shineDark * fade, shineLight = shineLight * fade, ring = ring * fade, irisLight = irisLight * fade)
     }
     lens.draw(this, layer, center, halfWidth, halfHeight, kotlin.math.sqrt(shown), 0f, dark, look, under = under)
 }
+
+/**
+ * The dock's lens over segments, its mirror softer: along the top and bottom it mirrored the white of «Save»'s fill and
+ * the labels as a sharp edge, rough from afar (the owner, 19.11: «именно отражение резкое»). A wider band, so the mirror
+ * fades out over more of the rim, spread over more of r and laid at half the dock's 0.6.
+ */
+private val SEGMENT_LOOK = DockGlass.Look.copy(bandSide = 0.18f, mirrorSoft = 0.14f, mirrorMix = 0.3f)
+private val SEGMENT_LOOK_LIGHT = DockGlass.LookLight.copy(bandSide = 0.18f, mirrorSoft = 0.14f, mirrorMix = 0.3f)
 
 /** The middles of the segments at either end, the smaller first: in a right-to-left layout the first is on the right. */
 private fun endMiddles(spans: FloatArray): Pair<Float, Float> {
