@@ -244,11 +244,17 @@ internal object DockGlass {
      * comes to fills its edges thick («прям жирно становится внутри»; `ios-dock/ours-rim2.png`, now above, new below).
      * On a light screen the rim light 0.15, not 0.8 (a thick white ring), and soft colours along the rim's inside
      * (`irisLight`), as iOS's there (`ios-dock/light-rim.png`, before above); the dark screen's look unchanged.
+     * Softer at the rim (the owner, 19.11, F-556): the labels mirrored into the top and bottom read as sharp bright specks
+     * — the mirror's band 0.1 r, not 0.04, softened over a grid 0.07 r apart and laid at 0.6; along the ends the dock's
+     * edge, drawn in, read as a second, rainbow frame inside the lens's own — spread more along the rim (smear 1.2, not
+     * 0.6), its colours parting less (chroma 0.06, disperse 0.2); on a dark screen 3 % lighter, not 7 %: under a finger
+     * the lens read milky. Fitted on the numpy copy over a dock like today's (`glass-session8-20261119/lens/`).
      */
     val Look = LensLook.Switch.copy(
         drawFrom = -0.13f, zoomEdge = 0.12f, push = 1.2f, pushPower = 6f, pushBand = 0.45f, pushAlong = 1.1f, pushAcross = 0.7f,
         pushEndFrom = 0.1f, pushEndTo = 0.6f,
-        chroma = 0.08f, disperse = 0.35f, smear = 0.6f, ring = 0.15f, rimShade = 0f, shineDark = 0.35f, shineLight = 0.15f, shineEnds = 0.7f, irisDark = 0f, irisLight = 0.12f,
+        chroma = 0.06f, disperse = 0.2f, smear = 1.2f, bandSide = 0.1f, mirrorSoft = 0.07f, mirrorMix = 0.6f,
+        ring = 0.15f, rimShade = 0f, lighten = 0.03f, shineDark = 0.35f, shineLight = 0.15f, shineEnds = 0.7f, irisDark = 0f, irisLight = 0.12f,
         shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 
@@ -256,7 +262,8 @@ internal object DockGlass {
      * On a light screen the colours split half as much: the dark it draws in against the white pane split into a rainbow
      * all round, and the rim's colours at 0.3 were too much (the owner, 18.11: «радуга очень агрессивная … все в радуге»).
      */
-    val LookLight = Look.copy(chroma = 0.04f, disperse = 0.18f)
+    // Half the dark screen's colours, as before; its lightness as before too: there the lens is not milky.
+    val LookLight = Look.copy(chroma = 0.03f, disperse = 0.1f, lighten = LensLook.Switch.lighten)
 
     /** The share of the lens, shrinking, over which the veil takes over from its filling. */
     const val HANDOVER = 0.3f

@@ -909,6 +909,13 @@ internal data class LensLook(
     val bandEnd: Float,
     /** How far beyond the band the mirror looks. */
     val mirror: Float,
+    /**
+     * The mirror softened over this share of r ([mirrorSoft], 0 — one sharp look), its colours parted by this share of
+     * the rim's ([mirrorChroma]), and laid over the picture this strongly ([mirrorMix]).
+     */
+    val mirrorSoft: Float = 0f,
+    val mirrorChroma: Float = 0.15f,
+    val mirrorMix: Float = 1f,
     /** The thin dark line round the rim, its opacity. */
     val ring: Float,
     /** How much darker the glass gets towards its rim. */
@@ -975,6 +982,9 @@ private class Api33GlassLens : GlassLens {
             shader.setFloatUniform("bandSide", look.bandSide)
             shader.setFloatUniform("bandEnd", look.bandEnd)
             shader.setFloatUniform("mirrorReach", look.mirror)
+            shader.setFloatUniform("mirrorSoft", look.mirrorSoft)
+            shader.setFloatUniform("mirrorChroma", look.mirrorChroma)
+            shader.setFloatUniform("mirrorMix", look.mirrorMix)
             shader.setFloatUniform("ringAlpha", look.ring)
             shader.setFloatUniform("rimShade", look.rimShade)
             shader.setFloatUniform("lighten", look.lighten)
@@ -1431,6 +1441,9 @@ uniform float chromaAmount;
 uniform float bandSide;
 uniform float bandEnd;
 uniform float mirrorReach;
+uniform float mirrorSoft;
+uniform float mirrorChroma;
+uniform float mirrorMix;
 uniform float ringAlpha;
 uniform float rimShade;
 uniform float lighten;
@@ -1524,8 +1537,22 @@ half4 main(float2 coord) {
     float band = radius * (bandSide + (bandEnd - bandSide) * smoothstep(-0.3, 0.5, (abs(p.x) - (halfSize.x - radius)) / radius));
     float rim = 1.0 - clamp(depth / band, 0.0, 1.0);
     float2 shift = drawn - coord;
-    half4 mirror = split(coord, float2(shift.x + p.x * 0.3 * bend, -n.y * (mirrorReach * radius + band) * rim * bend), chroma * 0.15);
-    color = mix(color, mirror, rim);
+    float2 mirrored = float2(shift.x + p.x * 0.3 * bend, -n.y * (mirrorReach * radius + band) * rim * bend);
+    half4 mirror;
+    // Softened over a 3 × 3 grid [mirrorSoft] r apart: a single look squeezed the labels into sharp bright specks along
+    // the dock lens's top and bottom (the owner, 19.11: «резким»).
+    if (mirrorSoft > 0.0) {
+        mirror = half4(0.0);
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                mirror += split(coord, mirrored + float2(float(i), float(j)) * (mirrorSoft * radius), chroma * mirrorChroma);
+            }
+        }
+        mirror *= 1.0 / 9.0;
+    } else {
+        mirror = split(coord, mirrored, chroma * mirrorChroma);
+    }
+    color = mix(color, mirror, rim * mirrorMix);
 
     color.rgb = mix(color.rgb, half3(color.a), frost * 0.25);
 
