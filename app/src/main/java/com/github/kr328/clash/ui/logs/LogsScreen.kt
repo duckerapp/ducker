@@ -1,7 +1,10 @@
 package com.github.kr328.clash.ui.logs
 
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.github.kr328.clash.ui.components.PaneIconButton
+import com.github.kr328.clash.ui.components.glassPanesOn
+import com.github.kr328.clash.ui.components.rememberGlassPress
+import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.DuckerSwitch
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.Symbols
@@ -138,9 +141,10 @@ fun LogsScreen(
         Card(
             modifier = Modifier.fillMaxWidth(),
             surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).toggleable(
-                value = verbose, interactionSource = press, indication = LocalIndication.current,
+                value = verbose, interactionSource = press, indication = paneIndication(),
                 role = Role.Switch, onValueChange = onVerbose,
             ),
+            ownClick = true,
         ) {
             Row(
                 modifier = Modifier.padding(14.dp),
@@ -183,7 +187,8 @@ fun LogsScreen(
             }
         }
 
-        Card(Modifier.fillMaxSize()) {
+        // A press that no touch drives: the log's card never swells, a held finger would pull it against the scroll.
+        Card(Modifier.fillMaxSize(), press = rememberGlassPress()) {
             Box(Modifier.fillMaxSize()) {
                 // On a TV the lines take no focus, so the list takes the remote as a whole (stage 6): Up and Down
                 // scroll it by a third, Up at the top goes on to the buttons above, OK goes to the new lines — the
@@ -250,7 +255,12 @@ fun LogsScreen(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
                 ) {
                     // On a TV OK on the list does this; the frame stays on the list.
-                    FilledIconButton(
+                    // On the pane glass a round glass button, as the ones on the cards.
+                    if (glassPanesOn()) {
+                        PaneIconButton(onClick = { follow = true }) {
+                            Icon(Symbols.KeyboardArrowDown, contentDescription = stringResource(R.string.logs_follow))
+                        }
+                    } else FilledIconButton(
                         onClick = { follow = true },
                         modifier = if (tv) Modifier.focusProperties { canFocus = false } else Modifier,
                     ) {

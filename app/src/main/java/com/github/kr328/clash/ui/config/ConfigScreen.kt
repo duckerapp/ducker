@@ -1,5 +1,12 @@
 package com.github.kr328.clash.ui.config
 
+import com.github.kr328.clash.ui.components.paneIndication
+import com.github.kr328.clash.ui.components.rememberGlassPress
+import com.github.kr328.clash.ui.components.glassPress
+import com.github.kr328.clash.ui.components.glass
+import com.github.kr328.clash.ui.components.GlassMaterial
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.BackButton
 import com.github.kr328.clash.ui.components.sheetButton
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
@@ -91,6 +98,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
@@ -432,7 +440,7 @@ fun ConfigScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
-                                    HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack, Modifier.focusRequester(corner))
+                                    BackButton(onBack, Modifier.focusRequester(corner))
                                     Text(
                                         text = state.name.asName(),
                                         modifier = Modifier.widthIn(max = 160.dp),
@@ -477,10 +485,16 @@ fun ConfigScreen(
                 modifier = Modifier.weight(1f).fillMaxWidth()
                     .padding(start = 16.dp, end = 16.dp, top = if (compact) 8.dp else 12.dp, bottom = if (compact) 8.dp else if (bare) 16.dp else 0.dp)
                     // The editor resizes with the IME; keep its shadow on the platform outline.
-                    .then(airEdge()?.let { Modifier.border(it, MaterialTheme.shapes.large) }
-                        ?: Modifier.resizingShadow(MaterialTheme.shapes.large))
+                    .then(
+                        when {
+                            // The glass style: a pane over the picture, as the cards of the other screens.
+                            LocalGlassBackdrop.current != null -> Modifier.glass(LocalGlassBackdrop.current, GlassMaterial.Surface, MaterialTheme.shapes.large)
+                            else -> airEdge()?.let { Modifier.border(it, MaterialTheme.shapes.large) }
+                                ?: Modifier.resizingShadow(MaterialTheme.shapes.large)
+                        },
+                    )
                     .clip(MaterialTheme.shapes.large)
-                    .background(MaterialTheme.colorScheme.surface)
+                    .then(if (LocalGlassBackdrop.current != null) Modifier else Modifier.background(MaterialTheme.colorScheme.surface))
                     .then(
                         if (keys) {
                             // The frame keeps to the code's own bounds: the place Compose gives for the focused editor
@@ -749,7 +763,7 @@ private fun Header(kind: String, name: String, onBack: () -> Unit, onFull: () ->
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onBack, back)
+        BackButton(onBack, back)
 
         Column(Modifier.weight(1f).padding(start = 4.dp)) {
             Text(
@@ -791,10 +805,12 @@ private fun ActionBar(
     val words = labelWeights(labels, MaterialTheme.typography.labelLarge, 0.dp)
     val actions = listOf({ _: String -> onSaveAs() }, onSave)
 
+    val backdrop = LocalGlassBackdrop.current
     Surface(
-        modifier = Modifier.fillMaxWidth().padding(16.dp).airShadow(CircleShape),
+        modifier = Modifier.fillMaxWidth().padding(16.dp)
+            .then(if (backdrop != null) Modifier.glass(backdrop, GlassMaterial.Surface, CircleShape) else Modifier.airShadow(CircleShape)),
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surface,
+        color = if (backdrop != null) Color.Transparent else MaterialTheme.colorScheme.surface,
     ) {
         BoxWithConstraints(Modifier.padding(6.dp)) {
             // Свободное место — кнопкам поровну, а не по длине подписи: иначе у «Сохранить как»
@@ -828,14 +844,21 @@ private fun ActionBar(
 @Composable
 private fun SaveButton(label: String, main: Boolean, state: ConfigState, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val enabled = !state.busy && state.text != null
+    // The pane glass: «Сохранить как» a control of glass, «Сохранить» keeping its fill; both swell, no ripple.
+    val press = rememberGlassPress()
+    val glass = press != null && !main
 
     Box(
         modifier = modifier
+            .glassPress(press?.takeIf { enabled }, own = true)
             // Подложка — до обрезки, в слое панели: внутри слоя обрезки она иногда не
             // рисовалась, пока кнопку не нажмёшь, — белая «Сохранить» на белом пропадала.
-            .background(if (main) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+            .then(
+                if (glass) Modifier.glass(LocalGlassBackdrop.current, GlassMaterial.Control, CircleShape, press = press)
+                else Modifier.background(if (main) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+            )
             .clip(CircleShape)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, interactionSource = null, indication = paneIndication(), role = Role.Button, onClick = onClick)
             .alpha(if (enabled) 1f else 0.5f)
             .padding(horizontal = 14.dp),
         contentAlignment = Alignment.Center,
@@ -869,14 +892,20 @@ private fun SearchLines(side: Boolean, content: @Composable (Modifier) -> Unit) 
     }
 }
 
+/** A pane of the screen: glass over the picture in the glass style, Air's raised surface otherwise. */
+@Composable
+private fun Modifier.configPane(shape: Shape): Modifier {
+    val backdrop = LocalGlassBackdrop.current
+    return if (backdrop != null) glass(backdrop, GlassMaterial.Surface, shape).clip(shape)
+    else airShadow(shape).clip(shape).background(MaterialTheme.colorScheme.surface)
+}
+
 /** Hint text and icon on a softly raised surface. */
 @Composable
 private fun Hint(text: String) {
     Row(
         modifier = Modifier.fillMaxWidth()
-            .airShadow(MaterialTheme.shapes.large)
-            .clip(MaterialTheme.shapes.large)
-            .background(MaterialTheme.colorScheme.surface)
+            .configPane(MaterialTheme.shapes.large)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -890,8 +919,7 @@ private fun Hint(text: String) {
 @Composable
 private fun ToolGroup(content: @Composable RowScope.() -> Unit) {
     Row(
-        modifier = Modifier.airShadow(CircleShape).clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surface)
+        modifier = Modifier.configPane(CircleShape)
             .padding(2.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content,
@@ -906,11 +934,14 @@ private fun ToolButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    // The pane glass: the button swells under a finger, as the ones on the cards, without a ripple.
+    val press = rememberGlassPress()
     Box(
         // 40, а не 44: в полном экране в строку встают шесть кнопок и на узком телефоне.
         modifier = modifier.size(40.dp)
+            .glassPress(press?.takeIf { enabled }, own = true)
             .clip(CircleShape)
-            .clickable(enabled = enabled, role = Role.Button, onClickLabel = description, onClick = onClick),
+            .clickable(enabled = enabled, interactionSource = null, indication = paneIndication(), role = Role.Button, onClickLabel = description, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -925,12 +956,17 @@ private fun ToolButton(
 /** Пилюля-кнопка со словом — для замены в поиске. */
 @Composable
 private fun TextPill(text: String, enabled: Boolean, onClick: () -> Unit) {
+    // The pane glass: a control of glass that swells, as [Pill].
+    val press = rememberGlassPress()
     Box(
         modifier = Modifier.heightIn(min = 44.dp)
-            .airShadow(CircleShape)
-            .background(MaterialTheme.colorScheme.surface, CircleShape)
+            .glassPress(press?.takeIf { enabled }, own = true)
+            .then(
+                if (press != null) Modifier.glass(LocalGlassBackdrop.current, GlassMaterial.Control, CircleShape, press = press)
+                else Modifier.airShadow(CircleShape).background(MaterialTheme.colorScheme.surface, CircleShape),
+            )
             .clip(CircleShape)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, interactionSource = null, indication = paneIndication(), role = Role.Button, onClick = onClick)
             .alpha(if (enabled) 1f else 0.4f)
             .padding(horizontal = 14.dp),
         contentAlignment = Alignment.Center,
@@ -994,10 +1030,13 @@ private fun ResultContent(result: ConfigResult, onLine: (Int) -> Unit, onDismiss
     val line = (result as? ConfigResult.Invalid)?.line
     val color = if (ok) scheme.onSurface else scheme.error
 
+    val backdrop = LocalGlassBackdrop.current
     Surface(
-        modifier = Modifier.airShadow(MaterialTheme.shapes.large, if (ok) scheme.surface else scheme.errorContainer),
+        // The glass style: a pane tinted by its colour, as the error card on Subscriptions.
+        modifier = if (backdrop != null) Modifier.glass(backdrop, GlassMaterial.Surface, MaterialTheme.shapes.large, color = if (ok) scheme.surface else scheme.errorContainer)
+        else Modifier.airShadow(MaterialTheme.shapes.large, if (ok) scheme.surface else scheme.errorContainer),
         shape = MaterialTheme.shapes.large,
-        color = if (ok) scheme.surface else scheme.errorContainer,
+        color = if (backdrop != null) Color.Transparent else if (ok) scheme.surface else scheme.errorContainer,
         border = if (ok) null else BorderStroke(1.dp, scheme.error.copy(alpha = 0.4f)),
     ) {
         Row(
@@ -1162,10 +1201,7 @@ private fun SaveAsSheet(file: Boolean, onPick: (SaveAs) -> Unit, onClosed: () ->
 private fun SaveOption(icon: ImageVector, title: String, hint: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth()
-            .airShadow(RoundedCornerShape(20.dp))
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .clickable(role = Role.Button, onClick = onClick)
+            .sheetButton(RoundedCornerShape(20.dp), onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -1188,16 +1224,18 @@ private const val RESULT_MS = 4000L
 private fun editorColors(): EditorColorScheme {
     val scheme = MaterialTheme.colorScheme
     val dark = scheme.background.luminance() < 0.5f
+    // The glass style: the code over the pane's glass, which an opaque ground would cover.
+    val ground = if (LocalGlassBackdrop.current != null) Color.Transparent else scheme.surface
 
-    return remember(scheme, dark) {
+    return remember(scheme, dark, ground) {
         EditorColorScheme().apply {
             fun set(id: Int, color: Color) = setColor(id, color.toArgb())
 
-            set(EditorColorScheme.WHOLE_BACKGROUND, scheme.surface)
-            set(EditorColorScheme.LINE_NUMBER_BACKGROUND, scheme.surface)
+            set(EditorColorScheme.WHOLE_BACKGROUND, ground)
+            set(EditorColorScheme.LINE_NUMBER_BACKGROUND, ground)
             set(EditorColorScheme.LINE_NUMBER, scheme.onSurfaceVariant.copy(alpha = 0.6f))
             set(EditorColorScheme.LINE_NUMBER_CURRENT, scheme.onSurface)
-            set(EditorColorScheme.LINE_DIVIDER, scheme.surface)
+            set(EditorColorScheme.LINE_DIVIDER, ground)
             set(EditorColorScheme.CURRENT_LINE, scheme.onSurface.copy(alpha = 0.05f))
             set(EditorColorScheme.TEXT_NORMAL, scheme.onSurface)
             set(EditorColorScheme.SELECTED_TEXT_BACKGROUND, scheme.primary.copy(alpha = 0.25f))

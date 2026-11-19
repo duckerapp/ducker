@@ -752,6 +752,18 @@ fun HeaderButton(
     }
 }
 
+/** The back arrow of a header: on the pane glass a round glass button, as the ones on the cards; otherwise [HeaderButton]. */
+@Composable
+internal fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    if (glassPanesOn()) {
+        GlassCardButton(onClick = onClick, modifier = modifier.size(44.dp), padding = 0.dp) {
+            Icon(Symbols.ArrowBack, contentDescription = stringResource(R.string.back))
+        }
+    } else {
+        HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onClick, modifier)
+    }
+}
+
 /**
  * Шапка экрана, одна на всё приложение (D-92): стрелка назад у экранов поверх вкладок,
  * заголовок и действия справа теми же круглыми кнопками, что на главной. Раньше у каждого
@@ -774,18 +786,7 @@ fun ScreenHeader(
         contents = listOf(
             {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(HEADER_GAP)) {
-                    // On the pane glass the back arrow is a round glass button, as the ones on the cards.
-                    if (glassBack) {
-                        GlassCardButton(onClick = onBack, modifier = Modifier.size(44.dp), padding = 0.dp) {
-                            Icon(Symbols.ArrowBack, contentDescription = stringResource(R.string.back))
-                        }
-                    } else if (onBack != null) {
-                        HeaderButton(
-                            icon = Symbols.ArrowBack,
-                            description = stringResource(R.string.back),
-                            onClick = onBack,
-                        )
-                    }
+                    if (onBack != null) BackButton(onBack)
 
                     FitLabel(
                         text = title,

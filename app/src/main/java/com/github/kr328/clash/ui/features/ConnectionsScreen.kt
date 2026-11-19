@@ -36,6 +36,11 @@ import com.github.kr328.clash.R
 import com.github.kr328.clash.common.util.formatSpeed
 import com.github.kr328.clash.ui.apps.AppIcon
 import com.github.kr328.clash.ui.apps.CountBesidePills
+import com.github.kr328.clash.ui.components.GlassMaterial
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.glass
+import com.github.kr328.clash.ui.components.glassPanesOn
+import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.EmptyState
 import com.github.kr328.clash.ui.components.Pill
 import com.github.kr328.clash.ui.components.SearchField
@@ -96,7 +101,7 @@ fun ConnectionsScreen(
         }
 
         item {
-            SearchField(value = state.query, onValue = onSearch, hint = stringResource(R.string.connections_search))
+            SearchField(value = state.query, onValue = onSearch, hint = stringResource(R.string.connections_search), glass = LocalGlassBackdrop.current)
         }
 
         item {
@@ -172,7 +177,9 @@ private fun ConnectionCard(row: ConnectionRow, onClick: () -> Unit, modifier: Mo
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).clickable(role = Role.Button, onClick = onClick),
+        surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
+            .clickable(interactionSource = null, indication = paneIndication(), role = Role.Button, onClick = onClick),
+        ownClick = true,
     ) {
         Row(
             // The card stays, its content fades: a closed one keeps its place and its shadow among the open ones.
@@ -259,7 +266,11 @@ private fun AppMark(app: ConnectionApp) {
             modifier = Modifier.size(size).clip(RoundedCornerShape(10.dp)),
         )
         else -> Box(
-            modifier = Modifier.size(size).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
+            // On the pane glass a pane of the buttons' glass, as a rule's badge: a grey fill read as foreign there.
+            modifier = Modifier.size(size).then(
+                if (glassPanesOn()) Modifier.glass(LocalGlassBackdrop.current, GlassMaterial.Control, RoundedCornerShape(10.dp)).clip(RoundedCornerShape(10.dp))
+                else Modifier.clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
+            ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

@@ -1,7 +1,13 @@
 package com.github.kr328.clash.ui.features
 
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.GlassMaterial
+import com.github.kr328.clash.ui.components.glass
+import com.github.kr328.clash.ui.components.glassPress
+import com.github.kr328.clash.ui.components.glassPressOwnTouch
+import com.github.kr328.clash.ui.components.rememberGlassPress
+import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.DuckerSwitch
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
@@ -136,10 +142,11 @@ fun MobileScreen(
                     value = settings.on,
                     enabled = state.loaded,
                     interactionSource = press,
-                    indication = LocalIndication.current,
+                    indication = paneIndication(),
                     role = Role.Switch,
                     onValueChange = turn,
                 ),
+                ownClick = true,
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -198,10 +205,11 @@ fun MobileScreen(
                     value = settings.provider,
                     enabled = state.loaded,
                     interactionSource = press,
-                    indication = LocalIndication.current,
+                    indication = paneIndication(),
                     role = Role.Switch,
                     onValueChange = onProvider,
                 ),
+                ownClick = true,
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -282,7 +290,8 @@ fun MobileScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
-                    .clickable(enabled = enabled, role = Role.Button) { nodesOpen = true; nodesShown = true },
+                    .clickable(enabled = enabled, interactionSource = null, indication = paneIndication(), role = Role.Button) { nodesOpen = true; nodesShown = true },
+                ownClick = true,
             ) {
                 // The nodes' height above it, so the list and its button line up.
                 Row(
@@ -408,6 +417,9 @@ private fun NodeRow(
     val lift by animateFloatAsState(if (up) 1f else 0f, tween(LIFT_MS), label = "lift")
     val raised = lifted || reorder.settling == key || lift > 0f
 
+    // The pane glass: the row swells under a finger, let go at the lift, as a subscription's row.
+    val press = rememberGlassPress()
+
     Box(modifier.fillMaxWidth().zIndex(if (raised) 1f else 0f)) {
         Card(
             modifier = Modifier.fillMaxWidth().graphicsLayer {
@@ -415,7 +427,10 @@ private fun NodeRow(
                 scaleX = 1f + LIFT_SCALE * lift
                 scaleY = scaleX
             },
+            press = press,
             surfaceModifier = Modifier.semantics { customActions = moves }
+                // Outside the reordering, which takes the whole gesture once the row is lifted.
+                .glassPressOwnTouch(press)
                 .reorderable(reorder, key, scale = { 1f + LIFT_SCALE * lift }, onLift = onLift, onStep = onStep),
         ) {
             Row(
@@ -573,12 +588,18 @@ private fun NodeChoice(name: String, checked: Boolean, favorite: Boolean = false
     val shape = RoundedCornerShape(20.dp)
     val content = if (checked) scheme.onPrimary else scheme.onSurface
     val fill = if (checked) scheme.primary else scheme.surface
+    // On a glass sheet as Home's node sheet's rows: a control of glass, the ticked one keeping its fill; swelling.
+    val backdrop = LocalGlassBackdrop.current
+    val glass = backdrop != null && !checked
+    val press = rememberGlassPress()
 
     Row(
         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
-            .airShadow(shape, fill).clip(shape)
-            .background(fill)
-            .toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheck)
+            .glassPress(press, own = true)
+            .then(if (glass) Modifier.glass(backdrop, GlassMaterial.Control, shape, press = press) else Modifier.airShadow(shape, fill))
+            .clip(shape)
+            .then(if (glass) Modifier else Modifier.background(fill))
+            .toggleable(value = checked, interactionSource = null, indication = paneIndication(), role = Role.Checkbox, onValueChange = onCheck)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -1,5 +1,9 @@
 package com.github.kr328.clash.ui.apps
 
+import com.github.kr328.clash.ui.components.glassPressOwnTouch
+import com.github.kr328.clash.ui.components.rememberGlassPress
+import com.github.kr328.clash.ui.components.paneIndication
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.keepFocus
@@ -148,7 +152,7 @@ fun AppsScreen(
 
         if (choosing) {
             item {
-                SearchField(value = state.query, onValue = onQuery, hint = stringResource(R.string.apps_search), next = firstApp)
+                SearchField(value = state.query, onValue = onQuery, hint = stringResource(R.string.apps_search), next = firstApp, glass = LocalGlassBackdrop.current)
             }
 
             // The count and two pills on one line instead of a card with a switch and two text buttons
@@ -211,16 +215,20 @@ fun AppsScreen(
 
 @Composable
 private fun AppItem(app: AppRow, checked: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
-    Card(modifier.fillMaxWidth()) {
+    // The row's click fills the card: on the pane glass the card swells for it, no ripple.
+    val press = rememberGlassPress()
+    Card(modifier.fillMaxWidth(), press = press) {
         Row(
             modifier = Modifier.fillMaxWidth()
                 // The rows the config decided stand first; on a TV they take the remote too and do nothing on OK.
                 // Skipped, they made the remote search past them all: the frame stalled and leapt over them, and
                 // past a few dozen it never reached the list.
                 .toggleable(
-                    value = checked, enabled = keepFocus(!app.locked), role = Role.Checkbox,
+                    value = checked, interactionSource = null, indication = paneIndication(),
+                    enabled = keepFocus(!app.locked), role = Role.Checkbox,
                     onValueChange = { if (!app.locked) onToggle() },
                 )
+                .glassPressOwnTouch(press)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),

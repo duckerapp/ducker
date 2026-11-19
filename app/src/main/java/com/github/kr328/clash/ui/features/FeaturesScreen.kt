@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 import com.github.kr328.clash.service.model.ShareState
+import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.asName
@@ -111,7 +112,9 @@ private fun ToolIcon(icon: ImageVector) {
 private fun ToolRow(icon: ImageVector, title: String, hint: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).clickable(role = Role.Button, onClick = onClick),
+        surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
+            .clickable(interactionSource = null, indication = paneIndication(), role = Role.Button, onClick = onClick),
+        ownClick = true,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),

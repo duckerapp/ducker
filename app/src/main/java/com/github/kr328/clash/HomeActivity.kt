@@ -514,12 +514,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 var showLogs by rememberSaveable { mutableStateOf(false) }
                 val covered = showSettings || showProbe || showApps || showLogs || showRules || showConfig
                 // The glass style: one picture under all three tabs, still as they move over it, and under the screens
-                // made glass so far, Settings and My rules (D-540). Air has none.
+                // over them (D-540, F-557's second half); the bird's game keeps its own. Air has none.
                 val wallpaper = !tv && glassOn && settingsState.glassBackdrop != SettingsStore.BACKDROP_NONE
                 val wallpaperBackdrop = if (wallpaper) rememberGlassBackdrop(still = true) else null
                 // Over a glass screen the status bar keeps the picture's tone, as over the tabs.
-                val airCovered = showProbe || showApps || showLogs || showConfig ||
-                    (wallpaperBackdrop == null && (showSettings || showRules))
+                val airCovered = wallpaperBackdrop == null && (showProbe || showApps || showLogs || showConfig || showSettings || showRules)
                 SideEffect { overScreen.value = airCovered }
 
                 // Признаки «экран открыт» переживают выгрузку процесса, а данные экранов — нет.
@@ -1584,6 +1583,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showApps,
                         onBack = closeApps,
+                        backdrop = wallpaperBackdrop,
+                        backdropTone = backdropTop,
                     ) {
                         AppsScreen(
                             state = appsState,
@@ -1601,6 +1602,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showLogs,
                         onBack = closeLogs,
+                        backdrop = wallpaperBackdrop,
+                        backdropTone = backdropTop,
                         // On a TV the log takes the whole width: its lines wrap there, and in the readable
                         // width nearly every one did.
                         wide = tv,
@@ -1640,6 +1643,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showConfig,
                         onBack = { configViewModel.close() },
+                        backdrop = wallpaperBackdrop,
+                        backdropTone = backdropTop,
                         // Телефон боком — редактору вся ширина (D-145). A TV gives it the whole width too, in both
                         // views: its lines wrap there.
                         wide = lowWindow() || tv,
@@ -1690,6 +1695,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showProbe,
                         onBack = closeProbe,
+                        backdrop = wallpaperBackdrop,
+                        backdropTone = backdropTop,
                     ) {
                         ProbeScreen(
                             state = probeState,
@@ -1705,6 +1712,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showFeatures,
                         onBack = closeFeatures,
+                        backdrop = wallpaperBackdrop,
+                        backdropTone = backdropTop,
                         enabled = !showConnections && !showMobile && !showShare,
                     ) {
                         FeaturesScreen(
@@ -1729,6 +1738,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showConnections,
                         onBack = closeConnections,
+                        backdrop = wallpaperBackdrop,
+                        backdropTone = backdropTop,
                     ) {
                         ConnectionsScreen(
                             state = connectionsState,
@@ -1746,6 +1757,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showMobile,
                         onBack = closeMobile,
+                        backdrop = wallpaperBackdrop,
+                        backdropTone = backdropTop,
                     ) {
                         MobileScreen(
                             state = mobileState,
@@ -1763,6 +1776,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     BackLayer(
                         visible = showShare,
                         onBack = closeShare,
+                        backdrop = wallpaperBackdrop,
+                        backdropTone = backdropTop,
                     ) {
                         ShareScreen(
                             state = shareState,

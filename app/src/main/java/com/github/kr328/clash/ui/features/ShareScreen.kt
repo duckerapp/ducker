@@ -3,6 +3,7 @@ package com.github.kr328.clash.ui.features
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
+import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.DuckerSwitch
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -75,9 +76,10 @@ fun ShareScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).toggleable(
-                    value = state.on, enabled = usable, interactionSource = press, indication = LocalIndication.current,
+                    value = state.on, enabled = usable, interactionSource = press, indication = paneIndication(),
                     role = Role.Switch, onValueChange = onTurn,
                 ),
+                ownClick = true,
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
