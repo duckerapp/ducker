@@ -86,6 +86,8 @@ internal fun DuckerSwitch(
 private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, onDrag: ((Boolean) -> Unit)?, pressed: InteractionSource?, enabled: Boolean) {
     val scheme = MaterialTheme.colorScheme
     val dark = scheme.background.luminance() < 0.5f
+    val tuning = LocalGlassTuning.current
+    val look = tuning.lens(GlassTuningGroup.Switch, LensLook.Switch, !dark)
     val off = if (dark) Color(0xFF787880).copy(alpha = 0.36f) else Color(0xFF787878).copy(alpha = 0.2f)
     val on = chosenFill()
     // White when on; off, grey on the dark theme, where a dark thumb on the light track read as a black blot (the owner,
@@ -230,12 +232,12 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
                 // Stretched along its way by its speed, and further as it is pulled past an end.
                 val past = (maxOf(p - 1f, -p, 0f) / give).coerceAtMost(1f)
                 val stretch = (abs(position.velocity) * 0.012f).coerceAtMost(0.08f) + past * 0.08f
-                val swell = 1f + (SWITCH_LENS_SWELL - 1f) * s
+                val swell = 1f + ((tuning?.value(GlassTuningGroup.Switch, "swell", SWITCH_LENS_SWELL, !dark) ?: SWITCH_LENS_SWELL) - 1f) * s
                 val halfW = thumbW / 2f * swell * (1f + stretch)
                 val halfH = thumbH / 2f * swell * (1f - stretch * 0.5f)
                 val origin = Offset(at[0], at[1])
                 val trackSize = size
-                lens.draw(this, layer, center, halfW, halfH, s, frost.value, dark) {
+                lens.draw(this, layer, center, halfW, halfH, s, frost.value, dark, look) {
                     under(origin)
                     // The switch's size, not the lens layer's this scope has.
                     drawRoundRect(trackColor, Offset.Zero, trackSize, trackCorner)
@@ -336,12 +338,12 @@ private val THUMB_WIDTH = 40.dp
 // iOS's switch: the thumb 0.58 of the track wide (the owner's video, 18.11).
 private val SWITCH_THUMB_WIDTH = 37.dp
 // A little smaller than the video's 1.6×, against an iPhone in hand (the owner, 18.11).
-private const val SWITCH_LENS_SWELL = 1.5f
+internal const val SWITCH_LENS_SWELL = 1.5f
 private val THUMB_HEIGHT = 24.dp
 private val PAD = 2.dp
 // The lens grows, its picture barely: the thumb keeps room inside it (the owner, 18.11).
-private const val LENS_SWELL = 1.6f
-private const val LENS_ZOOM = 0.06f
+internal const val LENS_SWELL = 1.6f
+internal const val LENS_ZOOM = 0.06f
 private const val LENS_IN_MS = 120
 private const val LENS_OUT_MS = 220
 /** How far past an end the switch's thumb gives under a pulling finger: iOS's, about 8 dp in the owner's video. */
@@ -377,6 +379,9 @@ internal fun DuckerSlider(
     val scheme = MaterialTheme.colorScheme
     val glass = LocalGlassBackdrop.current != null || LocalFrosted.current
     val bubble = remember(glass) { if (glass) bubbleShader() else null }
+    val tuning = LocalGlassTuning.current
+    val light = scheme.background.luminance() >= 0.5f
+    fun sliderValue(key: String, fallback: Float) = tuning?.value(GlassTuningGroup.Slider, key, fallback, light) ?: fallback
     if (bubble == null) {
         val haptics = LocalHapticFeedback.current
         // Each step ticks here, as the glass slider's drag does: the screens ticked too, and on glass every step twice.
@@ -443,14 +448,14 @@ internal fun DuckerSlider(
                     val shadowDrop = 1.dp.toPx()
                     drawThumb(center, size.width / 2f, size.height / 2f, Color.White, shadowDrop)
                     // Over the white thumb, always, a lens of the dock's kind, swollen under a finger.
-                    val swell = 1f + (LENS_SWELL - 1f) * lens.value
+                    val swell = 1f + (sliderValue("swell", LENS_SWELL) - 1f) * lens.value
                     val halfW = size.width / 2f * swell
                     val halfH = size.height / 2f * swell
                     val origin = Offset(at[0], at[1])
                     val thick = SLIDER_TRACK.toPx()
                     val width = size.width
                     val height = size.height
-                    drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base, zoom = 1f + LENS_ZOOM * lens.value) {
+                    drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base, zoom = 1f + sliderValue("zoom", LENS_ZOOM) * lens.value, tuning = tuning) {
                         under(origin)
                         // At the thumb's middle: this scope is the lens layer's, taller, and the line slid below the
                         // lens, a gap in the scale under the held thumb (the owner, 18.11).

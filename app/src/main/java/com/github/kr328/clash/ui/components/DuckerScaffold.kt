@@ -408,6 +408,8 @@ private fun FloatingDock(
         else Rect(Offset(start, 0f), Size(extent, size.height))
     }
 
+    val tuning = LocalGlassTuning.current
+    CompositionLocalProvider(LocalGlassStyle provides tuning.optics(GlassTuningGroup.Dock, LocalGlassStyle.current)) {
     Surface(
         modifier = modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.widthIn(max = 420.dp)).airShadow(shape)
             .liquidGlass(
@@ -505,6 +507,7 @@ private fun FloatingDock(
 
             SingleFace(face, single, onSingle, vertical, shape, onPill)
         }
+    }
     }
 }
 

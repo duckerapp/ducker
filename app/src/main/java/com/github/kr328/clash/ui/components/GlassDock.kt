@@ -295,12 +295,15 @@ internal fun GlassDock(
     val screen = scheme.background
     val dark = screen.luminance() < 0.5f
     val appStyle = LocalGlassStyle.current
-    val style = remember(appStyle) {
-        appStyle.copy(
-            blur = DockGlass.BLUR, tint = DockGlass.TINT, refraction = DockGlass.REFRACTION, dispersion = DockGlass.DISPERSION,
-            depth = DockGlass.DEPTH, highlight = DockGlass.HIGHLIGHT, noise = DockGlass.NOISE, vibrancy = DockGlass.VIBRANCY,
-        )
-    }
+    val tuning = LocalGlassTuning.current
+    val style = tuning.optics(GlassTuningGroup.Dock, appStyle.dockDefaults())
+    fun body(key: String, fallback: Float, byTheme: Boolean = false) =
+        tuning?.value(GlassTuningGroup.Dock, key, fallback, byTheme && !dark) ?: fallback
+    fun veilValue(key: String, fallback: Float, byTheme: Boolean = false) =
+        tuning?.value(GlassTuningGroup.Veil, key, fallback, byTheme && !dark) ?: fallback
+    fun lensValue(key: String, fallback: Float) =
+        tuning?.value(GlassTuningGroup.DockLens, key, fallback, !dark) ?: fallback
+    val lensTheme = tuning.lens(GlassTuningGroup.DockLens, if (dark) DockGlass.Look else DockGlass.LookLight, !dark)
     val shape = RoundedCornerShape(percent = 50)
     val face = rememberDockFace(single, onAction, position, glass = true)
     val alone = single != null
@@ -383,7 +386,7 @@ internal fun GlassDock(
         ease.animateTo(to, tween(if (lifted) DockGlass.TINT_IN_MS else DockGlass.TINT_OUT_MS))
     }
 
-    fun zoom() = 1f + DockGlass.BREATH * breath.value
+    fun zoom() = 1f + body("breath", DockGlass.BREATH) * breath.value
 
     // The finger's way, rubber-banded to −1..1.
     fun pulledX() = pullX.value / (abs(pullX.value) + pullGiveXPx)
@@ -423,10 +426,10 @@ internal fun GlassDock(
         val s = held.value
         val st = stretch()
         // From the veil to the lens: the lens sized by the dock's height, [h] and its padding.
-        val lensHalfHeight = (h / 2f + padPx) * DockGlass.LENS_HEIGHT
+        val lensHalfHeight = (h / 2f + padPx) * lensValue("height", DockGlass.LENS_HEIGHT)
         val sw = swell.value
-        val halfWidth = lerp(slot(row) / 2f, lensHalfHeight * DockGlass.LENS_ASPECT * (1f + DockGlass.SWELL_WIDE * sw), s) * (1f + st)
-        val halfHeight = lerp(h / 2f, lensHalfHeight * (1f - DockGlass.SWELL_FLAT * sw), s) * (1f - DockGlass.SQUASH * st)
+        val halfWidth = lerp(slot(row) / 2f, lensHalfHeight * lensValue("aspect", DockGlass.LENS_ASPECT) * (1f + lensValue("swellWide", DockGlass.SWELL_WIDE) * sw), s) * (1f + st)
+        val halfHeight = lerp(h / 2f, lensHalfHeight * (1f - lensValue("swellFlat", DockGlass.SWELL_FLAT) * sw), s) * (1f - DockGlass.SQUASH * st)
         val c = middle(row)
         return Rect(c - halfWidth, h / 2f - halfHeight, c + halfWidth, h / 2f + halfHeight)
     }
@@ -460,11 +463,11 @@ internal fun GlassDock(
         with(density) { (maxOf(widest.toDp(), DockGlass.ICON) + DockGlass.TAB_GAP) * TABS + DOCK_PAD * 2 }
     }
     val paneTint = scheme.surface.copy(alpha = (GlassMaterial.Surface.tint * (style.tint / 50f).coerceIn(0f, 2f)).coerceIn(0f, 0.92f))
-    val veilShade = Color.Black.copy(alpha = if (dark) DockGlass.VEIL_SHADE_DARK else DockGlass.VEIL_SHADE_LIGHT)
+    val veilShade = Color.Black.copy(alpha = veilValue("shade", if (dark) DockGlass.VEIL_SHADE_DARK else DockGlass.VEIL_SHADE_LIGHT, byTheme = true))
 
     /** The pane's tint over [whole], the dock's size: eased under a finger, and a little more around the lens. */
     fun DrawScope.drawPaneTint(whole: Size) {
-        val base = paneTint.alpha * (1f - (if (dark) DockGlass.TINT_EASE else DockGlass.TINT_EASE_LIGHT) * ease.value)
+        val base = paneTint.alpha * (1f - body("tintEase", if (dark) DockGlass.TINT_EASE else DockGlass.TINT_EASE_LIGHT, byTheme = true) * ease.value)
         val s = held.value.coerceIn(0f, 1f)
         val corner = CornerRadius(whole.height / 2f)
         if (s < LENS_SHOWN) {
@@ -474,8 +477,8 @@ internal fun GlassDock(
         val pad = DOCK_PAD.toPx()
         val row = whole.width - 2 * pad
         val c = (pad + middle(row)) / whole.width
-        val reach = slot(row) * DockGlass.TINT_REACH / whole.width
-        val low = base * (1f - (if (dark) DockGlass.TINT_NEAR else DockGlass.TINT_NEAR_LIGHT) * s)
+        val reach = slot(row) * body("tintReach", DockGlass.TINT_REACH) / whole.width
+        val low = base * (1f - body("tintNear", if (dark) DockGlass.TINT_NEAR else DockGlass.TINT_NEAR_LIGHT, byTheme = true) * s)
         fun tint(alpha: Float) = paneTint.copy(alpha = alpha)
         val brush = Brush.horizontalGradient(
             0f to tint(base),
@@ -518,7 +521,7 @@ internal fun GlassDock(
                     // Its lightness and light line go with its last third too: whole to its last frame, they blinked
                     // out with it as the veil came back (the owner, 18.11: «мигание … при отпускании пальца»).
                     val fade = (s / 0.3f).coerceAtMost(1f)
-                    val theme = if (dark) DockGlass.Look else DockGlass.LookLight
+                    val theme = lensTheme
                     val look = if (fade >= 1f) theme else theme.run {
                         copy(
                             lighten = lighten * fade, shineDark = shineDark * fade, shineLight = shineLight * fade,
@@ -528,7 +531,7 @@ internal fun GlassDock(
                     lensLayer.alpha = 1f - handover()
                     lens.draw(
                         this, lensLayer, rect.center, rect.width / 2f, rect.height / 2f, lift, 0f, dark, look,
-                        drawFrom = DockGlass.Look.drawFrom - DockGlass.SWELL_ZOOM * swell.value,
+                        drawFrom = lensTheme.drawFrom - lensValue("swellZoom", DockGlass.SWELL_ZOOM) * swell.value,
                     ) {
                         drawRect(screen, Offset(-whole.width, -whole.height), Size(whole.width * 3, whole.height * 3))
                         // The screen as it lies under the grown dock: [dockAt] is its grown corner (see liquidGlass's zoom).
@@ -538,7 +541,7 @@ internal fun GlassDock(
                         // The dock itself under the lens, its pane and veil as they are: drawn in, its edges come in along an
                         // arc with the wallpaper beyond (the owner, 18.11). The sharp wallpaper alone, magnified, was a fish-eye.
                         drawLayer(dockLayer)
-                        val gathered = veilGathered() * DockGlass.VEIL_OPACITY
+                        val gathered = veilGathered() * veilValue("opacity", DockGlass.VEIL_OPACITY)
                         if (gathered > 0f) {
                             val all = Size(whole.width * 3, whole.height * 3)
                             val from = Offset(-whole.width, -whole.height)
@@ -586,7 +589,7 @@ internal fun GlassDock(
                                 layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(rect.left.roundToInt(), rect.top.roundToInt()) }
                             }
                             .graphicsLayer {
-                                alpha = veilShown() * DockGlass.VEIL_OPACITY
+                                alpha = veilShown() * veilValue("opacity", DockGlass.VEIL_OPACITY)
                                 // The capsule swells a little as «+ Добавить»'s drop lands, and settles back.
                                 val drop = face.splash.value
                                 if (drop > 0f && drop < 1f) {
@@ -609,7 +612,7 @@ internal fun GlassDock(
                                 base = screen,
                                 tint = paneTint,
                                 shape = shape,
-                                blurBoost = DockGlass.VEIL_BLUR,
+                                blurBoost = veilValue("blur", DockGlass.VEIL_BLUR.value).dp,
                                 bendBoost = 0f,
                                 rimBoost = 0f,
                                 veil = {

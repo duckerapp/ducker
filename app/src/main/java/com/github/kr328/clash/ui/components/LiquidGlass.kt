@@ -343,10 +343,11 @@ internal fun rememberPaneUnder(plain: Boolean = false): (DrawScope.(position: Of
 private fun stillLooks(extra: Dp, own: Boolean, dock: Boolean): List<Pair<Int, Int>> {
     val density = LocalDensity.current
     val style = LocalGlassStyle.current
-    return remember(style.blur, style.vibrancy, density, extra, own, dock) {
+    val pane = LocalGlassTuning.current.optics(GlassTuningGroup.Pane, style.asDock())
+    return remember(style.blur, style.vibrancy, pane.blur, pane.vibrancy, density, extra, own, dock) {
         with(density) {
             val looks = (if (own) listOf(style.blur to style.vibrancy) else emptyList()) +
-                if (dock) listOf(DockGlass.BLUR to DockGlass.VIBRANCY) else emptyList()
+                if (dock) listOf(pane.blur to pane.vibrancy) else emptyList()
             looks.flatMap { (b, v) ->
                 listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (b / 100f) + (it + extra).toPx()).roundToInt() to v }
             }.distinct()
@@ -558,6 +559,10 @@ internal fun Modifier.liquidGlass(
     if (backdrop == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || !style.enabled) return this
     val extra = LocalGlassExtraBlur.current
     val panes = !dockOptics
+    val tuning = LocalGlassTuning.current
+    val ownRim = if (tuning?.enabled == true) tuning.paneOwnRim else !PaneGlass.DOCK_RIM
+    val paneHighlight = tuning?.value(GlassTuningGroup.Pane, "highlight", DockGlass.HIGHLIGHT.toFloat())?.roundToInt() ?: DockGlass.HIGHLIGHT
+    fun paneValue(key: String, fallback: Float) = tuning?.value(GlassTuningGroup.Pane, key, fallback) ?: fallback
 
     val glass = rememberGraphicsLayer()
     // The pane glass's live picture is bent in a layer of its own, drawn whole: drawn straight under the pane's clip, its
@@ -570,7 +575,7 @@ internal fun Modifier.liquidGlass(
     val stillShader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
     val stillBrush = remember(stillShader) { ShaderBrush(stillShader) }
     // The pane glass draws its own light line, unless it takes the dock's rim ([PaneGlass.DOCK_RIM]).
-    val highlightShader = remember(panes) { if (panes && !PaneGlass.DOCK_RIM) null else RuntimeShader(HIGHLIGHT_SHADER) }
+    val highlightShader = remember(panes, ownRim) { if (panes && ownRim) null else RuntimeShader(HIGHLIGHT_SHADER) }
     val highlightBrush = remember(highlightShader) { highlightShader?.let(::ShaderBrush) }
     // The pane glass's veil, thinner over the rim so its roll and light line show through: a flat tint drawn by it, an
     // own [veil] masked by the second.
@@ -606,14 +611,14 @@ internal fun Modifier.liquidGlass(
         val bent = if (bendBoost != 1f) style.copy(dispersion = (style.dispersion * bendBoost).roundToInt()) else style
 
         if (panes) {
-            paneBend(shader, margin, size.width, size.height, radii, bent, bendBoost)
+            paneBend(shader, margin, size.width, size.height, radii, bent, bendBoost, ownRim, tuning)
             val bend = RenderEffect.createRuntimeShaderEffect(shader, "img")
             glass.renderEffect = (paneLift(blur, style.vibrancy)?.let { RenderEffect.createChainEffect(bend, it) } ?: bend)
                 .asComposeRenderEffect()
-            paneBend(stillShader, 0f, size.width, size.height, radii, bent, bendBoost)
-            veilShader?.let { paneVeil(it, size.width, size.height, radii) }
+            paneBend(stillShader, 0f, size.width, size.height, radii, bent, bendBoost, ownRim, tuning)
+            veilShader?.let { paneVeil(it, size.width, size.height, radii, tuning) }
             maskShader?.let {
-                paneVeil(it, size.width, size.height, radii)
+                paneVeil(it, size.width, size.height, radii, tuning)
                 it.setFloatUniform("color", 1f, 1f, 1f, 1f)
             }
         } else {
@@ -655,7 +660,7 @@ internal fun Modifier.liquidGlass(
             }
 
             // The pane glass: a faint dark line just outside the rim (iOS's, F-550).
-            if (panes) drawOutline(outline, Color.Black.copy(alpha = PaneGlass.RING), style = Stroke(PaneGlass.RING_WIDTH.toPx()))
+            if (panes) drawOutline(outline, Color.Black.copy(alpha = paneValue("ring", PaneGlass.RING)), style = Stroke(paneValue("ringWidth", PaneGlass.RING_WIDTH.value).dp.toPx()))
 
             clipPath(clip) {
                 drawRect(base)
@@ -674,7 +679,7 @@ internal fun Modifier.liquidGlass(
                 }
                 val tintProgress = (style.tint / 50f).coerceIn(0f, 2f)
                 // A press eases the tint, gentler than the dock's (F-550).
-                val clear = 1f - PaneGlass.PRESS_CLEAR * pressed
+                val clear = 1f - paneValue("pressClear", PaneGlass.PRESS_CLEAR) * pressed
                 if (veil != null) {
                     if (maskBrush != null) {
                         drawContext.canvas.saveLayer(paneBounds, androidx.compose.ui.graphics.Paint().apply { alpha = clear })
@@ -683,7 +688,7 @@ internal fun Modifier.liquidGlass(
                         drawContext.canvas.restore()
                     } else veil()
                 } else if (tintProgress > 0f && tint.alpha > 0f) {
-                    val a = (tint.alpha * tintProgress * (if (panes) PaneGlass.DENSER * clear else 1f)).coerceIn(0f, 0.92f)
+                    val a = (tint.alpha * tintProgress * (if (panes) paneValue("denser", PaneGlass.DENSER) * clear else 1f)).coerceIn(0f, 0.92f)
                     if (veilShader != null && veilBrush != null) {
                         // Premultiplied, as the shader's output is.
                         veilShader.setFloatUniform("color", tint.red * a, tint.green * a, tint.blue * a, a)
@@ -694,7 +699,7 @@ internal fun Modifier.liquidGlass(
 
             // Specular directional highlight; the pane glass draws its own light line, coloured by what lies under it, or
             // the dock's rim at the dock's strength.
-            val highlight = if (panes) DockGlass.HIGHLIGHT else style.highlight
+            val highlight = if (panes) paneHighlight else style.highlight
             if (highlightShader == null || highlightBrush == null) {
                 // The pane glass: drawn by its shader.
             } else if (highlight > 0) {
@@ -847,15 +852,15 @@ internal fun heroWaveEffect(shader: GlassWave, center: Offset, currentRadius: Fl
     shader.effect(center, currentRadius, waveWidth, strength, dispersion, highlight, alpha)
 
 internal interface GlassBubble {
-    fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, zoom: Float, base: Color, under: DrawScope.() -> Unit)
+    fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, zoom: Float, base: Color, tuning: GlassTuning?, under: DrawScope.() -> Unit)
 }
 
 @Keep
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private class Api33GlassBubble : GlassBubble {
     private val shader = RuntimeShader(BUBBLE_SHADER)
-    override fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, zoom: Float, base: Color, under: DrawScope.() -> Unit) {
-        scope.drawShaderBubble(layer, shader, center, halfWidth, halfHeight, presence, zoom, base, under)
+    override fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, zoom: Float, base: Color, tuning: GlassTuning?, under: DrawScope.() -> Unit) {
+        scope.drawShaderBubble(layer, shader, center, halfWidth, halfHeight, presence, zoom, base, tuning, under)
     }
 }
 
@@ -1020,9 +1025,10 @@ internal fun DrawScope.drawGlassBubble(
     base: Color,
     /** How much the middle is magnified: the dock's by default; a switch's lens over its thumb, little. */
     zoom: Float = 1f + BUBBLE_ZOOM * presence,
+    tuning: GlassTuning? = null,
     under: DrawScope.() -> Unit,
 ) =
-    shader.draw(this, layer, center, halfWidth, halfHeight, presence, zoom, base, under)
+    shader.draw(this, layer, center, halfWidth, halfHeight, presence, zoom, base, tuning, under)
 
 /**
  * A refractive liquid glass shockwave expanding from [center] with radius [currentRadius].
@@ -1066,6 +1072,7 @@ private fun DrawScope.drawShaderBubble(
     presence: Float,
     zoom: Float,
     base: Color,
+    tuning: GlassTuning?,
     under: DrawScope.() -> Unit,
 ) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
@@ -1073,15 +1080,17 @@ private fun DrawScope.drawShaderBubble(
     val margin = GLASS_MARGIN.toPx()
     val left = center.x - halfWidth - margin
     val top = center.y - halfHeight - margin
-    val bezel = minOf(BUBBLE_BEZEL.toPx(), halfHeight)
+    fun value(key: String, fallback: Float) =
+        tuning?.value(GlassTuningGroup.Slider, key, fallback, base.luminance() >= 0.5f) ?: fallback
+    val bezel = minOf(value("bezel", BUBBLE_BEZEL.value).dp.toPx(), halfHeight)
 
     shader.setFloatUniform("center", halfWidth + margin, halfHeight + margin)
     shader.setFloatUniform("halfSize", halfWidth, halfHeight)
     shader.setFloatUniform("radius", halfHeight)
     shader.setFloatUniform("zoom", zoom)
     shader.setFloatUniform("bezel", bezel)
-    shader.setFloatUniform("strength", 0.28f)
-    shader.setFloatUniform("spread", 0.12f)
+    shader.setFloatUniform("strength", value("strength", 0.28f))
+    shader.setFloatUniform("spread", value("spread", 0.12f))
 
     layer.renderEffect = RenderEffect.createRuntimeShaderEffect(shader, "img").asComposeRenderEffect()
     layer.alpha = presence
@@ -1099,7 +1108,10 @@ private fun DrawScope.drawShaderBubble(
     }
 
     clipPath(pill) { translate(left, top) { drawLayer(layer) } }
-    drawRoundRect(glassRim(base).let { it.copy(alpha = it.alpha * presence) }, topLeft, size, corner, style = Stroke(1.2.dp.toPx()))
+    drawRoundRect(
+        glassRim(base).let { it.copy(alpha = (it.alpha * presence * value("rim", 1f)).coerceIn(0f, 1f)) },
+        topLeft, size, corner, style = Stroke(value("rimWidth", 1.2f).dp.toPx()),
+    )
 }
 
 /** How dense the accent colour lies over glass: Home's card when on, and a selected card. */
@@ -1120,7 +1132,7 @@ internal fun glassRim(base: Color): Color =
 private val VEIL_BLUR = 10.dp
 /** How far below the status bar the veil over an own picture's top reaches: past the tabs' headers. */
 private val HEADER_VEIL = 120.dp
-private val BUBBLE_BEZEL = 14.dp
+internal val BUBBLE_BEZEL = 14.dp
 /** How much the bubble magnifies at its middle when fully grown. */
 private const val BUBBLE_ZOOM = 0.22f
 
@@ -1745,7 +1757,7 @@ internal fun GlassPanes(on: Boolean = true, content: @Composable () -> Unit) {
     if (!on) return content()
     CompositionLocalProvider(
         LocalGlassPanes provides true,
-        LocalGlassStyle provides LocalGlassStyle.current.asDock(),
+        LocalGlassStyle provides LocalGlassTuning.current.optics(GlassTuningGroup.Pane, LocalGlassStyle.current.asDock()),
         content = content,
     )
 }
@@ -1845,35 +1857,38 @@ internal object PaneGlass {
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun Density.paneBend(shader: RuntimeShader, margin: Float, width: Float, height: Float, cornerRadii: FloatArray, style: GlassStyle, boost: Float) {
+private fun Density.paneBend(shader: RuntimeShader, margin: Float, width: Float, height: Float, cornerRadii: FloatArray, style: GlassStyle, boost: Float, ownRim: Boolean, tuning: GlassTuning?) {
+    fun value(key: String, fallback: Float) = tuning?.value(GlassTuningGroup.Pane, key, fallback) ?: fallback
     shader.setFloatUniform("size", width, height)
     shader.setFloatUniform("offset", -margin, -margin)
     shader.setFloatUniform("shift", 0f, 0f)
     shader.setFloatUniform("cornerRadii", cornerRadii)
-    shader.setFloatUniform("band", PaneGlass.BAND.toPx())
-    shader.setFloatUniform("push", PaneGlass.PUSH.toPx() * (style.refraction / 50f) * boost)
-    shader.setFloatUniform("chroma", PaneGlass.CHROMA.toPx() * (style.dispersion / 40f))
-    shader.setFloatUniform("saturation", PaneGlass.SATURATION)
-    shader.setFloatUniform("vivid", PaneGlass.VIVID * (style.vibrancy / 40f))
-    shader.setFloatUniform("roll", PaneGlass.ROLL)
+    shader.setFloatUniform("band", value("band", PaneGlass.BAND.value).dp.toPx())
+    shader.setFloatUniform("push", value("push", PaneGlass.PUSH.value).dp.toPx() * (style.refraction / 50f) * boost)
+    shader.setFloatUniform("chroma", value("chroma", PaneGlass.CHROMA.value).dp.toPx() * (style.dispersion / 40f))
+    shader.setFloatUniform("saturation", value("saturation", PaneGlass.SATURATION))
+    shader.setFloatUniform("vivid", value("vivid", PaneGlass.VIVID) * (style.vibrancy / 40f))
+    shader.setFloatUniform("roll", value("roll", PaneGlass.ROLL))
     shader.setFloatUniform("zoom", 1f, 1f)
-    shader.setFloatUniform("line", if (PaneGlass.DOCK_RIM) 0f else PaneGlass.LINE * (style.highlight / 60f))
-    shader.setFloatUniform("lineWidth", PaneGlass.LINE_WIDTH.toPx())
-    shader.setFloatUniform("volume", PaneGlass.VOLUME * (style.depth / 30f))
+    shader.setFloatUniform("line", if (ownRim) value("line", PaneGlass.LINE) * (style.highlight / 60f) else 0f)
+    shader.setFloatUniform("lineWidth", value("lineWidth", PaneGlass.LINE_WIDTH.value).dp.toPx())
+    shader.setFloatUniform("volume", value("volume", PaneGlass.VOLUME) * (style.depth / 30f))
     shader.setFloatUniform("noiseStrength", style.noise / 100f * 0.05f)
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun Density.paneVeil(shader: RuntimeShader, width: Float, height: Float, cornerRadii: FloatArray) {
+private fun Density.paneVeil(shader: RuntimeShader, width: Float, height: Float, cornerRadii: FloatArray, tuning: GlassTuning?) {
     shader.setFloatUniform("size", width, height)
     shader.setFloatUniform("cornerRadii", cornerRadii)
-    shader.setFloatUniform("band", PaneGlass.BAND.toPx())
-    shader.setFloatUniform("spare", PaneGlass.SPARE)
+    val band = tuning?.value(GlassTuningGroup.Pane, "band", PaneGlass.BAND.value) ?: PaneGlass.BAND.value
+    val spare = tuning?.value(GlassTuningGroup.Pane, "spare", PaneGlass.SPARE) ?: PaneGlass.SPARE
+    shader.setFloatUniform("band", band.dp.toPx())
+    shader.setFloatUniform("spare", spare)
 }
 
 /** A finger on a pane of the pane glass: it swells, its tint eases, and, held, it follows the finger a little. */
 @Stable
-internal class GlassPress(private val scope: CoroutineScope) {
+internal class GlassPress(private val scope: CoroutineScope, val tuning: GlassTuning?) {
     /** 0 at rest, 1 pressed, below 0 for a moment as it springs back. */
     val amount = Animatable(0f)
     /** The tint's easing, 0…1, on a tween: the bouncing spring made it flicker. */
@@ -1915,7 +1930,8 @@ internal class GlassPress(private val scope: CoroutineScope) {
 internal fun rememberGlassPress(): GlassPress? {
     val on = glassPanesOn()
     val scope = rememberCoroutineScope()
-    return remember(on, scope) { if (on) GlassPress(scope) else null }
+    val tuning = LocalGlassTuning.current
+    return remember(on, scope, tuning) { if (on) GlassPress(scope, tuning) else null }
 }
 
 /**
@@ -1978,7 +1994,11 @@ private fun Modifier.pressTouch(press: GlassPress, own: Boolean, pass: PointerEv
 /** The swell and the pull of [press], placed before the pane's [liquidGlass], whose glass then follows it. */
 internal fun Modifier.glassPressSwell(press: GlassPress?): Modifier =
     if (press == null) this else graphicsLayer {
-        val grow = (PaneGlass.PRESS_GROW.toPx() / size.width.coerceAtLeast(1f)).coerceIn(PaneGlass.GROW_MIN, PaneGlass.GROW_MAX)
+        val tuning = press.tuning
+        val growDp = tuning?.value(GlassTuningGroup.Pane, "pressGrow", PaneGlass.PRESS_GROW.value) ?: PaneGlass.PRESS_GROW.value
+        val maxGrow = tuning?.value(GlassTuningGroup.Pane, "growMax", PaneGlass.GROW_MAX) ?: PaneGlass.GROW_MAX
+        val minGrow = tuning?.value(GlassTuningGroup.Pane, "growMin", PaneGlass.GROW_MIN) ?: PaneGlass.GROW_MIN
+        val grow = (growDp.dp.toPx() / size.width.coerceAtLeast(1f)).coerceIn(minOf(minGrow, maxGrow), maxGrow)
         val z = 1f + grow * press.amount.value
         val give = PaneGlass.PULL_GIVE.toPx()
         val x = press.pullX.value / (kotlin.math.abs(press.pullX.value) + give)

@@ -123,6 +123,7 @@ fun PillSegments(
     val glass = (LocalGlassBackdrop.current != null || LocalFrosted.current) && !tv
     // The dock's own lens (the owner, 19.11: as the config's bars); its size here stays the pills' own.
     val bubble = remember(glass) { if (glass) lensShader() else null }
+    val tuning = LocalGlassTuning.current
     val dark = scheme.background.luminance() < 0.5f
     val lens = remember { Animatable(0f) }
     // How far past the first or the last segment the finger is, pixels: the lens gives a little and stretches there.
@@ -178,15 +179,19 @@ fun PillSegments(
                         val speedShare = (dockHalfWidth / (width / 2f * (1f + LENS_WIDEN))).coerceAtMost(1f)
                         val stretch = ((abs(positionState.velocity) * width / 5000f).coerceAtMost(0.25f) * speedShare + PILL_EDGE_STRETCH * reach * reach * reach)
                             .coerceAtLeast(-0.15f)
+                        val group = GlassTuningGroup.Segments
+                        val widen = tuning?.value(group, "widen", LENS_WIDEN, !dark) ?: LENS_WIDEN
+                        val rise = tuning?.value(group, "rise", LENS_RISE.value, !dark) ?: LENS_RISE.value
                         val origin = Offset(at[0], at[1])
                         drawDockLens(
                             lens = bubble,
                             layer = bubbleLayer!!,
                             center = Offset(pad + left + width / 2f + bent, size.height / 2f),
-                            halfWidth = width / 2f * (1f + LENS_WIDEN * shown) * (1f + stretch),
-                            halfHeight = (size.height / 2f - pad + LENS_RISE.toPx() * shown) * (1f - 0.35f * stretch),
+                            halfWidth = width / 2f * (1f + widen * shown) * (1f + stretch),
+                            halfHeight = (size.height / 2f - pad + rise.dp.toPx() * shown) * (1f - 0.35f * stretch),
                             shown = shown,
                             dark = dark,
+                            theme = tuning.lens(group, if (dark) SEGMENT_LOOK else SEGMENT_LOOK_LIGHT, !dark),
                         ) {
                             under(origin)
                             drawLayer(segmentsLayer)
@@ -387,10 +392,10 @@ private fun DrawScope.drawDockLens(
     halfHeight: Float,
     shown: Float,
     dark: Boolean,
+    theme: LensLook,
     under: DrawScope.() -> Unit,
 ) {
     val fade = (shown / 0.3f).coerceAtMost(1f)
-    val theme = if (dark) SEGMENT_LOOK else SEGMENT_LOOK_LIGHT
     val look = if (fade >= 1f) theme else theme.run {
         copy(lighten = lighten * fade, shineDark = shineDark * fade, shineLight = shineLight * fade, ring = ring * fade, irisLight = irisLight * fade)
     }
@@ -402,8 +407,8 @@ private fun DrawScope.drawDockLens(
  * the labels as a sharp edge, rough from afar (the owner, 19.11: «именно отражение резкое»). A wider band, so the mirror
  * fades out over more of the rim, spread over more of r and laid at half the dock's 0.6.
  */
-private val SEGMENT_LOOK = DockGlass.Look.copy(bandSide = 0.18f, mirrorSoft = 0.14f, mirrorMix = 0.3f)
-private val SEGMENT_LOOK_LIGHT = DockGlass.LookLight.copy(bandSide = 0.18f, mirrorSoft = 0.14f, mirrorMix = 0.3f)
+internal val SEGMENT_LOOK = DockGlass.Look.copy(bandSide = 0.18f, mirrorSoft = 0.14f, mirrorMix = 0.3f)
+internal val SEGMENT_LOOK_LIGHT = DockGlass.LookLight.copy(bandSide = 0.18f, mirrorSoft = 0.14f, mirrorMix = 0.3f)
 
 /** The middles of the segments at either end, the smaller first: in a right-to-left layout the first is on the right. */
 private fun endMiddles(spans: FloatArray): Pair<Float, Float> {
@@ -433,8 +438,8 @@ private val FOLLOW_SPRING = spring<Float>(dampingRatio = 0.85f, stiffness = 1400
 private val PILL_PAD = 4.dp
 // How far the lens swells over the track, above and below, and how much wider than the pill: a little past the
 // track (the owner, 18.11), as the dock's.
-private val LENS_RISE = 10.dp
-private const val LENS_WIDEN = 0.12f
+internal val LENS_RISE = 10.dp
+internal const val LENS_WIDEN = 0.12f
 // How far the lens gives past the end segments, and how much it stretches there: the dock's.
 private val PILL_EDGE_GIVE = 8.dp
 private const val PILL_EDGE_STRETCH = 0.2f
@@ -573,6 +578,7 @@ internal fun GlassToolbar(items: List<ToolbarItem>, modifier: Modifier = Modifie
     var spans by remember { mutableStateOf(FloatArray(0)) }
     // The dock's own lens (the owner, 19.11: the segments' bubble here was «пустышка»), its look and its size.
     val lensGlass = remember { lensShader() }
+    val tuning = LocalGlassTuning.current
     val itemsLayer = rememberGraphicsLayer()
     val lensLayer = rememberGraphicsLayer()
     // Where the bar's corner lies in the window and how much its breath scales it: the lens draws the screen under it.
@@ -616,9 +622,11 @@ internal fun GlassToolbar(items: List<ToolbarItem>, modifier: Modifier = Modifie
                 val reach = (abs(over) / (width / 2f)).coerceAtMost(1f)
                 // As the dock's: from the segment to a capsule [DockGlass.LENS_HEIGHT] of the bar's height, the dock's
                 // aspect, and never narrower than a wide segment (the save bar's).
-                val lensHalfHeight = size.height / 2f * DockGlass.LENS_HEIGHT
-                val dockHalfWidth = lensHalfHeight * DockGlass.LENS_ASPECT
-                val wide = maxOf(width / 2f * (1f + LENS_WIDEN), dockHalfWidth)
+                val group = GlassTuningGroup.Toolbar
+                fun value(key: String, fallback: Float) = tuning?.value(group, key, fallback, !dark) ?: fallback
+                val lensHalfHeight = size.height / 2f * value("height", DockGlass.LENS_HEIGHT)
+                val dockHalfWidth = lensHalfHeight * value("aspect", DockGlass.LENS_ASPECT)
+                val wide = maxOf(width / 2f * (1f + value("widen", LENS_WIDEN)), dockHalfWidth)
                 // The stretch as many pixels as a dock-sized lens's: a share of a wide lens's width leapt ahead as the
                 // finger set off (the owner, 19.11: the save bar's lens jerked the way it was pulled).
                 val stretch = ((abs(position.velocity) * width / 5000f).coerceAtMost(0.25f) * dockHalfWidth / wide + PILL_EDGE_STRETCH * reach * reach * reach)
@@ -626,7 +634,7 @@ internal fun GlassToolbar(items: List<ToolbarItem>, modifier: Modifier = Modifie
                 val halfWidth = lerp(width / 2f, wide, s) * (1f + stretch)
                 val halfHeight = lerp(size.height / 2f - pad, lensHalfHeight, s) * (1f - 0.35f * stretch)
                 val whole = size
-                drawDockLens(lensGlass, lensLayer, Offset(pad + left + width / 2f + bent, size.height / 2f), halfWidth, halfHeight, s, dark) {
+                drawDockLens(lensGlass, lensLayer, Offset(pad + left + width / 2f + bent, size.height / 2f), halfWidth, halfHeight, s, dark, tuning.lens(group, if (dark) SEGMENT_LOOK else SEGMENT_LOOK_LIGHT, !dark)) {
                     drawRect(base, Offset(-whole.width, -whole.height), Size(whole.width * 3, whole.height * 3))
                     // The screen as it lies under the breathing bar: [at] is its grown corner.
                     scale(1f / at[2], 1f / at[3], pivot = Offset.Zero) {

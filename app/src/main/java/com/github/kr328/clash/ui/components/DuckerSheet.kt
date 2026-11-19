@@ -226,6 +226,14 @@ internal fun DuckerSheet(
     ) {
         // Окно — во весь экран и без своего: системное затемнение включается разом, а
         // выезд и затемнение здесь свои.
+        val tuning = LocalGlassTuning.current
+        val sheet = remember { Any() }
+        if (tuning != null && glassVisible) {
+            DisposableEffect(tuning, sheet) {
+                tuning.sheets.add(sheet)
+                onDispose { tuning.sheets.remove(sheet) }
+            }
+        }
         val window = (LocalView.current.parent as? DialogWindowProvider)?.window
         // Полосы системы — прозрачные, значки — как у приложения: окно диалога заливало их
         // своими цветами, сверху чёрным, снизу белым.
@@ -633,6 +641,9 @@ internal fun DuckerSheet(
                     }
                 }
             }
+        }
+        if (tuning != null && glassVisible && tuning.sheets.lastOrNull() === sheet) {
+            GlassTuningPanel(tuning)
         }
     }
 }

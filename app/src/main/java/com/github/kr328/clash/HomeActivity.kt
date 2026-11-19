@@ -24,6 +24,10 @@ import com.github.kr328.clash.ui.components.backdropTopDark
 import com.github.kr328.clash.ui.theme.LocalBackdropTone
 import androidx.compose.runtime.SideEffect
 import com.github.kr328.clash.ui.components.glassSupported
+import com.github.kr328.clash.ui.components.GLASS_TUNING_PACKAGE
+import com.github.kr328.clash.ui.components.GlassTuning
+import com.github.kr328.clash.ui.components.GlassTuningPanel
+import com.github.kr328.clash.ui.components.LocalGlassTuning
 import com.github.kr328.clash.ui.components.GlassStyle
 import com.github.kr328.clash.ui.components.Symbols
 import android.content.ClipData
@@ -456,6 +460,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 ),
                 statusBarDark = if (overScreen.value) null else backdropTop,
             ) {
+                val tuning = remember(tv) {
+                    if (!tv && glassSupported && packageName == GLASS_TUNING_PACKAGE) GlassTuning(applicationContext) else null
+                }
+                CompositionLocalProvider(LocalGlassTuning provides tuning) {
                 val pagerState = rememberPagerState { TABS }
                 val scope = rememberCoroutineScope()
                 val focusManager = LocalFocusManager.current
@@ -2111,6 +2119,13 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 }
 
                 if (tv) TvSplash(visible = splashing.value)
+                if (tuning != null && tuning.sheets.isEmpty()) {
+                    GlassTuningPanel(tuning) {
+                        val next = if (glassOn) SettingsStore.STYLE_AIR else SettingsStore.STYLE_GLASS
+                        settingsViewModel.setStyle(this@HomeActivity, next)
+                    }
+                }
+                }
             }
         }
 
