@@ -752,17 +752,22 @@ fun HeaderButton(
     }
 }
 
-/** The back arrow of a header: on the pane glass a round glass button, as the ones on the cards; otherwise [HeaderButton]. */
+/** A header's button on the pane glass: a round glass button, as the ones on the cards; otherwise [HeaderButton]. */
 @Composable
-internal fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun PaneHeaderButton(icon: ImageVector, description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     if (glassPanesOn()) {
         GlassCardButton(onClick = onClick, modifier = modifier.size(44.dp), padding = 0.dp) {
-            Icon(Symbols.ArrowBack, contentDescription = stringResource(R.string.back))
+            Icon(icon, contentDescription = description)
         }
     } else {
-        HeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onClick, modifier)
+        HeaderButton(icon, description, onClick, modifier)
     }
 }
+
+/** The back arrow of a header, see [PaneHeaderButton]. */
+@Composable
+internal fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) =
+    PaneHeaderButton(Symbols.ArrowBack, stringResource(R.string.back), onClick, modifier)
 
 /**
  * Шапка экрана, одна на всё приложение (D-92): стрелка назад у экранов поверх вкладок,

@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.config
 
+import com.github.kr328.clash.ui.components.GlassPress
 import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.rememberGlassPress
 import com.github.kr328.clash.ui.components.glassPress
@@ -44,7 +45,7 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.ViewConfiguration
 import androidx.compose.runtime.saveable.rememberSaveable
-import com.github.kr328.clash.ui.components.HeaderButton
+import com.github.kr328.clash.ui.components.PaneHeaderButton
 import com.github.kr328.clash.ui.settings.SettingsStore
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.Role
@@ -781,7 +782,7 @@ private fun Header(kind: String, name: String, onBack: () -> Unit, onFull: () ->
             )
         }
 
-        HeaderButton(Symbols.Fullscreen, stringResource(R.string.config_fullscreen), onFull)
+        PaneHeaderButton(Symbols.Fullscreen, stringResource(R.string.config_fullscreen), onFull)
     }
 }
 
@@ -894,9 +895,10 @@ private fun SearchLines(side: Boolean, content: @Composable (Modifier) -> Unit) 
 
 /** A pane of the screen: glass over the picture in the glass style, Air's raised surface otherwise. */
 @Composable
-private fun Modifier.configPane(shape: Shape): Modifier {
+private fun Modifier.configPane(shape: Shape, press: GlassPress? = null): Modifier {
     val backdrop = LocalGlassBackdrop.current
-    return if (backdrop != null) glass(backdrop, GlassMaterial.Surface, shape).clip(shape)
+    // [press]: a pane that is no button swells under any touch, as Home's cards do.
+    return if (backdrop != null) glassPress(press, own = false).glass(backdrop, GlassMaterial.Surface, shape, press = press).clip(shape)
     else airShadow(shape).clip(shape).background(MaterialTheme.colorScheme.surface)
 }
 
@@ -905,7 +907,7 @@ private fun Modifier.configPane(shape: Shape): Modifier {
 private fun Hint(text: String) {
     Row(
         modifier = Modifier.fillMaxWidth()
-            .configPane(MaterialTheme.shapes.large)
+            .configPane(MaterialTheme.shapes.large, rememberGlassPress())
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
