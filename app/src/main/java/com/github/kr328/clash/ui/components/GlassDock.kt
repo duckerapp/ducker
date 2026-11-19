@@ -563,6 +563,7 @@ internal fun GlassDock(
                         shape = shape,
                         zoom = ::dockScale,
                         veil = { drawPaneTint(size) },
+                        dockOptics = true,
                     ),
                 shape = shape,
                 color = Color.Transparent,
@@ -616,6 +617,7 @@ internal fun GlassDock(
                                     drawRect(veilShade)
                                 },
                                 zoom = ::dockScale,
+                                dockOptics = true,
                             ),
                     )
 

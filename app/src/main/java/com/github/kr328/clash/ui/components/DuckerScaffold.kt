@@ -410,7 +410,13 @@ private fun FloatingDock(
 
     Surface(
         modifier = modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.widthIn(max = 420.dp)).airShadow(shape)
-            .glass(backdrop, GlassMaterial.Surface, shape),
+            .liquidGlass(
+                backdrop,
+                base = screen,
+                tint = MaterialTheme.colorScheme.surface.let { it.copy(alpha = it.alpha * GlassMaterial.Surface.tint) },
+                shape = shape,
+                dockOptics = true,
+            ),
         shape = shape,
         color = if (backdrop != null) Color.Transparent else MaterialTheme.colorScheme.surface,
     ) {

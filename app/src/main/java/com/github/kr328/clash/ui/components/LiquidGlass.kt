@@ -549,13 +549,15 @@ internal fun Modifier.liquidGlass(
     zoom: (() -> ScaleFactor)? = null,
     /** The pane glass: a finger on it eases its tint, see [glassPress]. */
     press: GlassPress? = null,
+    /** The dock and side rail keep their own refraction and tint. */
+    dockOptics: Boolean = false,
     /** Its own veil instead of a flat [tint], drawn under the rim. */
     veil: (DrawScope.() -> Unit)? = null,
 ): Modifier {
     val style = LocalGlassStyle.current
     if (backdrop == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || !style.enabled) return this
     val extra = LocalGlassExtraBlur.current
-    val panes = LocalGlassPanes.current
+    val panes = !dockOptics
 
     val glass = rememberGraphicsLayer()
     // The pane glass's live picture is bent in a layer of its own, drawn whole: drawn straight under the pane's clip, its
@@ -1724,7 +1726,7 @@ internal fun Modifier.glass(
 /**
  * The pane glass, after iOS's Control Centre and then the dock (the owner, 18.11; F-550): the dock's dark glass whose
  * rim rolls lighter and draws in the colours around it softly, a faint light line along it and a faint dark one outside,
- * and a press that swells it like jelly and eases its tint. Home first; the other screens keep [GLASS_SHADER]'s glass.
+ * and a press that swells it like jelly and eases its tint. The dock keeps its own optics.
  */
 internal val LocalGlassPanes = staticCompositionLocalOf { false }
 
