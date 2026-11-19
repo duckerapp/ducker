@@ -96,6 +96,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -457,175 +458,178 @@ internal fun DuckerSheet(
                 .pointerInput(Unit) { detectTapGestures { close() } },
         )
 
-        Box(
-            // Панель — своё окно, и рамка выделения пультом (этап 6) у неё своя.
-            Modifier.fillMaxSize()
-                .then(if (tv) Modifier.okOnce().focusRing().ringHold(!open || !settled) else Modifier)
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .then(if (tv) Modifier.padding(top = TV_TOP) else Modifier)
-                .onSizeChanged { room = it.height.toFloat() },
-            contentAlignment = Alignment.BottomCenter,
-        ) {
-            Column(
-                modifier = Modifier.widthIn(max = ReadableWidth).fillMaxWidth()
-                    .then(
-                        if (heightFraction != null) Modifier.layout { measurable, constraints ->
-                            val fullWindow = constraints.maxHeight + status.getTop(this)
-                            val target = (fullWindow * heightFraction + if (tv) 0f else keyboard(ime)).roundToInt()
-                                .coerceIn(0, constraints.maxHeight)
-                            val placeable = measurable.measure(constraints.copy(minHeight = target, maxHeight = target))
-                            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-                        } else Modifier,
-                    )
-                    .onSizeChanged {
-                        height = it.height.toFloat()
-
-                        // Пока панель не упёрлась в верх, её высота — содержимое плюс клавиатура.
-                        val now = with(density) { keyboard(ime) }
-                        if (now == 0f || height < room) natural = height - now
-                    }
-                    .offset { IntOffset(0, (offset.coerceAtMost(height) + lag() - lift.value).roundToInt()) }
-                    // Уезжающая панель не нажимается ни пальцем, ни пультом (аудит 9в.11): за время
-                    // отъезда кнопка успевала сработать второй раз.
-                    .pointerInput(open) {
-                        if (!open) awaitPointerEventScope {
-                            while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
-                        }
-                    }
-                    .onPreviewKeyEvent { !open }
-                    .nestedScroll(connection)
-                    .draggable(
-                        state = rememberDraggableState { drag(it) },
-                        orientation = Orientation.Vertical,
-                        onDragStopped = { settle(it) },
-                    )
-                    // Its height animates: a platform outline shadow avoids rebuilding
-                    // a full-sheet blur mask for each new height.
-                    // On glass the shadow showed through the pane as a dark inner frame; the light rim marks the edge instead.
-                    .then(if (glass) Modifier else Modifier.shadow(8.dp, sheetShape, clip = false))
-                    .clip(sheetShape)
-                    .then(
-                        // A pane of glass over the screen as blurred as the screen around it, its rim catching light as
-                        // Home's cards do (the owner, 17.11).
-                        if (pane != null) Modifier.liquidGlass(
-                            pane,
-                            base = MaterialTheme.colorScheme.background,
-                            tint = MaterialTheme.colorScheme.surface.copy(alpha = GlassMaterial.Surface.tint),
-                            shape = sheetShape,
-                            blurBoost = SHEET_BLUR,
-                            // The light catches the top and fades down the sides: cut off at the screen's bottom edge
-                            // it read as a stray stripe (the owner, 18.11).
-                            rimFade = SHEET_RIM_FADE,
-                        )
-                        else if (glass) Modifier
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.85f), sheetShape)
-                            .drawWithContent {
-                                drawContent()
-                                // Light catches the glass's top edge and fades down its sides, as on the glass sheet.
-                                drawRoundRect(
-                                    rimFadeBrush(rim, SHEET_RIM_FADE.toPx(), 28.dp.toPx()),
-                                    size = Size(size.width, size.height + 28.dp.toPx()),
-                                    cornerRadius = CornerRadius(28.dp.toPx()),
-                                    style = Stroke(1.dp.toPx()),
-                                )
-                            }
-                        else Modifier.background(MaterialTheme.colorScheme.background, sheetShape),
-                    ),
+        // A glass sheet over the screen is a pane of the pane glass, and so is everything on it (F-552).
+        GlassPanes(on = pane != null) {
+            Box(
+                // Панель — своё окно, и рамка выделения пультом (этап 6) у неё своя.
+                Modifier.fillMaxSize()
+                    .then(if (tv) Modifier.okOnce().focusRing().ringHold(!open || !settled) else Modifier)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .then(if (tv) Modifier.padding(top = TV_TOP) else Modifier)
+                    .onSizeChanged { room = it.height.toFloat() },
+                contentAlignment = Alignment.BottomCenter,
             ) {
-                // Ручка — знак, что панель тянется. Пульту тянуть нечем: на телевизоре на её месте поле.
-                if (tv) {
-                    Spacer(Modifier.height(24.dp))
-                } else {
-                    Box(
-                        Modifier.align(Alignment.CenterHorizontally)
-                            .padding(vertical = 22.dp)
-                            .size(width = 32.dp, height = 4.dp)
-                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), CircleShape),
-                    )
-                }
+                Column(
+                    modifier = Modifier.widthIn(max = ReadableWidth).fillMaxWidth()
+                        .then(
+                            if (heightFraction != null) Modifier.layout { measurable, constraints ->
+                                val fullWindow = constraints.maxHeight + status.getTop(this)
+                                val target = (fullWindow * heightFraction + if (tv) 0f else keyboard(ime)).roundToInt()
+                                    .coerceIn(0, constraints.maxHeight)
+                                val placeable = measurable.measure(constraints.copy(minHeight = target, maxHeight = target))
+                                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                            } else Modifier,
+                        )
+                        .onSizeChanged {
+                            height = it.height.toFloat()
 
-                // Lookahead hands the height spring below the final height at once, so a block with its
-                // own size animation — the slider under “Свой” (D-311) — and the panel move together on
-                // the same spring. Chasing such a block frame by frame, the panel lagged behind it, and
-                // the rows under it jerked up and back.
-                SheetBody(tv) {
-                    Column(
-                        // Прокрутка — на случай низкого экрана с открытой клавиатурой.
-                        modifier = Modifier.fillMaxWidth()
-                            .then(
-                                if (tv) Modifier.focusProperties { if (start != null) onEnter = { start.requestFocus() } }.focusGroup()
-                                else Modifier,
+                            // Пока панель не упёрлась в верх, её высота — содержимое плюс клавиатура.
+                            val now = with(density) { keyboard(ime) }
+                            if (now == 0f || height < room) natural = height - now
+                        }
+                        .offset { IntOffset(0, (offset.coerceAtMost(height) + lag() - lift.value).roundToInt()) }
+                        // Уезжающая панель не нажимается ни пальцем, ни пультом (аудит 9в.11): за время
+                        // отъезда кнопка успевала сработать второй раз.
+                        .pointerInput(open) {
+                            if (!open) awaitPointerEventScope {
+                                while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                            }
+                        }
+                        .onPreviewKeyEvent { !open }
+                        .nestedScroll(connection)
+                        .draggable(
+                            state = rememberDraggableState { drag(it) },
+                            orientation = Orientation.Vertical,
+                            onDragStopped = { settle(it) },
+                        )
+                        // Its height animates: a platform outline shadow avoids rebuilding
+                        // a full-sheet blur mask for each new height.
+                        // On glass the shadow showed through the pane as a dark inner frame; the light rim marks the edge instead.
+                        .then(if (glass) Modifier else Modifier.shadow(8.dp, sheetShape, clip = false))
+                        .clip(sheetShape)
+                        .then(
+                            // A pane of glass over the screen as blurred as the screen around it, its rim catching light as
+                            // Home's cards do (the owner, 17.11).
+                            if (pane != null) Modifier.liquidGlass(
+                                pane,
+                                base = MaterialTheme.colorScheme.background,
+                                tint = MaterialTheme.colorScheme.surface.copy(alpha = GlassMaterial.Surface.tint),
+                                shape = sheetShape,
+                                blurBoost = SHEET_BLUR,
+                                // The light catches the top and fades down the sides: cut off at the screen's bottom edge
+                                // it read as a stray stripe (the owner, 18.11).
+                                rimFade = SHEET_RIM_FADE,
                             )
-                            .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                            .navigationBarsPadding()
-                            .then(if (tv) Modifier else Modifier.imePadding())
-                            // Высота меняется плавно: подсказка при загрузке, строка ошибки, лишняя
-                            // строка в поле — без этого панель прыгала вверх рывком (D-101). Стоит
-                            // внутри отступа клавиатуры: за клавиатурой панель и так едет кадр в кадр,
-                            // пружина там только отставала бы.
-                            // Held at the bottom while the height rides, like the sheet itself: the rows below
-                            // a change stay still, and only the sheet's top moves. Held at the top, the save
-                            // button hopped whenever the spring and a block's own animation drifted apart (D-314).
-                            .then(
-                                // A fixed-height body already follows the IME insets. A second size
-                                // spring makes its rows chase the sheet when the keyboard closes.
-                                if (heightFraction == null) Modifier.animateContentSize(
-                                    spring(stiffness = Spring.StiffnessMediumLow), alignment = Alignment.BottomStart,
-                                ) else Modifier,
-                            )
-                            // On a TV the sheet stands on the bottom edge as on the phone (D-380), and the safe area a TV
-                            // may cut from the frame is kept inside the scroll, as the phone keeps the navigation bar's:
-                            // scrolled, the rows run to the edge, and at the end the last one stands above the area.
-                            // Outside the scroll it cut the rows at an empty band.
-                            .padding(
-                                start = 20.dp, end = 20.dp,
-                                bottom = (if (compact) 12.dp else 20.dp) + if (tv) TV_TOP else 0.dp,
-                            ),
-                        verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 16.dp),
-                    ) {
-                        // Цвет текста — под фон панели: окно диалога берёт чёрный по умолчанию, и в
-                        // тёмной теме заголовок и строки-переходы пропадали на фоне.
-                        CompositionLocalProvider(
-                            LocalContentColor provides MaterialTheme.colorScheme.onBackground,
-                            LocalTvTyping provides typing,
-                            LocalGlassExtraBlur provides if (pane != null) SHEET_BLUR else 0.dp,
-                            LocalFrosted provides (glass && pane == null),
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                if (titleAction == null) {
-                                    Text(
-                                        text = title,
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Bold,
+                            else if (glass) Modifier
+                                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.85f), sheetShape)
+                                .drawWithContent {
+                                    drawContent()
+                                    // Light catches the glass's top edge and fades down its sides, as on the glass sheet.
+                                    drawRoundRect(
+                                        rimFadeBrush(rim, SHEET_RIM_FADE.toPx(), 28.dp.toPx()),
+                                        size = Size(size.width, size.height + 28.dp.toPx()),
+                                        cornerRadius = CornerRadius(28.dp.toPx()),
+                                        style = Stroke(1.dp.toPx()),
                                     )
-                                } else {
-                                    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                }
+                            else Modifier.background(MaterialTheme.colorScheme.background, sheetShape),
+                        ),
+                ) {
+                    // Ручка — знак, что панель тянется. Пульту тянуть нечем: на телевизоре на её месте поле.
+                    if (tv) {
+                        Spacer(Modifier.height(24.dp))
+                    } else {
+                        Box(
+                            Modifier.align(Alignment.CenterHorizontally)
+                                .padding(vertical = 22.dp)
+                                .size(width = 32.dp, height = 4.dp)
+                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), CircleShape),
+                        )
+                    }
+
+                    // Lookahead hands the height spring below the final height at once, so a block with its
+                    // own size animation — the slider under “Свой” (D-311) — and the panel move together on
+                    // the same spring. Chasing such a block frame by frame, the panel lagged behind it, and
+                    // the rows under it jerked up and back.
+                    SheetBody(tv) {
+                        Column(
+                            // Прокрутка — на случай низкого экрана с открытой клавиатурой.
+                            modifier = Modifier.fillMaxWidth()
+                                .then(
+                                    if (tv) Modifier.focusProperties { if (start != null) onEnter = { start.requestFocus() } }.focusGroup()
+                                    else Modifier,
+                                )
+                                .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+                                .navigationBarsPadding()
+                                .then(if (tv) Modifier else Modifier.imePadding())
+                                // Высота меняется плавно: подсказка при загрузке, строка ошибки, лишняя
+                                // строка в поле — без этого панель прыгала вверх рывком (D-101). Стоит
+                                // внутри отступа клавиатуры: за клавиатурой панель и так едет кадр в кадр,
+                                // пружина там только отставала бы.
+                                // Held at the bottom while the height rides, like the sheet itself: the rows below
+                                // a change stay still, and only the sheet's top moves. Held at the top, the save
+                                // button hopped whenever the spring and a block's own animation drifted apart (D-314).
+                                .then(
+                                    // A fixed-height body already follows the IME insets. A second size
+                                    // spring makes its rows chase the sheet when the keyboard closes.
+                                    if (heightFraction == null) Modifier.animateContentSize(
+                                        spring(stiffness = Spring.StiffnessMediumLow), alignment = Alignment.BottomStart,
+                                    ) else Modifier,
+                                )
+                                // On a TV the sheet stands on the bottom edge as on the phone (D-380), and the safe area a TV
+                                // may cut from the frame is kept inside the scroll, as the phone keeps the navigation bar's:
+                                // scrolled, the rows run to the edge, and at the end the last one stands above the area.
+                                // Outside the scroll it cut the rows at an empty band.
+                                .padding(
+                                    start = 20.dp, end = 20.dp,
+                                    bottom = (if (compact) 12.dp else 20.dp) + if (tv) TV_TOP else 0.dp,
+                                ),
+                            verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 16.dp),
+                        ) {
+                            // Цвет текста — под фон панели: окно диалога берёт чёрный по умолчанию, и в
+                            // тёмной теме заголовок и строки-переходы пропадали на фоне.
+                            CompositionLocalProvider(
+                                LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+                                LocalTvTyping provides typing,
+                                LocalGlassExtraBlur provides if (pane != null) SHEET_BLUR else 0.dp,
+                                LocalFrosted provides (glass && pane == null),
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    if (titleAction == null) {
                                         Text(
                                             text = title,
-                                            modifier = Modifier.weight(1f),
                                             style = MaterialTheme.typography.headlineSmall,
                                             fontWeight = FontWeight.Bold,
                                         )
-                                        Box(
-                                            Modifier.height(with(density) { MaterialTheme.typography.headlineSmall.lineHeight.toDp() }),
-                                            contentAlignment = Alignment.Center,
-                                        ) { titleAction() }
+                                    } else {
+                                        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text(
+                                                text = title,
+                                                modifier = Modifier.weight(1f),
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                fontWeight = FontWeight.Bold,
+                                            )
+                                            Box(
+                                                Modifier.height(with(density) { MaterialTheme.typography.headlineSmall.lineHeight.toDp() }),
+                                                contentAlignment = Alignment.Center,
+                                            ) { titleAction() }
+                                        }
+                                    }
+
+                                    if (hint != null) {
+                                        Text(
+                                            text = hint,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
                                     }
                                 }
 
-                                if (hint != null) {
-                                    Text(
-                                        text = hint,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
+                                // A sheet opened from a tab would hand its cards the tab's backdrop, which lies under the
+                                // sheet: inside it everything is Air, unless the sheet is itself glass over the screen, whose
+                                // controls are then glass over the same screen.
+                                CompositionLocalProvider(LocalGlassBackdrop provides pane) { content() }
                             }
-
-                            // A sheet opened from a tab would hand its cards the tab's backdrop, which lies under the
-                            // sheet: inside it everything is Air, unless the sheet is itself glass over the screen, whose
-                            // controls are then glass over the same screen.
-                            CompositionLocalProvider(LocalGlassBackdrop provides pane) { content() }
                         }
                     }
                 }
@@ -847,6 +851,8 @@ internal fun SheetButton(
     val back by animateColorAsState(if (filling) scheme.surface else container, tween(FILL_FADE_MS), label = "sheetButtonBack")
     val front by animateColorAsState(if (filling) container else content, tween(FILL_FADE_MS), label = "sheetButtonFront")
     val edge = airEdge(if (filling) scheme.surface else container)
+    // The pane glass: a glass button swells under a finger as Home's do, without a ripple.
+    val press = if (pane != null || (redGlass && backdrop != null)) rememberGlassPress() else null
 
     Box(
         modifier = modifier.fillMaxWidth()
@@ -857,12 +863,13 @@ internal fun SheetButton(
                 alpha = if (enabled || busy) 1f else 0.4f
                 outsets = DuckerShadowOutsets
             }
+            .glassPress(press?.takeIf { enabled && !busy }, own = true)
             .then(if (edge == null && pane == null && !redGlass) Modifier.cardShadow(CircleShape) else Modifier)
             .clip(CircleShape)
             .then(
                 when {
-                    pane != null -> Modifier.glass(pane, GlassMaterial.Control, CircleShape)
-                    redGlass && backdrop != null -> Modifier.glass(backdrop, GlassMaterial.Control, CircleShape, color = red)
+                    pane != null -> Modifier.glass(pane, GlassMaterial.Control, CircleShape, press = press)
+                    redGlass && backdrop != null -> Modifier.glass(backdrop, GlassMaterial.Control, CircleShape, color = red, press = press)
                     redGlass -> Modifier.background(red.copy(alpha = red.alpha * GlassMaterial.Control.tint))
                         .border(1.dp, glassRim(scheme.background), CircleShape)
                     else -> Modifier.background(back)
@@ -874,7 +881,11 @@ internal fun SheetButton(
                         .semantics { progressBarRangeInfo = ProgressBarRangeInfo(filled, 0f..1f) }
                 } else Modifier
             )
-            .clickable(enabled = enabled && !busy, role = Role.Button, onClick = onClick),
+            .clickable(
+                interactionSource = null,
+                indication = if (press != null) null else LocalIndication.current,
+                enabled = enabled && !busy, role = Role.Button, onClick = onClick,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         SheetButtonLabel(text, busyText, busy, ring = !filling, color = front, icon = icon)

@@ -1055,10 +1055,15 @@ private fun ProfileMenu(
                 if (action == MenuAction.Delete) {
                     MenuLine(icon, stringResource(label), MaterialTheme.colorScheme.error) { onAction(action) }
                 } else {
-                    Card(Modifier.fillMaxWidth()) {
-                        MenuLine(icon, stringResource(label), detail = template.takeIf { action == MenuAction.Template }) {
-                            onAction(action)
-                        }
+                    // The line is the card's own click: on the pane glass the card swells under a finger.
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).clickable(
+                            interactionSource = null, indication = paneIndication(), role = Role.Button, onClick = { onAction(action) },
+                        ),
+                        ownClick = true,
+                    ) {
+                        MenuLine(icon, stringResource(label), detail = template.takeIf { action == MenuAction.Template }, onClick = null)
                     }
                 }
             }
@@ -1073,13 +1078,13 @@ private fun MenuLine(
     color: Color = LocalContentColor.current,
     /** A second line: what the action is set to. */
     detail: String? = null,
-    onClick: () -> Unit,
+    /** Null: the card around it takes the click. */
+    onClick: (() -> Unit)?,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth()
             .heightIn(min = 56.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(role = Role.Button, onClick = onClick)
+            .then(if (onClick != null) Modifier.clip(MaterialTheme.shapes.medium).clickable(role = Role.Button, onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),

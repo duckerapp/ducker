@@ -326,15 +326,18 @@ internal fun rememberPaneUnder(): (DrawScope.(position: Offset) -> Unit) {
     }
 }
 
-/** Every blur (pixels) and colour lift a pane on this backdrop asks for: the panes, the controls on them, the power button. */
+/**
+ * Every blur (pixels) and colour lift a pane on this backdrop asks for: the panes, the controls on them, the power button;
+ * in Appearance's look ([own]) and in the dock's, which the pane glass takes ([dock], F-550, [asDock]).
+ */
 @Composable
-private fun stillLooks(extra: Dp, dock: Boolean): List<Pair<Int, Int>> {
+private fun stillLooks(extra: Dp, own: Boolean, dock: Boolean): List<Pair<Int, Int>> {
     val density = LocalDensity.current
     val style = LocalGlassStyle.current
-    return remember(style.blur, style.vibrancy, density, extra, dock) {
+    return remember(style.blur, style.vibrancy, density, extra, own, dock) {
         with(density) {
-            // Also the dock's look, which Home's pane glass takes too (F-550, [asDock]).
-            val looks = listOf(style.blur to style.vibrancy) + if (dock) listOf(DockGlass.BLUR to DockGlass.VIBRANCY) else emptyList()
+            val looks = (if (own) listOf(style.blur to style.vibrancy) else emptyList()) +
+                if (dock) listOf(DockGlass.BLUR to DockGlass.VIBRANCY) else emptyList()
             looks.flatMap { (b, v) ->
                 listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (b / 100f) + (it + extra).toPx()).roundToInt() to v }
             }.distinct()
@@ -354,7 +357,7 @@ internal fun StillBackdropPictures(backdrop: GlassBackdrop) {
 
     val graphics = LocalGraphicsContext.current
     val density = LocalDensity.current
-    val looks = stillLooks(0.dp, dock = true)
+    val looks = stillLooks(0.dp, own = true, dock = true)
 
     LaunchedEffect(backdrop, looks) {
         backdrop.still = null
@@ -383,7 +386,8 @@ internal fun SheetStillPictures(backdrop: GlassBackdrop, sheets: SheetGlass, ext
 
     val graphics = LocalGraphicsContext.current
     val density = LocalDensity.current
-    val looks = stillLooks(extra, dock = false)
+    // A glass sheet and its panes are in the pane glass (F-552): the dock's look alone.
+    val looks = stillLooks(extra, own = false, dock = true)
 
     LaunchedEffect(backdrop, sheets, looks) {
         backdrop.still = null
@@ -1683,15 +1687,18 @@ internal val LocalGlassPanes = staticCompositionLocalOf { false }
 internal fun GlassStyle.asDock(): GlassStyle = copy(blur = DockGlass.BLUR, tint = DockGlass.TINT, vibrancy = DockGlass.VIBRANCY)
 
 /**
- * The pane glass over [content]: Home's cards, and Proxies' and Subscriptions' lists, in one place so the tabs stay alike.
- * Their sheets are composed outside it and keep the old glass for now.
+ * The pane glass over [content] — Home's cards, Proxies' and Subscriptions' lists, a glass sheet and all on it — in one
+ * place so they stay alike. [on] false: the content as it is (a frosted sheet, Air).
  */
 @Composable
-internal fun GlassPanes(content: @Composable () -> Unit) = CompositionLocalProvider(
-    LocalGlassPanes provides true,
-    LocalGlassStyle provides LocalGlassStyle.current.asDock(),
-    content = content,
-)
+internal fun GlassPanes(on: Boolean = true, content: @Composable () -> Unit) {
+    if (!on) return content()
+    CompositionLocalProvider(
+        LocalGlassPanes provides true,
+        LocalGlassStyle provides LocalGlassStyle.current.asDock(),
+        content = content,
+    )
+}
 
 /** The pane glass is drawn here: its panes answer a press by swelling ([glassPress]), not with a ripple. */
 @Composable

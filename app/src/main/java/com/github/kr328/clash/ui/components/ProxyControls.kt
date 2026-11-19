@@ -63,13 +63,15 @@ internal fun ProxyCheckButton(
     val fill = MaterialTheme.colorScheme.surfaceContainer
     val container = if (backdrop != null) Color.Transparent else fill
     // The pane glass: the round check swells under a finger as Home's buttons do.
-    val swell = if (compact) null else rememberGlassPress()
+    val swell = rememberGlassPress()
     val press = if (compact) {
-        Modifier.clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = ripple(bounded = false, radius = 24.dp),
-            enabled = keepFocus(active), role = Role.Button, onClickLabel = label,
-        ) { if (active) onClick() }
+        Modifier
+            .glassPress(swell?.takeIf { active }, own = true)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = if (swell != null) null else ripple(bounded = false, radius = 24.dp),
+                enabled = keepFocus(active), role = Role.Button, onClickLabel = label,
+            ) { if (active) onClick() }
     } else {
         Modifier
             .glassPress(swell?.takeIf { active }, own = true)
@@ -107,7 +109,7 @@ internal fun ProxyCheckButton(
             Box(
                 Modifier.size(44.dp)
                     .then(
-                        if (backdrop != null) Modifier.glass(backdrop, GlassMaterial.Control, CircleShape)
+                        if (backdrop != null) Modifier.glass(backdrop, GlassMaterial.Control, CircleShape, press = swell)
                         else Modifier.airShadow(CircleShape).clip(CircleShape).background(MaterialTheme.colorScheme.surface),
                     ),
                 contentAlignment = Alignment.Center,
