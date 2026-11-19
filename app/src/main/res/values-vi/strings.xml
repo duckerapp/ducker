@@ -135,7 +135,6 @@
     <string name="home_no_active_text">Chọn gói đăng ký để kết nối</string>
     <string name="home_choose_subscription">Chọn gói đăng ký</string>
     <string name="ducker_no_proxies">Nhóm máy chủ</string>
-    <string name="ducker_nodes_count">Máy chủ: %d</string>
     <string name="ducker_expand_group">Mở rộng nhóm</string>
     <string name="ducker_collapse_group">Thu gọn nhóm</string>
     <string name="ducker_active">Đang dùng</string>

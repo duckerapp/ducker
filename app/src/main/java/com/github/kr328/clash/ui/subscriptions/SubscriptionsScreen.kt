@@ -408,27 +408,14 @@ fun SubscriptionsScreen(
 
                     if (others.isNotEmpty()) {
                         item(key = OTHERS_KEY) {
-                            val label = @Composable { modifier: Modifier ->
-                                Text(
-                                    text = stringResource(R.string.other_subscriptions),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = modifier,
-                                )
-                            }
-                            val backdrop = LocalGlassBackdrop.current
-                            if (backdrop == null) {
-                                label(Modifier.padding(start = ROW_INSET, top = 20.dp, bottom = 8.dp))
-                            } else {
-                                // The glass style: on a small pane of glass, as the cards are. Grey letters straight on the
-                                // picture could not be read on any of the 17 pictures tried, nor on flat grey.
-                                Box(
-                                    Modifier.padding(start = ROW_INSET - LABEL_PAD, top = 16.dp, bottom = 4.dp)
-                                        .glass(backdrop, GlassMaterial.Surface, CircleShape),
-                                ) {
-                                    label(Modifier.padding(horizontal = LABEL_PAD, vertical = 4.dp))
-                                }
-                            }
+                            // Straight on the picture in the glass style too, as Settings' section titles: its small pane
+                            // of glass read as one more button (the owner, 19.11).
+                            Text(
+                                text = stringResource(R.string.other_subscriptions),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = ROW_INSET, top = 20.dp, bottom = 8.dp),
+                            )
                         }
                     }
                 }
@@ -970,7 +957,8 @@ private fun ActiveDetails(
         val first = focus?.let { Modifier.focusRequester(it) } ?: Modifier
 
         // Half as much air again above and below the buttons as the card's other steps.
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 7.dp)) {
+        // Centred: «Обновить» takes 48 dp for its 40 dp pane, the round ones on glass 40, which stood 4 dp higher (the owner, 19.11).
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 7.dp)) {
             // Своему конфигу обновляться неоткуда: «Обновить» шло по пустой ссылке с ошибкой.
             // Итог — в самой кнопке, как на главной (D-119): «Обновлено» или «Не удалось».
             if (!profile.local) {
@@ -987,8 +975,10 @@ private fun ActiveDetails(
 
             // On glass «Обновить» alone is wide and the pencil is round, as «⋯»: a labelled middle button stood off the
             // card's centre and read as shifted (the owner, 17.11). A config of one's own has no «Обновить».
+            // Round on glass, 40 dp as the rows' «⋯»: 48 wide on the 40 dp tall row, they were ovals (the owner, 19.11).
+            val round = if (LocalGlassBackdrop.current != null) Modifier.size(GLASS_ICON_BUTTON) else Modifier.width(48.dp)
             if (LocalGlassBackdrop.current != null && !profile.local) {
-                CardAction(onClick = onEdit, container = action, content = onAction, modifier = Modifier.width(48.dp)) {
+                CardAction(onClick = onEdit, container = action, content = onAction, modifier = round) {
                     Icon(Symbols.Edit, contentDescription = stringResource(R.string.edit), modifier = Modifier.size(20.dp))
                 }
             } else {
@@ -999,11 +989,12 @@ private fun ActiveDetails(
                 }
             }
 
-            CardAction(onClick = onMenu, container = action, content = onAction, modifier = Modifier.width(48.dp)) {
+            CardAction(onClick = onMenu, container = action, content = onAction, modifier = round) {
                 Icon(
                     Symbols.MoreHoriz,
                     contentDescription = stringResource(R.string.more_actions),
-                    modifier = Modifier.size(20.dp),
+                    // On glass the rows' bolder 24 dp dots.
+                    modifier = Modifier.size(if (LocalGlassBackdrop.current != null) 24.dp else 20.dp),
                 )
             }
         }
@@ -1269,8 +1260,6 @@ private val GAP = 12.dp
 
 /** Text inset and spacing for the compact subscription cards. */
 private val ROW_INSET = 16.dp
-/** The glass style: room around «Другие подписки» inside its pane, its letters where they stand without one. */
-private val LABEL_PAD = 10.dp
 private val ROW_HEIGHT = 74.dp
 private val ROW_GAP = 10.dp
 

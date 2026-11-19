@@ -135,7 +135,6 @@
     <string name="home_no_active_text">选择一个订阅以进行连接</string>
     <string name="home_choose_subscription">选择订阅</string>
     <string name="ducker_no_proxies">代理组</string>
-    <string name="ducker_nodes_count">节点数：%d</string>
     <string name="ducker_expand_group">展开代理组</string>
     <string name="ducker_collapse_group">收起代理组</string>
     <string name="ducker_active">当前使用</string>

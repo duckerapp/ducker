@@ -135,7 +135,6 @@
     <string name="home_no_active_text">اختر اشتراكًا للاتصال</string>
     <string name="home_choose_subscription">اختيار اشتراك</string>
     <string name="ducker_no_proxies">مجموعات الخوادم</string>
-    <string name="ducker_nodes_count">الخوادم: %d</string>
     <string name="ducker_expand_group">توسيع المجموعة</string>
     <string name="ducker_collapse_group">طي المجموعة</string>
     <string name="ducker_active">نشط</string>

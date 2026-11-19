@@ -1,5 +1,7 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.glassPress
+import com.github.kr328.clash.ui.components.rememberGlassPress
 import com.github.kr328.clash.ui.components.sheetSurface
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
@@ -157,10 +159,13 @@ internal fun AnnouncementsSheet(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     GroupHeader(group.profile, group.favorite)
 
-                    // One backing with inset lines, as the subscription's addresses (D-326).
+                    // One backing with inset lines, as the subscription's addresses (D-326). On the pane glass it swells
+                    // under a touch its links and «more» do not take, as Home's cards (the owner, 19.11: no life in it).
+                    val press = rememberGlassPress()
                     Column(
                         modifier = Modifier.fillMaxWidth()
-                            .sheetSurface(RoundedCornerShape(20.dp))
+                            .glassPress(press, own = false)
+                            .sheetSurface(RoundedCornerShape(20.dp), press)
                             .padding(vertical = 4.dp),
                     ) {
                         shown.forEachIndexed { index, item ->

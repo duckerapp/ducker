@@ -159,7 +159,6 @@
     <string name="home_no_active_text">Choose a subscription to connect</string>
     <string name="home_choose_subscription">Choose subscription</string>
     <string name="ducker_no_proxies">Proxy groups</string>
-    <string name="ducker_nodes_count">Nodes: %d</string>
     <string name="ducker_expand_group">Expand group</string>
     <string name="ducker_collapse_group">Collapse group</string>
     <string name="ducker_active">Active</string>

@@ -655,18 +655,19 @@ private fun GroupHeader(
                 )
                 Text(group.now.isolated(), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(
-                    // У групп, которые выбирают сами, узлы не нажимаются — говорим об
-                    // этом здесь, иначе выглядит как сломанное нажатие.
-                    text = if (group.selectable) {
-                        stringResource(R.string.ducker_nodes_count, group.proxies.size)
-                    } else {
-                        stringResource(R.string.group_auto, group.proxies.size)
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                // У групп, которые выбирают сами, узлы не нажимаются — говорим об
+                // этом здесь, иначе выглядит как сломанное нажатие. A plain group's node count said nothing useful
+                // (the owner, 19.11).
+                if (!group.selectable) {
+                    Text(
+                        text = stringResource(R.string.group_auto, group.proxies.size),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
+            // The check and the arrow closer on the pane glass, 8 dp between their circles: the name took two lines.
+            Row(horizontalArrangement = Arrangement.spacedBy(if (glassPanesOn()) 4.dp else 12.dp), verticalAlignment = Alignment.CenterVertically) {
             // Замер — кружком рядом со стрелкой, а не кнопкой во всю ширину (D-120): та
             // занимала строку в каждой раскрытой группе. Замерять нечем, пока ядро не работает.
             if (canCheck) {
@@ -685,6 +686,7 @@ private fun GroupHeader(
                 PaneIconButton(onClick = onExpand) { Icon(arrow, contentDescription = expandLabel) }
             } else {
                 Icon(arrow, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+            }
             }
         }
     }

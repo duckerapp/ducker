@@ -149,7 +149,6 @@
     <string name="home_no_active_text">Выберите подписку, чтобы подключиться</string>
     <string name="home_choose_subscription">Выбрать подписку</string>
     <string name="ducker_no_proxies">Группы прокси</string>
-    <string name="ducker_nodes_count">Узлов: %d</string>
     <string name="ducker_expand_group">Развернуть группу</string>
     <string name="ducker_collapse_group">Свернуть группу</string>
     <string name="ducker_active">Активна</string>

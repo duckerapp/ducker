@@ -135,7 +135,6 @@
     <string name="home_no_active_text">Choisissez un abonnement pour vous connecter</string>
     <string name="home_choose_subscription">Choisir un abonnement</string>
     <string name="ducker_no_proxies">Groupes de serveurs</string>
-    <string name="ducker_nodes_count">Serveurs : %d</string>
     <string name="ducker_expand_group">Développer le groupe</string>
     <string name="ducker_collapse_group">Replier le groupe</string>
     <string name="ducker_active">Actif</string>
