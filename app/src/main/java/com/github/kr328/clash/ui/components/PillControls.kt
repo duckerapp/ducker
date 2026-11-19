@@ -69,6 +69,10 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -488,3 +492,190 @@ fun Pill(
 
 private const val PILL_FADE_MS = 150
 private const val DISABLED_ALPHA = 0.4f
+
+/** An action of a [GlassToolbar]: an icon or a label. [fill] — the main one, in the accent fill; [busy] — a ring for it. */
+internal class ToolbarItem(
+    val description: String,
+    val icon: ImageVector? = null,
+    val label: String? = null,
+    val enabled: Boolean = true,
+    val fill: Boolean = false,
+    val busy: Boolean = false,
+    val onClick: () -> Unit,
+)
+
+/**
+ * Actions in one capsule of the pane glass, after the dock (the owner, 19.11: the config's tools «как докбар»): equal
+ * segments; under a finger the dock's lens swells over the touched one and a drag carries it along with a tick at each;
+ * lifted on the bar, the action under it runs, as iOS's toolbars; nothing stays chosen. Only where [glassPanesOn].
+ */
+@Composable
+internal fun GlassToolbar(items: List<ToolbarItem>, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 48.dp) {
+    val scheme = MaterialTheme.colorScheme
+    val haptics = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    val motion = scope.coroutineContext.motionScale > 0f
+    val position = remember { Animatable(0f) }
+    val edge = remember { Animatable(0f) }
+    val lens = remember { Animatable(0f) }
+    val touch = remember { LensTouch() }
+    var spans by remember { mutableStateOf(FloatArray(0)) }
+    val bubble = remember { bubbleShader() }
+    val itemsLayer = rememberGraphicsLayer()
+    val bubbleLayer = rememberGraphicsLayer()
+    val under = rememberPaneUnder()
+    val at = remember { floatArrayOf(0f, 0f) }
+    val base = scheme.background
+    val press = rememberGlassPress()
+    val backdrop = LocalGlassBackdrop.current
+    val itemsNow by rememberUpdatedState(items)
+    val accent = scheme.primaryContainer
+    if (bubble != null) LaunchedEffect(touch.count, touch.down, motion) { lens.follow(touch, motion) }
+
+    Layout(
+        modifier = modifier.height(height)
+            // The whole bar breathes while a finger is on it, as the dock under its lens.
+            .glassPress(press, own = true, follow = false)
+            .onGloballyPositioned { val p = it.positionInRoot(); at[0] = p.x; at[1] = p.y }
+            .drawWithContent {
+                val shown = lens.value
+                if (bubble == null || shown < 0.01f) {
+                    drawContent()
+                    return@drawWithContent
+                }
+                // The lens shows the bar under it: its fill and its icons.
+                itemsLayer.record { this@drawWithContent.drawContent() }
+                drawLayer(itemsLayer)
+
+                val pad = PILL_PAD.toPx()
+                val (left, width) = pillSpan(spans, position.value)
+                val over = edge.value
+                val give = PILL_EDGE_GIVE.toPx()
+                val bent = over * give / (abs(over) + give)
+                val reach = (abs(over) / (width / 2f)).coerceAtMost(1f)
+                val stretch = ((abs(position.velocity) * width / 5000f).coerceAtMost(0.25f) + PILL_EDGE_STRETCH * reach * reach * reach)
+                    .coerceAtLeast(-0.15f)
+                drawGlassBubble(
+                    layer = bubbleLayer,
+                    shader = bubble,
+                    center = Offset(pad + left + width / 2f + bent, size.height / 2f),
+                    halfWidth = width / 2f * (1f + LENS_WIDEN * shown) * (1f + stretch),
+                    halfHeight = (size.height / 2f - pad + LENS_RISE.toPx() * shown) * (1f - 0.35f * stretch),
+                    presence = shown,
+                    base = base,
+                ) {
+                    under(Offset(at[0], at[1]))
+                    drawLayer(itemsLayer)
+                }
+            }
+            .then(if (backdrop != null) Modifier.glass(backdrop, GlassMaterial.Surface, CircleShape, press = press) else Modifier)
+            .clip(CircleShape)
+            .padding(PILL_PAD)
+            .fingerOn(touch)
+            .pointerInput(motion) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    down.consume()
+                    val slop = viewConfiguration.touchSlop
+                    fun at(x: Float) = positionAt(spans, x).roundToInt().coerceIn(0, (spans.size / 2 - 1).coerceAtLeast(0))
+                    var near = at(down.position.x)
+                    scope.launch { position.snapTo(near.toFloat()) }
+                    var moving = false
+                    var last = down.position
+                    var lifted = false
+                    try {
+                        while (true) {
+                            val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
+                            change.consume()
+                            last = change.position
+                            if (!change.pressed) {
+                                lifted = true
+                                break
+                            }
+                            if (!moving && (change.position - down.position).getDistance() > slop) moving = true
+                            if (!moving) continue
+                            val x = change.position.x
+                            val to = positionAt(spans, x)
+                            scope.launch { if (motion) position.animateTo(to, FOLLOW_SPRING) else position.snapTo(to) }
+                            val ends = spans.let { s ->
+                                val n = s.size / 2
+                                if (n == 0) 0f to 0f else {
+                                    val a = s[0] + s[1] / 2f
+                                    val b = s[(n - 1) * 2] + s[(n - 1) * 2 + 1] / 2f
+                                    minOf(a, b) to maxOf(a, b)
+                                }
+                            }
+                            scope.launch { edge.snapTo(if (motion) x - x.coerceIn(ends.first, ends.second) else 0f) }
+                            val now = at(x)
+                            if (now != near) {
+                                near = now
+                                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                            }
+                        }
+                    } finally {
+                        scope.launch { edge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 420f)) }
+                    }
+                    scope.launch { position.animateTo(near.toFloat(), PILL_SPRING) }
+                    // Lifted off the bar (a finger slid well away from it), nothing runs.
+                    val reach = slop * 3
+                    val onBar = last.y > -reach && last.y < size.height + reach
+                    val item = itemsNow.getOrNull(near)
+                    if (lifted && onBar && item != null && item.enabled && !item.busy) item.onClick()
+                }
+            }
+            // The main action's fill, cleared under the lens as the dock's highlight under its bubble.
+            .drawBehind {
+                itemsNow.forEachIndexed { i, item ->
+                    if (!item.fill || spans.size < (i + 1) * 2) return@forEachIndexed
+                    val near = (1f - abs(position.value - i)).coerceIn(0f, 1f)
+                    drawRoundRect(
+                        color = accent.copy(alpha = accent.alpha * (1f - lens.value * near)),
+                        topLeft = Offset(spans[i * 2], 0f),
+                        size = Size(spans[i * 2 + 1], size.height),
+                        cornerRadius = CornerRadius(size.height / 2f),
+                    )
+                }
+            },
+        content = {
+            items.forEach { item ->
+                val ink = (if (item.fill) scheme.onPrimaryContainer else scheme.onSurface)
+                    .let { if (item.enabled) it else it.copy(alpha = 0.3f) }
+                Box(
+                    // The bar takes the touches; TalkBack reaches every action as a button of its own.
+                    modifier = Modifier.clearAndSetSemantics {
+                        role = Role.Button
+                        contentDescription = item.description
+                        if (!item.enabled) disabled()
+                        onClick { if (item.enabled) item.onClick(); item.enabled }
+                    },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    when {
+                        item.busy -> androidx.compose.material3.CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = ink)
+                        item.icon != null -> Icon(item.icon, contentDescription = null, tint = ink, modifier = Modifier.size(20.dp))
+                        item.label != null -> FitLabel(item.label, MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 8.dp), color = ink)
+                    }
+                }
+            }
+        },
+    ) { measurables, constraints ->
+        // Equal segments, for symmetry (the owner, 19.11).
+        val total = constraints.maxWidth
+        val count = measurables.size.coerceAtLeast(1)
+        val widths = MutableList(measurables.size) { total / count }
+        if (widths.isNotEmpty()) widths[widths.lastIndex] += total - widths.sum()
+        val placeables = measurables.mapIndexed { i, it -> it.measure(Constraints.fixed(widths[i], constraints.maxHeight)) }
+        val next = FloatArray(widths.size * 2)
+        val rtl = layoutDirection == LayoutDirection.Rtl
+        var x = 0
+        widths.forEachIndexed { i, width ->
+            next[i * 2] = (if (rtl) total - x - width else x).toFloat()
+            next[i * 2 + 1] = width.toFloat()
+            x += width
+        }
+        if (!next.contentEquals(spans)) spans = next
+        layout(total, constraints.maxHeight) {
+            placeables.forEachIndexed { i, it -> it.place(next[i * 2].toInt(), 0) }
+        }
+    }
+}

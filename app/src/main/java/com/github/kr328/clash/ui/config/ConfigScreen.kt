@@ -1,5 +1,8 @@
 package com.github.kr328.clash.ui.config
 
+import com.github.kr328.clash.ui.components.glassPanesOn
+import com.github.kr328.clash.ui.components.ToolbarItem
+import com.github.kr328.clash.ui.components.GlassToolbar
 import com.github.kr328.clash.ui.components.GlassPress
 import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.rememberGlassPress
@@ -100,6 +103,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
@@ -319,36 +323,11 @@ fun ConfigScreen(
     val ime = WindowInsets.ime
     val navigation = WindowInsets.navigationBars
 
-    Box(modifier.fillMaxSize().screenInsets()) {
-        Column(
-            Modifier.fillMaxSize()
-                .onGloballyPositioned { codeTop = it.positionInWindow().y.roundToInt() }
-                .aboveKeyboard(ime, navigation) { height ->
-                    if (keyboardTop != null) codeTop + height - keyboardTop else if (bare || compact) 0 else bar
-                },
-        ) {
-            // On a TV the keyboard leaves the app a strip of the screen: while typing the code takes all of it.
-            // With the header above it the code got no height, and Android took its focus away with the keyboard.
-            if (!tvTyping) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = if (compact) 4.dp else if (bare) 8.dp else 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp),
-                ) {
-                    if (!bare && !compact) {
-                        Header(
-                            kind = stringResource(if (state.file != null) R.string.config_kind_file else R.string.config_kind_subscription),
-                            name = state.name,
-                            onBack = onBack,
-                            onFull = { view(true) },
-                            back = Modifier.focusRequester(corner),
-                        )
-
-                        if (state.fromSubscription || state.file != null) {
-                            Hint(stringResource(if (state.file != null) R.string.config_file_hint else R.string.config_subscription_hint))
-                        }
-                    }
-
-                    if (searching) {
+    // The glass style on an upright phone: the tools and «Сохранить» in two glass bars at the bottom after the dock, riding
+    // above the keyboard so they stay at hand while typing (the owner, 19.11); a low window and full screen keep their one
+    // top row. The search opens in the tools' place there.
+    val dockBar = glassPanesOn() && !compact && !bare
+    val searchPanel: @Composable () -> Unit = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             SearchLines(side = compact) { line ->
                                 Row(line, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -367,7 +346,20 @@ fun ConfigScreen(
                                         )
                                     }
 
-                                    ToolGroup {
+                                    if (dockBar) {
+                                        GlassToolbar(
+                                            listOf(
+                                                ToolbarItem(stringResource(R.string.config_search_previous), Symbols.KeyboardArrowUp, enabled = matches > 0) {
+                                                    editor?.searcher?.takeIf { it.hasQuery() }?.gotoPrevious()
+                                                },
+                                                ToolbarItem(stringResource(R.string.config_search_next), Symbols.KeyboardArrowDown, enabled = matches > 0) {
+                                                    editor?.searcher?.takeIf { it.hasQuery() }?.gotoNext()
+                                                },
+                                                ToolbarItem(stringResource(R.string.config_search_close), Symbols.Close) { closeSearch() },
+                                            ),
+                                            Modifier.width(TOOL_SEGMENT * 3),
+                                        )
+                                    } else ToolGroup {
                                         ToolButton(Symbols.KeyboardArrowUp, stringResource(R.string.config_search_previous), matches > 0) {
                                             editor?.searcher?.takeIf { it.hasQuery() }?.gotoPrevious()
                                         }
@@ -409,7 +401,40 @@ fun ConfigScreen(
                                 )
                             }
                         }
-                    } else {
+    }
+
+    Box(modifier.fillMaxSize().screenInsets()) {
+        Column(
+            Modifier.fillMaxSize()
+                .onGloballyPositioned { codeTop = it.positionInWindow().y.roundToInt() }
+                .aboveKeyboard(ime, navigation, ride = dockBar) { height ->
+                    if (keyboardTop != null) codeTop + height - keyboardTop else if (bare || compact) 0 else bar
+                },
+        ) {
+            // On a TV the keyboard leaves the app a strip of the screen: while typing the code takes all of it.
+            // With the header above it the code got no height, and Android took its focus away with the keyboard.
+            if (!tvTyping) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = if (compact) 4.dp else if (bare) 8.dp else 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp),
+                ) {
+                    if (!bare && !compact) {
+                        Header(
+                            kind = stringResource(if (state.file != null) R.string.config_kind_file else R.string.config_kind_subscription),
+                            name = state.name,
+                            onBack = onBack,
+                            onFull = { view(true) },
+                            back = Modifier.focusRequester(corner),
+                        )
+
+                        if (state.fromSubscription || state.file != null) {
+                            Hint(stringResource(if (state.file != null) R.string.config_file_hint else R.string.config_subscription_hint))
+                        }
+                    }
+
+                    if (searching && !dockBar) {
+                        searchPanel()
+                    } else if (!dockBar) {
                         val edits: @Composable () -> Unit = {
                             ToolGroup {
                                 ToolButton(Symbols.Undo, stringResource(R.string.config_undo), canUndo) { editor?.undo() }
@@ -665,7 +690,41 @@ fun ConfigScreen(
         // Кнопки — у нижнего края, клавиатура их просто накрывает: прятать их и показывать
         // снова значило дёргать рамку кода, когда клавиатура уезжала. On a TV they go while the keyboard is up: it lies
         // over them, and the code ends above it (F-361, D-377).
-        if (!bare && !compact && !keyboardShown) {
+        if (dockBar) {
+            Box(Modifier.align(Alignment.BottomCenter).rideKeyboard(ime, navigation).onSizeChanged { bar = it.height }) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (searching) {
+                        searchPanel()
+                    } else {
+                        GlassToolbar(
+                            listOf(
+                                ToolbarItem(stringResource(R.string.config_undo), Symbols.Undo, enabled = canUndo) { editor?.undo() },
+                                ToolbarItem(stringResource(R.string.config_redo), Symbols.Redo, enabled = canRedo) { editor?.redo() },
+                                ToolbarItem(stringResource(R.string.config_text_smaller), Symbols.TextDecrease, enabled = textSize > MIN_TEXT) { resize(-1f) },
+                                ToolbarItem(stringResource(R.string.config_text_larger), Symbols.TextIncrease, enabled = textSize < MAX_TEXT) { resize(1f) },
+                                ToolbarItem(stringResource(R.string.config_format), Symbols.TaskAlt, enabled = !state.busy && state.text != null && editor != null) { format() },
+                                ToolbarItem(stringResource(R.string.config_sections), Symbols.List, enabled = editor != null) { showSections = true },
+                                ToolbarItem(stringResource(R.string.config_search), Symbols.Search, enabled = editor != null) { searching = true },
+                            ),
+                            Modifier.fillMaxWidth(),
+                        )
+                    }
+                    val ready = !state.busy && state.text != null
+                    GlassToolbar(
+                        listOf(
+                            ToolbarItem(stringResource(R.string.config_save_as), label = stringResource(R.string.config_save_as), enabled = ready) {
+                                if (editor?.text != null) showSaveAs = true
+                            },
+                            ToolbarItem(stringResource(R.string.save), label = stringResource(R.string.save), enabled = ready, fill = true, busy = state.busy) {
+                                editor?.text?.toString()?.let(onSave)
+                            },
+                        ),
+                        Modifier.fillMaxWidth(),
+                        height = 56.dp,
+                    )
+                }
+            }
+        } else if (!bare && !compact && !keyboardShown) {
             Box(Modifier.align(Alignment.BottomCenter).onSizeChanged { bar = it.height }) {
                 ActionBar(state, onSaveAs = { showSaveAs = true }, onSave, save) { editor?.text?.toString() }
             }
@@ -730,14 +789,26 @@ fun ConfigScreen(
  * раскладке, и экран не пересобирается на каждый кадр выезда клавиатуры. [bar] gets the height there is: on a TV it
  * also keeps the room the keyboard lies over.
  */
-private fun Modifier.aboveKeyboard(ime: WindowInsets, navigation: WindowInsets, bar: (height: Int) -> Int) =
+private fun Modifier.aboveKeyboard(ime: WindowInsets, navigation: WindowInsets, ride: Boolean = false, bar: (height: Int) -> Int) =
     layout { measurable, constraints ->
         val keyboard = (ime.getBottom(this) - navigation.getBottom(this)).coerceAtLeast(0)
-        val bottom = maxOf(keyboard, bar(constraints.maxHeight)).coerceAtMost(constraints.maxHeight)
+        // [ride]: the bars ride above the keyboard ([rideKeyboard]), so the code ends above both.
+        val bottom = (if (ride) keyboard + bar(constraints.maxHeight) else maxOf(keyboard, bar(constraints.maxHeight))).coerceAtMost(constraints.maxHeight)
         val placeable = measurable.measure(constraints.copy(minHeight = 0, maxHeight = constraints.maxHeight - bottom))
 
         layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
     }
+
+/** Lifted above the keyboard, read at layout: the screen is not recomposed for every frame of its slide. */
+private fun Modifier.rideKeyboard(ime: WindowInsets, navigation: WindowInsets) =
+    layout { measurable, constraints ->
+        val keyboard = (ime.getBottom(this) - navigation.getBottom(this)).coerceAtLeast(0)
+        val placeable = measurable.measure(constraints)
+        layout(placeable.width, placeable.height) { placeable.place(0, -keyboard) }
+    }
+
+/** A segment of the search's small glass bar. */
+private val TOOL_SEGMENT = 44.dp
 
 /** К строке [line] (с нуля): курсор — в её начало, сама — в верхнюю треть, чтобы было видно, что над ней. */
 private fun CodeEditor.jumpTo(line: Int) {
