@@ -24,6 +24,8 @@ import com.github.kr328.clash.ui.components.GlassPanes
 import com.github.kr328.clash.ui.components.PaneGlass
 import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.rememberGlassPress
+import com.github.kr328.clash.ui.components.glassPressOwnTouch
+import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.INNER_BLUR
 import com.github.kr328.clash.ui.components.glassAccentTint
 import com.github.kr328.clash.ui.components.Symbols
@@ -1188,7 +1190,7 @@ private fun HeroCard(
         resizing = tv,
     ) {
         Box(
-            Modifier.fillMaxWidth().padding(HERO_RING).clip(HeroInner).onGloballyPositioned { card = it }
+            Modifier.fillMaxWidth().padding(HERO_RING).onGloballyPositioned { card = it }
                 .then(
                     if (isGlass) {
                         Modifier
@@ -1235,7 +1237,9 @@ private fun HeroCard(
                                 }
                             }
                     } else Modifier
-                ),
+                )
+                // After the glass: its faint dark line lies just outside the rim, and a clip before it cut that off.
+                .clip(HeroInner),
         ) {
             val waveWidthPx = with(density) { 32.dp.toPx() }
 
@@ -1986,13 +1990,14 @@ private fun AnnouncementCard(text: String) {
         // under Home's power card stays on screen.
         val lines = if (tv && overflows) 2 else 3
 
-        Card(Modifier.fillMaxWidth()) {
+        val press = rememberGlassPress()
+        Card(Modifier.fillMaxWidth(), press = press.takeIf { overflows }) {
             Row(
                 modifier = Modifier.fillMaxWidth()
-                    .then(if (overflows) Modifier.clickable(role = Role.Button, onClickLabel = more) {
+                    .then(if (overflows) Modifier.clickable(interactionSource = null, indication = paneIndication(), role = Role.Button, onClickLabel = more) {
                         mounted = true
                         open = true
-                    } else Modifier)
+                    }.glassPressOwnTouch(press) else Modifier)
                     .padding(inset),
                 horizontalArrangement = Arrangement.spacedBy(gap),
                 verticalAlignment = Alignment.CenterVertically,

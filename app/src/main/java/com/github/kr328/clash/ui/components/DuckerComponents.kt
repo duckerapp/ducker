@@ -268,9 +268,11 @@ internal fun Modifier.resizingShadow(shape: Shape): Modifier = shadow(
  * [resizing] — the card's height animates, see [resizingShadow].
  * [ownClick] — the card is a button itself, its click in [surfaceModifier]: under the pane glass it swells for its own
  * touches, not for a button's inside it ([glassPressOwnTouch]); give that click [paneIndication].
+ * [press] — the card's press, its caller's from [rememberGlassPress], for a click that lies in its content (an expandable
+ * card's header): that click takes [glassPressOwnTouch] with it, and the card swells for it alone.
  */
 @Composable
-fun DuckerCard(
+internal fun DuckerCard(
     modifier: Modifier = Modifier,
     colors: CardColors = CardDefaults.cardColors(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -280,6 +282,7 @@ fun DuckerCard(
     surfaceModifier: Modifier = Modifier,
     resizing: Boolean = false,
     ownClick: Boolean = false,
+    press: GlassPress? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val edge = airEdge(colors.containerColor)
@@ -288,11 +291,12 @@ fun DuckerCard(
     // its shadow as its edge.
     val backdrop = LocalGlassBackdrop.current
     val glass = backdrop != null && colors.containerColor.alpha > 0f
-    val press = if (glass) rememberGlassPress() else null
+    val given = press
+    val press = if (glass) given ?: rememberGlassPress() else null
 
     Card(
         modifier = modifier
-            .then(if (ownClick) Modifier.glassPressSwell(press) else Modifier.glassPress(press, own = false))
+            .then(if (ownClick || given != null) Modifier.glassPressSwell(press) else Modifier.glassPress(press, own = false))
             .then(
                 when {
                     glass -> Modifier.liquidGlass(
@@ -403,10 +407,14 @@ internal fun smoothResource(@DrawableRes id: Int, size: Dp): ImageBitmap {
 
 @Composable
 fun IconBadge(icon: ImageVector, modifier: Modifier = Modifier) {
+    val shape = MaterialTheme.shapes.medium
     Box(
         modifier = modifier.size(44.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            // On the pane glass a pane of the buttons' glass: the grey fill read as foreign on the glass rows.
+            .then(
+                if (glassPanesOn()) Modifier.glass(LocalGlassBackdrop.current, GlassMaterial.Control, shape).clip(shape)
+                else Modifier.clip(shape).background(MaterialTheme.colorScheme.surfaceVariant),
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
@@ -491,12 +499,14 @@ internal fun PaneIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    /** The glass circle's size: smaller for a field's ✕, inside a field hardly taller than the usual circle. */
+    glassSize: Dp = GLASS_ICON_BUTTON,
     content: @Composable () -> Unit,
 ) {
     if (glassPanesOn()) {
         GlassCardButton(
             onClick = onClick,
-            modifier = modifier.padding(GLASS_ICON_INSET).size(GLASS_ICON_BUTTON),
+            modifier = modifier.padding(GLASS_ICON_INSET).size(glassSize),
             enabled = enabled,
             padding = 0.dp,
         ) { content() }
@@ -505,6 +515,8 @@ internal fun PaneIconButton(
     }
 }
 
+/** The glass circle of a field's ✕ (a search, a sheet's field). */
+internal val GLASS_CLEAR_BUTTON = 28.dp
 /** The visible size of a round glass button: the group check's, which the others match. */
 internal val GLASS_ICON_BUTTON = 40.dp
 /** Around it in the 48 dp an IconButton takes. */
@@ -638,7 +650,8 @@ fun SearchField(
             contentAlignment = Alignment.Center,
         ) {
             if (value.isNotEmpty()) {
-                IconButton(
+                PaneIconButton(
+                    glassSize = GLASS_CLEAR_BUTTON,
                     onClick = {
                         if (keys) self.requestFocus()
                         onValue("")
@@ -752,6 +765,7 @@ fun ScreenHeader(
     actions: @Composable RowScope.() -> Unit = {},
 ) = BackdropTone {
     val enlarged = LocalDensity.current.fontScale > 1f
+    val glassBack = onBack != null && glassPanesOn()
 
     // The actions go under the title when an enlarged system font leaves the title no room for its full size:
     // on a narrow phone «Прокси» shrank to a few pixels beside «Rules» and «По порядку». At the normal size the
@@ -760,7 +774,12 @@ fun ScreenHeader(
         contents = listOf(
             {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(HEADER_GAP)) {
-                    if (onBack != null) {
+                    // On the pane glass the back arrow is a round glass button, as the ones on the cards.
+                    if (glassBack) {
+                        GlassCardButton(onClick = onBack, modifier = Modifier.size(44.dp), padding = 0.dp) {
+                            Icon(Symbols.ArrowBack, contentDescription = stringResource(R.string.back))
+                        }
+                    } else if (onBack != null) {
                         HeaderButton(
                             icon = Symbols.ArrowBack,
                             description = stringResource(R.string.back),
@@ -782,7 +801,8 @@ fun ScreenHeader(
             },
         ),
         modifier = modifier.fillMaxWidth().then(
-            if (onBack != null) Modifier.layout { measurable, constraints ->
+            // A glass circle stays out of it, lined up with the cards: the list's edge cut it.
+            if (onBack != null && !glassBack) Modifier.layout { measurable, constraints ->
                 // Let the 48dp touch target enter the gutter; the arrow aligns with section labels.
                 val gutter = 12.dp.roundToPx()
                 val placeable = measurable.measure(constraints.offset(horizontal = gutter))

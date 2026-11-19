@@ -122,7 +122,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -794,7 +793,12 @@ internal fun SheetField(
         )
 
         if (value.isNotEmpty() && enabled) {
-            IconButton(onClick = { onValue("") }) {
+            // On the pane glass a small glass circle, as far from the field's end as from its top.
+            PaneIconButton(
+                onClick = { onValue("") },
+                modifier = if (glassPanesOn()) Modifier.padding(end = 6.dp) else Modifier,
+                glassSize = GLASS_CLEAR_BUTTON,
+            ) {
                 Icon(Symbols.Close, contentDescription = stringResource(R.string.clear), tint = scheme.onSurfaceVariant)
             }
         }

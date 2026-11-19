@@ -223,7 +223,10 @@ fun BackLayer(
                 LocalGlassBackdrop provides backdrop,
                 LocalBackdropTone provides if (backdrop != null) backdropTone else null,
             ) {
-                if (frameContent) ScreenFrame(wide, content = content) else content()
+                // The tabs' pane glass on a screen over Home's picture, so the two read as one glass (D-544).
+                GlassPanes(on = backdrop != null) {
+                    if (frameContent) ScreenFrame(wide, content = content) else content()
+                }
             }
 
             if (fade) NavigationFade()

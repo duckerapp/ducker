@@ -7,6 +7,11 @@ import com.github.kr328.clash.ui.components.DuckerSwitch
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.GlassMaterial
 import com.github.kr328.clash.ui.components.chosenFill
+import com.github.kr328.clash.ui.components.glass
+import com.github.kr328.clash.ui.components.glassPress
+import com.github.kr328.clash.ui.components.glassPressOwnTouch
+import com.github.kr328.clash.ui.components.paneIndication
+import com.github.kr328.clash.ui.components.rememberGlassPress
 import androidx.compose.foundation.Image
 
 import android.annotation.SuppressLint
@@ -771,14 +776,16 @@ fun SettingsScreen(
 private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> Unit) {
     // Held, the switch's thumb stands as a lens (D-541).
     val hwidPress = remember { MutableInteractionSource() }
-    Card(modifier = Modifier.fillMaxWidth()) {
+    val press = rememberGlassPress()
+    Card(modifier = Modifier.fillMaxWidth(), press = press) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
-                    .toggleable(value = sendHwid, interactionSource = hwidPress, indication = LocalIndication.current, role = Role.Switch, onValueChange = onSendHwid),
+                    .toggleable(value = sendHwid, interactionSource = hwidPress, indication = paneIndication(), role = Role.Switch, onValueChange = onSendHwid)
+                    .glassPressOwnTouch(press),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -820,9 +827,12 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
                 Box(
                     Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
                         .clickable(
+                            interactionSource = null,
+                            indication = paneIndication(),
                             onClickLabel = if (shown) stringResource(R.string.hwid_hide) else null,
                             role = Role.Button,
                         ) { shown = !shown }
+                        .glassPressOwnTouch(press)
                         .padding(vertical = 6.dp),
                 ) {
                     Crossfade(shown, label = "hwid") { open ->
@@ -869,12 +879,14 @@ private fun BackgroundCard(allowed: Boolean, autostart: Boolean?, onAllow: () ->
 
     val fold = if (foldable) {
         Modifier.clip(MaterialTheme.shapes.large).clickable(
+            interactionSource = null,
+            indication = paneIndication(),
             onClickLabel = stringResource(R.string.background_vendor_steps, stringResource(vendor.names)),
             role = Role.Button,
         ) { stepsOpen = !stepsOpen }
     } else Modifier
 
-    Card(modifier = Modifier.fillMaxWidth(), surfaceModifier = fold, resizing = true) {
+    Card(modifier = Modifier.fillMaxWidth(), surfaceModifier = fold, resizing = true, ownClick = foldable) {
         // Отступы — у самих строк, а не общим spacedBy: общий оставался бы, пока шаги
         // сворачиваются, и в последнем кадре карточка прыгала на 12 dp (D-140).
         Column(modifier = Modifier.padding(16.dp)) {
@@ -942,12 +954,14 @@ private fun ExpandableCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
+    val press = rememberGlassPress()
 
-    Card(modifier = Modifier.fillMaxWidth(), resizing = true) {
+    Card(modifier = Modifier.fillMaxWidth(), resizing = true, press = press) {
         Column {
             Row(
                 modifier = Modifier.fillMaxWidth()
-                    .clickable { expanded = !expanded }
+                    .clickable(interactionSource = null, indication = paneIndication()) { expanded = !expanded }
+                    .glassPressOwnTouch(press)
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1195,11 +1209,18 @@ private fun ChipsCard(
                         // On a glass card the choices are tinted as the glass's controls, the chosen one as its chosen.
                         val rest = if (LocalGlassBackdrop.current != null) scheme.surfaceVariant.copy(alpha = GlassMaterial.Control.tint)
                         else scheme.surfaceVariant
+                        val press = rememberGlassPress()
+                        val shape = MaterialTheme.shapes.extraLarge
                         Box(
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                                .clip(MaterialTheme.shapes.extraLarge)
-                                .background(if (chosen) chosenFill() else rest)
-                                .selectable(selected = chosen, role = Role.RadioButton, onClick = { onSelect(value) })
+                                .then(
+                                    if (press != null) Modifier.glassPress(press, own = true)
+                                        .glass(LocalGlassBackdrop.current, GlassMaterial.Control, shape, press = press)
+                                        .clip(shape)
+                                        .background(if (chosen) chosenFill() else androidx.compose.ui.graphics.Color.Transparent)
+                                    else Modifier.clip(shape).background(if (chosen) chosenFill() else rest),
+                                )
+                                .selectable(selected = chosen, interactionSource = null, indication = paneIndication(), role = Role.RadioButton, onClick = { onSelect(value) })
                                 .padding(horizontal = 6.dp, vertical = 10.dp),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -1253,13 +1274,15 @@ private fun BackdropCard(selected: String, image: Long, onSelect: (String) -> Un
             ) {
                 options.forEach { (value, label) ->
                     val chosen = selected == value
+                    val press = rememberGlassPress()
                     Box(
                         Modifier.size(SWATCH + 8.dp)
+                            .glassPress(press, own = true)
                             .border(2.dp, if (chosen) scheme.primary else androidx.compose.ui.graphics.Color.Transparent, CircleShape)
                             .padding(4.dp)
                             .clip(CircleShape)
                             .border(1.dp, scheme.outlineVariant, CircleShape)
-                            .selectable(selected = chosen, role = Role.RadioButton, onClick = {
+                            .selectable(selected = chosen, interactionSource = null, indication = paneIndication(), role = Role.RadioButton, onClick = {
                                 // The own picture: picked first when there is none, and again when it is the one chosen.
                                 if (value == SettingsStore.BACKDROP_IMAGE && (image == 0L || chosen)) onPick() else onSelect(value)
                             })
@@ -1332,7 +1355,8 @@ private fun SwitchRow(
     Card(
         modifier = Modifier.fillMaxWidth(),
         surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
-            .toggleable(value = checked, interactionSource = press, indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange),
+            .toggleable(value = checked, interactionSource = press, indication = paneIndication(), role = Role.Switch, onValueChange = onChange),
+        ownClick = true,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -1356,7 +1380,8 @@ private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit, icon: 
     Card(
         modifier = Modifier.fillMaxWidth(),
         surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
-            .clickable(role = Role.Button, onClick = onClick),
+            .clickable(interactionSource = null, indication = paneIndication(), role = Role.Button, onClick = onClick),
+        ownClick = true,
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)) {

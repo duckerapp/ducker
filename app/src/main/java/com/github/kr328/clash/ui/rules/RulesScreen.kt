@@ -34,7 +34,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -76,6 +75,7 @@ import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.SheetButton
 import com.github.kr328.clash.ui.components.SheetField
+import com.github.kr328.clash.ui.components.PaneIconButton
 import com.github.kr328.clash.ui.components.overscrollFor
 import com.github.kr328.clash.ui.components.screenInsets
 import com.github.kr328.clash.ui.components.DuckerCard as Card
@@ -277,7 +277,7 @@ private fun RuleRow(rule: UserRule, bypass: Bypass?, onRemove: () -> Unit) {
             }
         }
 
-        IconButton(onClick = onRemove) {
+        PaneIconButton(onClick = onRemove) {
             Icon(
                 Symbols.Close,
                 contentDescription = stringResource(R.string.rule_remove),
