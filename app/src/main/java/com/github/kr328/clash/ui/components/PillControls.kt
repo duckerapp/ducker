@@ -61,7 +61,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -520,30 +523,40 @@ internal fun GlassToolbar(items: List<ToolbarItem>, modifier: Modifier = Modifie
     val lens = remember { Animatable(0f) }
     val touch = remember { LensTouch() }
     var spans by remember { mutableStateOf(FloatArray(0)) }
-    val bubble = remember { bubbleShader() }
+    // The dock's own lens (the owner, 19.11: the segments' bubble here was «пустышка»), its look and its size.
+    val lensGlass = remember { lensShader() }
     val itemsLayer = rememberGraphicsLayer()
-    val bubbleLayer = rememberGraphicsLayer()
-    val under = rememberPaneUnder()
-    val at = remember { floatArrayOf(0f, 0f) }
+    val lensLayer = rememberGraphicsLayer()
+    // Where the bar's corner lies in the window and how much its breath scales it: the lens draws the screen under it.
+    val at = remember { floatArrayOf(0f, 0f, 1f, 1f) }
     val base = scheme.background
+    val dark = base.luminance() < 0.5f
     val press = rememberGlassPress()
     val backdrop = LocalGlassBackdrop.current
     val itemsNow by rememberUpdatedState(items)
     val accent = scheme.primaryContainer
-    if (bubble != null) LaunchedEffect(touch.count, touch.down, motion) { lens.follow(touch, motion) }
+    if (lensGlass != null) LaunchedEffect(touch.count, touch.down, motion) { lens.follow(touch, motion) }
 
     Layout(
         modifier = modifier.height(height)
             // The whole bar breathes while a finger is on it, as the dock under its lens.
             .glassPress(press, own = true, follow = false)
-            .onGloballyPositioned { val p = it.positionInRoot(); at[0] = p.x; at[1] = p.y }
+            .onGloballyPositioned {
+                val p = it.positionInRoot()
+                at[0] = p.x
+                at[1] = p.y
+                if (it.size.width > 0 && it.size.height > 0) {
+                    at[2] = (it.localToRoot(Offset(it.size.width.toFloat(), 0f)).x - p.x) / it.size.width
+                    at[3] = (it.localToRoot(Offset(0f, it.size.height.toFloat())).y - p.y) / it.size.height
+                }
+            }
             .drawWithContent {
-                val shown = lens.value
-                if (bubble == null || shown < 0.01f) {
+                val s = lens.value
+                if (lensGlass == null || backdrop == null || s < 0.01f) {
                     drawContent()
                     return@drawWithContent
                 }
-                // The lens shows the bar under it: its fill and its icons.
+                // What the lens draws in: the bar itself, its pane, fill and icons.
                 itemsLayer.record { this@drawWithContent.drawContent() }
                 drawLayer(itemsLayer)
 
@@ -555,16 +568,24 @@ internal fun GlassToolbar(items: List<ToolbarItem>, modifier: Modifier = Modifie
                 val reach = (abs(over) / (width / 2f)).coerceAtMost(1f)
                 val stretch = ((abs(position.velocity) * width / 5000f).coerceAtMost(0.25f) + PILL_EDGE_STRETCH * reach * reach * reach)
                     .coerceAtLeast(-0.15f)
-                drawGlassBubble(
-                    layer = bubbleLayer,
-                    shader = bubble,
-                    center = Offset(pad + left + width / 2f + bent, size.height / 2f),
-                    halfWidth = width / 2f * (1f + LENS_WIDEN * shown) * (1f + stretch),
-                    halfHeight = (size.height / 2f - pad + LENS_RISE.toPx() * shown) * (1f - 0.35f * stretch),
-                    presence = shown,
-                    base = base,
-                ) {
-                    under(Offset(at[0], at[1]))
+                // As the dock's: from the segment to a capsule [DockGlass.LENS_HEIGHT] of the bar's height, the dock's
+                // aspect, and never narrower than a wide segment (the save bar's).
+                val lensHalfHeight = size.height / 2f * DockGlass.LENS_HEIGHT
+                val halfWidth = lerp(width / 2f, maxOf(width / 2f * (1f + LENS_WIDEN), lensHalfHeight * DockGlass.LENS_ASPECT), s) * (1f + stretch)
+                val halfHeight = lerp(size.height / 2f - pad, lensHalfHeight, s) * (1f - 0.35f * stretch)
+                // Its bend with its size, its lightness and light line with its last third, as the dock's.
+                val fade = (s / 0.3f).coerceAtMost(1f)
+                val theme = if (dark) DockGlass.Look else DockGlass.LookLight
+                val look = if (fade >= 1f) theme else theme.run {
+                    copy(lighten = lighten * fade, shineDark = shineDark * fade, shineLight = shineLight * fade, ring = ring * fade, irisLight = irisLight * fade)
+                }
+                val whole = size
+                lensGlass.draw(this, lensLayer, Offset(pad + left + width / 2f + bent, size.height / 2f), halfWidth, halfHeight, kotlin.math.sqrt(s), 0f, dark, look) {
+                    drawRect(base, Offset(-whole.width, -whole.height), Size(whole.width * 3, whole.height * 3))
+                    // The screen as it lies under the breathing bar: [at] is its grown corner.
+                    scale(1f / at[2], 1f / at[3], pivot = Offset.Zero) {
+                        translate(backdrop.origin.x - at[0], backdrop.origin.y - at[1]) { drawLayer(backdrop.layer) }
+                    }
                     drawLayer(itemsLayer)
                 }
             }
@@ -623,13 +644,13 @@ internal fun GlassToolbar(items: List<ToolbarItem>, modifier: Modifier = Modifie
                     if (lifted && onBar && item != null && item.enabled && !item.busy) item.onClick()
                 }
             }
-            // The main action's fill, cleared under the lens as the dock's highlight under its bubble.
+            // The main action's fill. Kept under the lens, which shows it with its label: cleared, the label in the
+            // fill's ink was lost on the dark glass (the owner, 19.11: «если зажать на save, текст не видно»).
             .drawBehind {
                 itemsNow.forEachIndexed { i, item ->
                     if (!item.fill || spans.size < (i + 1) * 2) return@forEachIndexed
-                    val near = (1f - abs(position.value - i)).coerceIn(0f, 1f)
                     drawRoundRect(
-                        color = accent.copy(alpha = accent.alpha * (1f - lens.value * near)),
+                        color = accent,
                         topLeft = Offset(spans[i * 2], 0f),
                         size = Size(spans[i * 2 + 1], size.height),
                         cornerRadius = CornerRadius(size.height / 2f),
