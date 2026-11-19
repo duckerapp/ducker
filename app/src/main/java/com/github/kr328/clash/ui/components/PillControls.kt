@@ -7,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -412,10 +413,15 @@ fun Pill(
     val backdrop = LocalGlassBackdrop.current
     val selection by animateFloatAsState(if (selected) 1f else 0f, tween(PILL_FADE_MS), label = "pillSelection")
     val style = MaterialTheme.typography.labelLarge
+    // The pane glass: it swells under a finger as Home's buttons do, without a ripple.
+    val press = rememberGlassPress()
+    val indication = if (press != null) null else LocalIndication.current
     val action = when (role) {
-        Role.Button -> Modifier.clickable(enabled = enabled, role = role, onClick = onClick)
-        Role.Switch, Role.Checkbox -> Modifier.toggleable(value = selected, enabled = enabled, role = role, onValueChange = { onClick() })
-        else -> Modifier.selectable(selected = selected, enabled = enabled, role = role, onClick = onClick)
+        Role.Button -> Modifier.clickable(interactionSource = null, indication = indication, enabled = enabled, role = role, onClick = onClick)
+        Role.Switch, Role.Checkbox -> Modifier.toggleable(
+            value = selected, interactionSource = null, indication = indication, enabled = enabled, role = role, onValueChange = { onClick() },
+        )
+        else -> Modifier.selectable(selected = selected, interactionSource = null, indication = indication, enabled = enabled, role = role, onClick = onClick)
     }
 
     Box(
@@ -425,9 +431,10 @@ fun Pill(
                 alpha = if (enabled) 1f else DISABLED_ALPHA
                 outsets = DuckerShadowOutsets
             }
+            .glassPress(press.takeIf { enabled }, own = true)
             .then(
                 when {
-                    backdrop != null -> Modifier.glassButton(backdrop)
+                    backdrop != null -> Modifier.glass(backdrop, GlassMaterial.Control, CircleShape, press = press)
                     onCard -> Modifier
                     else -> Modifier.airShadow(CircleShape, rest)
                 },

@@ -34,6 +34,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.Indication
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.MaterialTheme
@@ -1655,6 +1658,26 @@ internal val LocalGlassPanes = staticCompositionLocalOf { false }
 internal fun GlassStyle.asDock(): GlassStyle = copy(blur = DockGlass.BLUR, tint = DockGlass.TINT, vibrancy = DockGlass.VIBRANCY)
 
 /**
+ * The pane glass over [content]: Home's cards, and Proxies' and Subscriptions' lists, in one place so the tabs stay alike.
+ * Their sheets are composed outside it and keep the old glass for now.
+ */
+@Composable
+internal fun GlassPanes(content: @Composable () -> Unit) = CompositionLocalProvider(
+    LocalGlassPanes provides true,
+    LocalGlassStyle provides LocalGlassStyle.current.asDock(),
+    content = content,
+)
+
+/** The pane glass is drawn here: its panes answer a press by swelling ([glassPress]), not with a ripple. */
+@Composable
+internal fun glassPanesOn(): Boolean =
+    LocalGlassBackdrop.current != null && LocalGlassPanes.current && LocalGlassStyle.current.enabled && glassSupported
+
+/** A pane's click indication: none under the pane glass, whose press is the swell; the usual ripple elsewhere. */
+@Composable
+internal fun paneIndication(): Indication? = if (glassPanesOn()) null else LocalIndication.current
+
+/**
  * The pane glass's whole tuning. Lengths stay the same on any pane, as iOS's rim is as wide on a small button as on
  * the player (F-550); the glass settings scale them around their defaults (refraction 50, dispersion 40, depth 30,
  * highlight 60, vibrancy 40).
@@ -1808,7 +1831,7 @@ internal class GlassPress(private val scope: CoroutineScope) {
 /** A press for a pane of the pane glass; null where it is not drawn (Air, older phones, the other screens for now). */
 @Composable
 internal fun rememberGlassPress(): GlassPress? {
-    val on = LocalGlassBackdrop.current != null && LocalGlassPanes.current && LocalGlassStyle.current.enabled && glassSupported
+    val on = glassPanesOn()
     val scope = rememberCoroutineScope()
     return remember(on, scope) { if (on) GlassPress(scope) else null }
 }
@@ -1819,12 +1842,22 @@ internal fun rememberGlassPress(): GlassPress? {
  * [own] — the touch is this pane's own button's: a card ([own] false) does not swell for a touch a button inside it
  * took. Placed before the pane's [liquidGlass], whose glass then follows it.
  */
-internal fun Modifier.glassPress(press: GlassPress?, own: Boolean): Modifier {
-    if (press == null) return this
+internal fun Modifier.glassPress(press: GlassPress?, own: Boolean): Modifier =
+    if (press == null) this else pressTouch(press, own, PointerEventPass.Final).glassPressSwell(press)
 
-    return pointerInput(press, own) {
+/**
+ * A pane that is a button itself (a node's card, a group's header, a subscription's row): [glassPressSwell] before its
+ * glass, [glassPressOwnTouch] after its own click in the same chain. It then swells for its own touches but not for a
+ * button's inside it: the buttons take the touch before it sees it, its own click only after. [glassPress] with [own]
+ * false never swelled here, as the pane's own click took every touch first.
+ */
+internal fun Modifier.glassPressOwnTouch(press: GlassPress?): Modifier =
+    if (press == null) this else pressTouch(press, own = false, PointerEventPass.Main)
+
+private fun Modifier.pressTouch(press: GlassPress, own: Boolean, pass: PointerEventPass): Modifier =
+    pointerInput(press, own, pass) {
         awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Final)
+            val down = awaitFirstDown(requireUnconsumed = false, pass = pass)
             if (!own && down.isConsumed) return@awaitEachGesture
             press.down()
             val slop = viewConfiguration.touchSlop
@@ -1853,7 +1886,11 @@ internal fun Modifier.glassPress(press: GlassPress?, own: Boolean): Modifier {
                 press.up()
             }
         }
-    }.graphicsLayer {
+    }
+
+/** The swell and the pull of [press], placed before the pane's [liquidGlass], whose glass then follows it. */
+internal fun Modifier.glassPressSwell(press: GlassPress?): Modifier =
+    if (press == null) this else graphicsLayer {
         val grow = (PaneGlass.PRESS_GROW.toPx() / size.width.coerceAtLeast(1f)).coerceIn(PaneGlass.GROW_MIN, PaneGlass.GROW_MAX)
         val z = 1f + grow * press.amount.value
         val give = PaneGlass.PULL_GIVE.toPx()
@@ -1864,7 +1901,6 @@ internal fun Modifier.glassPress(press: GlassPress?, own: Boolean): Modifier {
         scaleX = z * (1f + PaneGlass.PULL_ALONG * kotlin.math.abs(x)) * (1f - PaneGlass.PULL_ACROSS * kotlin.math.abs(y))
         scaleY = z * (1f + PaneGlass.PULL_ALONG * kotlin.math.abs(y)) * (1f - PaneGlass.PULL_ACROSS * kotlin.math.abs(x))
     }
-}
 
 /*
  * The pane glass (F-550): the blurred picture as it is; within [band] of the rim it is drawn from up to [push] beyond

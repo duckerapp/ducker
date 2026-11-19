@@ -20,8 +20,8 @@ import com.github.kr328.clash.ui.components.heroWaveShader
 import com.github.kr328.clash.ui.components.heroWaveEffect
 import com.github.kr328.clash.ui.components.liquidGlass
 import com.github.kr328.clash.ui.components.LocalGlassPanes
+import com.github.kr328.clash.ui.components.GlassPanes
 import com.github.kr328.clash.ui.components.PaneGlass
-import com.github.kr328.clash.ui.components.asDock
 import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.rememberGlassPress
 import com.github.kr328.clash.ui.components.INNER_BLUR
@@ -117,7 +117,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.github.kr328.clash.ui.components.PaneIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -503,12 +503,8 @@ private fun HomeRegular(
     // On a TV the column comes all the way to its start near it, as the lazy lists do.
     val bring = remember(scroll) { tvBringIntoView(scroll) }
 
-    // The pane glass is tuned on Home first (F-550); the node sheet below keeps the other screens' glass.
-    CompositionLocalProvider(
-        LocalBringIntoViewSpec provides if (tv) bring else LocalBringIntoViewSpec.current,
-        LocalGlassPanes provides true,
-        LocalGlassStyle provides LocalGlassStyle.current.asDock(),
-    ) {
+    // The pane glass (F-550), as on Proxies and Subscriptions; the node sheet below keeps the other glass for now.
+    GlassPanes { CompositionLocalProvider(LocalBringIntoViewSpec provides if (tv) bring else LocalBringIntoViewSpec.current) {
         Column(
             modifier = modifier
                 // Во всю высоту, а не по содержимому: иначе касание в пустое место под
@@ -658,7 +654,7 @@ private fun HomeRegular(
             }
 
         }
-    }
+    } }
 
     if (!tv && pickerMounted) {
         // Hidden, the kept sheet takes no new input (D-521): the proxy tab's checks and Home's updates would recompose
@@ -2180,7 +2176,7 @@ private fun StopCard(
                     modifier = Modifier.weight(1f),
                 )
 
-                IconButton(onClick = onDismiss) {
+                PaneIconButton(onClick = onDismiss) {
                     Icon(Symbols.Close, contentDescription = stringResource(R.string.dismiss))
                 }
             }

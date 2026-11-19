@@ -2,6 +2,7 @@ package com.github.kr328.clash.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -61,6 +62,8 @@ internal fun ProxyCheckButton(
     val backdrop = LocalGlassBackdrop.current
     val fill = MaterialTheme.colorScheme.surfaceContainer
     val container = if (backdrop != null) Color.Transparent else fill
+    // The pane glass: the round check swells under a finger as Home's buttons do.
+    val swell = if (compact) null else rememberGlassPress()
     val press = if (compact) {
         Modifier.clickable(
             interactionSource = remember { MutableInteractionSource() },
@@ -69,11 +72,16 @@ internal fun ProxyCheckButton(
         ) { if (active) onClick() }
     } else {
         Modifier
-            .glass(backdrop, GlassMaterial.Control, CircleShape)
+            .glassPress(swell?.takeIf { active }, own = true)
+            .glass(backdrop, GlassMaterial.Control, CircleShape, press = swell)
             .clip(CircleShape)
             .background(container)
-            // Keep focus on the remote while a check is running.
-            .clickable(enabled = keepFocus(active), role = Role.Button, onClickLabel = label) { if (active) onClick() }
+            // Keep focus on the remote while a check is running. The pane glass answers with its swell, not a ripple.
+            .clickable(
+                interactionSource = null,
+                indication = if (swell != null) null else LocalIndication.current,
+                enabled = keepFocus(active), role = Role.Button, onClickLabel = label,
+            ) { if (active) onClick() }
     }
     val indicator: @Composable () -> Unit = {
         if (checking) {

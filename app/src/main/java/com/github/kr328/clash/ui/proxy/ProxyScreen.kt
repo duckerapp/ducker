@@ -5,6 +5,10 @@ import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.isolated
 import com.github.kr328.clash.ui.theme.failureOn
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.GlassPanes
+import com.github.kr328.clash.ui.components.PaneIconButton
+import com.github.kr328.clash.ui.components.glassPanesOn
+import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.tvScrollToStart
 import com.github.kr328.clash.ui.components.TvLazyColumn
@@ -247,201 +251,204 @@ fun ProxyScreen(
         return slot to (hidden + (searchTop.roundToPx() - hidden) * reveal.value).toInt()
     }
 
-    PullToRefresh(
-        refreshing = refreshing,
-        onRefresh = onRefresh,
-        top = contentPadding.calculateTopPadding(),
-        modifier = modifier.fillMaxSize(),
-    ) {
-        // The glass style: the floating search shows the screen's backdrop through glass where the tabs have one,
-        // else the list under it — recorded only then, as it costs a recording of the whole list every frame.
-        val tabBackdrop = LocalGlassBackdrop.current
-        val listBackdrop = if (tabBackdrop == null) rememberGlassBackdrop() else null
+    // The pane glass, as on Home (F-550).
+    GlassPanes {
+        PullToRefresh(
+            refreshing = refreshing,
+            onRefresh = onRefresh,
+            top = contentPadding.calculateTopPadding(),
+            modifier = modifier.fillMaxSize(),
+        ) {
+            // The glass style: the floating search shows the screen's backdrop through glass where the tabs have one,
+            // else the list under it — recorded only then, as it costs a recording of the whole list every frame.
+            val tabBackdrop = LocalGlassBackdrop.current
+            val listBackdrop = if (tabBackdrop == null) rememberGlassBackdrop() else null
 
-        Box(Modifier.fillMaxSize().nestedScroll(search)) {
-            TvLazyColumn(
-                state = listState,
-                overscrollEffect = overscroll,
-                modifier = Modifier.fillMaxSize().glassSource(listBackdrop).screenInsets().focusRequester(listFocus)
-                    .onSizeChanged { viewportHeight = it.height },
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
-                // панель вкладок и видны в просветах по её бокам (D-74).
-                contentPadding = PaddingValues(
-                    start = start,
-                    end = end,
-                    top = 16.dp + contentPadding.calculateTopPadding(),
-                    bottom = bottomPadding,
-                ),
-            ) {
-                item {
-                    ScreenHeader(
-                        stringResource(R.string.proxies_tab),
-                        modifier = if (tv && searchable) {
-                            Modifier.focusRequester(headerFocus).focusProperties { down = searchFocus }
-                        } else Modifier,
-                    ) {
-                        // Global — в шапке, а не отдельным рядом над списком (D-136).
-                        if (state.running && state.modeSwitch) GlobalChip(state.mode, onMode)
+            Box(Modifier.fillMaxSize().nestedScroll(search)) {
+                TvLazyColumn(
+                    state = listState,
+                    overscrollEffect = overscroll,
+                    modifier = Modifier.fillMaxSize().glassSource(listBackdrop).screenInsets().focusRequester(listFocus)
+                        .onSizeChanged { viewportHeight = it.height },
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
+                    // панель вкладок и видны в просветах по её бокам (D-74).
+                    contentPadding = PaddingValues(
+                        start = start,
+                        end = end,
+                        top = 16.dp + contentPadding.calculateTopPadding(),
+                        bottom = bottomPadding,
+                    ),
+                ) {
+                    item {
+                        ScreenHeader(
+                            stringResource(R.string.proxies_tab),
+                            modifier = if (tv && searchable) {
+                                Modifier.focusRequester(headerFocus).focusProperties { down = searchFocus }
+                            } else Modifier,
+                        ) {
+                            // Global — в шапке, а не отдельным рядом над списком (D-136).
+                            if (state.running && state.modeSwitch) GlobalChip(state.mode, onMode)
 
-                        // With the VPN off too: the tab loads the profile into the core without the
-                        // tunnel, and the core sorts that list by delay as well (D-319).
-                        // Plain text in the glass style too: a text toggle gets no pane (the owner, 17.11).
-                        ProxySortToggle(state.sort, onSort)
+                            // With the VPN off too: the tab loads the profile into the core without the
+                            // tunnel, and the core sorts that list by delay as well (D-319).
+                            // Plain text in the glass style too: a text toggle gets no pane (the owner, 17.11).
+                            ProxySortToggle(state.sort, onSort)
+                        }
+                    }
+
+                    if (searchable) {
+                        item(key = SEARCH_KEY) {
+                            Spacer(Modifier.fillMaxWidth().height(with(density) { searchHeight.toDp() }))
+                        }
+                    }
+
+                    // Заглушки, а не бесконечная полоска (D-92): так же, как на главной, и ничего не
+                    // крутится на невидимой странице — лента держит её собранной рядом с главной (D-91).
+                    if (!state.loaded) {
+                        item { ProxySkeleton() }
+                    }
+
+                    if (state.loaded && state.groups.isEmpty()) {
+                        item {
+                            EmptyState(
+                                icon = Symbols.Language,
+                                title = stringResource(R.string.ducker_no_proxies),
+                                message = stringResource(
+                                    if (state.running) R.string.proxies_empty_direct else R.string.proxies_empty_stopped
+                                ),
+                            )
+                        }
+                    }
+
+                    if (state.loaded && groups.isEmpty() && state.groups.isNotEmpty()) {
+                        item {
+                            EmptyState(
+                                icon = Symbols.Language,
+                                title = stringResource(R.string.proxy_search_empty),
+                                message = stringResource(R.string.proxy_search_empty_hint),
+                            )
+                        }
+                    }
+
+                    groups.forEachIndexed { index, group ->
+                        // Свёрнуто по умолчанию, кроме первой группы: у провайдера их бывает пять,
+                        // а узлов в каждой под десяток — развёрнутый список не помещается на экран.
+                        // При поиске группы раскрыты: свёрнутый список прятал бы найденное.
+                        val open = query.isNotBlank() || ((index == 0) != (group.name in flipped))
+
+                        item(key = "header-${group.name}") {
+                            GroupHeader(
+                                group = group,
+                                open = open,
+                                checking = shown && state.checking == group.name,
+                                checkEnabled = state.checking == null,
+                                canCheck = state.canCheck,
+                                onExpand = {
+                                    val beforeLayout = listState.layoutInfo
+                                    groupScroll?.cancel()
+                                    if (group.name in flipped) flipped -= group.name else flipped += group.name
+
+                                    if (query.isBlank() && (open || returnToken != null)) {
+                                        // Keep scroll space while native item fades remove the rows.
+                                        val token = Any()
+                                        returnToken = token
+                                        groupScroll = scope.launch {
+                                            try {
+                                                withTimeoutOrNull(REVEAL_WAIT_MS) {
+                                                    snapshotFlow { listState.layoutInfo }.first { it !== beforeLayout }
+                                                }
+                                                listState.returnAfterCollapse(bottomPaddingPx)
+                                                withFrameNanos {}
+                                            } finally {
+                                                if (returnToken === token) returnToken = null
+                                            }
+                                        }
+                                    } else if (!open && group.proxies.isNotEmpty()) {
+                                        groupScroll = scope.launch {
+                                            listState.reveal(
+                                                header = "header-${group.name}",
+                                                firstRow = "${group.name}-0",
+                                                rows = (group.proxies.size + columns - 1) / columns,
+                                            )
+                                        }
+                                    }
+                                },
+                                onHealthCheck = { onHealthCheck(group.name) },
+                                // Пульт входит на «Прокси» на шапку первой группы: дальше вправо — замер,
+                                // вниз — узлы (этап 6).
+                                modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = ItemMove)
+                                    .then(if (tv) Modifier.onFocusChanged { if (it.hasFocus) column[0] = 0 } else Modifier)
+                                    .then(if (index == 0) Modifier.tabEntry().focusRequester(firstGroup) else Modifier)
+                                    .then(
+                                        if (index == 0 && tv) Modifier.focusProperties {
+                                            onExit = { if (requestedFocusDirection == FocusDirection.Up) searchFocus.requestFocus() }
+                                        } else Modifier,
+                                    ),
+                            )
+                        }
+
+                        // Rows are keyed by position: a starred node moving up changes the cards in place
+                        // rather than crossfading every row below it (D-359).
+                        itemsIndexed(
+                            if (open) group.proxies.chunked(columns) else emptyList(),
+                            key = { i, _ -> "${group.name}-$i" },
+                        ) { row, proxies ->
+                            ProxyRow(
+                                group = group, proxies = proxies, columns = columns, column = column,
+                                onSelect = onSelect, onFavorite = onFavorite,
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = ItemFadeIn, fadeOutSpec = ItemFadeOut, placementSpec = ItemMove,
+                                ).then(if (index == 0 && row == 0) Modifier.focusRequester(firstRow) else Modifier),
+                            )
+                        }
+                    }
+                    if (returnToken != null) {
+                        item(key = RETURN_RESERVE_KEY) {
+                            Spacer(Modifier.height(with(density) { viewportHeight.toDp() }))
+                        }
                     }
                 }
 
                 if (searchable) {
-                    item(key = SEARCH_KEY) {
-                        Spacer(Modifier.fillMaxWidth().height(with(density) { searchHeight.toDp() }))
-                    }
+                    SearchField(
+                        value = query,
+                        onValue = onQuery,
+                        hint = stringResource(R.string.proxy_search),
+                        next = firstRow,
+                        glass = tabBackdrop ?: listBackdrop,
+                        shadowLift = {
+                            with(density) {
+                                val (slot, floating) = searchPlace()
+                                ((floating - slot.toFloat()) / 12.dp.toPx()).coerceIn(0f, 1f)
+                            }
+                        },
+                        modifier = Modifier.screenInsets()
+                            .padding(start = start, end = end)
+                            .focusRequester(searchFocus)
+                            .focusProperties {
+                                if (!tv) return@focusProperties
+
+                                up = headerFocus
+                                val first = groups.firstOrNull()?.let { "header-${it.name}" }
+                                down = if (listState.layoutInfo.visibleItemsInfo.any { it.key == first }) firstGroup else listFocus
+                            }
+                            .onFocusChanged {
+                                if (!it.hasFocus || !keys) return@onFocusChanged
+                                // The first node found is the left one, as from a group's header.
+                                column[0] = 0
+                                scope.launch { listState.tvScrollToStart() }
+                            }
+                            .onSizeChanged { searchHeight = it.height.toFloat() }
+                            .offset {
+                                val (slot, floating) = searchPlace()
+
+                                IntOffset(0, maxOf(slot, floating))
+                            }
+                            // Поверх списка, но озвучивается раньше него, а не после всех узлов.
+                            .semantics { traversalIndex = -1f },
+                    )
                 }
-
-                // Заглушки, а не бесконечная полоска (D-92): так же, как на главной, и ничего не
-                // крутится на невидимой странице — лента держит её собранной рядом с главной (D-91).
-                if (!state.loaded) {
-                    item { ProxySkeleton() }
-                }
-
-                if (state.loaded && state.groups.isEmpty()) {
-                    item {
-                        EmptyState(
-                            icon = Symbols.Language,
-                            title = stringResource(R.string.ducker_no_proxies),
-                            message = stringResource(
-                                if (state.running) R.string.proxies_empty_direct else R.string.proxies_empty_stopped
-                            ),
-                        )
-                    }
-                }
-
-                if (state.loaded && groups.isEmpty() && state.groups.isNotEmpty()) {
-                    item {
-                        EmptyState(
-                            icon = Symbols.Language,
-                            title = stringResource(R.string.proxy_search_empty),
-                            message = stringResource(R.string.proxy_search_empty_hint),
-                        )
-                    }
-                }
-
-                groups.forEachIndexed { index, group ->
-                    // Свёрнуто по умолчанию, кроме первой группы: у провайдера их бывает пять,
-                    // а узлов в каждой под десяток — развёрнутый список не помещается на экран.
-                    // При поиске группы раскрыты: свёрнутый список прятал бы найденное.
-                    val open = query.isNotBlank() || ((index == 0) != (group.name in flipped))
-
-                    item(key = "header-${group.name}") {
-                        GroupHeader(
-                            group = group,
-                            open = open,
-                            checking = shown && state.checking == group.name,
-                            checkEnabled = state.checking == null,
-                            canCheck = state.canCheck,
-                            onExpand = {
-                                val beforeLayout = listState.layoutInfo
-                                groupScroll?.cancel()
-                                if (group.name in flipped) flipped -= group.name else flipped += group.name
-
-                                if (query.isBlank() && (open || returnToken != null)) {
-                                    // Keep scroll space while native item fades remove the rows.
-                                    val token = Any()
-                                    returnToken = token
-                                    groupScroll = scope.launch {
-                                        try {
-                                            withTimeoutOrNull(REVEAL_WAIT_MS) {
-                                                snapshotFlow { listState.layoutInfo }.first { it !== beforeLayout }
-                                            }
-                                            listState.returnAfterCollapse(bottomPaddingPx)
-                                            withFrameNanos {}
-                                        } finally {
-                                            if (returnToken === token) returnToken = null
-                                        }
-                                    }
-                                } else if (!open && group.proxies.isNotEmpty()) {
-                                    groupScroll = scope.launch {
-                                        listState.reveal(
-                                            header = "header-${group.name}",
-                                            firstRow = "${group.name}-0",
-                                            rows = (group.proxies.size + columns - 1) / columns,
-                                        )
-                                    }
-                                }
-                            },
-                            onHealthCheck = { onHealthCheck(group.name) },
-                            // Пульт входит на «Прокси» на шапку первой группы: дальше вправо — замер,
-                            // вниз — узлы (этап 6).
-                            modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = ItemMove)
-                                .then(if (tv) Modifier.onFocusChanged { if (it.hasFocus) column[0] = 0 } else Modifier)
-                                .then(if (index == 0) Modifier.tabEntry().focusRequester(firstGroup) else Modifier)
-                                .then(
-                                    if (index == 0 && tv) Modifier.focusProperties {
-                                        onExit = { if (requestedFocusDirection == FocusDirection.Up) searchFocus.requestFocus() }
-                                    } else Modifier,
-                                ),
-                        )
-                    }
-
-                    // Rows are keyed by position: a starred node moving up changes the cards in place
-                    // rather than crossfading every row below it (D-359).
-                    itemsIndexed(
-                        if (open) group.proxies.chunked(columns) else emptyList(),
-                        key = { i, _ -> "${group.name}-$i" },
-                    ) { row, proxies ->
-                        ProxyRow(
-                            group = group, proxies = proxies, columns = columns, column = column,
-                            onSelect = onSelect, onFavorite = onFavorite,
-                            modifier = Modifier.animateItem(
-                                fadeInSpec = ItemFadeIn, fadeOutSpec = ItemFadeOut, placementSpec = ItemMove,
-                            ).then(if (index == 0 && row == 0) Modifier.focusRequester(firstRow) else Modifier),
-                        )
-                    }
-                }
-                if (returnToken != null) {
-                    item(key = RETURN_RESERVE_KEY) {
-                        Spacer(Modifier.height(with(density) { viewportHeight.toDp() }))
-                    }
-                }
-            }
-
-            if (searchable) {
-                SearchField(
-                    value = query,
-                    onValue = onQuery,
-                    hint = stringResource(R.string.proxy_search),
-                    next = firstRow,
-                    glass = tabBackdrop ?: listBackdrop,
-                    shadowLift = {
-                        with(density) {
-                            val (slot, floating) = searchPlace()
-                            ((floating - slot.toFloat()) / 12.dp.toPx()).coerceIn(0f, 1f)
-                        }
-                    },
-                    modifier = Modifier.screenInsets()
-                        .padding(start = start, end = end)
-                        .focusRequester(searchFocus)
-                        .focusProperties {
-                            if (!tv) return@focusProperties
-
-                            up = headerFocus
-                            val first = groups.firstOrNull()?.let { "header-${it.name}" }
-                            down = if (listState.layoutInfo.visibleItemsInfo.any { it.key == first }) firstGroup else listFocus
-                        }
-                        .onFocusChanged {
-                            if (!it.hasFocus || !keys) return@onFocusChanged
-                            // The first node found is the left one, as from a group's header.
-                            column[0] = 0
-                            scope.launch { listState.tvScrollToStart() }
-                        }
-                        .onSizeChanged { searchHeight = it.height.toFloat() }
-                        .offset {
-                            val (slot, floating) = searchPlace()
-
-                            IntOffset(0, maxOf(slot, floating))
-                        }
-                        // Поверх списка, но озвучивается раньше него, а не после всех узлов.
-                        .semantics { traversalIndex = -1f },
-                )
             }
         }
     }
@@ -587,18 +594,27 @@ private fun GroupHeader(
     val ping = remember { FocusRequester() }
     val tv = LocalTv.current
 
-    Card(modifier.fillMaxWidth().focusGroup()) {
+    val expandLabel = stringResource(if (open) R.string.ducker_collapse_group else R.string.ducker_expand_group)
+
+    // The header is the card's own click, so under the pane glass the card swells for it but not for the check's.
+    Card(
+        modifier.fillMaxWidth().focusGroup(),
+        surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
+            // The card's 24 dp: by its size the frame took the usual 20 and stood off the card's corners.
+            .then(if (tv) Modifier.ringCorner(24.dp) else Modifier)
+            .focusRequester(head)
+            .focusProperties { if (tv && canCheck) end = ping }
+            .clickable(
+                interactionSource = null,
+                indication = paneIndication(),
+                role = Role.Button,
+                onClickLabel = expandLabel,
+                onClick = onExpand,
+            ),
+        ownClick = true,
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
-                // The card's 24 dp: by its size the frame took the usual 20 and stood off the card's corners.
-                .then(if (tv) Modifier.ringCorner(24.dp) else Modifier)
-                .focusRequester(head)
-                .focusProperties { if (tv && canCheck) end = ping }
-                .clickable(
-                    role = Role.Button,
-                    onClickLabel = stringResource(if (open) R.string.ducker_collapse_group else R.string.ducker_expand_group),
-                    onClick = onExpand,
-                ).padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -656,8 +672,14 @@ private fun GroupHeader(
                     modifier = Modifier.focusRequester(ping).then(if (tv) Modifier.ownLeft(head) else Modifier),
                 )
             }
-            Icon(if (open) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown, contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface)
+            // On the pane glass a round glass button beside the check, as Home's buttons on its cards; else the bare arrow
+            // of the header's own click.
+            val arrow = if (open) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown
+            if (glassPanesOn()) {
+                PaneIconButton(onClick = onExpand) { Icon(arrow, contentDescription = expandLabel) }
+            } else {
+                Icon(arrow, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+            }
         }
     }
 }
@@ -756,11 +778,15 @@ private fun ProxyOption(
             // silence read as a broken button.
             .selectable(
                 selected = selected,
+                interactionSource = null,
+                indication = paneIndication(),
                 enabled = keepFocus(enabled),
                 role = Role.RadioButton,
                 onClick = { if (enabled) onSelect() else groupPicks(context) },
             ),
         shape = MaterialTheme.shapes.medium,
+        // Swells for a touch on the card, not on its star.
+        ownClick = true,
         colors = CardDefaults.cardColors(
             containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         ),

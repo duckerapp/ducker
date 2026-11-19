@@ -247,6 +247,8 @@ internal fun Modifier.resizingShadow(shape: Shape): Modifier = shadow(
 /**
  * [surfaceModifier] keeps clipped press feedback inside the card's outer shadow.
  * [resizing] — the card's height animates, see [resizingShadow].
+ * [ownClick] — the card is a button itself, its click in [surfaceModifier]: under the pane glass it swells for its own
+ * touches, not for a button's inside it ([glassPressOwnTouch]); give that click [paneIndication].
  */
 @Composable
 fun DuckerCard(
@@ -258,6 +260,7 @@ fun DuckerCard(
     border: BorderStroke? = null,
     surfaceModifier: Modifier = Modifier,
     resizing: Boolean = false,
+    ownClick: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val edge = airEdge(colors.containerColor)
@@ -270,7 +273,7 @@ fun DuckerCard(
 
     Card(
         modifier = modifier
-            .glassPress(press, own = false)
+            .then(if (ownClick) Modifier.glassPressSwell(press) else Modifier.glassPress(press, own = false))
             .then(
                 when {
                     glass -> Modifier.liquidGlass(
@@ -291,7 +294,8 @@ fun DuckerCard(
                     else -> Modifier.cardShadow(shape)
                 },
             )
-            .then(surfaceModifier),
+            .then(surfaceModifier)
+            .then(if (ownClick) Modifier.glassPressOwnTouch(press) else Modifier),
         shape = shape,
         colors = if (glass) colors.copy(containerColor = Color.Transparent) else colors,
         border = border ?: edge,
@@ -420,12 +424,9 @@ fun EmptyState(
 /** How much of a glass card's own colour lies over the glass: enough for its text, little enough to see through. */
 internal val GLASS_CARD_TINT get() = GlassMaterial.Surface.tint
 
-/** The glass style's one frosted button: Home's card buttons, the pills and the subscription card's actions alike. */
-@Composable
-internal fun Modifier.glassButton(backdrop: GlassBackdrop?): Modifier = glass(backdrop, GlassMaterial.Control, CircleShape)
-
 /**
- * A button on a glass card, frosted as [glassButton]. Material's Button sizes its modifier to the 48 dp touch target and
+ * The glass style's one frosted button: Home's card buttons and the subscription card's actions alike.
+ * A button on a glass card, frosted as [GlassMaterial.Control]. Material's Button sizes its modifier to the 48 dp touch target and
  * clips its press to the 40 dp shape inside, so glass on that modifier showed a press that missed the pane; here the
  * glass, the clip and the press share the visible 40 dp, and the touch target stays 48 dp around them.
  */
@@ -460,6 +461,35 @@ internal fun GlassCardButton(
         ) { content() }
     }
 }
+
+/**
+ * A round icon button on a glass pane (a group's check and arrow, a row's «⋯», a card's ✕ and QR): under the pane glass
+ * a [GLASS_ICON_BUTTON] pane of the buttons' glass that swells under a finger, as Home's buttons do; elsewhere Material's
+ * IconButton as before. Both take the same 48 dp, so the circle stands centred where the bare icon stood.
+ */
+@Composable
+internal fun PaneIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    if (glassPanesOn()) {
+        GlassCardButton(
+            onClick = onClick,
+            modifier = modifier.padding(GLASS_ICON_INSET).size(GLASS_ICON_BUTTON),
+            enabled = enabled,
+            padding = 0.dp,
+        ) { content() }
+    } else {
+        IconButton(onClick = onClick, modifier = modifier, enabled = enabled) { content() }
+    }
+}
+
+/** The visible size of a round glass button: the group check's, which the others match. */
+internal val GLASS_ICON_BUTTON = 40.dp
+/** Around it in the 48 dp an IconButton takes. */
+internal val GLASS_ICON_INSET = 4.dp
 
 /** A soft shadow separates the search surface; floating lift is read during shadow drawing. */
 @Composable
