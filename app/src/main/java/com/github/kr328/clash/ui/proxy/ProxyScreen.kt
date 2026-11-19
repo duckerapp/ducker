@@ -96,6 +96,7 @@ import com.github.kr328.clash.ui.components.overscrollFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
@@ -123,7 +124,7 @@ import com.github.kr328.clash.ui.components.EmptyState
 import com.github.kr328.clash.ui.components.PullToRefresh
 import com.github.kr328.clash.ui.components.ScreenHeader
 import com.github.kr328.clash.ui.components.FloatingSearch
-import com.github.kr328.clash.ui.components.glassSource
+import com.github.kr328.clash.ui.components.glassSourceOver
 import com.github.kr328.clash.ui.components.rememberGlassBackdrop
 import com.github.kr328.clash.ui.components.ProxySortToggle
 import com.github.kr328.clash.ui.components.ProxyCheckButton
@@ -259,16 +260,21 @@ fun ProxyScreen(
             top = contentPadding.calculateTopPadding(),
             modifier = modifier.fillMaxSize(),
         ) {
-            // The glass style: the floating search shows the screen's backdrop through glass where the tabs have one,
-            // else the list under it — recorded only then, as it costs a recording of the whole list every frame.
+            // The glass style: the floating search shows the list under it on the screen's backdrop: with the backdrop
+            // alone its glass stood still as the cards moved beneath (the owner, 19.11).
             val tabBackdrop = LocalGlassBackdrop.current
-            val listBackdrop = if (tabBackdrop == null) rememberGlassBackdrop() else null
+            val listBackdrop = rememberGlassBackdrop()
+            // Live only while it floats off its place: there cards pass under it. At its place, or hidden, it shows the
+            // backdrop's still picture, cheaper while it rests (F-552).
+            val floating by remember(density) {
+                derivedStateOf { reveal.value > 0f && with(density) { searchPlace().let { (slot, floating) -> floating > slot } } }
+            }
 
             Box(Modifier.fillMaxSize().nestedScroll(search)) {
                 TvLazyColumn(
                     state = listState,
                     overscrollEffect = overscroll,
-                    modifier = Modifier.fillMaxSize().glassSource(listBackdrop).screenInsets().focusRequester(listFocus)
+                    modifier = Modifier.fillMaxSize().glassSourceOver(listBackdrop, tabBackdrop).screenInsets().focusRequester(listFocus)
                         .onSizeChanged { viewportHeight = it.height },
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
@@ -416,7 +422,7 @@ fun ProxyScreen(
                         onValue = onQuery,
                         hint = stringResource(R.string.proxy_search),
                         next = firstRow,
-                        glass = tabBackdrop ?: listBackdrop,
+                        glass = if (floating || tabBackdrop == null) listBackdrop else tabBackdrop,
                         shadowLift = {
                             with(density) {
                                 val (slot, floating) = searchPlace()

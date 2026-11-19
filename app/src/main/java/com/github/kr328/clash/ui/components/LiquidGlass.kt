@@ -449,6 +449,31 @@ internal fun Modifier.glassSource(backdrop: GlassBackdrop?): Modifier =
     })
 
 /**
+ * As [glassSource], with [under] — the screen's backdrop beneath this content — recorded first into [backdrop]: a pane
+ * floating over a list (Proxies' search) then shows the cards moving under it on the wallpaper, not the wallpaper alone,
+ * which read as frozen glass (the owner, 19.11). Its panes draw it live, as the list moves.
+ */
+@Composable
+internal fun Modifier.glassSourceOver(backdrop: GlassBackdrop?, under: GlassBackdrop?): Modifier {
+    if (backdrop == null || under == null) return glassSource(backdrop)
+    val content = rememberGraphicsLayer()
+
+    return then(remember(backdrop, under, content) {
+        Modifier.onGloballyPositioned { backdrop.origin = it.positionInRoot() }
+            .drawWithContent {
+                content.record { this@drawWithContent.drawContent() }
+                backdrop.layer.record {
+                    translate(under.origin.x - backdrop.origin.x, under.origin.y - backdrop.origin.y) { drawLayer(under.layer) }
+                    drawLayer(content)
+                }
+                // Not a read of this draw: it would invalidate itself and draw again forever.
+                Snapshot.withoutReadObservation { backdrop.version++ }
+                drawLayer(content)
+            }
+    })
+}
+
+/**
  * Inside a layer of a [glassSource]'s content: its drawing changed there (a picture loaded, colours fading over), which
  * the source's own recording, holding the layer, shows without drawing again; the still pictures must be made anew.
  */
