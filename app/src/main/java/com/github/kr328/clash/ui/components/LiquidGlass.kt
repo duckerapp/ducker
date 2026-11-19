@@ -300,29 +300,35 @@ internal fun stillKey(blur: Int, vibrancy: Int): Int = blur * 1000 + vibrancy
 /**
  * What a glass pane here shows of the backdrop under it, for a lens over the pane (a switch's, a slider's): the pane's
  * still picture and its veil, drawn at [position] in the window. Nothing where none is made: the lens is clear there.
+ * [plain]: the picture alone, its colour lift undone — what lies under the panes before their own lift and tint, for
+ * panes that then lift and tint it themselves (a floating search over a sheet's rows): with the veil they were tinted
+ * twice, dark and grey beside the same pane at rest (the owner, 19.11).
  */
 @Composable
-internal fun rememberPaneUnder(): (DrawScope.(position: Offset) -> Unit) {
+internal fun rememberPaneUnder(plain: Boolean = false): (DrawScope.(position: Offset) -> Unit) {
     val backdrop = LocalGlassBackdrop.current
     val blur = with(LocalDensity.current) {
         (MAX_BLUR.toPx() * (LocalGlassStyle.current.blur / 100f) + LocalGlassExtraBlur.current.toPx()).roundToInt()
     }
     val vibrancy = LocalGlassStyle.current.vibrancy
-    // As dense as the pane glass lays it ([PaneGlass.DENSER]), so what a lens or a floating search shows is the sheet as seen.
-    val veil = MaterialTheme.colorScheme.surface.copy(
-        alpha = GlassMaterial.Surface.tint * if (LocalGlassPanes.current) PaneGlass.DENSER else 1f,
-    )
-    return remember(backdrop, blur, vibrancy, veil) {
+    val veil = MaterialTheme.colorScheme.surface.copy(alpha = GlassMaterial.Surface.tint)
+    // Saturation matrices multiply by their factors, so the lift's inverse is a saturation of its reciprocal.
+    val unlift = remember(plain, vibrancy) {
+        if (plain) androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+            androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(1f / liftSaturation(vibrancy)) },
+        ) else null
+    }
+    return remember(backdrop, blur, vibrancy, veil, unlift) {
         { position ->
             val picture = backdrop?.still?.pictures?.get(stillKey(blur, vibrancy))
             if (picture != null) {
                 val size = backdrop.layer.size
                 translate(backdrop.origin.x - position.x, backdrop.origin.y - position.y) {
                     val whole = androidx.compose.ui.geometry.Size(size.width.toFloat(), size.height.toFloat())
-                    drawRect(ShaderBrush(picture), size = whole)
+                    drawRect(ShaderBrush(picture), size = whole, colorFilter = unlift)
                     // Over the whole picture: sized by the lens layer around the control's corner, the veil missed a
                     // wide control's far end, and the lens over the last pill showed the bare wallpaper (the owner, 18.11).
-                    drawRect(veil, size = whole)
+                    if (!plain) drawRect(veil, size = whole)
                 }
             }
         }
@@ -755,10 +761,13 @@ private fun bend(shader: RuntimeShader, margin: Float, width: Float, height: Flo
     shader.setFloatUniform("noiseStrength", style.noise / 100f * 0.05f)
 }
 
+/** The saturation a pane's colour lift of [vibrancy] gives. */
+private fun liftSaturation(vibrancy: Int): Float = 1f + 0.45f * (vibrancy / 100f)
+
 /** What a pane does to the backdrop before bending it: blurs it by [blur] pixels and lifts its colour by [vibrancy] %. */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private fun paneLift(blur: Float, vibrancy: Int): RenderEffect? {
-    val sat = 1f + 0.45f * (vibrancy / 100f)
+    val sat = liftSaturation(vibrancy)
     val colour = if (sat > 1.001f) RenderEffect.createColorFilterEffect(
         android.graphics.ColorMatrixColorFilter(
             android.graphics.ColorMatrix().apply { setSaturation(sat) }

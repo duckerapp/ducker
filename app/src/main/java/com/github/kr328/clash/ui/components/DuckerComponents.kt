@@ -916,6 +916,10 @@ fun PullToRefresh(
     LaunchedEffect(refreshing) {
         if (!refreshing) pull.finished()
     }
+    // The glass style: the page recorded over the screen's backdrop, so the circle shows the title and the cards under
+    // it, not the wallpaper alone (the owner, 19.11). Drawn only while the circle is out.
+    val screen = LocalGlassBackdrop.current
+    val page = if (screen != null && !keys) rememberGlassBackdrop() else null
 
     Box(
         modifier
@@ -933,13 +937,14 @@ fun PullToRefresh(
             }
             .nestedScroll(pull),
     ) {
-        content()
+        // Its own box, without the circle: recorded with it, the circle would draw itself into its own glass.
+        Box(Modifier.glassSourceOver(page, screen), propagateMinConstraints = true) { content() }
 
         if (!keys) {
             // Only a refresh the pull asked for: a check from the group's button or one that starts by
             // itself has its own progress, and a minute-long check kept the circle up as if stuck.
             val shown = pull.own && refreshing
-            val backdrop = LocalGlassBackdrop.current
+            val backdrop = page ?: screen
 
             if (backdrop != null) {
                 GlassPullIndicator(state, shown, backdrop, top, Modifier.align(Alignment.TopCenter).padding(top = top))

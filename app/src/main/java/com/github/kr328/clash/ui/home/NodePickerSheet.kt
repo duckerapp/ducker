@@ -197,7 +197,7 @@ private fun PickerList(
         // The floating search shows the rows moving under it on the screen, as Proxies' does (F-552): live only while it
         // floats off its place, else the screen's still picture.
         val listBackdrop = if (glass != null) rememberGlassBackdrop() else null
-        val sheet = rememberPaneUnder()
+        val under = rememberPaneUnder(plain = true)
         val floating by remember(density) {
             derivedStateOf { reveal.value > 0f && with(density) { searchPlace().let { (slot, floating) -> floating > slot } } }
         }
@@ -212,8 +212,8 @@ private fun PickerList(
                     val placeable = measurable.measure(constraints.copy(minWidth = wide, maxWidth = wide))
                     layout(constraints.maxWidth, placeable.height) { placeable.place(-over, 0) }
                 }
-                // The sheet as it looks with its rows on it, for the floating search and check.
-                .glassSourceOver(listBackdrop, glass, beneath = sheet)
+                // What the panes on the sheet see, with its rows on it, for the floating search and check.
+                .glassSourceOver(listBackdrop, glass, beneath = under)
                 .selectableGroup()
                 .then(if (glass != null) Modifier.graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen } else Modifier)
                 .drawWithCache {
@@ -265,8 +265,8 @@ private fun PickerList(
                 }
             }
         }
-        // Floating, the search and the check show the sheet and the rows under them, through their own blur alone; at
-        // their place, the screen under the sheet as the other panes on it do.
+        // Floating, the search and the check show the rows on what the sheet's panes see, through their own blur alone;
+        // at their place, the screen under the sheet as the other panes on it do. Their lift and tint are laid once.
         CompositionLocalProvider(
             LocalGlassBackdrop provides if (floating && listBackdrop != null) listBackdrop else glass,
             LocalGlassExtraBlur provides if (floating && listBackdrop != null) 0.dp else LocalGlassExtraBlur.current,
