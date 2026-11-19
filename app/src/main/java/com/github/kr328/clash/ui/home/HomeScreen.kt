@@ -3,6 +3,8 @@ package com.github.kr328.clash.ui.home
 import android.os.Build
 import android.os.SystemClock
 import android.view.HapticFeedbackConstants
+import com.github.kr328.clash.ui.components.glassPanesOn
+import com.github.kr328.clash.ui.components.GLASS_BANNER_SHIFT
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.settings.SettingsStore
@@ -107,6 +109,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
@@ -2181,7 +2184,7 @@ private fun StopCard(
                     modifier = Modifier.weight(1f),
                 )
 
-                PaneIconButton(onClick = onDismiss) {
+                PaneIconButton(onClick = onDismiss, modifier = Modifier.offset(x = if (glassPanesOn()) -GLASS_BANNER_SHIFT else 0.dp)) {
                     Icon(Symbols.Close, contentDescription = stringResource(R.string.dismiss))
                 }
             }

@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.GLASS_BANNER_SHIFT
 import com.github.kr328.clash.ui.components.ringInk
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
@@ -1204,7 +1205,10 @@ private fun UpdateErrorCard(
                 }
             }
 
-            PaneIconButton(onClick = onDismiss, modifier = if (remote) Modifier.ownLeft(button) else Modifier) {
+            PaneIconButton(
+                onClick = onDismiss,
+                modifier = Modifier.offset(x = if (glassPanesOn()) -GLASS_BANNER_SHIFT else 0.dp).then(if (remote) Modifier.ownLeft(button) else Modifier),
+            ) {
                 Icon(Symbols.Close, contentDescription = stringResource(R.string.dismiss), tint = scheme.onSurfaceVariant)
             }
         }

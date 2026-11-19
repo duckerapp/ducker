@@ -515,6 +515,13 @@ internal fun PaneIconButton(
     }
 }
 
+/**
+ * How far a banner's ✕ moves in on the pane glass: its row ends 4 dp from the card's edge, the circle 4 dp inside its
+ * 48 dp, so the circle stood 8 dp past the cards' 16 dp content edge, further out than the subscription card's QR (the
+ * owner, 19.11). Air's bare icon already stands 12 dp inside, on that edge.
+ */
+internal val GLASS_BANNER_SHIFT get() = 16.dp - 4.dp - GLASS_ICON_INSET
+
 /** The glass circle of a field's ✕ (a search, a sheet's field). */
 internal val GLASS_CLEAR_BUTTON = 28.dp
 /** The visible size of a round glass button: the group check's, which the others match. */

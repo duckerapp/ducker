@@ -63,6 +63,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
@@ -119,7 +121,9 @@ fun PillSegments(
 
     // The glass style's lens: 0 — the pill, 1 — a clear lens under a finger.
     val glass = (LocalGlassBackdrop.current != null || LocalFrosted.current) && !tv
-    val bubble = remember(glass) { if (glass) bubbleShader() else null }
+    // The dock's own lens (the owner, 19.11: as the config's bars); its size here stays the pills' own.
+    val bubble = remember(glass) { if (glass) lensShader() else null }
+    val dark = scheme.background.luminance() < 0.5f
     val lens = remember { Animatable(0f) }
     // How far past the first or the last segment the finger is, pixels: the lens gives a little and stretches there.
     val edge = remember { Animatable(0f) }
@@ -128,7 +132,6 @@ fun PillSegments(
     val bubbleLayer = if (bubble != null) rememberGraphicsLayer() else null
     val under = rememberPaneUnder()
     val at = remember { floatArrayOf(0f, 0f) }
-    val base = scheme.background
     val selectedNow by rememberUpdatedState(selected)
     if (bubble != null) LaunchedEffect(touch.count, touch.down, motion) {
         // Swollen until the pill has landed where the finger sent it.
@@ -169,17 +172,21 @@ fun PillSegments(
                         val give = PILL_EDGE_GIVE.toPx()
                         val bent = over * give / (abs(over) + give)
                         val reach = (abs(over) / (width / 2f)).coerceAtMost(1f)
-                        val stretch = ((abs(positionState.velocity) * width / 5000f).coerceAtMost(0.25f) + PILL_EDGE_STRETCH * reach * reach * reach)
+                        // The speed's stretch no more pixels than a dock-sized lens's, as [GlassToolbar]'s: a share of a
+                        // wide segment's lens leapt ahead as the finger set off.
+                        val dockHalfWidth = size.height / 2f * DockGlass.LENS_HEIGHT * DockGlass.LENS_ASPECT
+                        val speedShare = (dockHalfWidth / (width / 2f * (1f + LENS_WIDEN))).coerceAtMost(1f)
+                        val stretch = ((abs(positionState.velocity) * width / 5000f).coerceAtMost(0.25f) * speedShare + PILL_EDGE_STRETCH * reach * reach * reach)
                             .coerceAtLeast(-0.15f)
                         val origin = Offset(at[0], at[1])
-                        drawGlassBubble(
+                        drawDockLens(
+                            lens = bubble,
                             layer = bubbleLayer!!,
-                            shader = bubble,
                             center = Offset(pad + left + width / 2f + bent, size.height / 2f),
                             halfWidth = width / 2f * (1f + LENS_WIDEN * shown) * (1f + stretch),
                             halfHeight = (size.height / 2f - pad + LENS_RISE.toPx() * shown) * (1f - 0.35f * stretch),
-                            presence = shown,
-                            base = base,
+                            shown = shown,
+                            dark = dark,
                         ) {
                             under(origin)
                             drawLayer(segmentsLayer)
@@ -324,6 +331,7 @@ private fun Modifier.pillDrag(
             val slop = viewConfiguration.touchSlop
             var moving = false
             var near = selectedNow
+            val from = segmentMiddle(spans(), positionAt(spans(), down.position.x).roundToInt())
             try {
                 while (true) {
                     val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
@@ -332,7 +340,9 @@ private fun Modifier.pillDrag(
                     if (!moving) continue
 
                     change.consume()
-                    val x = change.position.x
+                    // The finger's way from the middle of its segment: its place in a wide segment read as a pull past
+                    // the end, and the lens jerked the other way first (the owner, 19.11).
+                    val x = from + change.position.x - down.position.x
                     val to = positionAt(spans(), x)
                     scope.launch { if (motion) position.animateTo(to, FOLLOW_SPRING) else position.snapTo(to) }
                     val ends = endMiddles(spans())
@@ -355,6 +365,36 @@ private fun Modifier.pillDrag(
             else scope.launch { position.animateTo(picked.toFloat(), PILL_SPRING) }
         }
     }
+}
+
+/** The middle of segment [i], clamped to the segments there are. */
+private fun segmentMiddle(spans: FloatArray, i: Int): Float {
+    val count = spans.size / 2
+    if (count == 0) return 0f
+    val k = i.coerceIn(0, count - 1)
+    return spans[k * 2] + spans[k * 2 + 1] / 2f
+}
+
+/**
+ * The dock's lens at [center], [shown] 0…1: its shader and look, its bend growing with it, its lightness and light line
+ * with its last third, as the dock's (`GlassDock`).
+ */
+private fun DrawScope.drawDockLens(
+    lens: GlassLens,
+    layer: GraphicsLayer,
+    center: Offset,
+    halfWidth: Float,
+    halfHeight: Float,
+    shown: Float,
+    dark: Boolean,
+    under: DrawScope.() -> Unit,
+) {
+    val fade = (shown / 0.3f).coerceAtMost(1f)
+    val theme = if (dark) DockGlass.Look else DockGlass.LookLight
+    val look = if (fade >= 1f) theme else theme.run {
+        copy(lighten = lighten * fade, shineDark = shineDark * fade, shineLight = shineLight * fade, ring = ring * fade, irisLight = irisLight * fade)
+    }
+    lens.draw(this, layer, center, halfWidth, halfHeight, kotlin.math.sqrt(shown), 0f, dark, look, under = under)
 }
 
 /** The middles of the segments at either end, the smaller first: in a right-to-left layout the first is on the right. */
@@ -566,21 +606,19 @@ internal fun GlassToolbar(items: List<ToolbarItem>, modifier: Modifier = Modifie
                 val give = PILL_EDGE_GIVE.toPx()
                 val bent = over * give / (abs(over) + give)
                 val reach = (abs(over) / (width / 2f)).coerceAtMost(1f)
-                val stretch = ((abs(position.velocity) * width / 5000f).coerceAtMost(0.25f) + PILL_EDGE_STRETCH * reach * reach * reach)
-                    .coerceAtLeast(-0.15f)
                 // As the dock's: from the segment to a capsule [DockGlass.LENS_HEIGHT] of the bar's height, the dock's
                 // aspect, and never narrower than a wide segment (the save bar's).
                 val lensHalfHeight = size.height / 2f * DockGlass.LENS_HEIGHT
-                val halfWidth = lerp(width / 2f, maxOf(width / 2f * (1f + LENS_WIDEN), lensHalfHeight * DockGlass.LENS_ASPECT), s) * (1f + stretch)
+                val dockHalfWidth = lensHalfHeight * DockGlass.LENS_ASPECT
+                val wide = maxOf(width / 2f * (1f + LENS_WIDEN), dockHalfWidth)
+                // The stretch as many pixels as a dock-sized lens's: a share of a wide lens's width leapt ahead as the
+                // finger set off (the owner, 19.11: the save bar's lens jerked the way it was pulled).
+                val stretch = ((abs(position.velocity) * width / 5000f).coerceAtMost(0.25f) * dockHalfWidth / wide + PILL_EDGE_STRETCH * reach * reach * reach)
+                    .coerceAtLeast(-0.15f)
+                val halfWidth = lerp(width / 2f, wide, s) * (1f + stretch)
                 val halfHeight = lerp(size.height / 2f - pad, lensHalfHeight, s) * (1f - 0.35f * stretch)
-                // Its bend with its size, its lightness and light line with its last third, as the dock's.
-                val fade = (s / 0.3f).coerceAtMost(1f)
-                val theme = if (dark) DockGlass.Look else DockGlass.LookLight
-                val look = if (fade >= 1f) theme else theme.run {
-                    copy(lighten = lighten * fade, shineDark = shineDark * fade, shineLight = shineLight * fade, ring = ring * fade, irisLight = irisLight * fade)
-                }
                 val whole = size
-                lensGlass.draw(this, lensLayer, Offset(pad + left + width / 2f + bent, size.height / 2f), halfWidth, halfHeight, kotlin.math.sqrt(s), 0f, dark, look) {
+                drawDockLens(lensGlass, lensLayer, Offset(pad + left + width / 2f + bent, size.height / 2f), halfWidth, halfHeight, s, dark) {
                     drawRect(base, Offset(-whole.width, -whole.height), Size(whole.width * 3, whole.height * 3))
                     // The screen as it lies under the breathing bar: [at] is its grown corner.
                     scale(1f / at[2], 1f / at[3], pivot = Offset.Zero) {
@@ -600,6 +638,7 @@ internal fun GlassToolbar(items: List<ToolbarItem>, modifier: Modifier = Modifie
                     val slop = viewConfiguration.touchSlop
                     fun at(x: Float) = positionAt(spans, x).roundToInt().coerceIn(0, (spans.size / 2 - 1).coerceAtLeast(0))
                     var near = at(down.position.x)
+                    val from = segmentMiddle(spans, near)
                     scope.launch { position.snapTo(near.toFloat()) }
                     var moving = false
                     var last = down.position
@@ -615,7 +654,8 @@ internal fun GlassToolbar(items: List<ToolbarItem>, modifier: Modifier = Modifie
                             }
                             if (!moving && (change.position - down.position).getDistance() > slop) moving = true
                             if (!moving) continue
-                            val x = change.position.x
+                            // From the middle of the segment it started on, as the pills'.
+                            val x = from + change.position.x - down.position.x
                             val to = positionAt(spans, x)
                             scope.launch { if (motion) position.animateTo(to, FOLLOW_SPRING) else position.snapTo(to) }
                             val ends = spans.let { s ->
