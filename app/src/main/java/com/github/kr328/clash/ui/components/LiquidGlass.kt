@@ -508,6 +508,11 @@ internal fun Modifier.liquidGlass(
     val panes = LocalGlassPanes.current
 
     val glass = rememberGraphicsLayer()
+    // The pane glass's live picture is bent in a layer of its own, drawn whole: drawn straight under the pane's clip, its
+    // bend was handed the blurred backdrop only up to the clip's edge, and the rim, drawn from beyond it, came out empty
+    // on the right and at the bottom, the dark ground showing through whenever it drew live: the first ~0.3 s after a
+    // start or a return, the connect wave (the owner, 19.11).
+    val glassFrame = if (panes) rememberGraphicsLayer() else null
     val shader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
     // The same glass drawn straight from a still backdrop's picture: no layer of its own, no blur of its own.
     val stillShader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
@@ -587,6 +592,10 @@ internal fun Modifier.liquidGlass(
                         }
                     }
                 }
+                glassFrame?.let {
+                    it.compositingStrategy = androidx.compose.ui.graphics.layer.CompositingStrategy.Offscreen
+                    it.record(paneSize) { drawLayer(glass) }
+                }
             } else {
                 stillShader.setInputShader("img", still)
                 stillShader.setFloatUniform("shift", position.x - backdrop.origin.x, position.y - backdrop.origin.y)
@@ -598,7 +607,7 @@ internal fun Modifier.liquidGlass(
 
             clipPath(clip) {
                 drawRect(base)
-                if (still == null) translate(-margin, -margin) { drawLayer(glass) } else drawRect(stillBrush)
+                if (still == null) translate(-margin, -margin) { drawLayer(glassFrame ?: glass) } else drawRect(stillBrush)
                 val shadowAlpha = 0.12f * (style.depth / 100f)
                 if (!panes && shadowAlpha > 0.005f) {
                     val shadowHeight = minOf(16.dp.toPx(), size.height * 0.4f)
