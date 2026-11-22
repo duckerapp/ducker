@@ -297,6 +297,10 @@ internal fun GlassDock(
     val appStyle = LocalGlassStyle.current
     val tuning = LocalGlassTuning.current
     val style = tuning.optics(GlassTuningGroup.Dock, appStyle.dockDefaults())
+    // «Док 2» (review app): the body in the cards' pane glass, tuned by its own group from the cards' settings; the chosen
+    // tab's veil and the lens keep the dock's own (the owner, 22.11: the dock's body follows its own rules).
+    val dockPane = tuning?.enabled == true && tuning.dockPane
+    val bodyStyle = if (dockPane) tuning.optics(GlassTuningGroup.DockPane, appStyle.asDock()) else style
     fun body(key: String, fallback: Float, byTheme: Boolean = false) =
         tuning?.value(GlassTuningGroup.Dock, key, fallback, byTheme && !dark) ?: fallback
     fun veilValue(key: String, fallback: Float, byTheme: Boolean = false) =
@@ -462,7 +466,7 @@ internal fun GlassDock(
         val widest = labels.maxOf { measurer.measure(it, labelStyle, maxLines = 1, softWrap = false).size.width }
         with(density) { (maxOf(widest.toDp(), DockGlass.ICON) + DockGlass.TAB_GAP) * TABS + DOCK_PAD * 2 }
     }
-    val paneTint = scheme.surface.copy(alpha = (GlassMaterial.Surface.tint * (style.tint / 50f).coerceIn(0f, 2f)).coerceIn(0f, 0.92f))
+    val paneTint = scheme.surface.copy(alpha = (GlassMaterial.Surface.tint * (bodyStyle.tint / 50f).coerceIn(0f, 2f)).coerceIn(0f, 0.92f))
     val veilShade = Color.Black.copy(alpha = veilValue("shade", if (dark) DockGlass.VEIL_SHADE_DARK else DockGlass.VEIL_SHADE_LIGHT, byTheme = true))
 
     /** The pane's tint over [whole], the dock's size: eased under a finger, and a little more around the lens. */
@@ -566,7 +570,9 @@ internal fun GlassDock(
                         shape = shape,
                         zoom = ::dockScale,
                         veil = { drawPaneTint(size) },
-                        dockOptics = true,
+                        dockOptics = !dockPane,
+                        paneGroup = GlassTuningGroup.DockPane,
+                        glassStyle = bodyStyle,
                     ),
                 shape = shape,
                 color = Color.Transparent,

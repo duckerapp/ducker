@@ -557,17 +557,21 @@ internal fun Modifier.liquidGlass(
      * thinning the panes made too clear to read (the owner, 22.11).
      */
     fixedTint: Boolean = false,
+    /** The review app's tuning group of this pane's glass: the cards', or the dock body's second mode («Док 2»). */
+    paneGroup: GlassTuningGroup = GlassTuningGroup.Pane,
+    /** Its settings, if not [LocalGlassStyle]'s: the dock's body in its second mode inside the dock's own style. */
+    glassStyle: GlassStyle? = null,
     /** Its own veil instead of a flat [tint], drawn under the rim. */
     veil: (DrawScope.() -> Unit)? = null,
 ): Modifier {
-    val style = LocalGlassStyle.current
+    val style = glassStyle ?: LocalGlassStyle.current
     if (backdrop == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || !style.enabled) return this
     val extra = LocalGlassExtraBlur.current
     val panes = !dockOptics
     val tuning = LocalGlassTuning.current
-    val ownRim = if (tuning?.enabled == true) tuning.paneOwnRim else !PaneGlass.DOCK_RIM
-    val paneHighlight = tuning?.value(GlassTuningGroup.Pane, "highlight", DockGlass.HIGHLIGHT.toFloat())?.roundToInt() ?: DockGlass.HIGHLIGHT
-    fun paneValue(key: String, fallback: Float) = tuning?.value(GlassTuningGroup.Pane, key, fallback) ?: fallback
+    val ownRim = if (tuning?.enabled == true) tuning.ownRimOf(paneGroup) else !PaneGlass.DOCK_RIM
+    val paneHighlight = tuning?.value(paneGroup, "highlight", DockGlass.HIGHLIGHT.toFloat())?.roundToInt() ?: DockGlass.HIGHLIGHT
+    fun paneValue(key: String, fallback: Float) = tuning?.value(paneGroup, key, fallback) ?: fallback
 
     val glass = rememberGraphicsLayer()
     // The pane glass's live picture is bent in a layer of its own, drawn whole: drawn straight under the pane's clip, its
@@ -616,14 +620,14 @@ internal fun Modifier.liquidGlass(
         val bent = if (bendBoost != 1f) style.copy(dispersion = (style.dispersion * bendBoost).roundToInt()) else style
 
         if (panes) {
-            paneBend(shader, margin, size.width, size.height, radii, bent, bendBoost, ownRim, tuning)
+            paneBend(shader, margin, size.width, size.height, radii, bent, bendBoost, ownRim, tuning, paneGroup)
             val bend = RenderEffect.createRuntimeShaderEffect(shader, "img")
             glass.renderEffect = (paneLift(blur, style.vibrancy)?.let { RenderEffect.createChainEffect(bend, it) } ?: bend)
                 .asComposeRenderEffect()
-            paneBend(stillShader, 0f, size.width, size.height, radii, bent, bendBoost, ownRim, tuning)
-            veilShader?.let { paneVeil(it, size.width, size.height, radii, tuning) }
+            paneBend(stillShader, 0f, size.width, size.height, radii, bent, bendBoost, ownRim, tuning, paneGroup)
+            veilShader?.let { paneVeil(it, size.width, size.height, radii, tuning, paneGroup) }
             maskShader?.let {
-                paneVeil(it, size.width, size.height, radii, tuning)
+                paneVeil(it, size.width, size.height, radii, tuning, paneGroup)
                 it.setFloatUniform("color", 1f, 1f, 1f, 1f)
             }
         } else {
@@ -1863,8 +1867,11 @@ internal object PaneGlass {
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun Density.paneBend(shader: RuntimeShader, margin: Float, width: Float, height: Float, cornerRadii: FloatArray, style: GlassStyle, boost: Float, ownRim: Boolean, tuning: GlassTuning?) {
-    fun value(key: String, fallback: Float) = tuning?.value(GlassTuningGroup.Pane, key, fallback) ?: fallback
+private fun Density.paneBend(
+    shader: RuntimeShader, margin: Float, width: Float, height: Float, cornerRadii: FloatArray, style: GlassStyle, boost: Float,
+    ownRim: Boolean, tuning: GlassTuning?, group: GlassTuningGroup = GlassTuningGroup.Pane,
+) {
+    fun value(key: String, fallback: Float) = tuning?.value(group, key, fallback) ?: fallback
     shader.setFloatUniform("size", width, height)
     shader.setFloatUniform("offset", -margin, -margin)
     shader.setFloatUniform("shift", 0f, 0f)
@@ -1878,16 +1885,24 @@ private fun Density.paneBend(shader: RuntimeShader, margin: Float, width: Float,
     shader.setFloatUniform("zoom", 1f, 1f)
     shader.setFloatUniform("line", if (ownRim) value("line", PaneGlass.LINE) * (style.highlight / 60f) else 0f)
     shader.setFloatUniform("lineWidth", value("lineWidth", PaneGlass.LINE_WIDTH.value).dp.toPx())
+    // The line's glow inwards, none by default: its reach, strength, how fast it fades, how much it follows the light.
+    shader.setFloatUniform("lineSpread", value("lineSpread", 0f).dp.toPx())
+    shader.setFloatUniform("lineGlow", value("lineGlow", PANE_LINE_GLOW))
+    shader.setFloatUniform("lineFall", value("lineFall", PANE_LINE_FALL))
+    shader.setFloatUniform("lineDirect", value("lineDirect", 1f))
     shader.setFloatUniform("volume", value("volume", PaneGlass.VOLUME) * (style.depth / 30f))
     shader.setFloatUniform("noiseStrength", style.noise / 100f * 0.05f)
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun Density.paneVeil(shader: RuntimeShader, width: Float, height: Float, cornerRadii: FloatArray, tuning: GlassTuning?) {
+private fun Density.paneVeil(
+    shader: RuntimeShader, width: Float, height: Float, cornerRadii: FloatArray, tuning: GlassTuning?,
+    group: GlassTuningGroup = GlassTuningGroup.Pane,
+) {
     shader.setFloatUniform("size", width, height)
     shader.setFloatUniform("cornerRadii", cornerRadii)
-    val band = tuning?.value(GlassTuningGroup.Pane, "band", PaneGlass.BAND.value) ?: PaneGlass.BAND.value
-    val spare = tuning?.value(GlassTuningGroup.Pane, "spare", PaneGlass.SPARE) ?: PaneGlass.SPARE
+    val band = tuning?.value(group, "band", PaneGlass.BAND.value) ?: PaneGlass.BAND.value
+    val spare = tuning?.value(group, "spare", PaneGlass.SPARE) ?: PaneGlass.SPARE
     shader.setFloatUniform("band", band.dp.toPx())
     shader.setFloatUniform("spare", spare)
 }
@@ -2035,6 +2050,10 @@ uniform float vivid;
 uniform float roll;
 uniform float line;
 uniform float lineWidth;
+uniform float lineSpread;
+uniform float lineGlow;
+uniform float lineFall;
+uniform float lineDirect;
 uniform float volume;
 uniform float noiseStrength;
 // How much the layers around the pane scale it: a point of it lies this many times as far from its corner on the screen.
@@ -2078,7 +2097,10 @@ half4 main(float2 coord) {
     c.rgb *= half(1.0 - volume * n.y * rim);
 
     float lw = 1.0 - smoothstep(0.0, lineWidth, depth);
-    float dir = 0.3 + 0.7 * pow(abs(dot(n, float2(-0.447, -0.894))), 1.5);
+    // A glow from the line inwards over lineSpread, at lineGlow, fading by the power lineFall: the further, the weaker.
+    if (lineSpread > 0.0) lw = max(lw, lineGlow * pow(clamp(1.0 - depth / lineSpread, 0.0, 1.0), lineFall));
+    // Brightest where the light falls (top left), or, at lineDirect 0, evenly all round.
+    float dir = mix(1.0, 0.3 + 0.7 * pow(abs(dot(n, float2(-0.447, -0.894))), 1.5), lineDirect);
     c.rgb = min(c.rgb + (c.rgb * 0.9 + half3(0.2) * c.a) * half(lw * line * dir), half3(c.a));
 
     if (noiseStrength > 0.0) {
@@ -2108,3 +2130,7 @@ half4 main(float2 coord) {
     return color * half(keep);
 }
 """
+
+/** The defaults of the pane line's glow knobs; the glow itself is off until its reach is set. */
+internal const val PANE_LINE_GLOW = 0.6f
+internal const val PANE_LINE_FALL = 2f

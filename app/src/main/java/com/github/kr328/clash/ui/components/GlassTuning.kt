@@ -18,6 +18,7 @@ internal val LocalGlassTuning = staticCompositionLocalOf<GlassTuning?> { null }
 
 internal enum class GlassTuningGroup(val title: String) {
     Dock("Док"),
+    DockPane("Док 2: как карточки"),
     Veil("Подложка вкладки"),
     DockLens("Линза дока"),
     Pane("Карточки"),
@@ -72,6 +73,40 @@ private val lensKnobs = listOf(
             knob("frostBlur", "Размытие при отпускании, dp", 0f, 18f)
 )
 
+/** The pane glass's knobs: the cards', and the dock's body in its second mode («Док 2»). */
+private val paneKnobs = listOf(
+            knob("blur", "Размытие", 0f, 100f, 1f),
+            knob("tint", "Тонировка", 0f, 100f, 1f),
+            knob("vibrancy", "Насыщенность", 0f, 100f, 1f),
+            knob("refraction", "Преломление", 0f, 100f, 1f),
+            knob("dispersion", "Разделение цветов", 0f, 100f, 1f),
+            knob("depth", "Глубина", 0f, 100f, 1f),
+            knob("highlight", "Блик", 0f, 100f, 1f),
+            knob("noise", "Зерно", 0f, 100f, 1f),
+            knob("band", "Ширина преломлённого края, dp", 1f, 45f),
+            knob("push", "Сдвиг фона на краю, dp", 0f, 25f),
+            knob("chroma", "Ширина цветного края, dp", 0f, 5f),
+            knob("saturation", "Насыщенность внутри", 0f, 2f),
+            knob("vivid", "Насыщенность края", 0f, 0.6f),
+            knob("roll", "Осветление края", 0f, 0.4f),
+            knob("line", "Собственный блик: сила", 0f, 1.5f),
+            knob("lineWidth", "Собственный блик: ширина линии, dp", 0.25f, 12f),
+            knob("lineSpread", "Блик: рассеивание вглубь, dp", 0f, 48f),
+            knob("lineGlow", "Блик: сила рассеивания", 0f, 1f),
+            knob("lineFall", "Блик: спад (больше — быстрее гаснет)", 0.3f, 6f),
+            knob("lineDirect", "Блик: направленность (0 — по всему краю)", 0f, 1f),
+            knob("volume", "Разница света сверху и снизу", 0f, 0.5f),
+            knob("spare", "Прозрачность оттенка на краю", 0f, 1f),
+            knob("ring", "Внешний тёмный контур", 0f, 0.5f),
+            knob("ringWidth", "Ширина тёмного контура, dp", 0.25f, 4f),
+            knob("denser", "Плотность тонировки", 0f, 2f),
+            knob("pressClear", "Осветление при нажатии", 0f, 1f),
+            knob("pressGrow", "Рост при нажатии, dp", 0f, 20f),
+            knob("growMin", "Минимальный рост при нажатии", 0f, 0.08f),
+            knob("growMax", "Максимальный рост при нажатии", 0f, 0.12f)
+    
+)
+
 internal val glassKnobs = mapOf(
     GlassTuningGroup.Dock to listOf(
             knob("blur", "Размытие", 0f, 100f, 1f),
@@ -99,33 +134,8 @@ internal val glassKnobs = mapOf(
             knob("swellFlat", "Сплющивание при касании", 0f, 0.3f),
             knob("swellZoom", "Увеличение при касании", 0f, 0.4f)
     ) + lensKnobs,
-    GlassTuningGroup.Pane to listOf(
-            knob("blur", "Размытие", 0f, 100f, 1f),
-            knob("tint", "Тонировка", 0f, 100f, 1f),
-            knob("vibrancy", "Насыщенность", 0f, 100f, 1f),
-            knob("refraction", "Преломление", 0f, 100f, 1f),
-            knob("dispersion", "Разделение цветов", 0f, 100f, 1f),
-            knob("depth", "Глубина", 0f, 100f, 1f),
-            knob("highlight", "Блик", 0f, 100f, 1f),
-            knob("noise", "Зерно", 0f, 100f, 1f),
-            knob("band", "Ширина преломлённого края, dp", 1f, 45f),
-            knob("push", "Сдвиг фона на краю, dp", 0f, 25f),
-            knob("chroma", "Ширина цветного края, dp", 0f, 5f),
-            knob("saturation", "Насыщенность внутри", 0f, 2f),
-            knob("vivid", "Насыщенность края", 0f, 0.6f),
-            knob("roll", "Осветление края", 0f, 0.4f),
-            knob("line", "Собственный блик: сила", 0f, 1f),
-            knob("lineWidth", "Собственный блик: ширина, dp", 0.25f, 4f),
-            knob("volume", "Разница света сверху и снизу", 0f, 0.5f),
-            knob("spare", "Прозрачность оттенка на краю", 0f, 1f),
-            knob("ring", "Внешний тёмный контур", 0f, 0.5f),
-            knob("ringWidth", "Ширина тёмного контура, dp", 0.25f, 4f),
-            knob("denser", "Плотность тонировки", 0f, 2f),
-            knob("pressClear", "Осветление при нажатии", 0f, 1f),
-            knob("pressGrow", "Рост при нажатии, dp", 0f, 20f),
-            knob("growMin", "Минимальный рост при нажатии", 0f, 0.08f),
-            knob("growMax", "Максимальный рост при нажатии", 0f, 0.12f)
-    ),
+    GlassTuningGroup.Pane to paneKnobs,
+    GlassTuningGroup.DockPane to paneKnobs,
     GlassTuningGroup.Chosen to listOf(
             knob("opacity", "Плотность выделения", 0f, 1f),
             knob("white", "Белизна выделения", 0f, 1f)
@@ -154,7 +164,7 @@ internal val glassKnobs = mapOf(
 )
 
 internal fun GlassTuningGroup.usesLightValues(key: String, light: Boolean): Boolean = light && when (this) {
-    GlassTuningGroup.Pane -> false
+    GlassTuningGroup.Pane, GlassTuningGroup.DockPane -> false
     GlassTuningGroup.Dock -> key == "tintEase" || key == "tintNear"
     GlassTuningGroup.Veil -> key == "shade"
     else -> true
@@ -184,6 +194,24 @@ internal class GlassTuning(context: Context) {
         private set
     var paneOwnRim by mutableStateOf(prefs.getBoolean("pane_own_rim", false))
         private set
+    /** «Док 2»: the dock's body in the pane glass (the cards'), tuned by its own group; off — its own optics. */
+    var dockPane by mutableStateOf(prefs.getBoolean("dock_pane", false))
+        private set
+    var dockOwnRim by mutableStateOf(prefs.getBoolean("dock_own_rim", false))
+        private set
+
+    fun useDockPane(on: Boolean) {
+        dockPane = on
+        prefs.edit().putBoolean("dock_pane", on).apply()
+    }
+
+    fun dockRim(on: Boolean) {
+        dockOwnRim = on
+        prefs.edit().putBoolean("dock_own_rim", on).apply()
+    }
+
+    /** The own light line of [group]'s panes: the cards' or the dock body's in its second mode. */
+    fun ownRimOf(group: GlassTuningGroup) = if (group == GlassTuningGroup.DockPane) dockOwnRim else paneOwnRim
 
     fun enable(on: Boolean) {
         enabled = on
@@ -227,9 +255,11 @@ internal class GlassTuning(context: Context) {
         }
         return JSONObject()
             .put("format", "ducker-glass-tuning-v1")
-            .put("base", "b5aa95af")
+            .put("base", "exp/glass-tuning-20261122")
             .put("enabled", enabled)
             .put("paneOwnRim", paneOwnRim)
+            .put("dockPane", dockPane)
+            .put("dockOwnRim", dockOwnRim)
             .put("overrides", groups)
             .toString(2)
     }
@@ -257,6 +287,7 @@ internal class GlassTuning(context: Context) {
             editor.remove(key)
         }
         if (group == GlassTuningGroup.Pane) ownRim(false)
+        if (group == GlassTuningGroup.DockPane) dockRim(false)
         editor.apply()
     }
 }

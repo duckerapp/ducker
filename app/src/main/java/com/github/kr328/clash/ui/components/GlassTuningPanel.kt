@@ -86,7 +86,8 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
         "height" to DockGlass.LENS_HEIGHT, "aspect" to DockGlass.LENS_ASPECT,
         "swellWide" to DockGlass.SWELL_WIDE, "swellFlat" to DockGlass.SWELL_FLAT, "swellZoom" to DockGlass.SWELL_ZOOM,
     )
-    GlassTuningGroup.Pane -> style.asDock().numbers() + mapOf(
+    GlassTuningGroup.Pane, GlassTuningGroup.DockPane -> style.asDock().numbers() + mapOf(
+        "lineSpread" to 0f, "lineGlow" to PANE_LINE_GLOW, "lineFall" to PANE_LINE_FALL, "lineDirect" to 1f,
         "highlight" to DockGlass.HIGHLIGHT.toFloat(),
         "band" to PaneGlass.BAND.value, "push" to PaneGlass.PUSH.value, "chroma" to PaneGlass.CHROMA.value,
         "saturation" to PaneGlass.SATURATION, "vivid" to PaneGlass.VIVID, "roll" to PaneGlass.ROLL,
@@ -223,12 +224,22 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                 }
                 androidx.compose.runtime.key(group) {
                     LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = listHeight).padding(end = 8.dp)) {
-                        if (group == GlassTuningGroup.Pane) {
+                        if (group == GlassTuningGroup.DockPane) {
+                            item { PanelToggle("Корпус дока как карточки", tuning.dockPane, tuning::useDockPane) }
+                            if (!tuning.dockPane) item {
+                                Text(
+                                    "Выключено: у дока своё стекло (группа «Док»). Включи, чтобы его корпус стал стеклом карточек с этими ручками.",
+                                    style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        if (group == GlassTuningGroup.Pane || group == GlassTuningGroup.DockPane) {
                             item {
-                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Собственный блик карточек", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                                    Switch(checked = tuning.paneOwnRim, onCheckedChange = tuning::ownRim, modifier = Modifier.scale(0.8f))
-                                }
+                                PanelToggle(
+                                    if (group == GlassTuningGroup.Pane) "Собственный блик карточек" else "Собственный блик дока",
+                                    tuning.ownRimOf(group),
+                                    if (group == GlassTuningGroup.Pane) tuning::ownRim else tuning::dockRim,
+                                )
                             }
                         }
                         fun current(key: String): Float =
@@ -240,15 +251,16 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                                 "shineLight", "irisLight", "shadowLight" -> light
                                 // The sharp rim's steepness counts only without a soft band (the shader's choice).
                                 "pushPower" -> current("pushBand") <= 0f
-                                // The cards' own light line draws only with their own highlight on.
-                                "line", "lineWidth" -> group != GlassTuningGroup.Pane || tuning.paneOwnRim
+                                // The panes' own light line draws only with their own highlight on; its glow only with a reach.
+                                "line", "lineWidth", "lineSpread", "lineDirect" -> tuning.ownRimOf(group)
+                                "lineGlow", "lineFall" -> tuning.ownRimOf(group) && current("lineSpread") > 0f
                                 else -> true
                             }
                         }
                         items(shown, key = { it.key }) { knob ->
                             val themed = group.usesLightValues(knob.key, light)
                             val saved = tuning.saved(group, knob.key, themed)
-                            val fallback = if (group == GlassTuningGroup.Pane && knob.key == "highlight" && tuning.paneOwnRim) {
+                            val fallback = if ((group == GlassTuningGroup.Pane || group == GlassTuningGroup.DockPane) && knob.key == "highlight" && tuning.ownRimOf(group)) {
                                 style.highlight.toFloat()
                             } else defaults.getValue(knob.key)
                             GlassTuningRow(
@@ -263,6 +275,14 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PanelToggle(text: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+        Switch(checked = checked, onCheckedChange = onChange, modifier = Modifier.scale(0.8f))
     }
 }
 
