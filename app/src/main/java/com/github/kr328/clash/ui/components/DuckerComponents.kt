@@ -298,7 +298,7 @@ internal fun DuckerCard(
     val tuning = LocalGlassTuning.current
     val chosenTint = if (chosen) {
         val opacity = tuning?.value(GlassTuningGroup.Chosen, "opacity", chosenDensity(!light), light) ?: chosenDensity(!light)
-        val white = tuning?.value(GlassTuningGroup.Chosen, "white", 0f, light) ?: 0f
+        val white = tuning?.value(GlassTuningGroup.Chosen, "white", chosenWhite(!light), light) ?: chosenWhite(!light)
         // No lerp at none: through Oklab it would shift the accent a little.
         (if (white > 0f) androidx.compose.ui.graphics.lerp(colors.containerColor, Color.White, white) else colors.containerColor)
             .copy(alpha = colors.containerColor.alpha * opacity)
@@ -1323,4 +1323,11 @@ private const val OUTCOME_MS = 2500L
 private const val MIN_SPIN_MS = 700L
 
 /** A chosen card's accent density on the pane glass: the accent tint laid as densely as the panes lay theirs. */
-internal fun chosenDensity(dark: Boolean): Float = glassAccentTint(dark) * PaneGlass.DENSER
+internal fun chosenDensity(dark: Boolean): Float = if (dark) CHOSEN_DENSITY_DARK else CHOSEN_DENSITY_LIGHT
+
+/** The chosen card's density: the owner's on the dark theme (22.11); on the light one as before, the accent's × 1.2. */
+private const val CHOSEN_DENSITY_DARK = 0.81f
+private const val CHOSEN_DENSITY_LIGHT = 0.96f
+
+/** And its share of white: the owner's touch on the dark theme. */
+internal fun chosenWhite(dark: Boolean): Float = if (dark) 0.01f else 0f

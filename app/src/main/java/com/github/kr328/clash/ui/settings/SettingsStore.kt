@@ -111,27 +111,27 @@ class SettingsStore(context: Context) {
 
     /** Experiment: refraction strength / distortion, 0…100 %. */
     var glassRefraction: Int
-        get() = prefs.getInt(KEY_GLASS_REFRACTION, if (photo) PHOTO_REFRACTION else 50)
+        get() = prefs.getInt(KEY_GLASS_REFRACTION, if (photo) PHOTO_REFRACTION else GLASS_REFRACTION)
         set(value) = prefs.edit().putInt(KEY_GLASS_REFRACTION, value).apply()
 
     /** Experiment: chromatic aberration / dispersion, 0…100 %. */
     var glassDispersion: Int
-        get() = prefs.getInt(KEY_GLASS_DISPERSION, if (photo) PHOTO_DISPERSION else 40)
+        get() = prefs.getInt(KEY_GLASS_DISPERSION, if (photo) PHOTO_DISPERSION else GLASS_DISPERSION)
         set(value) = prefs.edit().putInt(KEY_GLASS_DISPERSION, value).apply()
 
     /** Experiment: 3D convex lens depth, 0…100 %. */
     var glassDepth: Int
-        get() = prefs.getInt(KEY_GLASS_DEPTH, 30)
+        get() = prefs.getInt(KEY_GLASS_DEPTH, GLASS_DEPTH)
         set(value) = prefs.edit().putInt(KEY_GLASS_DEPTH, value).apply()
 
     /** Experiment: directional specular highlight brightness, 0…100 %. */
     var glassHighlight: Int
-        get() = prefs.getInt(KEY_GLASS_HIGHLIGHT, 60)
+        get() = prefs.getInt(KEY_GLASS_HIGHLIGHT, GLASS_HIGHLIGHT)
         set(value) = prefs.edit().putInt(KEY_GLASS_HIGHLIGHT, value).apply()
 
     /** Experiment: micro-frost surface noise / grain, 0…100 %. */
     var glassNoise: Int
-        get() = prefs.getInt(KEY_GLASS_NOISE, 15)
+        get() = prefs.getInt(KEY_GLASS_NOISE, GLASS_NOISE)
         set(value) = prefs.edit().putInt(KEY_GLASS_NOISE, value).apply()
 
     /** Experiment: saturation vibrancy boost, 0…100 %. */
@@ -194,11 +194,18 @@ class SettingsStore(context: Context) {
         private const val KEY_GLASS_VIBRANCY = "glass_vibrancy"
         private const val KEY_GLASS_TINT = "glass_tint"
 
-        // An own picture's defaults: frosted glass, denser, a calmer rim (F-388).
+        // An own picture's defaults: frosted glass, denser (F-388); its rim now as the cards' (the owner, 22.11).
         private const val PHOTO_BLUR = 35
         private const val PHOTO_TINT = 65
-        private const val PHOTO_REFRACTION = 30
-        private const val PHOTO_DISPERSION = 15
+        private const val PHOTO_REFRACTION = 50
+        private const val PHOTO_DISPERSION = 0
+
+        /** The cards' glass as the owner tuned it (22.11): Appearance's sliders start there. */
+        const val GLASS_REFRACTION = 50
+        const val GLASS_DISPERSION = 0
+        const val GLASS_DEPTH = 65
+        const val GLASS_HIGHLIGHT = 70
+        const val GLASS_NOISE = 0
 
         /** The own picture, a copy fitted to the screen: the picked file may go from the gallery later. */
         const val GLASS_IMAGE_FILE = "glass_backdrop.jpg"

@@ -76,8 +76,8 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
         "tintEase" to if (light) DockGlass.TINT_EASE_LIGHT else DockGlass.TINT_EASE,
         "tintNear" to if (light) DockGlass.TINT_NEAR_LIGHT else DockGlass.TINT_NEAR,
         "tintReach" to DockGlass.TINT_REACH,
-        "line" to PaneGlass.LINE, "lineWidth" to PaneGlass.LINE_WIDTH.value,
-        "lineSpread" to 0f, "lineGlow" to PANE_LINE_GLOW, "lineFall" to PANE_LINE_FALL, "lineDirect" to 1f,
+        "line" to DockGlass.LINE, "lineWidth" to DockGlass.LINE_WIDTH.value, "lineSpread" to DockGlass.LINE_SPREAD.value,
+        "lineGlow" to DockGlass.LINE_GLOW, "lineFall" to DockGlass.LINE_FALL, "lineDirect" to DockGlass.LINE_DIRECT,
     )
     GlassTuningGroup.Veil -> mapOf(
         "opacity" to DockGlass.VEIL_OPACITY,
@@ -89,7 +89,8 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
         "swellWide" to DockGlass.SWELL_WIDE, "swellFlat" to DockGlass.SWELL_FLAT, "swellZoom" to DockGlass.SWELL_ZOOM,
     )
     GlassTuningGroup.Pane, GlassTuningGroup.DockPane -> style.asDock().numbers() + mapOf(
-        "lineSpread" to 0f, "lineGlow" to PANE_LINE_GLOW, "lineFall" to PANE_LINE_FALL, "lineDirect" to 1f,
+        "lineSpread" to PaneGlass.LINE_SPREAD.value, "lineGlow" to PaneGlass.LINE_GLOW, "lineFall" to PaneGlass.LINE_FALL,
+        "lineDirect" to PaneGlass.LINE_DIRECT,
         "highlight" to DockGlass.HIGHLIGHT.toFloat(),
         "band" to PaneGlass.BAND.value, "push" to PaneGlass.PUSH.value, "chroma" to PaneGlass.CHROMA.value,
         "saturation" to PaneGlass.SATURATION, "vivid" to PaneGlass.VIVID, "roll" to PaneGlass.ROLL,
@@ -98,8 +99,8 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
         "denser" to PaneGlass.DENSER, "pressClear" to PaneGlass.PRESS_CLEAR, "pressGrow" to PaneGlass.PRESS_GROW.value,
         "growMin" to PaneGlass.GROW_MIN, "growMax" to PaneGlass.GROW_MAX,
     )
-    GlassTuningGroup.Chosen -> mapOf("opacity" to chosenDensity(!light), "white" to 0f)
-    GlassTuningGroup.Switch -> lensDefaults(LensLook.Switch) + mapOf("swell" to SWITCH_LENS_SWELL)
+    GlassTuningGroup.Chosen -> mapOf("opacity" to chosenDensity(!light), "white" to chosenWhite(!light))
+    GlassTuningGroup.Switch -> lensDefaults(if (light) LensLook.SwitchLight else LensLook.Switch) + mapOf("swell" to SWITCH_LENS_SWELL)
     GlassTuningGroup.Slider -> mapOf(
         "swell" to LENS_SWELL, "zoom" to LENS_ZOOM, "bezel" to BUBBLE_BEZEL.value,
         "strength" to 0.28f, "spread" to 0.12f, "rim" to 1f, "rimWidth" to 1.2f,
@@ -107,10 +108,12 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
     GlassTuningGroup.Segments -> lensDefaults(if (light) SEGMENT_LOOK_LIGHT else SEGMENT_LOOK) + mapOf(
         "rise" to LENS_RISE.value, "widen" to LENS_WIDEN,
     )
-    GlassTuningGroup.Toolbar -> lensDefaults(if (light) SEGMENT_LOOK_LIGHT else SEGMENT_LOOK) + mapOf(
-        "height" to DockGlass.LENS_HEIGHT, "aspect" to DockGlass.LENS_ASPECT, "widen" to LENS_WIDEN,
+    GlassTuningGroup.Toolbar -> lensDefaults(if (light) TOOLBAR_LOOK_LIGHT else TOOLBAR_LOOK) + mapOf(
+        "height" to TOOLBAR_LENS_HEIGHT, "aspect" to TOOLBAR_LENS_ASPECT, "widen" to TOOLBAR_WIDEN,
     )
-    GlassTuningGroup.Wall -> mapOf("blur" to 0f, "tint" to 0f, "tone" to if (light) 1f else 0f, "saturation" to 1f)
+    GlassTuningGroup.Wall -> mapOf(
+        "blur" to wallBlur(!light), "tint" to wallTint(!light), "tone" to if (light) 1f else 0f, "saturation" to 1f,
+    )
 }
 
 /**

@@ -207,7 +207,7 @@ internal class GlassTuning(context: Context) {
     var group by mutableStateOf(GlassTuningGroup.Dock)
     var enabled by mutableStateOf(prefs.getBoolean("enabled", true))
         private set
-    var paneOwnRim by mutableStateOf(prefs.getBoolean("pane_own_rim", false))
+    var paneOwnRim by mutableStateOf(prefs.getBoolean("pane_own_rim", !PaneGlass.DOCK_RIM))
         private set
     /** «Док 2»: the dock's body in the pane glass (the cards'), tuned by its own group; off — its own optics. */
     var dockPane by mutableStateOf(prefs.getBoolean("dock_pane", false))
@@ -216,7 +216,7 @@ internal class GlassTuning(context: Context) {
         private set
 
     /** What the screens over the tabs lie on: Home's picture, the theme's plain background, or iOS's ([WallMode]). */
-    var wallMode by mutableIntStateOf(prefs.getInt("wall_mode", WallMode.PICTURE))
+    var wallMode by mutableIntStateOf(prefs.getInt("wall_mode", WallMode.DEFAULT))
         private set
 
     fun useWallMode(mode: Int) {
@@ -242,7 +242,7 @@ internal class GlassTuning(context: Context) {
     }
 
     /** «Док 1»'s body with the cards' own light line over its own glass, instead of its thin rim light. */
-    var dockOneRim by mutableStateOf(prefs.getBoolean("dock1_own_rim", false))
+    var dockOneRim by mutableStateOf(prefs.getBoolean("dock1_own_rim", DockGlass.OWN_LINE))
         private set
 
     fun dock1Rim(on: Boolean) {
@@ -359,9 +359,10 @@ internal class GlassTuning(context: Context) {
             values.getValue(key).floatValue = Float.NaN
             editor.remove(key)
         }
-        if (group == GlassTuningGroup.Pane) ownRim(false)
+        // Back to the defaults: their own light lines as the app has them.
+        if (group == GlassTuningGroup.Pane) ownRim(!PaneGlass.DOCK_RIM)
         if (group == GlassTuningGroup.DockPane) dockRim(false)
-        if (group == GlassTuningGroup.Dock) dock1Rim(false)
+        if (group == GlassTuningGroup.Dock) dock1Rim(DockGlass.OWN_LINE)
         editor.apply()
     }
 }
@@ -435,7 +436,13 @@ internal object WallMode {
     const val PLAIN = 1
     /** iOS's grouped background (its Settings): black in the dark, #F2F2F7 in the light. */
     const val IOS = 2
+    /** The owner's choice (22.11). */
+    const val DEFAULT = IOS
 }
+
+/** The picture's blur (dp) and tint over it in «Обои экранов»: the owner's on the dark theme (22.11), none on the light. */
+internal fun wallBlur(dark: Boolean): Float = if (dark) 20f else 0f
+internal fun wallTint(dark: Boolean): Float = if (dark) 0.2f else 0f
 
 internal val SOFT_EDGE_PRESET = mapOf(
     "drawFrom" to -0.18f, "zoomEdge" to 0.6f, "push" to 1.4f, "pushBand" to 0.7f, "pushAlong" to 1f, "pushAcross" to 1f,

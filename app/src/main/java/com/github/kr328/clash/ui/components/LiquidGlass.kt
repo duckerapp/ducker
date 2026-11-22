@@ -119,11 +119,12 @@ data class GlassStyle(
     val image: Long = 0L,
     /** The own picture's top, under the status bar and the headers, is dark. */
     val imageTopDark: Boolean = false,
+    // Appearance's defaults (SettingsStore's GLASS_*), the owner's (22.11).
     val refraction: Int = 50,
-    val dispersion: Int = 40,
-    val depth: Int = 30,
-    val highlight: Int = 60,
-    val noise: Int = 15,
+    val dispersion: Int = 0,
+    val depth: Int = 65,
+    val highlight: Int = 70,
+    val noise: Int = 0,
     val vibrancy: Int = 40,
     val tint: Int = 50,
 )
@@ -344,10 +345,13 @@ private fun stillLooks(extra: Dp, own: Boolean, dock: Boolean): List<Pair<Int, I
     val density = LocalDensity.current
     val style = LocalGlassStyle.current
     val pane = LocalGlassTuning.current.optics(GlassTuningGroup.Pane, style.asDock())
-    return remember(style.blur, style.vibrancy, pane.blur, pane.vibrancy, density, extra, own, dock) {
+    // The dock's own glass too: since the owner tuned it apart from the panes (22.11) its blur and lift are not theirs,
+    // and without a picture of its own it bent its glass live every frame.
+    val dockGlass = LocalGlassTuning.current.optics(GlassTuningGroup.Dock, style.dockDefaults())
+    return remember(style.blur, style.vibrancy, pane.blur, pane.vibrancy, dockGlass.blur, dockGlass.vibrancy, density, extra, own, dock) {
         with(density) {
             val looks = (if (own) listOf(style.blur to style.vibrancy) else emptyList()) +
-                if (dock) listOf(pane.blur to pane.vibrancy) else emptyList()
+                if (dock) listOf(pane.blur to pane.vibrancy, dockGlass.blur to dockGlass.vibrancy) else emptyList()
             looks.flatMap { (b, v) ->
                 listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (b / 100f) + (it + extra).toPx()).roundToInt() to v }
             }.distinct()
@@ -581,8 +585,8 @@ internal fun Modifier.liquidGlass(
     val glassFrame = if (panes) rememberGraphicsLayer() else null
     // The dock's body in its own optics («Док 1») with the cards' own light line: drawn over its finished glass by a pass
     // of its own, so its bend and reflection stay as they are (the owner, 22.11). Its body alone passes [paneGroup] DockPane.
-    val dockLine = !panes && paneGroup == GlassTuningGroup.DockPane && tuning?.enabled == true &&
-        tuning.ownRimOf(GlassTuningGroup.Dock)
+    val dockLine = !panes && paneGroup == GlassTuningGroup.DockPane &&
+        if (tuning?.enabled == true) tuning.ownRimOf(GlassTuningGroup.Dock) else DockGlass.OWN_LINE
     val lineShader = remember(dockLine) { if (dockLine) RuntimeShader(DOCK_LINE_SHADER) else null }
     val lineStillShader = remember(dockLine) { if (dockLine) RuntimeShader(DOCK_LINE_SHADER) else null }
     val lineStillBrush = remember(lineStillShader) { lineStillShader?.let(::ShaderBrush) }
@@ -639,12 +643,12 @@ internal fun Modifier.liquidGlass(
             }
         } else {
             val effect = glassEffect(shader, margin, size.width, size.height, radii, BEZEL.toPx(), amount, blur, bent)
-            glass.renderEffect = (if (lineShader != null && tuning != null) {
+            glass.renderEffect = (if (lineShader != null) {
                 dockLine(lineShader, margin, size.width, size.height, radii, bent, tuning)
                 RenderEffect.createChainEffect(RenderEffect.createRuntimeShaderEffect(lineShader, "img"), effect)
             } else effect).asComposeRenderEffect()
             bend(stillShader, 0f, size.width, size.height, radii, BEZEL.toPx(), amount, bent)
-            if (lineStillShader != null && tuning != null) dockLine(lineStillShader, 0f, size.width, size.height, radii, bent, tuning)
+            if (lineStillShader != null) dockLine(lineStillShader, 0f, size.width, size.height, radii, bent, tuning)
         }
         val stillBlur = blur.roundToInt()
         val paneSize = IntSize((size.width + 2 * margin).toInt(), (size.height + 2 * margin).toInt())
@@ -784,18 +788,18 @@ private fun glassEffect(
 /** [DOCK_LINE_SHADER]'s uniforms from «Док»'s light line knobs: as the cards' line, by the dock's own highlight. */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private fun Density.dockLine(
-    shader: RuntimeShader, margin: Float, width: Float, height: Float, cornerRadii: FloatArray, style: GlassStyle, tuning: GlassTuning,
+    shader: RuntimeShader, margin: Float, width: Float, height: Float, cornerRadii: FloatArray, style: GlassStyle, tuning: GlassTuning?,
 ) {
-    fun value(key: String, fallback: Float) = tuning.value(GlassTuningGroup.Dock, key, fallback)
+    fun value(key: String, fallback: Float) = tuning?.value(GlassTuningGroup.Dock, key, fallback) ?: fallback
     shader.setFloatUniform("size", width, height)
     shader.setFloatUniform("offset", -margin, -margin)
     shader.setFloatUniform("cornerRadii", cornerRadii)
-    shader.setFloatUniform("line", value("line", PaneGlass.LINE) * (style.highlight / 60f))
-    shader.setFloatUniform("lineWidth", value("lineWidth", PaneGlass.LINE_WIDTH.value).dp.toPx())
-    shader.setFloatUniform("lineSpread", value("lineSpread", 0f).dp.toPx())
-    shader.setFloatUniform("lineGlow", value("lineGlow", PANE_LINE_GLOW))
-    shader.setFloatUniform("lineFall", value("lineFall", PANE_LINE_FALL))
-    shader.setFloatUniform("lineDirect", value("lineDirect", 1f))
+    shader.setFloatUniform("line", value("line", DockGlass.LINE) * (style.highlight / 60f))
+    shader.setFloatUniform("lineWidth", value("lineWidth", DockGlass.LINE_WIDTH.value).dp.toPx())
+    shader.setFloatUniform("lineSpread", value("lineSpread", DockGlass.LINE_SPREAD.value).dp.toPx())
+    shader.setFloatUniform("lineGlow", value("lineGlow", DockGlass.LINE_GLOW))
+    shader.setFloatUniform("lineFall", value("lineFall", DockGlass.LINE_FALL))
+    shader.setFloatUniform("lineDirect", value("lineDirect", DockGlass.LINE_DIRECT))
 }
 
 /** The glass's bend near the rim, for a pane [width] × [height] whose layer starts [margin] before it. */
@@ -988,10 +992,14 @@ internal data class LensLook(
     val frostBlur: Dp,
 ) {
     companion object {
+        /** Tuned by the owner on the dark theme (22.11, the panel's export). */
         val Switch = LensLook(
-            drawFrom = 0.12f, zoomEdge = 0.35f, push = 0.3f, pushPower = 1.5f, pushBand = 0f, pushAlong = 0.6f, pushAcross = 1f, pushEndFrom = 0.25f, pushEndTo = 0.7f, chroma = 0.1f, disperse = 0f, smear = 0f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f,
-            ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shineEnds = 0.1f, irisDark = 0f, irisLight = 0f, shadowDark = 0.3f,
-            shadowLight = 0.12f, clearBlur = 0.3.dp, frostBlur = 6.dp,
+            drawFrom = -0.18f, zoomEdge = 0.6f, push = 1.4f, pushPower = 1.5f, pushBand = 0.7f, pushAlong = 1f, pushAcross = 1f, pushEndFrom = 0.1f, pushEndTo = 0.6f, chroma = 0.05f, disperse = 0.15f, smear = 0.5f, bandSide = 0.2f, bandEnd = 0.22f, mirror = 0.98f, mirrorSoft = 0.16f, mirrorChroma = 0.15f, mirrorMix = 0.25f, ring = 0.08f, rimShade = 0f, lighten = 0.04f, shineDark = 0f, shineLight = 0.6f, shineEnds = 0f, irisDark = 0f, irisLight = 0f, shadowDark = 0f, shadowLight = 0.12f, clearBlur = 0.dp, frostBlur = 6.dp,
+        )
+
+        /** The light theme's, as before the dark one was tuned. */
+        val SwitchLight = LensLook(
+            drawFrom = 0.12f, zoomEdge = 0.35f, push = 0.3f, pushPower = 1.5f, pushBand = 0f, pushAlong = 0.6f, pushAcross = 1f, pushEndFrom = 0.25f, pushEndTo = 0.7f, chroma = 0.1f, disperse = 0f, smear = 0f, bandSide = 0.04f, bandEnd = 0.22f, mirror = 0.9f, mirrorSoft = 0f, mirrorChroma = 0.15f, mirrorMix = 1f, ring = 0.6f, rimShade = 0.28f, lighten = 0.07f, shineDark = 0.18f, shineLight = 0.6f, shineEnds = 0.1f, irisDark = 0f, irisLight = 0f, shadowDark = 0.3f, shadowLight = 0.12f, clearBlur = 0.3.dp, frostBlur = 6.dp,
         )
     }
 }
@@ -1790,7 +1798,11 @@ internal val LocalGlassPanes = staticCompositionLocalOf { false }
  * The pane glass's settings: the dock's blur, tint and colour, so the cards and the dock read as one glass (the owner,
  * 18.11: the cards stood out from the dock in clarity and tint); the other sliders still tune the cards.
  */
-internal fun GlassStyle.asDock(): GlassStyle = copy(blur = DockGlass.BLUR, tint = DockGlass.TINT, vibrancy = DockGlass.VIBRANCY)
+/** The panes' tint density, as they read it: tuned in the review app. */
+@Composable
+internal fun paneDensity(): Float = LocalGlassTuning.current?.value(GlassTuningGroup.Pane, "denser", PaneGlass.DENSER) ?: PaneGlass.DENSER
+
+internal fun GlassStyle.asDock(): GlassStyle = copy(blur = PaneGlass.BLUR, tint = PaneGlass.TINT, vibrancy = PaneGlass.VIBRANCY)
 
 /**
  * The pane glass over [content] — Home's cards, Proxies' and Subscriptions' lists, a glass sheet and all on it — in one
@@ -1821,16 +1833,20 @@ internal fun paneIndication(): Indication? = if (glassPanesOn()) null else Local
  * highlight 60, vibrancy 40).
  */
 internal object PaneGlass {
+    /** The panes' own blur, tint and colour lift (the dock's were theirs until the owner tuned both apart, 22.11). */
+    const val BLUR = 13
+    const val TINT = 50
+    const val VIBRANCY = 0
     /**
      * How wide the rim's roll is: over it the picture is drawn in from beyond the rim, its colours livelier, and the
      * glass lighter towards the rim. iOS's player rolls over ~8 pt (F-550); at 9 dp ours read as a thin hard frame, so
      * wider and softer (the owner, 18.11: the colour diffused wider at the edges). Small panes keep 0.6 of their half.
      */
-    val BAND = 22.dp
+    val BAND = 6.01.dp
     /** How far beyond the rim the rim's picture comes from, at the rim itself. */
-    val PUSH = 14.dp
+    val PUSH = 13.28.dp
     /** How far red and blue part where the rim bends most. */
-    val CHROMA = 1.5.dp
+    val CHROMA = 1.16.dp
     /**
      * The colours inside the pane, as a share of the picture's: the dock's own (1), so the two read as one glass; and how
      * much livelier they are at the rim.
@@ -1842,40 +1858,45 @@ internal object PaneGlass {
      * at 0.12, it laid a light haze over the cards' sides that read as the wallpaper's teal against the dark dock
      * (the owner, 18.11: «все равно не как докбар по цвету»).
      */
-    const val ROLL = 0.1f
+    const val ROLL = 0f
     /**
      * The dock's rim, the old glass's directional light line ([HIGHLIGHT_SHADER] at [DockGlass.HIGHLIGHT]), in place of
      * the pane's own [LINE]: tried and kept by the owner (19.11: «мне нравится, оставим»). False brings the pane's line back.
      */
-    const val DOCK_RIM = true
+    const val DOCK_RIM = false
     /** The light line along the rim, its strength and width. */
-    const val LINE = 0.3f
-    val LINE_WIDTH = 1.5.dp
+    const val LINE = 1f
+    val LINE_WIDTH = 0.25.dp
+    /** The line's glow inwards: its reach, strength, how fast it fades, how much it follows the light (top left). */
+    val LINE_SPREAD = 5.92.dp
+    const val LINE_GLOW = 0.3f
+    const val LINE_FALL = 2.18f
+    const val LINE_DIRECT = 0.83f
     /** The roll lighter at the top and darker at the bottom. */
-    const val VOLUME = 0.12f
+    const val VOLUME = 0.1f
     /** How much of the material's dark tint the rim is spared, so its roll and light show; at 0.5 the cards were lighter than the dock. */
-    const val SPARE = 0.1f
+    const val SPARE = 0f
     /** The faint dark line just outside the rim. */
-    const val RING = 0.1f
-    val RING_WIDTH = 1.dp
+    const val RING = 0f
+    val RING_WIDTH = 0.25.dp
     /**
      * The material's tint laid this much denser: the cards read lighter than the dock, whose glass is the same but whose
      * wallpaper at the screen's foot is darker (F-550; the owner, 18.11: «докбар темнее чем карточки»).
      */
-    const val DENSER = 1.2f
+    const val DENSER = 0.25f
     /**
      * A press eases the tint by [PRESS_CLEAR] over [PRESS_IN_MS] in and [PRESS_OUT_MS] back. Lifting the picture's
      * brightness and colours read as oversaturated beside the dock's restrained press, and even the dock's 0.3 eased
      * the cards' colours ×1.35-1.56 (the owner, 18.11: «сильновато тонировка спадает»); longer than the dock's 150 / 400,
      * as the owner asked a smoother press.
      */
-    const val PRESS_CLEAR = 0.15f
+    const val PRESS_CLEAR = 1f
     const val PRESS_IN_MS = 260
     const val PRESS_OUT_MS = 560
     /** It grows by this length, between these shares of its width. */
     val PRESS_GROW = 8.dp
-    const val GROW_MIN = 0.015f
-    const val GROW_MAX = 0.04f
+    const val GROW_MIN = 0.04f
+    const val GROW_MAX = 0.06f
     /**
      * The dock's breath springs, so a pane swells as the dock does: iOS's player's +3 % in ~70 ms with a quick bounce
      * (0.8 / 1200 in, 0.4 / 900 out) read as abrupt (the owner, 18.11: smoother, a little longer). A short tap still
@@ -1920,10 +1941,10 @@ private fun Density.paneBend(
     shader.setFloatUniform("line", if (ownRim) value("line", PaneGlass.LINE) * (style.highlight / 60f) else 0f)
     shader.setFloatUniform("lineWidth", value("lineWidth", PaneGlass.LINE_WIDTH.value).dp.toPx())
     // The line's glow inwards, none by default: its reach, strength, how fast it fades, how much it follows the light.
-    shader.setFloatUniform("lineSpread", value("lineSpread", 0f).dp.toPx())
-    shader.setFloatUniform("lineGlow", value("lineGlow", PANE_LINE_GLOW))
-    shader.setFloatUniform("lineFall", value("lineFall", PANE_LINE_FALL))
-    shader.setFloatUniform("lineDirect", value("lineDirect", 1f))
+    shader.setFloatUniform("lineSpread", value("lineSpread", PaneGlass.LINE_SPREAD.value).dp.toPx())
+    shader.setFloatUniform("lineGlow", value("lineGlow", PaneGlass.LINE_GLOW))
+    shader.setFloatUniform("lineFall", value("lineFall", PaneGlass.LINE_FALL))
+    shader.setFloatUniform("lineDirect", value("lineDirect", PaneGlass.LINE_DIRECT))
     shader.setFloatUniform("volume", value("volume", PaneGlass.VOLUME) * (style.depth / 30f))
     shader.setFloatUniform("noiseStrength", style.noise / 100f * 0.05f)
 }
@@ -2201,6 +2222,3 @@ half4 main(float2 coord) {
 }
 """
 
-/** The defaults of the pane line's glow knobs; the glow itself is off until its reach is set. */
-internal const val PANE_LINE_GLOW = 0.6f
-internal const val PANE_LINE_FALL = 2f

@@ -12,6 +12,7 @@ import com.github.kr328.clash.ui.components.glassSourceChanges
 import com.github.kr328.clash.ui.components.rememberGlassBackdrop
 import com.github.kr328.clash.ui.components.rememberScreenWall
 import com.github.kr328.clash.ui.components.WallMode
+import com.github.kr328.clash.ui.components.screenWallMode
 import com.github.kr328.clash.ui.components.screenWallSource
 import com.github.kr328.clash.ui.components.heroWaveShader
 import com.github.kr328.clash.ui.components.heroWaveEffect
@@ -528,10 +529,10 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // over them (D-540, F-557's second half); the bird's game keeps its own. Air has none.
                 val wallpaper = !tv && glassOn && settingsState.glassBackdrop != SettingsStore.BACKDROP_NONE
                 val wallpaperBackdrop = if (wallpaper) rememberGlassBackdrop(still = true) else null
-                // The screens over the tabs show it as the tuning panel's «Обои экранов» say (the review app).
+                // The screens over the tabs lie on iOS's plain background, or on it as the tuning panel says (the review app).
                 val screenWall = rememberScreenWall(wallpaperBackdrop)
                 // A plain background there (the same panel): the status bar and headers in the theme's tone, not the picture's.
-                val plainScreens = screenWall !== wallpaperBackdrop && tuning?.wallMode != WallMode.PICTURE
+                val plainScreens = screenWall !== wallpaperBackdrop && screenWallMode(tuning) != WallMode.PICTURE
                 val screenTone = if (plainScreens) null else backdropTop
                 // Over a glass screen the status bar keeps the picture's tone, as over the tabs.
                 val airCovered = (wallpaperBackdrop == null || plainScreens) && (showProbe || showApps || showLogs || showConfig || showSettings || showRules)

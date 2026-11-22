@@ -87,7 +87,7 @@ private fun GlassToggle(checked: Boolean, lens: GlassLens, modifier: Modifier, o
     val scheme = MaterialTheme.colorScheme
     val dark = scheme.background.luminance() < 0.5f
     val tuning = LocalGlassTuning.current
-    val look = tuning.lens(GlassTuningGroup.Switch, LensLook.Switch, !dark)
+    val look = tuning.lens(GlassTuningGroup.Switch, if (dark) LensLook.Switch else LensLook.SwitchLight, !dark)
     val off = if (dark) Color(0xFF787880).copy(alpha = 0.36f) else Color(0xFF787878).copy(alpha = 0.2f)
     val on = chosenFill()
     // White when on; off, grey on the dark theme, where a dark thumb on the light track read as a black blot (the owner,
@@ -338,7 +338,7 @@ private val THUMB_WIDTH = 40.dp
 // iOS's switch: the thumb 0.58 of the track wide (the owner's video, 18.11).
 private val SWITCH_THUMB_WIDTH = 37.dp
 // A little smaller than the video's 1.6×, against an iPhone in hand (the owner, 18.11).
-internal const val SWITCH_LENS_SWELL = 1.5f
+internal const val SWITCH_LENS_SWELL = 1.55f
 private val THUMB_HEIGHT = 24.dp
 private val PAD = 2.dp
 // The lens grows, its picture barely: the thumb keeps room inside it (the owner, 18.11).

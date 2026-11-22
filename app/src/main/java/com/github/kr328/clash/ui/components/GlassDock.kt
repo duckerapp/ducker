@@ -82,7 +82,7 @@ import com.github.kr328.clash.R
  */
 internal object DockGlass {
     /** The whole dock grows by this share under a finger (iOS: +4.6 % at the peak, +4.2 % held), about its middle. */
-    const val BREATH = 0.045f
+    const val BREATH = 0.1f
 
     /**
      * iOS's: the peak 170 ms after the touch, ~10 % past; let go, back past its size by ~10 % 200 ms later. It breathes
@@ -98,27 +98,28 @@ internal object DockGlass {
      * app's defaults: less blur (iOS's dock is nearly clear), a gentler rim bend, no dome or inner top shadow (`depth`
      * drives both), no grain (`noise`; iOS has none).
      */
-    const val BLUR = 25
-    const val TINT = 50
-    const val REFRACTION = 35
-    const val DISPERSION = 30
-    const val DEPTH = 0
+    // Tuned by the owner (22.11, the panel's export).
+    const val BLUR = 0
+    const val TINT = 45
+    const val REFRACTION = 66
+    const val DISPERSION = 50
+    const val DEPTH = 70
     const val HIGHLIGHT = 50
     const val NOISE = 0
-    const val VIBRANCY = 40
+    const val VIBRANCY = 50
 
     /**
      * Its tint eases under a finger rather than its colour changing (iOS, dark: 29 → 40 of 255; the owner, 18.11: «не
      * цвет, а тонировку»), by [TINT_EASE]; around the lens it eases a little more, by [TINT_NEAR], over [TINT_REACH] of a
      * tab each way, so the lens carries a clearer patch along with it.
      */
-    const val TINT_EASE = 0.3f
-    const val TINT_NEAR = 0.25f
+    const val TINT_EASE = 0.5f
+    const val TINT_NEAR = 0f
     // On a light screen much less: there the white tint is what makes the dock a pane, and easing it as on a dark one
     // opened a dark hole round the lens and closed it again (the owner, 18.11: «резкие моменты»); iOS's stays white.
     const val TINT_EASE_LIGHT = 0.08f
     const val TINT_NEAR_LIGHT = 0.06f
-    const val TINT_REACH = 1.2f
+    const val TINT_REACH = 0f
     const val TINT_IN_MS = 150
     const val TINT_OUT_MS = 400
 
@@ -128,11 +129,11 @@ internal object DockGlass {
      * blot (the owner's video of ours, 18.11). [VEIL_OPACITY]: the whole veil shows the pane through it (the owner,
      * 18.11: 35 % clearer, and no light at its edges — a backing, not a pane).
      */
-    const val VEIL_SHADE_DARK = 0.22f
+    const val VEIL_SHADE_DARK = 0.25f
     // Light: a pale grey a little under the white pane, as iOS's; at 0.06 over the tint drawn again it came out whiter.
     const val VEIL_SHADE_LIGHT = 0.14f
-    val VEIL_BLUR = 12.dp
-    const val VEIL_OPACITY = 0.65f
+    val VEIL_BLUR = 0.dp
+    const val VEIL_OPACITY = 1f
 
     /**
      * A tab's width: the widest label plus this, so labels stand about as far apart as the first one from the dock's
@@ -151,8 +152,8 @@ internal object DockGlass {
      * draw the dock's edges in flat, ending at the rim in rounded steps; nearly round (1.22 high, 1.23 wide), it bowed
      * them into a barrel (the owner's sketch, 18.11). The width kept from that, iOS's less 15 % (the owner, 18.11).
      */
-    const val LENS_HEIGHT = 1.08f
-    const val LENS_ASPECT = 1.39f
+    const val LENS_HEIGHT = 1.06f
+    const val LENS_ASPECT = 1.35f
 
     /**
      * A touch: the veil, swelling with the lens in its shape, gone in 100 ms on the way (iOS's: it grows into the lens and
@@ -182,10 +183,10 @@ internal object DockGlass {
      * A touch: the lens swells on past its size, wider and a little flatter, and settles back. iOS's App Store, held:
      * 1.17 × as wide at ~270 ms from the touch, back by ~450 ms later (`ios-dock/appear/`); it grew to its size and stood.
      */
-    const val SWELL_WIDE = 0.17f
+    const val SWELL_WIDE = 0.28f
     /** And magnifies more at its peak (iOS's tap: the icon 1.08 × its held size), the rim then drawing out what lies at it. */
     const val SWELL_ZOOM = 0.06f
-    const val SWELL_FLAT = 0.05f
+    const val SWELL_FLAT = 0.2f
     const val SWELL_IN_MS = 270
     const val SWELL_OUT_MS = 450
 
@@ -250,12 +251,8 @@ internal object DockGlass {
      * 0.6), its colours parting less (chroma 0.06, disperse 0.2); on a dark screen 3 % lighter, not 7 %: under a finger
      * the lens read milky. Fitted on the numpy copy over a dock like today's (`glass-session8-20261119/lens/`).
      */
-    val Look = LensLook.Switch.copy(
-        drawFrom = -0.13f, zoomEdge = 0.12f, push = 1.2f, pushPower = 6f, pushBand = 0.45f, pushAlong = 1.1f, pushAcross = 0.7f,
-        pushEndFrom = 0.1f, pushEndTo = 0.6f,
-        chroma = 0.06f, disperse = 0.2f, smear = 1.2f, bandSide = 0.1f, mirrorSoft = 0.07f, mirrorMix = 0.6f,
-        ring = 0.15f, rimShade = 0f, lighten = 0.03f, shineDark = 0.35f, shineLight = 0.15f, shineEnds = 0.7f, irisDark = 0f, irisLight = 0.12f,
-        shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
+    val Look = LensLook(
+        drawFrom = -0.09f, zoomEdge = 0.02f, push = 0.34f, pushPower = 6f, pushBand = 0.52f, pushAlong = 1.06f, pushAcross = 1.52f, pushEndFrom = 0.13f, pushEndTo = 0.46f, chroma = 0.07f, disperse = 0.08f, smear = 0.83f, bandSide = 0.5f, bandEnd = 0.12f, mirror = 0.4f, mirrorSoft = 0.03f, mirrorChroma = 0.43f, mirrorMix = 0.7f, ring = 0f, rimShade = 0f, lighten = 0f, shineDark = 0.15f, shineLight = 0.15f, shineEnds = 0f, irisDark = 0f, irisLight = 0.12f, shadowDark = 0.06f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
     )
 
     /**
@@ -263,7 +260,22 @@ internal object DockGlass {
      * all round, and the rim's colours at 0.3 were too much (the owner, 18.11: «радуга очень агрессивная … все в радуге»).
      */
     // Half the dark screen's colours, as before; its lightness as before too: there the lens is not milky.
-    val LookLight = Look.copy(chroma = 0.03f, disperse = 0.1f, lighten = LensLook.Switch.lighten)
+    // The light theme's, as before the dark one was tuned (the owner, 22.11).
+    val LookLight = LensLook(
+        drawFrom = -0.13f, zoomEdge = 0.12f, push = 1.2f, pushPower = 6f, pushBand = 0.45f, pushAlong = 1.1f, pushAcross = 0.7f, pushEndFrom = 0.1f, pushEndTo = 0.6f, chroma = 0.03f, disperse = 0.1f, smear = 1.2f, bandSide = 0.1f, bandEnd = 0.22f, mirror = 0.9f, mirrorSoft = 0.07f, mirrorChroma = 0.15f, mirrorMix = 0.6f, ring = 0.15f, rimShade = 0f, lighten = 0.07f, shineDark = 0.35f, shineLight = 0.15f, shineEnds = 0.7f, irisDark = 0f, irisLight = 0.12f, shadowDark = 0f, shadowLight = 0f, clearBlur = 0.dp, frostBlur = 0.dp,
+    )
+
+    /**
+     * Its body's own light line, the cards' (`DOCK_LINE_SHADER`), over its own glass instead of its thin rim light: the
+     * owner's choice (22.11, the panel's export).
+     */
+    const val OWN_LINE = true
+    const val LINE = 0.3f
+    val LINE_WIDTH = 2.59.dp
+    val LINE_SPREAD = 0.dp
+    const val LINE_GLOW = 0f
+    const val LINE_FALL = 2f
+    const val LINE_DIRECT = 1f
 
     /** The share of the lens, shrinking, over which the veil takes over from its filling. */
     const val HANDOVER = 0.3f

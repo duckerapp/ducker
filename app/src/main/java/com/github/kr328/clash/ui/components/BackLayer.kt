@@ -287,14 +287,13 @@ private class Placement {
 }
 
 /**
- * Home's picture as the screens over the tabs show it, blurred, tinted and saturated by the tuning panel's
- * [GlassTuningGroup.Wall] (the review app; elsewhere [wall] itself). Recorded by [screenWallSource], so their glass
- * shows it too.
+ * What the screens over the tabs lie on ([screenWallMode]): a plain colour (iOS's by default, the owner's choice,
+ * 22.11) or Home's picture blurred, tinted and saturated ([GlassTuningGroup.Wall]). Recorded by [screenWallSource], so
+ * their glass shows it too.
  */
 @Composable
 internal fun rememberScreenWall(wall: GlassBackdrop?): GlassBackdrop? {
-    val tuning = LocalGlassTuning.current
-    if (wall == null || tuning == null || !tuning.enabled) return wall
+    if (wall == null) return null
     val screens = rememberGlassBackdrop(still = true) ?: return wall
 
     // It draws [wall]'s layer, so shows its changes at once; its still pictures are made anew with them.
@@ -311,14 +310,14 @@ internal fun rememberScreenWall(wall: GlassBackdrop?): GlassBackdrop? {
 /** Records [screens] from [wall] (see [rememberScreenWall]) and draws nothing itself. */
 @Composable
 internal fun Modifier.screenWallSource(screens: GlassBackdrop?, wall: GlassBackdrop?): Modifier {
-    val tuning = LocalGlassTuning.current
-    if (screens == null || wall == null || screens === wall || tuning == null) return this
+    val tuning = LocalGlassTuning.current?.takeIf { it.enabled }
+    if (screens == null || wall == null || screens === wall) return this
     val plain = MaterialTheme.colorScheme.background
     val light = plain.luminance() > 0.5f
     val picture = rememberGraphicsLayer()
 
     return drawBehind {
-        val mode = tuning.wallMode
+        val mode = screenWallMode(tuning)
         if (mode != WallMode.PICTURE) {
             val color = if (mode == WallMode.IOS) (if (light) IOS_GROUPED_LIGHT else Color.Black) else plain
             screens.layer.record { drawRect(color) }
@@ -327,10 +326,11 @@ internal fun Modifier.screenWallSource(screens: GlassBackdrop?, wall: GlassBackd
             return@drawBehind
         }
         val group = GlassTuningGroup.Wall
-        val blur = tuning.value(group, "blur", 0f, light).dp.toPx()
-        val saturation = tuning.value(group, "saturation", 1f, light)
-        val tint = tuning.value(group, "tint", 0f, light)
-        val tone = tuning.value(group, "tone", if (light) 1f else 0f, light)
+        fun value(key: String, fallback: Float) = tuning?.value(group, key, fallback, light) ?: fallback
+        val blur = value("blur", wallBlur(!light)).dp.toPx()
+        val saturation = value("saturation", 1f)
+        val tint = value("tint", wallTint(!light))
+        val tone = value("tone", if (light) 1f else 0f)
 
         picture.renderEffect = if (blur > 0f) BlurEffect(blur, blur, TileMode.Clamp) else null
         picture.colorFilter = if (saturation != 1f) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }) else null
@@ -343,6 +343,9 @@ internal fun Modifier.screenWallSource(screens: GlassBackdrop?, wall: GlassBackd
         Snapshot.withoutReadObservation { screens.version++ }
     }
 }
+
+/** What the screens over the tabs lie on: the tuning panel's choice in the review app, else [WallMode.DEFAULT]. */
+internal fun screenWallMode(tuning: GlassTuning?): Int = if (tuning?.enabled == true) tuning.wallMode else WallMode.DEFAULT
 
 /** iOS's `systemGroupedBackground` in the light (its Settings); black in the dark. */
 private val IOS_GROUPED_LIGHT = Color(0xFFF2F2F7)
