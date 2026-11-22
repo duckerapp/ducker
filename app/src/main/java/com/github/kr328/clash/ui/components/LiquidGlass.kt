@@ -1275,6 +1275,19 @@ float2 gradSdRoundedRect(float2 coord, float2 halfSize, float radius) {
     }
 }
 
+// The light line's brightness at a pixel whose centre lies [depth] inside the rim: its fall over [width], averaged over
+// the pixel, so a line thinner than a pixel lies smoothly along a round rim instead of in steps (the power button, the
+// owner, 22.11); outside the rim, none.
+float rimLine(float depth, float width) {
+    float w = max(width, 0.001);
+    float sum = 0.0;
+    for (int i = 0; i < 4; i++) {
+        float x = depth + (float(i) - 1.5) * 0.25;
+        sum += x < 0.0 ? 0.0 : 1.0 - smoothstep(0.0, w, x);
+    }
+    return sum * 0.25;
+}
+
 float circleMap(float x) {
     return 1.0 - sqrt(max(1.0 - x * x, 0.0));
 }
@@ -2166,7 +2179,8 @@ half4 main(float2 coord) {
     float2 p = (coord + offset) - halfSize;
     float radius = radiusAt(p, cornerRadii);
     float sd = sdRoundedRect(p, halfSize, radius);
-    if (sd > 0.0) return sample(coord);
+    // The pixels the rim crosses too: their share of the light line, see rimLine.
+    if (sd > 0.5) return sample(coord);
 
     float depth = -sd;
     float b = clamp(band, 1.0, max(min(halfSize.x, halfSize.y) * 0.6, 1.0));
@@ -2190,9 +2204,9 @@ half4 main(float2 coord) {
     c.rgb += (half3(c.a) - c.rgb) * half(roll * u * u * u);
     c.rgb *= half(1.0 - volume * n.y * rim);
 
-    float lw = 1.0 - smoothstep(0.0, lineWidth, depth);
+    float lw = rimLine(depth, lineWidth);
     // A glow from the line inwards over lineSpread, at lineGlow, fading by the power lineFall: the further, the weaker.
-    if (lineSpread > 0.0) lw = max(lw, lineGlow * pow(clamp(1.0 - depth / lineSpread, 0.0, 1.0), lineFall));
+    if (lineSpread > 0.0) lw = max(lw, lineGlow * pow(clamp(1.0 - max(depth, 0.0) / lineSpread, 0.0, 1.0), lineFall) * rimLine(depth, 1.0e6));
     // Brightest where the light falls (top left), or, at lineDirect 0, evenly all round.
     float dir = mix(1.0, 0.3 + 0.7 * pow(abs(dot(n, float2(-0.447, -0.894))), 1.5), lineDirect);
     c.rgb = min(c.rgb + (c.rgb * 0.9 + half3(0.2) * c.a) * half(lw * line * dir), half3(c.a));
@@ -2249,12 +2263,12 @@ half4 main(float2 coord) {
     float2 p = (coord + offset) - halfSize;
     float radius = radiusAt(p, cornerRadii);
     float sd = sdRoundedRect(p, halfSize, radius);
-    if (sd > 0.0 || line <= 0.0) return c;
+    if (sd > 0.5 || line <= 0.0) return c;
 
     float depth = -sd;
     float2 n = gradSdRoundedRect(p, halfSize, min(radius * 1.5, min(halfSize.x, halfSize.y)));
-    float lw = 1.0 - smoothstep(0.0, lineWidth, depth);
-    if (lineSpread > 0.0) lw = max(lw, lineGlow * pow(clamp(1.0 - depth / lineSpread, 0.0, 1.0), lineFall));
+    float lw = rimLine(depth, lineWidth);
+    if (lineSpread > 0.0) lw = max(lw, lineGlow * pow(clamp(1.0 - max(depth, 0.0) / lineSpread, 0.0, 1.0), lineFall) * rimLine(depth, 1.0e6));
     float dir = mix(1.0, 0.3 + 0.7 * pow(abs(dot(n, float2(-0.447, -0.894))), 1.5), lineDirect);
     c.rgb = min(c.rgb + (c.rgb * 0.9 + half3(0.2) * c.a) * half(lw * line * dir), half3(c.a));
     return c;
