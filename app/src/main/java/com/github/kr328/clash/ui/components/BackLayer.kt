@@ -268,8 +268,10 @@ private fun Modifier.backdropPicture(backdrop: GlassBackdrop, moves: () -> Unit)
         moves()
         val here = place.coordinates
         if (here != null && here.isAttached) {
-            place.matrix.reset()
-            here.transformFrom(here.findRootCoordinates(), place.matrix)
+            // Here to the window, then inverted: the inverse Compose keeps for a layer was found stale on a screen opened
+            // again after it left by Back, the picture drawn a screen and a bit aside — no picture at all.
+            here.findRootCoordinates().transformFrom(here, place.matrix)
+            place.matrix.invert()
         }
         withTransform({
             if (here != null && here.isAttached) transform(place.matrix)
