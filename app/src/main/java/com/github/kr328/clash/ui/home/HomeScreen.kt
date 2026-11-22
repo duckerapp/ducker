@@ -23,7 +23,7 @@ import com.github.kr328.clash.ui.components.heroWaveEffect
 import com.github.kr328.clash.ui.components.liquidGlass
 import com.github.kr328.clash.ui.components.LocalGlassPanes
 import com.github.kr328.clash.ui.components.GlassPanes
-import com.github.kr328.clash.ui.components.PaneGlass
+import com.github.kr328.clash.ui.components.paneDensity
 import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.rememberGlassPress
 import com.github.kr328.clash.ui.components.glassPressOwnTouch
@@ -1009,12 +1009,14 @@ private fun HeroCard(
     val baseAlphaOff = GlassMaterial.Surface.tint
     val alphaOn = if (tintFactor <= 1f) baseAlphaOn * tintFactor else baseAlphaOn + (1f - baseAlphaOn) * ((tintFactor - 1f) * 0.65f)
     // The pane glass's tint, as dense as on every other pane of it (F-550).
-    val alphaOff = (baseAlphaOff * tintFactor * if (LocalGlassPanes.current) PaneGlass.DENSER else 1f).coerceAtMost(0.92f)
-    // On glass connected is clearer glass of the same colour, not a pane turned over to the accent (the owner, 17.11):
-    // its rim and bend grow stronger and the power button glows, see the card's veil below. Air keeps its fill.
-    val tintOn = if (isGlass) scheme.surface.copy(alpha = (alphaOff * GLASS_ON_CLEAR).coerceIn(0f, 1f))
-    else scheme.primaryContainer.copy(alpha = alphaOn.coerceIn(0f, 1f))
+    // Read as the other panes read it: the constant alone left the card denser, greyer, once the panes were tuned thinner.
+    val alphaOff = (baseAlphaOff * tintFactor * if (LocalGlassPanes.current) paneDensity() else 1f).coerceAtMost(0.92f)
+    // On glass connected is the same glass of the same colour, not a pane turned over to the accent (the owner, 17.11;
+    // clearer it changed its colour, 22.11): its rim and bend grow stronger and the power button glows, see the card's
+    // veil below. Air keeps its fill.
     val tintOff = scheme.surface.copy(alpha = alphaOff.coerceIn(0f, 1f))
+    val tintOn = if (isGlass) tintOff
+    else scheme.primaryContainer.copy(alpha = alphaOn.coerceIn(0f, 1f))
     // The glow's colour: the accent where the theme has one (the system's colours), else light.
     val glowColor = scheme.primary.let { if (maxOf(it.red, it.green, it.blue) - minOf(it.red, it.green, it.blue) > 0.2f) it else Color.White }
 
@@ -1797,13 +1799,13 @@ private const val BUTTON_FADE = 0.15f
 private const val GLASS_BUTTON_FADE = 0.28f
 /** How much of the card's letters' colour shades the glass power button, so it stands out of the card. */
 private const val GLASS_BUTTON_SHADE = 0.14f
-/** Connected on glass: how much of the resting veil stays, and how much more the rim bends and shines. */
-private const val GLASS_ON_CLEAR = 0.5f
+/** Connected on glass: how much more the rim bends and shines. */
 private const val GLASS_ON_BEND = 1.5f
 private const val GLASS_ON_RIM = 1.6f
 private const val GLASS_ON_MS = 900
 /** The connected glow: its strength at the button, and its reach in the button's radii. */
-private const val GLASS_GLOW_ALPHA = 0.35f
+// Half the first 0.35 (the owner, 22.11).
+private const val GLASS_GLOW_ALPHA = 0.175f
 private const val GLASS_GLOW_REACH = 2.6f
 private const val HINT_OUT_MS = 90
 private const val HINT_IN_MS = 150
