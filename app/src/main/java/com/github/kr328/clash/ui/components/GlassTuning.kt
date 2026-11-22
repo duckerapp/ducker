@@ -17,14 +17,15 @@ internal const val GLASS_TUNING_PACKAGE = "app.ducker.glassreview"
 internal val LocalGlassTuning = staticCompositionLocalOf<GlassTuning?> { null }
 
 internal enum class GlassTuningGroup(val title: String) {
-    Dock("Корпус дока"),
+    Dock("Док"),
     Veil("Подложка вкладки"),
     DockLens("Линза дока"),
-    Pane("Карточки и листы"),
-    Switch("Линза переключателя"),
-    Slider("Линза ползунка"),
-    Segments("Линзы сегментов"),
-    Toolbar("Линзы редактора");
+    Pane("Карточки"),
+    Chosen("Выделение"),
+    Switch("Тумблер"),
+    Slider("Ползунок"),
+    Segments("Сегменты"),
+    Toolbar("Панели редактора");
 }
 
 internal data class GlassKnob(
@@ -39,36 +40,36 @@ private fun knob(key: String, label: String, min: Float, max: Float, step: Float
     GlassKnob(key, label, min, max, step)
 
 private val lensKnobs = listOf(
-            knob("drawFrom", "Увеличение / масштаб", -0.35f, 0.35f),
-            knob("zoomEdge", "Ширина перехода увеличения", 0.02f, 0.8f),
-            knob("push", "Преломление края", 0f, 2f),
-            knob("pushPower", "Крутизна преломления", 0.5f, 10f),
-            knob("pushBand", "Ширина зоны преломления", 0f, 1f),
-            knob("pushAlong", "Преломление на концах", 0f, 2f),
-            knob("pushAcross", "Преломление сверху и снизу", 0f, 2f),
-            knob("pushEndFrom", "Начало затухания по краям", 0f, 1f),
-            knob("pushEndTo", "Конец затухания по краям", 0f, 1f),
-            knob("chroma", "Разделение цветов", 0f, 0.5f),
-            knob("disperse", "Цвета в преломлении", 0f, 1f),
-            knob("smear", "Растяжение отражения", 0f, 2f),
-            knob("bandSide", "Ширина отражения по сторонам", 0f, 0.5f),
-            knob("bandEnd", "Ширина отражения на концах", 0f, 0.5f),
-            knob("mirror", "Дальность отражения", 0f, 2f),
-            knob("mirrorSoft", "Мягкость отражения", 0f, 0.4f),
-            knob("mirrorChroma", "Цвета в отражении", 0f, 1f),
-            knob("mirrorMix", "Видимость отражения", 0f, 1f),
+            knob("drawFrom", "Увеличение внутри (минус — крупнее)", -0.35f, 0.35f),
+            knob("zoomEdge", "Плавность увеличения к краю", 0.02f, 0.8f),
+            knob("push", "Затягивание фона в край", 0f, 2f),
+            knob("pushBand", "Ширина мягкого края (0 — острый)", 0f, 1f),
+            knob("pushPower", "Резкость острого края", 0.5f, 10f),
+            knob("pushAlong", "Затягивание на концах", 0f, 2f),
+            knob("pushAcross", "Затягивание сверху и снизу", 0f, 2f),
+            knob("pushEndFrom", "Сверху и снизу: начало спада", 0f, 1f),
+            knob("pushEndTo", "Сверху и снизу: конец спада", 0f, 1f),
+            knob("chroma", "Радуга по краю", 0f, 0.5f),
+            knob("disperse", "Радуга в затянутом фоне", 0f, 1f),
+            knob("smear", "Размазывание края", 0f, 2f),
+            knob("bandSide", "Отражение: ширина сверху и снизу", 0f, 0.5f),
+            knob("bandEnd", "Отражение: ширина на концах", 0f, 0.5f),
+            knob("mirror", "Отражение: глубина", 0f, 2f),
+            knob("mirrorSoft", "Отражение: мягкость", 0f, 0.4f),
+            knob("mirrorChroma", "Отражение: радуга", 0f, 1f),
+            knob("mirrorMix", "Отражение: яркость", 0f, 1f),
             knob("ring", "Тёмный контур", 0f, 1f),
-            knob("rimShade", "Затемнение края", 0f, 0.8f),
+            knob("rimShade", "Затемнение к краю", 0f, 0.8f),
             knob("lighten", "Осветление линзы", 0f, 0.4f),
-            knob("shineDark", "Блик на тёмном", 0f, 1f),
-            knob("shineLight", "Блик на светлом", 0f, 1f),
-            knob("shineEnds", "Блик на концах", 0f, 1f),
-            knob("irisDark", "Радужный край на тёмном", 0f, 1f),
-            knob("irisLight", "Радужный край на светлом", 0f, 1f),
-            knob("shadowDark", "Тень на тёмном", 0f, 1f),
-            knob("shadowLight", "Тень на светлом", 0f, 1f),
-            knob("clearBlur", "Размытие прозрачной линзы, dp", 0f, 12f),
-            knob("frostBlur", "Размытие при оседании, dp", 0f, 18f)
+            knob("shineDark", "Светлая линия по краю", 0f, 1f),
+            knob("shineLight", "Светлая линия по краю", 0f, 1f),
+            knob("shineEnds", "Светлая линия на концах", 0f, 1f),
+            knob("irisDark", "Цветной отлив по краю", 0f, 1f),
+            knob("irisLight", "Цветной отлив по краю", 0f, 1f),
+            knob("shadowDark", "Тень под линзой", 0f, 1f),
+            knob("shadowLight", "Тень под линзой", 0f, 1f),
+            knob("clearBlur", "Размытие внутри, dp", 0f, 12f),
+            knob("frostBlur", "Размытие при отпускании, dp", 0f, 18f)
 )
 
 internal val glassKnobs = mapOf(
@@ -113,8 +114,8 @@ internal val glassKnobs = mapOf(
             knob("saturation", "Насыщенность внутри", 0f, 2f),
             knob("vivid", "Насыщенность края", 0f, 0.6f),
             knob("roll", "Осветление края", 0f, 0.4f),
-            knob("line", "Сила собственного блика", 0f, 1f),
-            knob("lineWidth", "Ширина собственного блика, dp", 0.25f, 4f),
+            knob("line", "Собственный блик: сила", 0f, 1f),
+            knob("lineWidth", "Собственный блик: ширина, dp", 0.25f, 4f),
             knob("volume", "Разница света сверху и снизу", 0f, 0.5f),
             knob("spare", "Прозрачность оттенка на краю", 0f, 1f),
             knob("ring", "Внешний тёмный контур", 0f, 0.5f),
@@ -124,6 +125,10 @@ internal val glassKnobs = mapOf(
             knob("pressGrow", "Рост при нажатии, dp", 0f, 20f),
             knob("growMin", "Минимальный рост при нажатии", 0f, 0.08f),
             knob("growMax", "Максимальный рост при нажатии", 0f, 0.12f)
+    ),
+    GlassTuningGroup.Chosen to listOf(
+            knob("opacity", "Плотность выделения", 0f, 1f),
+            knob("white", "Белизна выделения", 0f, 1f)
     ),
     GlassTuningGroup.Switch to listOf(
             knob("swell", "Размер под пальцем", 1f, 2.2f)
@@ -229,6 +234,21 @@ internal class GlassTuning(context: Context) {
             .toString(2)
     }
 
+    /** One knob back to what it inherits. */
+    fun clear(group: GlassTuningGroup, knob: GlassKnob, light: Boolean) {
+        val key = group.storageKey(knob.key, light)
+        values.getValue(key).floatValue = Float.NaN
+        prefs.edit().remove(key).apply()
+    }
+
+    /** Several knobs of [group] at once (a preset), each clamped to its range. */
+    fun apply(group: GlassTuningGroup, light: Boolean, preset: Map<String, Float>) {
+        for (knob in glassKnobs.getValue(group)) {
+            val value = preset[knob.key] ?: continue
+            set(group, knob, group.usesLightValues(knob.key, light), value)
+        }
+    }
+
     fun reset(group: GlassTuningGroup, light: Boolean) {
         val editor = prefs.edit()
         for (knob in glassKnobs.getValue(group)) {
@@ -292,6 +312,22 @@ internal fun GlassTuning?.lens(group: GlassTuningGroup, fallback: LensLook, ligh
         frostBlur = value(group, "frostBlur", fallback.frostBlur.value, light).dp,
     )
 }
+
+/** The lens groups: a preset applies to them. */
+internal val GlassTuningGroup.lens: Boolean
+    get() = this == GlassTuningGroup.DockLens || this == GlassTuningGroup.Switch ||
+        this == GlassTuningGroup.Segments || this == GlassTuningGroup.Toolbar
+
+/**
+ * «Мягкие края»: a starting point after a lens the owner liked (FlClashX's glass dock, 22.11): the middle magnified, the
+ * picture drawn into a wide soft rim along a circle's edge, smeared rather than copied, faint colours, a faint mirror,
+ * no dark ring. The owner tunes from here; nothing applies until pressed.
+ */
+internal val SOFT_EDGE_PRESET = mapOf(
+    "drawFrom" to -0.18f, "zoomEdge" to 0.6f, "push" to 1.4f, "pushBand" to 0.7f, "pushAlong" to 1f, "pushAcross" to 1f,
+    "pushEndFrom" to 0.1f, "pushEndTo" to 0.6f, "chroma" to 0.05f, "disperse" to 0.15f, "smear" to 1.6f,
+    "bandSide" to 0.2f, "mirrorSoft" to 0.16f, "mirrorMix" to 0.25f, "ring" to 0.08f, "rimShade" to 0f, "lighten" to 0.04f,
+)
 
 internal fun lensDefaults(look: LensLook): Map<String, Float> = mapOf(
     "drawFrom" to look.drawFrom,

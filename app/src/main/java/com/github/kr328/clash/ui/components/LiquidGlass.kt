@@ -552,6 +552,11 @@ internal fun Modifier.liquidGlass(
     press: GlassPress? = null,
     /** The dock and side rail keep their own refraction and tint. */
     dockOptics: Boolean = false,
+    /**
+     * The pane glass: [tint]'s alpha is final, not scaled by the glass's tint and density — a chosen card's accent, which
+     * thinning the panes made too clear to read (the owner, 22.11).
+     */
+    fixedTint: Boolean = false,
     /** Its own veil instead of a flat [tint], drawn under the rim. */
     veil: (DrawScope.() -> Unit)? = null,
 ): Modifier {
@@ -687,8 +692,9 @@ internal fun Modifier.liquidGlass(
                         drawRect(maskBrush, blendMode = BlendMode.DstIn)
                         drawContext.canvas.restore()
                     } else veil()
-                } else if (tintProgress > 0f && tint.alpha > 0f) {
-                    val a = (tint.alpha * tintProgress * (if (panes) paneValue("denser", PaneGlass.DENSER) * clear else 1f)).coerceIn(0f, 0.92f)
+                } else if ((tintProgress > 0f || fixedTint && panes) && tint.alpha > 0f) {
+                    val a = (if (fixedTint && panes) tint.alpha * clear
+                    else tint.alpha * tintProgress * (if (panes) paneValue("denser", PaneGlass.DENSER) * clear else 1f)).coerceIn(0f, 0.92f)
                     if (veilShader != null && veilBrush != null) {
                         // Premultiplied, as the shader's output is.
                         veilShader.setFloatUniform("color", tint.red * a, tint.green * a, tint.blue * a, a)

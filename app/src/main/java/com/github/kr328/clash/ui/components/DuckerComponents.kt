@@ -291,6 +291,18 @@ internal fun DuckerCard(
     // its shadow as its edge.
     val backdrop = LocalGlassBackdrop.current
     val glass = backdrop != null && colors.containerColor.alpha > 0f
+    // A selected card, in the accent fill, on the pane glass: its own density (the default as dense as before: the accent
+    // tint × the panes' density), not thinned with the panes, and a share of white, both tunable (the owner, 22.11).
+    val chosen = colors.containerColor == MaterialTheme.colorScheme.primaryContainer && LocalGlassPanes.current
+    val light = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+    val tuning = LocalGlassTuning.current
+    val chosenTint = if (chosen) {
+        val opacity = tuning?.value(GlassTuningGroup.Chosen, "opacity", chosenDensity(!light), light) ?: chosenDensity(!light)
+        val white = tuning?.value(GlassTuningGroup.Chosen, "white", 0f, light) ?: 0f
+        // No lerp at none: through Oklab it would shift the accent a little.
+        (if (white > 0f) androidx.compose.ui.graphics.lerp(colors.containerColor, Color.White, white) else colors.containerColor)
+            .copy(alpha = colors.containerColor.alpha * opacity)
+    } else null
     val given = press
     val press = if (glass) given ?: rememberGlassPress() else null
 
@@ -304,13 +316,14 @@ internal fun DuckerCard(
                         base = MaterialTheme.colorScheme.background,
                         // A selected card, in the accent fill, is as dense as Home's card when on: the same colour reads
                         // as the same glass, not a muddy half-tint of it over the backdrop.
-                        tint = colors.containerColor.copy(
+                        tint = chosenTint ?: colors.containerColor.copy(
                             alpha = colors.containerColor.alpha * if (colors.containerColor == MaterialTheme.colorScheme.primaryContainer) {
                                 glassAccentTint(MaterialTheme.colorScheme.background.luminance() < 0.5f)
                             } else GLASS_CARD_TINT,
                         ),
                         shape = shape,
                         press = press,
+                        fixedTint = chosenTint != null,
                     )
                     edge != null -> Modifier
                     resizing -> Modifier.resizingShadow(shape)
@@ -1308,3 +1321,6 @@ private const val OUTCOME_MS = 2500L
 
 /** Меньше кольцо не крутится, как бы быстро ни пришёл ответ. */
 private const val MIN_SPIN_MS = 700L
+
+/** A chosen card's accent density on the pane glass: the accent tint laid as densely as the panes lay theirs. */
+internal fun chosenDensity(dark: Boolean): Float = glassAccentTint(dark) * PaneGlass.DENSER

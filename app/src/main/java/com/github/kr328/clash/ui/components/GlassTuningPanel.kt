@@ -3,6 +3,19 @@ package com.github.kr328.clash.ui.components
 import android.content.ClipData
 import android.content.ClipboardManager
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -18,9 +31,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -85,6 +95,7 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
         "denser" to PaneGlass.DENSER, "pressClear" to PaneGlass.PRESS_CLEAR, "pressGrow" to PaneGlass.PRESS_GROW.value,
         "growMin" to PaneGlass.GROW_MIN, "growMax" to PaneGlass.GROW_MAX,
     )
+    GlassTuningGroup.Chosen -> mapOf("opacity" to chosenDensity(!light), "white" to 0f)
     GlassTuningGroup.Switch -> lensDefaults(LensLook.Switch) + mapOf("swell" to SWITCH_LENS_SWELL)
     GlassTuningGroup.Slider -> mapOf(
         "swell" to LENS_SWELL, "zoom" to LENS_ZOOM, "bezel" to BUBBLE_BEZEL.value,
@@ -98,11 +109,18 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
     )
 }
 
-/** Kept outside the backdrop capture so this panel never appears reflected in the tested glass. */
+/**
+ * The floating tuning panel (D-548), compact so the glass under it stays in view and quick to tap (the owner, 22.11: the
+ * first one was bulky): a round button when hidden; open, a header of icons, the groups as a row of chips, and per knob
+ * one line of label and value over a slider with − and + steps. A changed knob's value is accented; tapping it resets the
+ * knob. Knobs that change nothing with the others as they are stay hidden. Kept outside the backdrop capture so it never
+ * appears reflected in the tested glass.
+ */
 @Composable
 internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = null) {
     val style = LocalGlassStyle.current
     val context = LocalContext.current
+    val scheme = MaterialTheme.colorScheme
     var copied by remember { mutableStateOf(false) }
     LaunchedEffect(copied) {
         if (copied) {
@@ -110,106 +128,136 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
             copied = false
         }
     }
-    val light = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+    val light = scheme.background.luminance() >= 0.5f
     BackHandler(enabled = tuning.expanded) { tuning.expanded = false }
 
     BoxWithConstraints(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
-        val bottomGap = if (maxHeight < 400.dp) 16.dp else 100.dp
-        val edgeGap = if (tuning.lower) bottomGap else 56.dp
-        val listHeight = (maxHeight - edgeGap - 150.dp).coerceIn(48.dp, (maxHeight * 0.34f).coerceAtLeast(48.dp))
+        val bottomGap = if (maxHeight < 400.dp) 12.dp else 96.dp
         val alignment = if (tuning.lower) Alignment.BottomEnd else Alignment.TopEnd
         val edge = Modifier.align(alignment).padding(
-            top = if (tuning.lower) 0.dp else 56.dp,
+            top = if (tuning.lower) 0.dp else 52.dp,
             bottom = if (tuning.lower) bottomGap else 0.dp,
             end = 12.dp,
             start = 12.dp,
         )
         if (!tuning.expanded) {
-            FilledTonalButton(onClick = { tuning.expanded = true }, modifier = edge) { Text("Настроить стекло") }
-        } else {
-            val group = tuning.group
-            val defaults = remember(group, style, light) { group.defaults(style, light) }
             Surface(
-                modifier = edge.widthIn(max = 344.dp).fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 6.dp,
-                shadowElevation = 8.dp,
+                onClick = { tuning.expanded = true },
+                modifier = edge.size(44.dp).semantics { contentDescription = "Настроить стекло" },
+                shape = CircleShape,
+                color = scheme.surfaceContainerHigh.copy(alpha = 0.92f),
+                shadowElevation = 6.dp,
             ) {
-                Column(Modifier.padding(horizontal = 12.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Стекло", style = MaterialTheme.typography.titleMedium)
-                        TextButton(onClick = { tuning.lower = !tuning.lower }) {
-                            Text(if (tuning.lower) "Наверх" else "Вниз")
-                        }
-                        TextButton(onClick = { tuning.expanded = false }) { Text("Скрыть") }
+                Box(contentAlignment = Alignment.Center) { Icon(Symbols.Tune, contentDescription = null, modifier = Modifier.size(22.dp)) }
+            }
+            return@BoxWithConstraints
+        }
+
+        val group = tuning.group
+        val defaults = remember(group, style, light) { group.defaults(style, light) }
+        val listHeight = (maxHeight * 0.36f).coerceIn(120.dp, 320.dp)
+        Surface(
+            modifier = edge.widthIn(max = 380.dp).fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            color = scheme.surfaceContainerHigh.copy(alpha = 0.95f),
+            shadowElevation = 8.dp,
+        ) {
+            Column(Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 8.dp)) {
+                // The header: what the panel is, then its actions as icons.
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Стекло", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    PanelIcon(if (tuning.lower) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown, if (tuning.lower) "Панель наверх" else "Панель вниз") {
+                        tuning.lower = !tuning.lower
                     }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        if (changeStyle != null) {
-                            TextButton(onClick = changeStyle) { Text(if (style.enabled) "Стиль Glass" else "Стиль Air") }
-                        }
-                        Text("Правки", modifier = Modifier.weight(1f))
-                        Switch(
-                            checked = tuning.enabled,
-                            onCheckedChange = tuning::enable,
-                            modifier = Modifier.semantics { contentDescription = "Применять правки" },
-                        )
-                        TextButton(onClick = {
-                            context.getSystemService(ClipboardManager::class.java)?.let { clipboard ->
-                                clipboard.setPrimaryClip(ClipData.newPlainText("Ducker Glass", tuning.export()))
-                                copied = true
-                            }
-                        }) {
-                            Text(if (copied) "Скопировано" else "Копировать")
+                    PanelIcon(if (copied) Symbols.Check else Symbols.ContentCopy, "Скопировать настройки") {
+                        context.getSystemService(ClipboardManager::class.java)?.let { clipboard ->
+                            clipboard.setPrimaryClip(ClipData.newPlainText("Ducker Glass", tuning.export()))
+                            copied = true
                         }
                     }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.weight(1f)) {
-                            var menu by remember { mutableStateOf(false) }
-                            TextButton(onClick = { menu = true }) { Text(group.title) }
-                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                                GlassTuningGroup.entries.forEach { choice ->
-                                    DropdownMenuItem(text = { Text(choice.title) }, onClick = {
-                                        tuning.group = choice
-                                        menu = false
-                                    })
-                                }
-                            }
-                        }
-                        TextButton(onClick = { tuning.reset(group, light) }) { Text("Сбросить") }
-                    }
-                    androidx.compose.runtime.key(group) {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxWidth().heightIn(max = listHeight),
+                    PanelIcon(Symbols.Close, "Скрыть панель") { tuning.expanded = false }
+                }
+                // The groups, one tap each.
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    items(GlassTuningGroup.entries) { choice ->
+                        val on = choice == group
+                        Surface(
+                            onClick = { tuning.group = choice },
+                            shape = CircleShape,
+                            color = if (on) scheme.primary else scheme.surfaceVariant,
+                            contentColor = if (on) scheme.onPrimary else scheme.onSurfaceVariant,
                         ) {
-                            if (!style.enabled) {
-                                item { Text("Нажми «Стиль Air», чтобы включить стекло.", style = MaterialTheme.typography.bodySmall) }
-                            }
-                            if (group == GlassTuningGroup.Pane) {
-                                item {
-                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Собственный блик карточек", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                                        Switch(checked = tuning.paneOwnRim, onCheckedChange = tuning::ownRim)
-                                    }
+                            Text(
+                                choice.title,
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.heightIn(min = 36.dp).wrapContentHeight().padding(horizontal = 12.dp),
+                            )
+                        }
+                    }
+                }
+                // The group's actions and the whole panel's switches.
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 2.dp).horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Правки", style = MaterialTheme.typography.labelLarge)
+                    Switch(
+                        checked = tuning.enabled,
+                        onCheckedChange = tuning::enable,
+                        modifier = Modifier.scale(0.8f).semantics { contentDescription = "Применять правки" },
+                    )
+                    if (changeStyle != null) {
+                        SmallButton(if (style.enabled) "Включить Air" else "Включить стекло", changeStyle)
+                    }
+                    if (group.lens) SmallButton("Мягкие края") { tuning.apply(group, light, SOFT_EDGE_PRESET) }
+                    SmallButton("Сброс группы") { tuning.reset(group, light) }
+                }
+                if (!tuning.enabled) {
+                    Text("Правки выключены: видно стекло по умолчанию.", style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
+                }
+                if (!style.enabled) {
+                    Text("Сейчас Air: включи стекло, чтобы увидеть правки.", style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
+                }
+                androidx.compose.runtime.key(group) {
+                    LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = listHeight).padding(end = 8.dp)) {
+                        if (group == GlassTuningGroup.Pane) {
+                            item {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Собственный блик карточек", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                                    Switch(checked = tuning.paneOwnRim, onCheckedChange = tuning::ownRim, modifier = Modifier.scale(0.8f))
                                 }
                             }
-                            val applicableKnobs = glassKnobs.getValue(group).filter { knob ->
-                                when (knob.key) {
-                                    "frostBlur" -> group == GlassTuningGroup.Switch
-                                    "shineDark", "irisDark", "shadowDark" -> !light
-                                    "shineLight", "irisLight", "shadowLight" -> light
-                                    else -> true
-                                }
+                        }
+                        fun current(key: String): Float =
+                            tuning.saved(group, key, group.usesLightValues(key, light)) ?: defaults[key] ?: 0f
+                        val shown = glassKnobs.getValue(group).filter { knob ->
+                            when (knob.key) {
+                                "frostBlur" -> group == GlassTuningGroup.Switch
+                                "shineDark", "irisDark", "shadowDark" -> !light
+                                "shineLight", "irisLight", "shadowLight" -> light
+                                // The sharp rim's steepness counts only without a soft band (the shader's choice).
+                                "pushPower" -> current("pushBand") <= 0f
+                                // The cards' own light line draws only with their own highlight on.
+                                "line", "lineWidth" -> group != GlassTuningGroup.Pane || tuning.paneOwnRim
+                                else -> true
                             }
-                            items(applicableKnobs, key = { it.key }) { knob ->
-                                val themed = group.usesLightValues(knob.key, light)
-                                val fallback = if (group == GlassTuningGroup.Pane && knob.key == "highlight" && tuning.paneOwnRim) {
-                                    style.highlight.toFloat()
-                                } else defaults.getValue(knob.key)
-                                GlassTuningRow(knob, tuning.saved(group, knob.key, themed) ?: fallback) { value ->
-                                    tuning.set(group, knob, themed, value)
-                                }
-                            }
+                        }
+                        items(shown, key = { it.key }) { knob ->
+                            val themed = group.usesLightValues(knob.key, light)
+                            val saved = tuning.saved(group, knob.key, themed)
+                            val fallback = if (group == GlassTuningGroup.Pane && knob.key == "highlight" && tuning.paneOwnRim) {
+                                style.highlight.toFloat()
+                            } else defaults.getValue(knob.key)
+                            GlassTuningRow(
+                                knob = knob,
+                                value = saved ?: fallback,
+                                changed = saved != null,
+                                onChange = { tuning.set(group, knob, themed, it) },
+                                onReset = { tuning.clear(group, knob, themed) },
+                            )
                         }
                     }
                 }
@@ -219,16 +267,60 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
 }
 
 @Composable
-private fun GlassTuningRow(knob: GlassKnob, value: Float, onChange: (Float) -> Unit) {
-    val format = remember { NumberFormat.getNumberInstance().apply { maximumFractionDigits = 3 } }
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(knob.label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-        Text(format.format(value), style = MaterialTheme.typography.labelLarge)
+private fun PanelIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
+    IconButton(onClick = onClick, modifier = Modifier.size(44.dp)) {
+        Icon(icon, contentDescription = description, modifier = Modifier.size(20.dp))
     }
-    Slider(
-        value = value,
-        valueRange = knob.min..knob.max,
-        onValueChange = onChange,
-        modifier = Modifier.semantics { contentDescription = knob.label },
-    )
+}
+
+@Composable
+private fun SmallButton(text: String, onClick: () -> Unit) {
+    TextButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 10.dp)) {
+        Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+    }
+}
+
+/** One knob: its label and value on a line, the slider with − and + steps under it; a changed value resets on a tap. */
+@Composable
+private fun GlassTuningRow(knob: GlassKnob, value: Float, changed: Boolean, onChange: (Float) -> Unit, onReset: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val format = remember { NumberFormat.getNumberInstance().apply { maximumFractionDigits = 3 } }
+    // A step of the − and + buttons: a fiftieth of the range, never finer than the knob's own step.
+    val step = maxOf(knob.step, (knob.max - knob.min) / 50f)
+    Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                knob.label, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
+                color = if (changed) scheme.primary else scheme.onSurface, maxLines = 2,
+            )
+            Text(
+                (if (changed) "↺ " else "") + format.format(value),
+                style = MaterialTheme.typography.labelMedium,
+                color = if (changed) scheme.primary else scheme.onSurfaceVariant,
+                modifier = Modifier.clip(CircleShape)
+                    .then(if (changed) Modifier.clickable(onClickLabel = "Вернуть по умолчанию", onClick = onReset) else Modifier)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            StepButton("−") { onChange((value - step).coerceIn(knob.min, knob.max)) }
+            Slider(
+                value = value,
+                valueRange = knob.min..knob.max,
+                onValueChange = onChange,
+                modifier = Modifier.weight(1f).semantics { contentDescription = knob.label },
+            )
+            StepButton("+") { onChange((value + step).coerceIn(knob.min, knob.max)) }
+        }
+    }
+}
+
+@Composable
+private fun StepButton(text: String, onClick: () -> Unit) {
+    Box(
+        Modifier.size(36.dp).clip(CircleShape).clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = MaterialTheme.typography.titleMedium)
+    }
 }
