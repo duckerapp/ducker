@@ -1,5 +1,7 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.graphics.drawscope.clipPath
 
 import androidx.compose.ui.geometry.RoundRect
@@ -169,6 +171,8 @@ fun DuckerScaffold(
     tv: TvFocus? = null,
     tvTitle: @Composable RowScope.() -> Unit = {},
     tvTools: @Composable RowScope.() -> Unit = {},
+    /** Home's picture, whose connect wave bends the whole screen, see [screenWaveEffect]. */
+    wave: GlassBackdrop? = null,
     content: @Composable (tabs: PaddingValues, overlays: PaddingValues) -> Unit,
 ) {
     if (tv != null) {
@@ -215,13 +219,21 @@ fun DuckerScaffold(
         }
     }
 
+    val waveShader = remember(wave != null) { if (wave != null) heroWaveShader() else null }
+    var waveAt by remember { mutableStateOf(Offset.Zero) }
+
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { insets ->
         Box(
             Modifier.fillMaxSize().then(
-                // The glass style: under a bottom sheet the screen blurs as the sheet comes out.
-                if (LocalGlassStyle.current.enabled) Modifier.graphicsLayer {
+                // The glass style: under a bottom sheet the screen blurs as the sheet comes out; Home's connect wave
+                // bends it all.
+                if (LocalGlassStyle.current.enabled) Modifier.onGloballyPositioned { waveAt = it.positionInRoot() }.graphicsLayer {
                     val shown = sheetGlass?.shown ?: 0f
-                    renderEffect = if (shown > 0.01f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) sheetBlurEffect(SHEET_BLUR.toPx(), shown) else null
+                    renderEffect = when {
+                        shown > 0.01f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> sheetBlurEffect(SHEET_BLUR.toPx(), shown)
+                        wave != null && waveShader != null -> screenWaveEffect(waveShader, wave, waveAt)
+                        else -> null
+                    }
                 } else Modifier,
             ),
         ) {

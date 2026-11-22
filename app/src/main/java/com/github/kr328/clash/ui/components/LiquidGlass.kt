@@ -59,6 +59,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.SolidColor
@@ -266,8 +267,10 @@ class GlassBackdrop(val layer: GraphicsLayer) {
     internal var version by mutableIntStateOf(0)
     /** The backdrop drawn once per blur, see [StillBackdropPictures]; null — not made, or the backdrop has changed. */
     internal var still by mutableStateOf<StillBackdrop?>(null)
+    /** Home's connect wave, see [screenWaveEffect]: from [waveCenter] (in the window), a ring at [waveRadius] pixels. */
     var waveCenter by mutableStateOf(Offset.Unspecified)
     var waveProgress by mutableFloatStateOf(0f)
+    var waveRadius by mutableFloatStateOf(0f)
     var waveActive by mutableStateOf(false)
 }
 
@@ -375,8 +378,7 @@ internal fun StillBackdropPictures(backdrop: GlassBackdrop) {
 
     LaunchedEffect(backdrop, looks) {
         backdrop.still = null
-        snapshotFlow { backdrop.version to backdrop.waveActive }.collectLatest { (version, wave) ->
-            if (wave) return@collectLatest
+        snapshotFlow { backdrop.version }.collectLatest { version ->
             // A backdrop changing for a while (a theme's colours fading over) is drawn once it has settled.
             delay(STILL_SETTLE_MS)
             val size = backdrop.layer.size
@@ -565,6 +567,11 @@ internal fun Modifier.liquidGlass(
     paneGroup: GlassTuningGroup = GlassTuningGroup.Pane,
     /** Its settings, if not [LocalGlassStyle]'s: the dock's body in its second mode inside the dock's own style. */
     glassStyle: GlassStyle? = null,
+    /**
+     * A smooth clip of [shape] lies around it already (`Modifier.clip`): its own clip, a path's, has no smoothing, and
+     * its steps showed along the round edge inside the smooth one (the power button, the owner, 22.11).
+     */
+    clipped: Boolean = false,
     /** Its own veil instead of a flat [tint], drawn under the rim. */
     veil: (DrawScope.() -> Unit)? = null,
 ): Modifier {
@@ -660,7 +667,7 @@ internal fun Modifier.liquidGlass(
             val plain = scaled.scaleX == 1f && scaled.scaleY == 1f
             // The pane glass reads the still picture scaled as well: a press drew it live, and the spring's last swings
             // switched between the two every frame.
-            val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && !backdrop.waveActive && (plain || panes) }?.pictures?.get(stillKey(stillBlur, style.vibrancy))
+            val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && (plain || panes) }?.pictures?.get(stillKey(stillBlur, style.vibrancy))
             val pressed = press?.light() ?: 0f
 
             if (still == null) {
@@ -687,7 +694,8 @@ internal fun Modifier.liquidGlass(
             // The pane glass: a faint dark line just outside the rim (iOS's, F-550).
             if (panes) drawOutline(outline, Color.Black.copy(alpha = paneValue("ring", PaneGlass.RING)), style = Stroke(paneValue("ringWidth", PaneGlass.RING_WIDTH.value).dp.toPx()))
 
-            clipPath(clip) {
+            fun DrawScope.inside(block: DrawScope.() -> Unit) = if (clipped) block() else clipPath(clip, block = block)
+            inside {
                 drawRect(base)
                 if (still == null) {
                     translate(-margin, -margin) { drawLayer(glassFrame ?: glass) }
@@ -899,6 +907,36 @@ internal fun heroWaveShader(): GlassWave? =
 
 internal fun heroWaveEffect(shader: GlassWave, center: Offset, currentRadius: Float, waveWidth: Float, strength: Float, dispersion: Float, highlight: Float, alpha: Float) =
     shader.effect(center, currentRadius, waveWidth, strength, dispersion, highlight, alpha)
+
+/**
+ * Home's connect wave (the owner, 22.11): one ring from the power button's centre over the whole screen, the card's
+ * change inside it, bending all it crosses — the cards, their letters, the dock — strongly, its colours parted as light
+ * through a lens. [RING]: its width; [STRENGTH], [CHROMA], [LIGHT]: the bend, the colours' parting, the light on its crest.
+ */
+internal object HeroWave {
+    val RING = 46.dp
+    const val STRENGTH = 1.5f
+    const val CHROMA = 0.35f
+    const val LIGHT = 0.3f
+}
+
+/**
+ * The wave of [wave] over a layer at [at] in the window; null while none runs. It comes in as the ring leaves the
+ * button's middle, narrower while it is small, and weakens as it spreads, gone before it leaves the screen.
+ */
+internal fun Density.screenWaveEffect(shader: GlassWave, wave: GlassBackdrop, at: Offset): androidx.compose.ui.graphics.RenderEffect? {
+    val radius = wave.waveRadius
+    if (!wave.waveActive || !wave.waveCenter.isSpecified || radius <= 0f) return null
+    val ring = HeroWave.RING.toPx()
+    val travel = wave.waveProgress
+    fun smooth(x: Float) = x.coerceIn(0f, 1f).let { it * it * (3f - 2f * it) }
+    val amount = smooth(radius / (ring * 1.5f)) * (1f - 0.45f * travel) * (1f - smooth((travel - 0.72f) / 0.26f))
+    if (amount <= 0.001f) return null
+    return heroWaveEffect(
+        shader, wave.waveCenter - at, radius, minOf(ring, radius * 0.9f + 1f),
+        HeroWave.STRENGTH, HeroWave.CHROMA, HeroWave.LIGHT * amount, amount,
+    )
+}
 
 internal interface GlassBubble {
     fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, zoom: Float, base: Color, tuning: GlassTuning?, under: DrawScope.() -> Unit)

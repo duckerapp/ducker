@@ -14,14 +14,6 @@ import com.github.kr328.clash.ui.components.rememberScreenWall
 import com.github.kr328.clash.ui.components.WallMode
 import com.github.kr328.clash.ui.components.screenWallMode
 import com.github.kr328.clash.ui.components.screenWallSource
-import com.github.kr328.clash.ui.components.heroWaveShader
-import com.github.kr328.clash.ui.components.heroWaveEffect
-import com.github.kr328.clash.ui.components.LocalGlassStyle
-import com.github.kr328.clash.ui.home.fade
-import com.github.kr328.clash.ui.home.farthestFrom
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.isSpecified
-import androidx.compose.ui.platform.LocalDensity
 import androidx.activity.result.PickVisualMediaRequest
 import com.github.kr328.clash.ui.components.backdropIsDark
 import com.github.kr328.clash.ui.components.backdropTopDark
@@ -1077,6 +1069,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 }
 
                 DuckerScaffold(
+                    // The connect wave runs over the whole screen from Home's card (the owner, 22.11).
+                    wave = wallpaperBackdrop,
                     // Подсветка вкладки идёт по осевшей странице: по ней же выбирается
                     // плавающая кнопка, а её появление меняет отступы (D-76). На телевизоре — по
                     // вкладке, к которой лента едет: пока она едет, осевшая ещё прежняя, и возврат
@@ -1441,9 +1435,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                     } else {
                         // Their cards and buttons are glass over the picture.
                         val backdrop = wallpaperBackdrop
-                        val wallpaperWaveShader = remember(wallpaper) { if (wallpaper) heroWaveShader() else null }
-                        val glassStyle = LocalGlassStyle.current
-                        val density = LocalDensity.current
 
                         if (wallpaper) {
                             Box(
@@ -1453,30 +1444,6 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                     // made as the next tab switch began stopped the page for 20 ms (the owner, 17.11).
                                     .graphicsLayer()
                                     .then(if (backdrop != null) Modifier.glassSource(backdrop) else Modifier)
-                                    .graphicsLayer {
-                                        val b = backdrop
-                                        val shader = wallpaperWaveShader
-                                        if (b != null && b.waveActive && b.waveCenter.isSpecified && shader != null) {
-                                            val progress = b.waveProgress
-                                            if (progress > 0f) {
-                                                val wallpaperCenter = b.waveCenter - b.origin
-                                                val maxReach = Size(size.width, size.height).farthestFrom(wallpaperCenter)
-                                                val startRadius = with(density) { 56.dp.toPx() }
-                                                val curRadius = startRadius + (maxReach - startRadius) * progress
-                                                val waveWidthPx = with(density) { 48.dp.toPx() }
-                                                val waveAlpha = fade(progress, 0f, 0.08f) * (1f - fade(progress, 0.70f, 0.95f))
-                                                val damping = 1f - progress * 0.45f
-                                                val str = 0.32f * (glassStyle.refraction / 50f) * damping
-                                                val disp = 0.75f * (glassStyle.dispersion / 40f) * damping
-                                                val hi = 0.45f * (glassStyle.highlight / 60f) * damping
-                                                renderEffect = heroWaveEffect(shader, wallpaperCenter, curRadius, waveWidthPx, str, disp, hi, waveAlpha)
-                                            } else {
-                                                renderEffect = null
-                                            }
-                                        } else {
-                                            renderEffect = null
-                                        }
-                                    }
                                     .glassSourceChanges(backdrop)
                                     .glassBackground(settingsState.glassBackdrop, state.running),
                             )

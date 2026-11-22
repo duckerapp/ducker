@@ -18,8 +18,10 @@ import com.github.kr328.clash.ui.components.glass
 import com.github.kr328.clash.ui.components.GlassMaterial
 import com.github.kr328.clash.ui.components.POWER_BLUR_BOOST
 import com.github.kr328.clash.ui.components.LocalGlassStyle
-import com.github.kr328.clash.ui.components.heroWaveShader
-import com.github.kr328.clash.ui.components.heroWaveEffect
+import com.github.kr328.clash.ui.components.HeroWave
+import com.github.kr328.clash.ui.components.GlassPress
+import com.github.kr328.clash.ui.components.glassPressSwell
+import androidx.compose.ui.layout.findRootCoordinates
 import com.github.kr328.clash.ui.components.liquidGlass
 import com.github.kr328.clash.ui.components.LocalGlassPanes
 import com.github.kr328.clash.ui.components.GlassPanes
@@ -993,7 +995,6 @@ private fun HeroCard(
     val glassStyle = LocalGlassStyle.current
     // The glass style: the card is glass over Home's backdrop. Null backdrop — Air, the card as it always was.
     val isGlass = backdrop != null
-    val waveShader = remember(isGlass) { if (isGlass) heroWaveShader() else null }
     // The pane glass: a finger on the card, not on its buttons, swells it (F-550).
     val heroPress = rememberGlassPress()
     val density = LocalDensity.current
@@ -1041,14 +1042,38 @@ private fun HeroCard(
     var buttonCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var center by remember { mutableStateOf(Offset.Unspecified) }
     var reach by remember { mutableFloatStateOf(0f) }
-    // The button's own radius: the wave leaves from its edge.
+    // Where the wave leaves from: Air's fill from the button's edge, the glass ring from its centre (the owner, 22.11).
     var start by remember { mutableFloatStateOf(0f) }
+    var buttonRadius by remember { mutableFloatStateOf(0f) }
+    // On glass the ring crosses the whole screen and leaves it: from the button's centre to the farthest corner.
+    var screenReach by remember { mutableFloatStateOf(0f) }
 
     // Нажатие одно на обе копии: иначе под волной и над ней кнопка проседала бы по-разному.
     val press = remember { MutableInteractionSource() }
     // And one size: the copy over the wave, made after the press, stood at full size at once while the one under it
     // was still springing back from the dip, and the button grew back with a jerk.
-    val buttonScale = pressScale(press)
+    val buttonScale = pressScale(press, dips = !isGlass)
+    // On glass the button is a pane like the cards: it swells and sways under a finger rather than sinks (the owner,
+    // 22.11), and swells softly as the state changes.
+    val buttonPress = rememberGlassPress()
+    val buttonSwell = remember { Animatable(0f) }
+    var swelledFor by remember { mutableStateOf(active) }
+
+    LaunchedEffect(active) {
+        if (!isGlass || swelledFor == active) return@LaunchedEffect
+        swelledFor = active
+        buttonSwell.animateTo(1f, tween(BUTTON_SWELL_MS, easing = FastOutSlowInEasing))
+        buttonSwell.animateTo(0f, spring(dampingRatio = 0.38f, stiffness = 170f))
+    }
+
+    val buttonSize = { buttonScale.value * (1f + BUTTON_SWELL * buttonSwell.value) }
+
+    // The ring's radius at the wave's [t]: one for the card's change and the screen's bend, so they meet.
+    fun radius(t: Float) = if (isGlass && screenReach > 0f) screenReach * t else start + (reach - start).coerceAtLeast(0f) * t
+    // How far the card's change has gone: on glass the ring crosses the card early on its way over the screen.
+    fun cardWave(): Float = if (isGlass && reach > 0f && screenReach > 0f) (radius(wave.value) / reach).coerceIn(0f, 1f) else wave.value
+    val waveMs = if (isGlass) WAVE_GLASS_MS else WAVE_MS
+    val waveEasing = if (isGlass) RippleEasing else WaveEasing
 
     LaunchedEffect(active) {
         buttonCoords?.takeIf { it.isAttached }?.let { b ->
@@ -1061,12 +1086,14 @@ private fun HeroCard(
             if (wave.value > 0f) {
                 try {
                     backdrop?.waveActive = true
-                    wave.animateTo(0f, tween((WAVE_MS * wave.value).roundToInt(), easing = WaveEasing)) {
+                    wave.animateTo(0f, tween((waveMs * wave.value).roundToInt(), easing = waveEasing)) {
                         backdrop?.waveProgress = value
+                        backdrop?.waveRadius = radius(value)
                     }
                 } finally {
                     backdrop?.waveActive = false
                     backdrop?.waveProgress = 0f
+                    backdrop?.waveRadius = 0f
                 }
             }
 
@@ -1088,12 +1115,14 @@ private fun HeroCard(
 
         try {
             backdrop?.waveActive = true
-            wave.animateTo(1f, tween((WAVE_MS * (1f - wave.value)).roundToInt(), easing = WaveEasing)) {
+            wave.animateTo(1f, tween((waveMs * (1f - wave.value)).roundToInt(), easing = waveEasing)) {
                 backdrop?.waveProgress = value
+                backdrop?.waveRadius = radius(value)
             }
         } finally {
             backdrop?.waveActive = false
             backdrop?.waveProgress = 0f
+            backdrop?.waveRadius = 0f
         }
 
         settled = active
@@ -1111,13 +1140,15 @@ private fun HeroCard(
         val c = box.localPositionOf(button, Offset(button.size.width / 2f, button.size.height / 2f))
 
         center = c
-        start = button.size.width / 2f
-        // On glass the wave is a refracting ring 32 dp wide: it travels on until the ring has left the card.
-        reach = Size(box.size.width.toFloat(), box.size.height.toFloat()).farthestFrom(c) +
-            if (isGlass) with(density) { 48.dp.toPx() } else 0f
+        buttonRadius = button.size.width / 2f
+        start = if (isGlass) 0f else buttonRadius
+        reach = Size(box.size.width.toFloat(), box.size.height.toFloat()).farthestFrom(c)
 
         val rootCenter = button.positionInRoot() + Offset(button.size.width / 2f, button.size.height / 2f)
         backdrop?.waveCenter = rootCenter
+        val root = button.findRootCoordinates()
+        screenReach = Size(root.size.width.toFloat(), root.size.height.toFloat()).farthestFrom(rootCenter) +
+            with(density) { HeroWave.RING.toPx() }
     }
 
     // Быстрая смена узла (D-116): плашка узла раскрывается на всю карточку.
@@ -1208,7 +1239,7 @@ private fun HeroCard(
                                 rimBoost = 1f + (GLASS_ON_RIM - 1f) * connected,
                                 press = heroPress,
                             ) {
-                                val curRadius = start + (reach - start).coerceAtLeast(0f) * wave.value
+                                val curRadius = radius(wave.value)
                                 val centerOffset = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f)
 
                                 // Connected, a soft light spreads from the power button over the clearer glass.
@@ -1217,7 +1248,7 @@ private fun HeroCard(
                                     if (area == null) drawRect(tint) else drawPath(area, tint)
                                     if (!on || !center.isSpecified) return
 
-                                    val radius = start * GLASS_GLOW_REACH
+                                    val radius = buttonRadius * GLASS_GLOW_REACH
                                     val glow = Brush.radialGradient(
                                         0f to glowColor.copy(alpha = GLASS_GLOW_ALPHA),
                                         1f to glowColor.copy(alpha = 0f),
@@ -1246,32 +1277,19 @@ private fun HeroCard(
                 // After the glass: its faint dark line lies just outside the rim, and a clip before it cut that off.
                 .clip(HeroInner),
         ) {
-            val waveWidthPx = with(density) { 32.dp.toPx() }
-
-            Box(
-                Modifier.fillMaxWidth().then(if (isGlass) Modifier.graphicsLayer {
-                    if (waveShader != null && settled != upper && wave.value > 0f && center.isSpecified) {
-                        val curRadius = start + (reach - start).coerceAtLeast(0f) * wave.value
-                        val waveAlpha = fade(wave.value, 0f, 0.08f) * (1f - fade(wave.value, 0.80f, 0.95f))
-                        val str = 0.35f * (glassStyle.refraction / 50f)
-                        val disp = 0.85f * (glassStyle.dispersion / 40f)
-                        val hi = 0.60f * (glassStyle.highlight / 60f)
-                        renderEffect = heroWaveEffect(waveShader, center, curRadius, waveWidthPx, str, disp, hi, waveAlpha)
-                    } else {
-                        renderEffect = null
-                    }
-                } else Modifier),
-            ) {
+            // The wave's bend is the whole screen's now ([HeroWave]): the card's copies change under its ring.
+            Box(Modifier.fillMaxWidth()) {
                 HeroFace(
                     running = settled,
                     state = state,
                     metrics = metrics,
                     press = press,
-                    buttonScale = { buttonScale.value },
+                    buttonScale = buttonSize,
+                    buttonPress = buttonPress,
                     // On glass both copies' button and node row are see-through: the old ones fade out as the new
                     // ones fade in. Air's lower copy stays whole under the new one.
-                    buttonAlpha = { if (isGlass && settled != upper) 1f - fade(wave.value, 0f, GLASS_BUTTON_FADE) else 1f },
-                    nodeRowAlpha = { if (isGlass && settled != upper) 1f - fade(wave.value, 0.08f, 0.28f) else 1f },
+                    buttonAlpha = { if (isGlass && settled != upper) 1f - fade(cardWave(), 0f, GLASS_BUTTON_FADE) else 1f },
+                    nodeRowAlpha = { if (isGlass && settled != upper) 1f - fade(cardWave(), 0.08f, 0.28f) else 1f },
                     onToggle = onToggle,
                     onNode = onNode,
                     compact = compact,
@@ -1282,7 +1300,7 @@ private fun HeroCard(
                     // Надписи прежнего состояния гаснут в первой трети волны, новые проявляются
                     // во второй половине. Фронт проходит по пустому месту, и два разных слова не
                     // встречаются на экране — без этого волна резала заголовок пополам.
-                    textAlpha = { if (settled != upper) 1f - fade(wave.value, 0f, TEXT_OUT) else 1f },
+                    textAlpha = { if (settled != upper) 1f - fade(cardWave(), 0f, TEXT_OUT) else 1f },
                     isGlass = isGlass,
                     cardTint = if (settled) tintOn else tintOff,
                 )
@@ -1293,26 +1311,27 @@ private fun HeroCard(
                         state = state,
                         metrics = metrics,
                         press = press,
-                        buttonScale = { buttonScale.value },
+                        buttonScale = buttonSize,
+                        buttonPress = buttonPress,
                         buttonAlpha = { 1f },
-                        nodeRowAlpha = { if (isGlass) fade(wave.value, 0.08f, 0.28f) else 1f },
+                        nodeRowAlpha = { if (isGlass) fade(cardWave(), 0.08f, 0.28f) else 1f },
                         onToggle = onToggle,
                         onNode = onNode,
                         compact = compact,
                         tight = tight,
                         onButtonPlaced = {},
                         onNodePlaced = {},
-                        textAlpha = { fade(wave.value, TEXT_IN, 1f) },
+                        textAlpha = { fade(cardWave(), TEXT_IN, 1f) },
                         isGlass = isGlass,
                         cardTint = if (upper) tintOn else tintOff,
                         modifier = Modifier.matchParentSize().graphicsLayer {
                             clip = true
                             // The button changes by a crossfade and the wave leaves from its edge: a circle growing from
                             // the centre crossed the small button in a frame or two, and the press filled it with a jerk.
-                            alpha = fade(wave.value, 0f, if (isGlass) GLASS_BUTTON_FADE else BUTTON_FADE)
+                            alpha = fade(cardWave(), 0f, if (isGlass) GLASS_BUTTON_FADE else BUTTON_FADE)
                             shape = WaveShape(
                                 center = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f),
-                                radius = start + (reach - start).coerceAtLeast(0f) * wave.value,
+                                radius = radius(wave.value),
                             )
                         },
                     )
@@ -1393,6 +1412,8 @@ private fun HeroFace(
     metrics: () -> HomeMetrics,
     press: MutableInteractionSource,
     buttonScale: () -> Float,
+    /** On glass: the button's swell under a finger, one for both copies. */
+    buttonPress: GlassPress? = null,
     buttonAlpha: () -> Float = { 1f },
     nodeRowAlpha: () -> Float = { 1f },
     onToggle: () -> Unit,
@@ -1492,6 +1513,7 @@ private fun HeroFace(
                 busy = state.busy,
                 press = press,
                 scale = buttonScale,
+                glassPress = buttonPress,
                 buttonAlpha = buttonAlpha,
                 onToggle = onToggle,
                 compact = compact,
@@ -1612,6 +1634,8 @@ private fun PowerButton(
     press: MutableInteractionSource,
     /** The button's size, one for both copies: see [pressScale]. */
     scale: () -> Float,
+    /** On glass: it swells and sways under a finger as the cards do, see [glassPressSwell]. */
+    glassPress: GlassPress? = null,
     buttonAlpha: () -> Float = { 1f },
     onToggle: () -> Unit,
     compact: Boolean,
@@ -1668,6 +1692,7 @@ private fun PowerButton(
 
         Box(
             modifier = Modifier.size(diameter)
+                .glassPressSwell(glassPress)
                 .graphicsLayer {
                     scaleX = scale()
                     scaleY = scale()
@@ -1682,6 +1707,7 @@ private fun PowerButton(
                             tint = face.copy(alpha = GLASS_BUTTON_SHADE).compositeOver(cardTint),
                             shape = CircleShape,
                             blurBoost = INNER_BLUR + POWER_BLUR_BOOST,
+                            clipped = true,
                         )
                     } else Modifier.background(face),
                 )
@@ -1697,7 +1723,8 @@ private fun PowerButton(
                     onClick = {
                         if (busy) return@clickable
 
-                        if (!tv) scope.launch {
+                        // On glass it swells instead, see [glassPress].
+                        if (!tv && !isGlass) scope.launch {
                             press.emit(Dip.Start)
                             delay(DIP_MS)
                             press.emit(Dip.End)
@@ -1711,7 +1738,8 @@ private fun PowerButton(
 
                         onToggle()
                     },
-                ),
+                )
+                .glassPressOwnTouch(glassPress),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -1728,7 +1756,7 @@ private fun PowerButton(
 
 /** The power button's size: dipping while pressed, lifted under the remote's focus; springs between them. */
 @Composable
-private fun pressScale(press: MutableInteractionSource): State<Float> {
+private fun pressScale(press: MutableInteractionSource, dips: Boolean = true): State<Float> {
     val pressed by press.collectIsPressedAsState()
     // A tap ends before a touch screen shows the press, so on a phone the button did not move; a remote's OK holds
     // it for a moment, and on a TV it dips and springs back. A tap now dips it as long ([Dip], from [PowerButton]).
@@ -1740,7 +1768,7 @@ private fun pressScale(press: MutableInteractionSource): State<Float> {
     val lifted = LocalTv.current && press.collectIsFocusedAsState().value
 
     return animateFloatAsState(
-        targetValue = if (pressed || dipping) 0.92f else if (lifted) TV_LIFT else 1f,
+        targetValue = if (dips && (pressed || dipping)) 0.92f else if (lifted) TV_LIFT else 1f,
         animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow),
         label = "press",
     )
@@ -1781,6 +1809,17 @@ private const val NODE_IN_MS = 220
 
 private const val WAVE_MS = 650
 
+/**
+ * On glass the ring crosses the whole screen ([HeroWave]): longer, out of the button fast and slowing as it spreads,
+ * as a ripple; it passes the card in about its first third.
+ */
+private const val WAVE_GLASS_MS = 1150
+private val RippleEasing = CubicBezierEasing(0.25f, 0.4f, 0.3f, 1f)
+
+/** The glass button's soft swell as the state changes: how much, and how long to its height; it settles by a spring. */
+private const val BUTTON_SWELL = 0.07f
+private const val BUTTON_SWELL_MS = 240
+
 /** Кольцо обводки главной карточки — как обводка остальных карточек. */
 private val HERO_RING = 1.dp
 
@@ -1804,8 +1843,8 @@ private const val GLASS_ON_BEND = 1.5f
 private const val GLASS_ON_RIM = 1.6f
 private const val GLASS_ON_MS = 900
 /** The connected glow: its strength at the button, and its reach in the button's radii. */
-// Half the first 0.35 (the owner, 22.11).
-private const val GLASS_GLOW_ALPHA = 0.175f
+// A quarter of the first 0.35 (the owner, 22.11: halved, then halved again).
+private const val GLASS_GLOW_ALPHA = 0.0875f
 private const val GLASS_GLOW_REACH = 2.6f
 private const val HINT_OUT_MS = 90
 private const val HINT_IN_MS = 150
