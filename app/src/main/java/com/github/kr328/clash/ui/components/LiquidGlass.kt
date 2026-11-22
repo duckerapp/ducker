@@ -719,7 +719,8 @@ internal fun Modifier.liquidGlass(
                         drawContext.canvas.restore()
                     } else veil()
                 } else if ((tintProgress > 0f || fixedTint && panes) && tint.alpha > 0f) {
-                    val a = (if (fixedTint && panes) tint.alpha * clear
+                    // A chosen card keeps its colour under a finger and only swells (the owner, 22.11).
+                    val a = (if (fixedTint && panes) tint.alpha
                     else tint.alpha * tintProgress * (if (panes) paneValue("denser", PaneGlass.DENSER) * clear else 1f)).coerceIn(0f, 0.92f)
                     if (veilShader != null && veilBrush != null) {
                         // Premultiplied, as the shader's output is.
