@@ -214,7 +214,10 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                     if (changeStyle != null) {
                         SmallButton(if (style.enabled) "Включить Air" else "Включить стекло", changeStyle)
                     }
-                    if (group.lens) SmallButton("Мягкие края") { tuning.apply(group, light, SOFT_EDGE_PRESET) }
+                    if (group.lens) {
+                        val soft = tuning.softOn(group, light)
+                        SmallButton(if (soft) "Убрать мягкие края" else "Мягкие края") { tuning.soft(group, light, !soft) }
+                    }
                     SmallButton("Сброс группы") { tuning.reset(group, light) }
                 }
                 if (!tuning.enabled) {

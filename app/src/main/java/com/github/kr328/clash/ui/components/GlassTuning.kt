@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -286,7 +287,41 @@ internal class GlassTuning(context: Context) {
         }
     }
 
+    /** The knobs «Мягкие края» overwrote, per group and theme, so pressing it again puts them back. */
+    private val softBackups = mutableStateMapOf<String, String>().apply {
+        for (group in GlassTuningGroup.entries) for (light in listOf(false, true)) {
+            prefs.getString(softKey(group, light), null)?.let { put(softKey(group, light), it) }
+        }
+    }
+
+    private fun softKey(group: GlassTuningGroup, light: Boolean) = "soft.${group.name}." + if (light) "light" else "dark"
+
+    fun softOn(group: GlassTuningGroup, light: Boolean) = softKey(group, light) in softBackups
+
+    /** «Мягкие края» on: the preset over the lens, its knobs as they were kept; off: those put back. */
+    fun soft(group: GlassTuningGroup, light: Boolean, on: Boolean) {
+        val key = softKey(group, light)
+        val knobs = glassKnobs.getValue(group).filter { it.key in SOFT_EDGE_PRESET }
+        if (on) {
+            val backup = knobs.joinToString(";") { "${it.key}=${saved(group, it.key, group.usesLightValues(it.key, light)) ?: ""}" }
+            softBackups[key] = backup
+            prefs.edit().putString(key, backup).apply()
+            apply(group, light, SOFT_EDGE_PRESET)
+        } else {
+            val backup = softBackups.remove(key) ?: return
+            prefs.edit().remove(key).apply()
+            val was = backup.split(";").associate { it.substringBefore("=") to it.substringAfter("=").toFloatOrNull() }
+            for (knob in knobs) {
+                val themed = group.usesLightValues(knob.key, light)
+                val value = was[knob.key]
+                if (value != null) set(group, knob, themed, value) else clear(group, knob, themed)
+            }
+        }
+    }
+
     fun reset(group: GlassTuningGroup, light: Boolean) {
+        softBackups.remove(softKey(group, light))
+        prefs.edit().remove(softKey(group, light)).apply()
         val editor = prefs.edit()
         for (knob in glassKnobs.getValue(group)) {
             val key = group.storageKey(knob.key, group.usesLightValues(knob.key, light))
