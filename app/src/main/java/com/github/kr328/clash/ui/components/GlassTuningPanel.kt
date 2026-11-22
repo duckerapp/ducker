@@ -111,6 +111,7 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
     GlassTuningGroup.Toolbar -> lensDefaults(if (light) TOOLBAR_LOOK_LIGHT else TOOLBAR_LOOK) + mapOf(
         "height" to TOOLBAR_LENS_HEIGHT, "aspect" to TOOLBAR_LENS_ASPECT, "widen" to TOOLBAR_WIDEN,
     )
+    GlassTuningGroup.Wave -> HeroWave.defaults
     GlassTuningGroup.Wall -> mapOf(
         "blur" to wallBlur(!light), "tint" to wallTint(!light), "tone" to if (light) 1f else 0f, "saturation" to 1f,
     )

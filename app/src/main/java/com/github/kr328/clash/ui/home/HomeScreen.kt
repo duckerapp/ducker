@@ -19,6 +19,10 @@ import com.github.kr328.clash.ui.components.GlassMaterial
 import com.github.kr328.clash.ui.components.POWER_BLUR_BOOST
 import com.github.kr328.clash.ui.components.LocalGlassStyle
 import com.github.kr328.clash.ui.components.HeroWave
+import kotlin.math.pow
+import androidx.compose.animation.core.Easing
+import com.github.kr328.clash.ui.components.wave
+import com.github.kr328.clash.ui.components.LocalGlassTuning
 import com.github.kr328.clash.ui.components.GlassPress
 import com.github.kr328.clash.ui.components.glassPressSwell
 import androidx.compose.ui.layout.findRootCoordinates
@@ -1058,22 +1062,26 @@ private fun HeroCard(
     val buttonPress = rememberGlassPress()
     val buttonSwell = remember { Animatable(0f) }
     var swelledFor by remember { mutableStateOf(active) }
+    // The wave's and the button's knobs: the tuning panel's in the review app, else [HeroWave]'s.
+    val tuning = LocalGlassTuning.current
 
     LaunchedEffect(active) {
         if (!isGlass || swelledFor == active) return@LaunchedEffect
         swelledFor = active
-        buttonSwell.animateTo(1f, tween(BUTTON_SWELL_MS, easing = FastOutSlowInEasing))
-        buttonSwell.animateTo(0f, spring(dampingRatio = 0.38f, stiffness = 170f))
+        buttonSwell.animateTo(1f, tween(tuning.wave("swellMs").roundToInt(), easing = FastOutSlowInEasing))
+        buttonSwell.animateTo(0f, spring(dampingRatio = tuning.wave("swellBounce"), stiffness = tuning.wave("swellSpeed")))
     }
 
-    val buttonSize = { buttonScale.value * (1f + BUTTON_SWELL * buttonSwell.value) }
+    val buttonSize = { buttonScale.value * (1f + tuning.wave("swell") * buttonSwell.value) }
 
     // The ring's radius at the wave's [t]: one for the card's change and the screen's bend, so they meet.
     fun radius(t: Float) = if (isGlass && screenReach > 0f) screenReach * t else start + (reach - start).coerceAtLeast(0f) * t
     // How far the card's change has gone: on glass the ring crosses the card early on its way over the screen.
     fun cardWave(): Float = if (isGlass && reach > 0f && screenReach > 0f) (radius(wave.value) / reach).coerceIn(0f, 1f) else wave.value
-    val waveMs = if (isGlass) WAVE_GLASS_MS else WAVE_MS
-    val waveEasing = if (isGlass) RippleEasing else WaveEasing
+    // On glass the ring crosses the whole screen: longer, out of the button fast and slowing as a ripple.
+    val waveMs = if (isGlass) tuning.wave("duration").roundToInt() else WAVE_MS
+    val brake = tuning.wave("brake")
+    val waveEasing = if (isGlass) Easing { 1f - (1f - it).pow(brake) } else WaveEasing
 
     LaunchedEffect(active) {
         buttonCoords?.takeIf { it.isAttached }?.let { b ->
@@ -1148,7 +1156,7 @@ private fun HeroCard(
         backdrop?.waveCenter = rootCenter
         val root = button.findRootCoordinates()
         screenReach = Size(root.size.width.toFloat(), root.size.height.toFloat()).farthestFrom(rootCenter) +
-            with(density) { HeroWave.RING.toPx() }
+            with(density) { tuning.wave("ring").dp.toPx() }
     }
 
     // Быстрая смена узла (D-116): плашка узла раскрывается на всю карточку.
@@ -1235,8 +1243,8 @@ private fun HeroCard(
                                 base = MaterialTheme.colorScheme.background,
                                 tint = Color.Transparent,
                                 shape = HeroInner,
-                                bendBoost = 1f + (GLASS_ON_BEND - 1f) * connected,
-                                rimBoost = 1f + (GLASS_ON_RIM - 1f) * connected,
+                                bendBoost = 1f + (tuning.wave("onBend") - 1f) * connected,
+                                rimBoost = 1f + (tuning.wave("onRim") - 1f) * connected,
                                 press = heroPress,
                             ) {
                                 val curRadius = radius(wave.value)
@@ -1248,9 +1256,9 @@ private fun HeroCard(
                                     if (area == null) drawRect(tint) else drawPath(area, tint)
                                     if (!on || !center.isSpecified) return
 
-                                    val radius = buttonRadius * GLASS_GLOW_REACH
+                                    val radius = buttonRadius * tuning.wave("glowReach")
                                     val glow = Brush.radialGradient(
-                                        0f to glowColor.copy(alpha = GLASS_GLOW_ALPHA),
+                                        0f to glowColor.copy(alpha = tuning.wave("glow")),
                                         1f to glowColor.copy(alpha = 0f),
                                         center = center,
                                         radius = radius,
@@ -1715,7 +1723,8 @@ private fun PowerButton(
                 .tabEntry()
                 .clickable(
                     interactionSource = press,
-                    indication = ripple(color = fill),
+                    // On glass no grey ripple inside: it swells, as the cards do (the owner, 22.11).
+                    indication = if (isGlass) null else ripple(color = fill),
                     // С пульта на время подключения кнопка держит фокус (D-158).
                     enabled = keepFocus(!busy),
                     role = Role.Button,
@@ -1809,17 +1818,6 @@ private const val NODE_IN_MS = 220
 
 private const val WAVE_MS = 650
 
-/**
- * On glass the ring crosses the whole screen ([HeroWave]): longer, out of the button fast and slowing as it spreads,
- * as a ripple; it passes the card in about its first third.
- */
-private const val WAVE_GLASS_MS = 1150
-private val RippleEasing = CubicBezierEasing(0.25f, 0.4f, 0.3f, 1f)
-
-/** The glass button's soft swell as the state changes: how much, and how long to its height; it settles by a spring. */
-private const val BUTTON_SWELL = 0.07f
-private const val BUTTON_SWELL_MS = 240
-
 /** Кольцо обводки главной карточки — как обводка остальных карточек. */
 private val HERO_RING = 1.dp
 
@@ -1838,14 +1836,8 @@ private const val BUTTON_FADE = 0.15f
 private const val GLASS_BUTTON_FADE = 0.28f
 /** How much of the card's letters' colour shades the glass power button, so it stands out of the card. */
 private const val GLASS_BUTTON_SHADE = 0.14f
-/** Connected on glass: how much more the rim bends and shines. */
-private const val GLASS_ON_BEND = 1.5f
-private const val GLASS_ON_RIM = 1.6f
+/** Connected on glass: how long the card's stronger bend and rim come in ([HeroWave.ON_BEND], [HeroWave.ON_RIM]). */
 private const val GLASS_ON_MS = 900
-/** The connected glow: its strength at the button, and its reach in the button's radii. */
-// A quarter of the first 0.35 (the owner, 22.11: halved, then halved again).
-private const val GLASS_GLOW_ALPHA = 0.0875f
-private const val GLASS_GLOW_REACH = 2.6f
 private const val HINT_OUT_MS = 90
 private const val HINT_IN_MS = 150
 private const val RING_DELAY_MS = 150

@@ -221,6 +221,7 @@ fun DuckerScaffold(
 
     val waveShader = remember(wave != null) { if (wave != null) heroWaveShader() else null }
     var waveAt by remember { mutableStateOf(Offset.Zero) }
+    val tuning = LocalGlassTuning.current
 
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { insets ->
         Box(
@@ -231,7 +232,7 @@ fun DuckerScaffold(
                     val shown = sheetGlass?.shown ?: 0f
                     renderEffect = when {
                         shown > 0.01f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> sheetBlurEffect(SHEET_BLUR.toPx(), shown)
-                        wave != null && waveShader != null -> screenWaveEffect(waveShader, wave, waveAt)
+                        wave != null && waveShader != null -> screenWaveEffect(waveShader, wave, waveAt, tuning)
                         else -> null
                     }
                 } else Modifier,

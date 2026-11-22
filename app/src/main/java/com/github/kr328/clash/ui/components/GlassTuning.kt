@@ -29,7 +29,8 @@ internal enum class GlassTuningGroup(val title: String) {
     Slider("Ползунок"),
     Segments("Сегменты"),
     Toolbar("Панели редактора"),
-    Wall("Обои экранов");
+    Wall("Обои экранов"),
+    Wave("Волна вкл/выкл");
 }
 
 internal data class GlassKnob(
@@ -170,6 +171,25 @@ internal val glassKnobs = mapOf(
             knob("aspect", "Ширина к высоте", 0.8f, 2.05f),
             knob("widen", "Рост по ширине", 0f, 0.4f)
     ) + lensKnobs,
+    GlassTuningGroup.Wave to listOf(
+            knob("ring", "Толщина кольца, dp", 4f, 120f, 1f),
+            knob("strength", "Сила искажения", 0f, 4f),
+            knob("chroma", "Разложение цветов", 0f, 1.5f),
+            knob("light", "Блик на гребне", 0f, 1.5f),
+            knob("duration", "Длительность, мс", 300f, 3000f, 10f),
+            knob("brake", "Торможение (1 — ровный ход)", 1f, 5f),
+            knob("fadeIn", "Нарастание у кнопки, в толщинах кольца", 0f, 5f),
+            knob("decay", "Ослабление к краю экрана", 0f, 1f),
+            knob("fadeFrom", "Угасание с доли пути", 0.2f, 1f),
+            knob("swell", "Набухание кнопки при вкл/выкл", 0f, 0.25f),
+            knob("swellMs", "Набухание: время роста, мс", 40f, 800f, 10f),
+            knob("swellBounce", "Набухание: упругость (меньше — сильнее качается)", 0.1f, 1f),
+            knob("swellSpeed", "Набухание: скорость возврата", 50f, 800f, 5f),
+            knob("glow", "Засветка вокруг кнопки при вкл", 0f, 0.5f),
+            knob("glowReach", "Размер засветки, в радиусах кнопки", 1f, 6f),
+            knob("onBend", "Изгиб края карточки при вкл", 0f, 3f),
+            knob("onRim", "Блик края карточки при вкл", 0f, 3f)
+    ),
     GlassTuningGroup.Wall to listOf(
             knob("blur", "Размытие обоев, dp", 0f, 40f, 0.5f),
             knob("tint", "Тонировка: плотность", 0f, 0.9f),
@@ -179,7 +199,7 @@ internal val glassKnobs = mapOf(
 )
 
 internal fun GlassTuningGroup.usesLightValues(key: String, light: Boolean): Boolean = light && when (this) {
-    GlassTuningGroup.Pane, GlassTuningGroup.DockPane -> false
+    GlassTuningGroup.Pane, GlassTuningGroup.DockPane, GlassTuningGroup.Wave -> false
     GlassTuningGroup.Dock -> key == "tintEase" || key == "tintNear"
     GlassTuningGroup.Veil -> key == "shade"
     else -> true

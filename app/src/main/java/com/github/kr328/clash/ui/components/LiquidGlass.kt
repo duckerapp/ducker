@@ -918,23 +918,56 @@ internal object HeroWave {
     const val STRENGTH = 1.5f
     const val CHROMA = 0.35f
     const val LIGHT = 0.3f
+    /** Its way: how long, and how it slows (1 − (1 − t)^[BRAKE]: out of the button fast, slowing as a ripple). */
+    const val DURATION = 1150f
+    const val BRAKE = 2.2f
+    /** It comes in over [FADE_IN] rings of radius, weakens by [DECAY] as it spreads, and fades out from [FADE_FROM] of its way. */
+    const val FADE_IN = 1.5f
+    const val DECAY = 0.45f
+    const val FADE_FROM = 0.72f
+    /** The glass power button's swell as the state changes: how much, its rise, and the spring it settles by. */
+    const val SWELL = 0.07f
+    const val SWELL_MS = 240f
+    const val SWELL_BOUNCE = 0.38f
+    const val SWELL_SPEED = 170f
+    /** The connected glow round the button: its strength (a quarter of the first, the owner, 22.11) and reach in its radii. */
+    const val GLOW = 0.0875f
+    const val GLOW_REACH = 2.6f
+    /** Connected: how much more the card's rim bends and shines. */
+    const val ON_BEND = 1.5f
+    const val ON_RIM = 1.6f
+
+    val defaults: Map<String, Float> get() = mapOf(
+        "ring" to RING.value, "strength" to STRENGTH, "chroma" to CHROMA, "light" to LIGHT, "duration" to DURATION,
+        "brake" to BRAKE, "fadeIn" to FADE_IN, "decay" to DECAY, "fadeFrom" to FADE_FROM, "swell" to SWELL,
+        "swellMs" to SWELL_MS, "swellBounce" to SWELL_BOUNCE, "swellSpeed" to SWELL_SPEED, "glow" to GLOW,
+        "glowReach" to GLOW_REACH, "onBend" to ON_BEND, "onRim" to ON_RIM,
+    )
 }
+
+/** A wave knob: the tuning panel's in the review app, else [HeroWave]'s. */
+internal fun GlassTuning?.wave(key: String): Float =
+    this?.value(GlassTuningGroup.Wave, key, HeroWave.defaults.getValue(key)) ?: HeroWave.defaults.getValue(key)
 
 /**
  * The wave of [wave] over a layer at [at] in the window; null while none runs. It comes in as the ring leaves the
  * button's middle, narrower while it is small, and weakens as it spreads, gone before it leaves the screen.
  */
-internal fun Density.screenWaveEffect(shader: GlassWave, wave: GlassBackdrop, at: Offset): androidx.compose.ui.graphics.RenderEffect? {
+internal fun Density.screenWaveEffect(shader: GlassWave, wave: GlassBackdrop, at: Offset, tuning: GlassTuning?): androidx.compose.ui.graphics.RenderEffect? {
     val radius = wave.waveRadius
     if (!wave.waveActive || !wave.waveCenter.isSpecified || radius <= 0f) return null
-    val ring = HeroWave.RING.toPx()
+    val ring = tuning.wave("ring").dp.toPx()
     val travel = wave.waveProgress
     fun smooth(x: Float) = x.coerceIn(0f, 1f).let { it * it * (3f - 2f * it) }
-    val amount = smooth(radius / (ring * 1.5f)) * (1f - 0.45f * travel) * (1f - smooth((travel - 0.72f) / 0.26f))
+    val fadeIn = tuning.wave("fadeIn")
+    val fadeFrom = tuning.wave("fadeFrom")
+    val coming = if (fadeIn > 0f) smooth(radius / (ring * fadeIn)) else 1f
+    val going = if (fadeFrom < 1f) 1f - smooth((travel - fadeFrom) / ((1f - fadeFrom) * 0.93f)) else 1f
+    val amount = coming * (1f - tuning.wave("decay") * travel) * going
     if (amount <= 0.001f) return null
     return heroWaveEffect(
         shader, wave.waveCenter - at, radius, minOf(ring, radius * 0.9f + 1f),
-        HeroWave.STRENGTH, HeroWave.CHROMA, HeroWave.LIGHT * amount, amount,
+        tuning.wave("strength"), tuning.wave("chroma"), tuning.wave("light") * amount, amount,
     )
 }
 
