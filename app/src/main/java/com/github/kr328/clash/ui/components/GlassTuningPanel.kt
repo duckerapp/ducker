@@ -237,6 +237,22 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                                 )
                             }
                         }
+                        if (group == GlassTuningGroup.Wall) {
+                            item {
+                                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Фон", Modifier.padding(end = 4.dp), style = MaterialTheme.typography.bodySmall)
+                                    for ((mode, label) in listOf(WallMode.PICTURE to "Обои", WallMode.PLAIN to "Без фона", WallMode.IOS to "Как в iOS")) {
+                                        SmallButton(if (tuning.wallMode == mode) "● $label" else label) { tuning.useWallMode(mode) }
+                                    }
+                                }
+                            }
+                            if (tuning.wallMode != WallMode.PICTURE) item {
+                                Text(
+                                    if (tuning.wallMode == WallMode.IOS) "Как в iOS: чёрный #000000 в тёмной теме, #F2F2F7 в светлой." else "Без фона: цвет темы приложения.",
+                                    style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant,
+                                )
+                            }
+                        }
                         if (group == GlassTuningGroup.Pane || group == GlassTuningGroup.DockPane) {
                             item {
                                 PanelToggle(
@@ -258,6 +274,8 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                                 // The panes' own light line draws only with their own highlight on; its glow only with a reach.
                                 "line", "lineWidth", "lineSpread", "lineDirect" -> tuning.ownRimOf(group)
                                 "lineGlow", "lineFall" -> tuning.ownRimOf(group) && current("lineSpread") > 0f
+                                // The picture's blur and tint mean nothing on a plain background.
+                                "blur", "tint", "tone", "saturation" -> group != GlassTuningGroup.Wall || tuning.wallMode == WallMode.PICTURE
                                 else -> true
                             }
                         }

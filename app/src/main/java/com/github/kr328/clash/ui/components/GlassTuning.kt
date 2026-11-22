@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -208,6 +209,15 @@ internal class GlassTuning(context: Context) {
     var dockOwnRim by mutableStateOf(prefs.getBoolean("dock_own_rim", false))
         private set
 
+    /** What the screens over the tabs lie on: Home's picture, the theme's plain background, or iOS's ([WallMode]). */
+    var wallMode by mutableIntStateOf(prefs.getInt("wall_mode", WallMode.PICTURE))
+        private set
+
+    fun useWallMode(mode: Int) {
+        wallMode = mode
+        prefs.edit().putInt("wall_mode", mode).apply()
+    }
+
     fun useDockPane(on: Boolean) {
         dockPane = on
         prefs.edit().putBoolean("dock_pane", on).apply()
@@ -268,6 +278,7 @@ internal class GlassTuning(context: Context) {
             .put("paneOwnRim", paneOwnRim)
             .put("dockPane", dockPane)
             .put("dockOwnRim", dockOwnRim)
+            .put("wallMode", wallMode)
             .put("overrides", groups)
             .toString(2)
     }
@@ -396,6 +407,15 @@ internal val GlassTuningGroup.lens: Boolean
  * picture drawn into a wide soft rim along a circle's edge, smeared rather than copied, faint colours, a faint mirror,
  * no dark ring. The owner tunes from here; nothing applies until pressed.
  */
+/** The screens' backgrounds in «Обои экранов». */
+internal object WallMode {
+    const val PICTURE = 0
+    /** The theme's own background, no picture. */
+    const val PLAIN = 1
+    /** iOS's grouped background (its Settings): black in the dark, #F2F2F7 in the light. */
+    const val IOS = 2
+}
+
 internal val SOFT_EDGE_PRESET = mapOf(
     "drawFrom" to -0.18f, "zoomEdge" to 0.6f, "push" to 1.4f, "pushBand" to 0.7f, "pushAlong" to 1f, "pushAcross" to 1f,
     "pushEndFrom" to 0.1f, "pushEndTo" to 0.6f, "chroma" to 0.05f, "disperse" to 0.15f, "smear" to 1.6f,

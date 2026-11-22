@@ -313,10 +313,19 @@ internal fun rememberScreenWall(wall: GlassBackdrop?): GlassBackdrop? {
 internal fun Modifier.screenWallSource(screens: GlassBackdrop?, wall: GlassBackdrop?): Modifier {
     val tuning = LocalGlassTuning.current
     if (screens == null || wall == null || screens === wall || tuning == null) return this
-    val light = MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val plain = MaterialTheme.colorScheme.background
+    val light = plain.luminance() > 0.5f
     val picture = rememberGraphicsLayer()
 
     return drawBehind {
+        val mode = tuning.wallMode
+        if (mode != WallMode.PICTURE) {
+            val color = if (mode == WallMode.IOS) (if (light) IOS_GROUPED_LIGHT else Color.Black) else plain
+            screens.layer.record { drawRect(color) }
+            // Not a read of this draw: it would invalidate itself and draw again forever.
+            Snapshot.withoutReadObservation { screens.version++ }
+            return@drawBehind
+        }
         val group = GlassTuningGroup.Wall
         val blur = tuning.value(group, "blur", 0f, light).dp.toPx()
         val saturation = tuning.value(group, "saturation", 1f, light)
@@ -334,6 +343,9 @@ internal fun Modifier.screenWallSource(screens: GlassBackdrop?, wall: GlassBackd
         Snapshot.withoutReadObservation { screens.version++ }
     }
 }
+
+/** iOS's `systemGroupedBackground` in the light (its Settings); black in the dark. */
+private val IOS_GROUPED_LIGHT = Color(0xFFF2F2F7)
 
 /** Whether the focus is inside the layer; read by its focus request, not drawn — no state. */
 private class RoomFocus {

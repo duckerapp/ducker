@@ -11,6 +11,7 @@ import com.github.kr328.clash.ui.components.glassSource
 import com.github.kr328.clash.ui.components.glassSourceChanges
 import com.github.kr328.clash.ui.components.rememberGlassBackdrop
 import com.github.kr328.clash.ui.components.rememberScreenWall
+import com.github.kr328.clash.ui.components.WallMode
 import com.github.kr328.clash.ui.components.screenWallSource
 import com.github.kr328.clash.ui.components.heroWaveShader
 import com.github.kr328.clash.ui.components.heroWaveEffect
@@ -529,8 +530,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 val wallpaperBackdrop = if (wallpaper) rememberGlassBackdrop(still = true) else null
                 // The screens over the tabs show it as the tuning panel's «Обои экранов» say (the review app).
                 val screenWall = rememberScreenWall(wallpaperBackdrop)
+                // A plain background there (the same panel): the status bar and headers in the theme's tone, not the picture's.
+                val plainScreens = screenWall !== wallpaperBackdrop && tuning?.wallMode != WallMode.PICTURE
+                val screenTone = if (plainScreens) null else backdropTop
                 // Over a glass screen the status bar keeps the picture's tone, as over the tabs.
-                val airCovered = wallpaperBackdrop == null && (showProbe || showApps || showLogs || showConfig || showSettings || showRules)
+                val airCovered = (wallpaperBackdrop == null || plainScreens) && (showProbe || showApps || showLogs || showConfig || showSettings || showRules)
                 SideEffect { overScreen.value = airCovered }
 
                 // Признаки «экран открыт» переживают выгрузку процесса, а данные экранов — нет.
@@ -1504,7 +1508,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         enabled = !showApps && !showLogs && !showProbe,
                         frameContent = false,
                         backdrop = screenWall,
-                        backdropTone = backdropTop,
+                        backdropTone = screenTone,
                     ) {
                         SettingsScreen(
                             state = settingsState,
@@ -1597,7 +1601,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         visible = showApps,
                         onBack = closeApps,
                         backdrop = screenWall,
-                        backdropTone = backdropTop,
+                        backdropTone = screenTone,
                     ) {
                         AppsScreen(
                             state = appsState,
@@ -1616,7 +1620,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         visible = showLogs,
                         onBack = closeLogs,
                         backdrop = screenWall,
-                        backdropTone = backdropTop,
+                        backdropTone = screenTone,
                         // On a TV the log takes the whole width: its lines wrap there, and in the readable
                         // width nearly every one did.
                         wide = tv,
@@ -1657,7 +1661,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         visible = showConfig,
                         onBack = { configViewModel.close() },
                         backdrop = screenWall,
-                        backdropTone = backdropTop,
+                        backdropTone = screenTone,
                         // Телефон боком — редактору вся ширина (D-145). A TV gives it the whole width too, in both
                         // views: its lines wrap there.
                         wide = lowWindow() || tv,
@@ -1692,7 +1696,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         visible = showRules,
                         onBack = { subscriptionsViewModel.closeRules() },
                         backdrop = screenWall,
-                        backdropTone = backdropTop,
+                        backdropTone = screenTone,
                     ) {
                         RulesScreen(
                             name = subscriptionsState.rulesName,
@@ -1709,7 +1713,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         visible = showProbe,
                         onBack = closeProbe,
                         backdrop = screenWall,
-                        backdropTone = backdropTop,
+                        backdropTone = screenTone,
                     ) {
                         ProbeScreen(
                             state = probeState,
@@ -1726,7 +1730,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         visible = showFeatures,
                         onBack = closeFeatures,
                         backdrop = screenWall,
-                        backdropTone = backdropTop,
+                        backdropTone = screenTone,
                         enabled = !showConnections && !showMobile && !showShare,
                     ) {
                         FeaturesScreen(
@@ -1752,7 +1756,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         visible = showConnections,
                         onBack = closeConnections,
                         backdrop = screenWall,
-                        backdropTone = backdropTop,
+                        backdropTone = screenTone,
                     ) {
                         ConnectionsScreen(
                             state = connectionsState,
@@ -1771,7 +1775,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         visible = showMobile,
                         onBack = closeMobile,
                         backdrop = screenWall,
-                        backdropTone = backdropTop,
+                        backdropTone = screenTone,
                     ) {
                         MobileScreen(
                             state = mobileState,
@@ -1790,7 +1794,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         visible = showShare,
                         onBack = closeShare,
                         backdrop = screenWall,
-                        backdropTone = backdropTop,
+                        backdropTone = screenTone,
                     ) {
                         ShareScreen(
                             state = shareState,
