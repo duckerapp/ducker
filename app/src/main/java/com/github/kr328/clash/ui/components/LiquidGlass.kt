@@ -579,12 +579,19 @@ internal fun Modifier.liquidGlass(
     // on the right and at the bottom, the dark ground showing through whenever it drew live: the first ~0.3 s after a
     // start or a return, the connect wave (the owner, 19.11).
     val glassFrame = if (panes) rememberGraphicsLayer() else null
+    // The dock's body in its own optics («Док 1») with the cards' own light line: drawn over its finished glass by a pass
+    // of its own, so its bend and reflection stay as they are (the owner, 22.11). Its body alone passes [paneGroup] DockPane.
+    val dockLine = !panes && paneGroup == GlassTuningGroup.DockPane && tuning?.enabled == true &&
+        tuning.ownRimOf(GlassTuningGroup.Dock)
+    val lineShader = remember(dockLine) { if (dockLine) RuntimeShader(DOCK_LINE_SHADER) else null }
+    val lineStillShader = remember(dockLine) { if (dockLine) RuntimeShader(DOCK_LINE_SHADER) else null }
+    val lineStillBrush = remember(lineStillShader) { lineStillShader?.let(::ShaderBrush) }
     val shader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
     // The same glass drawn straight from a still backdrop's picture: no layer of its own, no blur of its own.
     val stillShader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
     val stillBrush = remember(stillShader) { ShaderBrush(stillShader) }
     // The pane glass draws its own light line, unless it takes the dock's rim ([PaneGlass.DOCK_RIM]).
-    val highlightShader = remember(panes, ownRim) { if (panes && ownRim) null else RuntimeShader(HIGHLIGHT_SHADER) }
+    val highlightShader = remember(panes, ownRim, dockLine) { if (panes && ownRim || dockLine) null else RuntimeShader(HIGHLIGHT_SHADER) }
     val highlightBrush = remember(highlightShader) { highlightShader?.let(::ShaderBrush) }
     // The pane glass's veil, thinner over the rim so its roll and light line show through: a flat tint drawn by it, an
     // own [veil] masked by the second.
@@ -631,8 +638,13 @@ internal fun Modifier.liquidGlass(
                 it.setFloatUniform("color", 1f, 1f, 1f, 1f)
             }
         } else {
-            glass.renderEffect = glassEffect(shader, margin, size.width, size.height, radii, BEZEL.toPx(), amount, blur, bent)
+            val effect = glassEffect(shader, margin, size.width, size.height, radii, BEZEL.toPx(), amount, blur, bent)
+            glass.renderEffect = (if (lineShader != null && tuning != null) {
+                dockLine(lineShader, margin, size.width, size.height, radii, bent, tuning)
+                RenderEffect.createChainEffect(RenderEffect.createRuntimeShaderEffect(lineShader, "img"), effect)
+            } else effect).asComposeRenderEffect()
             bend(stillShader, 0f, size.width, size.height, radii, BEZEL.toPx(), amount, bent)
+            if (lineStillShader != null && tuning != null) dockLine(lineStillShader, 0f, size.width, size.height, radii, bent, tuning)
         }
         val stillBlur = blur.roundToInt()
         val paneSize = IntSize((size.width + 2 * margin).toInt(), (size.height + 2 * margin).toInt())
@@ -673,7 +685,13 @@ internal fun Modifier.liquidGlass(
 
             clipPath(clip) {
                 drawRect(base)
-                if (still == null) translate(-margin, -margin) { drawLayer(glassFrame ?: glass) } else drawRect(stillBrush)
+                if (still == null) {
+                    translate(-margin, -margin) { drawLayer(glassFrame ?: glass) }
+                } else if (lineStillShader != null && lineStillBrush != null) {
+                    // Set again each frame: the line's input holds the still glass as its uniforms were when set.
+                    lineStillShader.setInputShader("img", stillShader)
+                    drawRect(lineStillBrush)
+                } else drawRect(stillBrush)
                 val shadowAlpha = 0.12f * (style.depth / 100f)
                 if (!panes && shadowAlpha > 0.005f) {
                     val shadowHeight = minOf(16.dp.toPx(), size.height * 0.4f)
@@ -755,13 +773,29 @@ private fun glassEffect(
     amount: Float,
     blur: Float,
     style: GlassStyle,
-): androidx.compose.ui.graphics.RenderEffect {
+): RenderEffect {
     bend(shader, margin, width, height, cornerRadii, bezel, amount, style)
     val bend = RenderEffect.createRuntimeShaderEffect(shader, "img")
     val inner = paneLift(blur, style.vibrancy)
 
-    return (if (inner != null) RenderEffect.createChainEffect(bend, inner) else bend)
-        .asComposeRenderEffect()
+    return if (inner != null) RenderEffect.createChainEffect(bend, inner) else bend
+}
+
+/** [DOCK_LINE_SHADER]'s uniforms from «Док»'s light line knobs: as the cards' line, by the dock's own highlight. */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun Density.dockLine(
+    shader: RuntimeShader, margin: Float, width: Float, height: Float, cornerRadii: FloatArray, style: GlassStyle, tuning: GlassTuning,
+) {
+    fun value(key: String, fallback: Float) = tuning.value(GlassTuningGroup.Dock, key, fallback)
+    shader.setFloatUniform("size", width, height)
+    shader.setFloatUniform("offset", -margin, -margin)
+    shader.setFloatUniform("cornerRadii", cornerRadii)
+    shader.setFloatUniform("line", value("line", PaneGlass.LINE) * (style.highlight / 60f))
+    shader.setFloatUniform("lineWidth", value("lineWidth", PaneGlass.LINE_WIDTH.value).dp.toPx())
+    shader.setFloatUniform("lineSpread", value("lineSpread", 0f).dp.toPx())
+    shader.setFloatUniform("lineGlow", value("lineGlow", PANE_LINE_GLOW))
+    shader.setFloatUniform("lineFall", value("lineFall", PANE_LINE_FALL))
+    shader.setFloatUniform("lineDirect", value("lineDirect", 1f))
 }
 
 /** The glass's bend near the rim, for a pane [width] × [height] whose layer starts [margin] before it. */
@@ -2128,6 +2162,42 @@ half4 main(float2 coord) {
     // Thinned softly over the whole band, not cut away at the very rim: that bare strip read as a hard frame (the owner, 18.11).
     float keep = 1.0 - spare * (1.0 - smoothstep(0.0, 1.0, depth / b));
     return color * half(keep);
+}
+"""
+
+/**
+ * The cards' own light line (see [PANE_SHADER]) over glass already drawn: «Док 1»'s body, its bend and reflection left as
+ * they are. Brightens what the glass shows along its rim, as the cards' line does.
+ */
+private const val DOCK_LINE_SHADER = """
+uniform shader img;
+uniform float2 size;
+uniform float2 offset;
+uniform float4 cornerRadii;
+uniform float line;
+uniform float lineWidth;
+uniform float lineSpread;
+uniform float lineGlow;
+uniform float lineFall;
+uniform float lineDirect;
+
+$ROUNDED_RECT_SDF
+
+half4 main(float2 coord) {
+    half4 c = img.eval(coord);
+    float2 halfSize = size * 0.5;
+    float2 p = (coord + offset) - halfSize;
+    float radius = radiusAt(p, cornerRadii);
+    float sd = sdRoundedRect(p, halfSize, radius);
+    if (sd > 0.0 || line <= 0.0) return c;
+
+    float depth = -sd;
+    float2 n = gradSdRoundedRect(p, halfSize, min(radius * 1.5, min(halfSize.x, halfSize.y)));
+    float lw = 1.0 - smoothstep(0.0, lineWidth, depth);
+    if (lineSpread > 0.0) lw = max(lw, lineGlow * pow(clamp(1.0 - depth / lineSpread, 0.0, 1.0), lineFall));
+    float dir = mix(1.0, 0.3 + 0.7 * pow(abs(dot(n, float2(-0.447, -0.894))), 1.5), lineDirect);
+    c.rgb = min(c.rgb + (c.rgb * 0.9 + half3(0.2) * c.a) * half(lw * line * dir), half3(c.a));
+    return c;
 }
 """
 

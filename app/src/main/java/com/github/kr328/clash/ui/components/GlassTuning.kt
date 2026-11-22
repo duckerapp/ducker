@@ -121,6 +121,12 @@ internal val glassKnobs = mapOf(
             knob("highlight", "Блик", 0f, 100f, 1f),
             knob("noise", "Зерно", 0f, 100f, 1f),
             knob("breath", "Рост корпуса при нажатии", 0f, 0.16f),
+            knob("line", "Собственный блик: сила", 0f, 1.5f),
+            knob("lineWidth", "Собственный блик: ширина линии, dp", 0.25f, 12f),
+            knob("lineSpread", "Блик: рассеивание вглубь, dp", 0f, 48f),
+            knob("lineGlow", "Блик: сила рассеивания", 0f, 1f),
+            knob("lineFall", "Блик: спад (больше — быстрее гаснет)", 0.3f, 6f),
+            knob("lineDirect", "Блик: направленность (0 — по всему краю)", 0f, 1f),
             knob("tintEase", "Осветление корпуса при нажатии", 0f, 1f),
             knob("tintNear", "Осветление рядом с линзой", 0f, 1f),
             knob("tintReach", "Ширина осветления около линзы", 0f, 2f)
@@ -229,7 +235,20 @@ internal class GlassTuning(context: Context) {
     }
 
     /** The own light line of [group]'s panes: the cards' or the dock body's in its second mode. */
-    fun ownRimOf(group: GlassTuningGroup) = if (group == GlassTuningGroup.DockPane) dockOwnRim else paneOwnRim
+    fun ownRimOf(group: GlassTuningGroup) = when (group) {
+        GlassTuningGroup.DockPane -> dockOwnRim
+        GlassTuningGroup.Dock -> dockOneRim
+        else -> paneOwnRim
+    }
+
+    /** «Док 1»'s body with the cards' own light line over its own glass, instead of its thin rim light. */
+    var dockOneRim by mutableStateOf(prefs.getBoolean("dock1_own_rim", false))
+        private set
+
+    fun dock1Rim(on: Boolean) {
+        dockOneRim = on
+        prefs.edit().putBoolean("dock1_own_rim", on).apply()
+    }
 
     fun enable(on: Boolean) {
         enabled = on
@@ -278,6 +297,7 @@ internal class GlassTuning(context: Context) {
             .put("paneOwnRim", paneOwnRim)
             .put("dockPane", dockPane)
             .put("dockOwnRim", dockOwnRim)
+            .put("dock1OwnRim", dockOneRim)
             .put("wallMode", wallMode)
             .put("overrides", groups)
             .toString(2)
@@ -341,6 +361,7 @@ internal class GlassTuning(context: Context) {
         }
         if (group == GlassTuningGroup.Pane) ownRim(false)
         if (group == GlassTuningGroup.DockPane) dockRim(false)
+        if (group == GlassTuningGroup.Dock) dock1Rim(false)
         editor.apply()
     }
 }

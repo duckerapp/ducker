@@ -76,6 +76,8 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
         "tintEase" to if (light) DockGlass.TINT_EASE_LIGHT else DockGlass.TINT_EASE,
         "tintNear" to if (light) DockGlass.TINT_NEAR_LIGHT else DockGlass.TINT_NEAR,
         "tintReach" to DockGlass.TINT_REACH,
+        "line" to PaneGlass.LINE, "lineWidth" to PaneGlass.LINE_WIDTH.value,
+        "lineSpread" to 0f, "lineGlow" to PANE_LINE_GLOW, "lineFall" to PANE_LINE_FALL, "lineDirect" to 1f,
     )
     GlassTuningGroup.Veil -> mapOf(
         "opacity" to DockGlass.VEIL_OPACITY,
@@ -252,6 +254,9 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                                     style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant,
                                 )
                             }
+                        }
+                        if (group == GlassTuningGroup.Dock) {
+                            item { PanelToggle("Собственный блик дока 1 (как у карточек)", tuning.ownRimOf(group), tuning::dock1Rim) }
                         }
                         if (group == GlassTuningGroup.Pane || group == GlassTuningGroup.DockPane) {
                             item {
