@@ -26,7 +26,8 @@ internal enum class GlassTuningGroup(val title: String) {
     Switch("Тумблер"),
     Slider("Ползунок"),
     Segments("Сегменты"),
-    Toolbar("Панели редактора");
+    Toolbar("Панели редактора"),
+    Wall("Обои экранов");
 }
 
 internal data class GlassKnob(
@@ -161,6 +162,12 @@ internal val glassKnobs = mapOf(
             knob("aspect", "Ширина к высоте", 0.8f, 2.05f),
             knob("widen", "Рост по ширине", 0f, 0.4f)
     ) + lensKnobs,
+    GlassTuningGroup.Wall to listOf(
+            knob("blur", "Размытие обоев, dp", 0f, 40f, 0.5f),
+            knob("tint", "Тонировка: плотность", 0f, 0.9f),
+            knob("tone", "Тонировка: 0 — чёрная, 1 — белая", 0f, 1f),
+            knob("saturation", "Насыщенность обоев", 0f, 2f)
+    ),
 )
 
 internal fun GlassTuningGroup.usesLightValues(key: String, light: Boolean): Boolean = light && when (this) {

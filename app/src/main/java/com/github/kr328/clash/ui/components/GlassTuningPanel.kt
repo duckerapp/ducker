@@ -108,6 +108,7 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
     GlassTuningGroup.Toolbar -> lensDefaults(if (light) SEGMENT_LOOK_LIGHT else SEGMENT_LOOK) + mapOf(
         "height" to DockGlass.LENS_HEIGHT, "aspect" to DockGlass.LENS_ASPECT, "widen" to LENS_WIDEN,
     )
+    GlassTuningGroup.Wall -> mapOf("blur" to 0f, "tint" to 0f, "tone" to if (light) 1f else 0f, "saturation" to 1f)
 }
 
 /**

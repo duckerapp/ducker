@@ -2,10 +2,20 @@ package com.github.kr328.clash.ui.components
 
 import com.github.kr328.clash.ui.theme.LocalBackdropTone
 import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.findRootCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
@@ -208,7 +218,17 @@ fun BackLayer(
                     shadowElevation = ELEVATION.toPx() * p
                 }
                 .background(MaterialTheme.colorScheme.background)
-                .then(if (backdrop != null) Modifier.backdropPicture(backdrop) else Modifier)
+                .then(
+                    if (backdrop != null) {
+                        Modifier.backdropPicture(backdrop) {
+                            progress.value
+                            offset.value
+                            transition.playTimeNanos
+                        }
+                    } else {
+                        Modifier
+                    },
+                )
                 // Пустое место экрана — тоже экран: касание не должно проваливаться
                 // к вкладкам под ним и листать их.
                 .pointerInput(Unit) {
@@ -236,13 +256,80 @@ fun BackLayer(
 
 /**
  * Home's picture where it lies in the window, as under the tabs: the glass of the cards on it shows the picture at their
- * place in the window, so a picture moved with the screen would not meet it.
+ * place in the window, so a picture moved with the screen would not meet it. Drawn back through the whole way from the
+ * window to here, the screen's scale too, and anew each frame [moves] reads: placed by its position alone, a frame late,
+ * the picture grew and shrank with a screen opening or closing over the same picture, which read as a jerk (the owner,
+ * 22.11).
  */
 @Composable
-private fun Modifier.backdropPicture(backdrop: GlassBackdrop): Modifier {
-    var at by remember { mutableStateOf(Offset.Zero) }
-    return onGloballyPositioned { at = it.positionInRoot() }.drawBehind {
-        translate(backdrop.origin.x - at.x, backdrop.origin.y - at.y) { drawLayer(backdrop.layer) }
+private fun Modifier.backdropPicture(backdrop: GlassBackdrop, moves: () -> Unit): Modifier {
+    val place = remember { Placement() }
+    return onPlaced { place.coordinates = it }.drawBehind {
+        moves()
+        val here = place.coordinates
+        if (here != null && here.isAttached) {
+            place.matrix.reset()
+            here.transformFrom(here.findRootCoordinates(), place.matrix)
+        }
+        withTransform({
+            if (here != null && here.isAttached) transform(place.matrix)
+            translate(backdrop.origin.x, backdrop.origin.y)
+        }) { drawLayer(backdrop.layer) }
+    }
+}
+
+/** Where a screen's picture is drawn from; read in its draw, not drawn by — no state. */
+private class Placement {
+    var coordinates: LayoutCoordinates? = null
+    val matrix = Matrix()
+}
+
+/**
+ * Home's picture as the screens over the tabs show it, blurred, tinted and saturated by the tuning panel's
+ * [GlassTuningGroup.Wall] (the review app; elsewhere [wall] itself). Recorded by [screenWallSource], so their glass
+ * shows it too.
+ */
+@Composable
+internal fun rememberScreenWall(wall: GlassBackdrop?): GlassBackdrop? {
+    val tuning = LocalGlassTuning.current
+    if (wall == null || tuning == null || !tuning.enabled) return wall
+    val screens = rememberGlassBackdrop(still = true) ?: return wall
+
+    // It draws [wall]'s layer, so shows its changes at once; its still pictures are made anew with them.
+    LaunchedEffect(wall, screens) {
+        snapshotFlow { wall.origin to wall.version }.collect { (origin, _) ->
+            screens.origin = origin
+            screens.version++
+        }
+    }
+
+    return screens
+}
+
+/** Records [screens] from [wall] (see [rememberScreenWall]) and draws nothing itself. */
+@Composable
+internal fun Modifier.screenWallSource(screens: GlassBackdrop?, wall: GlassBackdrop?): Modifier {
+    val tuning = LocalGlassTuning.current
+    if (screens == null || wall == null || screens === wall || tuning == null) return this
+    val light = MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val picture = rememberGraphicsLayer()
+
+    return drawBehind {
+        val group = GlassTuningGroup.Wall
+        val blur = tuning.value(group, "blur", 0f, light).dp.toPx()
+        val saturation = tuning.value(group, "saturation", 1f, light)
+        val tint = tuning.value(group, "tint", 0f, light)
+        val tone = tuning.value(group, "tone", if (light) 1f else 0f, light)
+
+        picture.renderEffect = if (blur > 0f) BlurEffect(blur, blur, TileMode.Clamp) else null
+        picture.colorFilter = if (saturation != 1f) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }) else null
+        picture.record { drawLayer(wall.layer) }
+        screens.layer.record {
+            drawLayer(picture)
+            if (tint > 0f) drawRect(lerp(Color.Black, Color.White, tone), alpha = tint)
+        }
+        // Not a read of this draw: it would invalidate itself and draw again forever.
+        Snapshot.withoutReadObservation { screens.version++ }
     }
 }
 
