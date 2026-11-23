@@ -420,6 +420,8 @@ internal fun DuckerSlider(
     val layer = rememberGraphicsLayer()
     val under = rememberPaneUnder()
     val at = remember { floatArrayOf(0f, 0f) }
+    // The track's start in the window and its width: under the lens the track ends where it does.
+    val trackAt = remember { floatArrayOf(0f, 0f) }
 
     LaunchedEffect(touch.count, touch.down, motion) { lens.follow(touch, motion) }
 
@@ -462,8 +464,11 @@ internal fun DuckerSlider(
                     drawDockLens(lensGlass, layer, center, halfW, halfH, s, !light, look) {
                         under(origin)
                         // At the thumb's middle: this scope is the lens layer's, taller, and the line slid below the
-                        // lens, a gap in the scale under the held thumb (the owner, 18.11).
-                        track(-width, width * 2f, center.x, thick, center.y)
+                        // lens, a gap in the scale under the held thumb (the owner, 18.11). From the track's own start to
+                        // its end: drawn three thumbs each way, the lens showed a strip past the track's ends (the owner,
+                        // 23.11).
+                        val start = trackAt[0] - at[0]
+                        track(start, start + trackAt[1], center.x, thick, center.y)
                         drawThumb(center, width / 2f, height / 2f, Color.White, shadowDrop)
                     }
                 },
@@ -471,14 +476,16 @@ internal fun DuckerSlider(
         },
         track = { state ->
             Box(
-                Modifier.fillMaxWidth().height(THUMB_HEIGHT).drawBehind {
-                    val range = state.valueRange
-                    val fraction = if (range.endInclusive > range.start) {
-                        ((state.value - range.start) / (range.endInclusive - range.start)).coerceIn(0f, 1f)
-                    } else 0f
-                    val split = if (rtl) size.width * (1f - fraction) else size.width * fraction
-                    track(0f, size.width, split, SLIDER_TRACK.toPx())
-                },
+                Modifier.fillMaxWidth().height(THUMB_HEIGHT)
+                    .onGloballyPositioned { trackAt[0] = it.positionInRoot().x; trackAt[1] = it.size.width.toFloat() }
+                    .drawBehind {
+                        val range = state.valueRange
+                        val fraction = if (range.endInclusive > range.start) {
+                            ((state.value - range.start) / (range.endInclusive - range.start)).coerceIn(0f, 1f)
+                        } else 0f
+                        val split = if (rtl) size.width * (1f - fraction) else size.width * fraction
+                        track(0f, size.width, split, SLIDER_TRACK.toPx())
+                    },
             )
         },
     )
