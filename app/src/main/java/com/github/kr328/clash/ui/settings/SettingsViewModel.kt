@@ -77,13 +77,9 @@ class SettingsViewModel : ViewModel() {
                         theme = ours.theme, oled = ours.oled, dynamicColor = ours.dynamicColor,
                         lockSensitive = ours.lockSensitive,
                         style = ours.style,
-                        glassBackdrop = ours.glassBackdrop, glassBlur = ours.glassBlur,
+                        glassBackdrop = ours.glassBackdrop, glassBlurBoost = ours.glassBlurBoost,
                         glassImage = glassImageTime(context), glassImageDark = ours.glassImageDark,
                         glassImageTopDark = ours.glassImageTopDark ?: false,
-                        glassRefraction = ours.glassRefraction, glassDispersion = ours.glassDispersion,
-                        glassDepth = ours.glassDepth, glassHighlight = ours.glassHighlight,
-                        glassNoise = ours.glassNoise, glassVibrancy = ours.glassVibrancy,
-                        glassTint = ours.glassTint,
                     )
                 }
             }
@@ -113,17 +109,10 @@ class SettingsViewModel : ViewModel() {
                     dynamicColor = ours.dynamicColor,
                     style = ours.style,
                     glassBackdrop = ours.glassBackdrop,
-                    glassBlur = ours.glassBlur,
+                    glassBlurBoost = ours.glassBlurBoost,
                     glassImage = glassImageTime(context),
                     glassImageDark = ours.glassImageDark,
                     glassImageTopDark = ours.glassImageTopDark ?: false,
-                    glassRefraction = ours.glassRefraction,
-                    glassDispersion = ours.glassDispersion,
-                    glassDepth = ours.glassDepth,
-                    glassHighlight = ours.glassHighlight,
-                    glassNoise = ours.glassNoise,
-                    glassVibrancy = ours.glassVibrancy,
-                    glassTint = ours.glassTint,
                     allowExternalControl = ours.allowExternalControl,
                     ipv6 = service.allowIpv6,
                     appVersion = appVersion,
@@ -299,65 +288,15 @@ class SettingsViewModel : ViewModel() {
         return dark(bitmap) to dark(band)
     }
 
-    /** The blur and the tuning as the store has them now: their defaults follow the backdrop. */
-    private fun SettingsState.withGlass(store: SettingsStore) = copy(
-        glassBackdrop = store.glassBackdrop,
-        glassBlur = store.glassBlur,
-        glassRefraction = store.glassRefraction,
-        glassDispersion = store.glassDispersion,
-        glassDepth = store.glassDepth,
-        glassHighlight = store.glassHighlight,
-        glassNoise = store.glassNoise,
-        glassVibrancy = store.glassVibrancy,
-        glassTint = store.glassTint,
-    )
+    /** The backdrop as the store has it now: a key no longer offered reads as the first picture. */
+    private fun SettingsState.withGlass(store: SettingsStore) = copy(glassBackdrop = store.glassBackdrop)
 
     private fun glassImageTime(context: Context): Long =
         File(context.filesDir, SettingsStore.GLASS_IMAGE_FILE).lastModified()
 
-    fun setGlassBlur(context: Context, value: Int) {
-        _state.update { it.copy(glassBlur = value) }
-        SettingsStore(context).glassBlur = value
-    }
-
-    fun setGlassRefraction(context: Context, value: Int) {
-        _state.update { it.copy(glassRefraction = value) }
-        SettingsStore(context).glassRefraction = value
-    }
-
-    fun setGlassDispersion(context: Context, value: Int) {
-        _state.update { it.copy(glassDispersion = value) }
-        SettingsStore(context).glassDispersion = value
-    }
-
-    fun setGlassDepth(context: Context, value: Int) {
-        _state.update { it.copy(glassDepth = value) }
-        SettingsStore(context).glassDepth = value
-    }
-
-    fun setGlassHighlight(context: Context, value: Int) {
-        _state.update { it.copy(glassHighlight = value) }
-        SettingsStore(context).glassHighlight = value
-    }
-
-    fun setGlassNoise(context: Context, value: Int) {
-        _state.update { it.copy(glassNoise = value) }
-        SettingsStore(context).glassNoise = value
-    }
-
-    fun setGlassVibrancy(context: Context, value: Int) {
-        _state.update { it.copy(glassVibrancy = value) }
-        SettingsStore(context).glassVibrancy = value
-    }
-
-    fun setGlassTint(context: Context, value: Int) {
-        _state.update { it.copy(glassTint = value) }
-        SettingsStore(context).glassTint = value
-    }
-
-    fun resetGlassTuning(context: Context) {
-        val store = SettingsStore(context).apply { resetGlassTuning() }
-        _state.update { it.withGlass(store) }
+    fun setGlassBlurBoost(context: Context, value: Int) {
+        _state.update { it.copy(glassBlurBoost = value) }
+        SettingsStore(context).glassBlurBoost = value
     }
 
     fun setAllowExternalControl(context: Context, value: Boolean) {

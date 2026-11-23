@@ -687,21 +687,12 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">سبک</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Ducker Glass</string>
+    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">پس‌زمینه</string>
     <string name="glass_backdrop_fern">سرخس</string>
     <string name="glass_backdrop_liquid">فلز مایع</string>
     <string name="glass_blur">تاری شیشه</string>
-    <string name="glass_blur_none">بدون تاری</string>
-    <string name="glass_tuning">تنظیم شیشه</string>
-    <string name="glass_refraction">شکست نور (اعوجاج)</string>
-    <string name="glass_dispersion">خطای رنگی</string>
-    <string name="glass_depth">عمق عدسی (انحنا)</string>
-    <string name="glass_highlight">درخشش لبه</string>
-    <string name="glass_noise">نویز ریز (ماتی)</string>
-    <string name="glass_vibrancy">شدت رنگ پس‌زمینه</string>
-    <string name="glass_tint">رنگ شیشه</string>
-    <string name="glass_reset_tuning">بازنشانی تنظیمات شیشه</string>
+    <string name="glass_blur_standard">معمولی</string>
     <string name="glass_image_pick">انتخاب تصویر دیگر</string>
     <string name="glass_image_pick_hint">هنگام پیمایش کارت‌ها ثابت می‌ماند</string>
 </resources>

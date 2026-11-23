@@ -1,6 +1,5 @@
 package com.github.kr328.clash.ui.settings
 
-import com.github.kr328.clash.ui.components.DuckerSlider
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.github.kr328.clash.ui.components.DuckerSwitch
@@ -28,7 +27,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.compose.ui.semantics.stateDescription
 import com.github.kr328.clash.ui.components.glassSupported
 import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.tvEdge
@@ -89,6 +87,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -122,14 +121,7 @@ data class SettingsState(
     /** The look, Air or glass, and the glass's settings, see [SettingsStore.style]. */
     val style: String = SettingsStore.STYLE_AIR,
     val glassBackdrop: String = SettingsStore.BACKDROPS.first(),
-    val glassBlur: Int = 0,
-    val glassRefraction: Int = SettingsStore.GLASS_REFRACTION,
-    val glassDispersion: Int = SettingsStore.GLASS_DISPERSION,
-    val glassDepth: Int = SettingsStore.GLASS_DEPTH,
-    val glassHighlight: Int = SettingsStore.GLASS_HIGHLIGHT,
-    val glassNoise: Int = SettingsStore.GLASS_NOISE,
-    val glassVibrancy: Int = 40,
-    val glassTint: Int = 50,
+    val glassBlurBoost: Int = 0,
     /** The own picture: its file's time (0 — none yet), whether it is dark, and whether its top is. */
     val glassImage: Long = 0L,
     val glassImageDark: Boolean = false,
@@ -200,15 +192,7 @@ fun SettingsScreen(
     onDynamicColor: (Boolean) -> Unit,
     onStyle: (String) -> Unit,
     onGlassBackdrop: (String) -> Unit,
-    onGlassBlur: (Int) -> Unit,
-    onGlassRefraction: (Int) -> Unit = {},
-    onGlassDispersion: (Int) -> Unit = {},
-    onGlassDepth: (Int) -> Unit = {},
-    onGlassHighlight: (Int) -> Unit = {},
-    onGlassNoise: (Int) -> Unit = {},
-    onGlassVibrancy: (Int) -> Unit = {},
-    onGlassTint: (Int) -> Unit = {},
-    onResetGlassTuning: () -> Unit = {},
+    onGlassBlurBoost: (Int) -> Unit,
     onPickGlassImage: () -> Unit,
     onExternalControl: (Boolean) -> Unit,
     onIpv6: (Boolean) -> Unit,
@@ -392,7 +376,8 @@ fun SettingsScreen(
                             )
                         }
 
-                        item {
+                        // Ducker Glass lies on its pictures: pure black has nothing to do there.
+                        if (tv || !glassSupported || state.style != SettingsStore.STYLE_GLASS) item {
                             SwitchRow(
                                 title = stringResource(R.string.oled),
                                 subtitle = stringResource(R.string.oled_hint),
@@ -425,6 +410,7 @@ fun SettingsScreen(
                                     ),
                                     selected = state.style,
                                     onSelect = onStyle,
+                                    badges = mapOf(SettingsStore.STYLE_GLASS to "BETA"),
                                 )
                             }
                         }
@@ -446,18 +432,16 @@ fun SettingsScreen(
                                 }
                             }
 
-                            item { GlassBlurCard(state.glassBlur, onGlassBlur) }
+                            // The glass is the owner's tuning; only its blur can be raised, in three steps (the owner, 23.11).
                             item {
-                                GlassTuningSection(
-                                    state = state,
-                                    onRefraction = onGlassRefraction,
-                                    onDispersion = onGlassDispersion,
-                                    onDepth = onGlassDepth,
-                                    onHighlight = onGlassHighlight,
-                                    onNoise = onGlassNoise,
-                                    onVibrancy = onGlassVibrancy,
-                                    onTint = onGlassTint,
-                                    onReset = onResetGlassTuning,
+                                ChipsCard(
+                                    title = stringResource(R.string.glass_blur),
+                                    icon = Symbols.Contrast,
+                                    options = (0..SettingsStore.GLASS_BLUR_BOOST_MAX step 10).map {
+                                        it.toString() to if (it == 0) stringResource(R.string.glass_blur_standard) else "+$it %"
+                                    },
+                                    selected = state.glassBlurBoost.toString(),
+                                    onSelect = { onGlassBlurBoost(it.toInt()) },
                                 )
                             }
                         }
@@ -1019,155 +1003,6 @@ private fun InnerSwitch(
     }
 }
 
-/** The glass style: the glass's blur in steps of 10 %, from none to full. */
-@Composable
-private fun GlassBlurCard(blur: Int, onBlur: (Int) -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    val shown = if (blur == 0) stringResource(R.string.glass_blur_none) else "$blur %"
-
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SettingsIcon(Symbols.Contrast)
-                Text(stringResource(R.string.glass_blur), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Text(shown, style = MaterialTheme.typography.labelLarge, color = scheme.onSurfaceVariant)
-            }
-            DuckerSlider(
-                value = blur / 10f,
-                onValueChange = { value ->
-                    val next = value.roundToInt().coerceIn(0, 10) * 10
-                    if (next != blur) onBlur(next)
-                },
-                valueRange = 0f..10f,
-                steps = 9,
-                modifier = Modifier.fillMaxWidth().semantics { stateDescription = shown },
-            )
-        }
-    }
-}
-
-/** The glass style: fine-tuning parameters for iOS-style liquid glass. */
-@Composable
-private fun GlassTuningSection(
-    state: SettingsState,
-    onRefraction: (Int) -> Unit,
-    onDispersion: (Int) -> Unit,
-    onDepth: (Int) -> Unit,
-    onHighlight: (Int) -> Unit,
-    onNoise: (Int) -> Unit,
-    onVibrancy: (Int) -> Unit,
-    onTint: (Int) -> Unit,
-    onReset: () -> Unit,
-) {
-    val scheme = MaterialTheme.colorScheme
-    var expanded by remember { mutableStateOf(false) }
-
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded },
-            ) {
-                SettingsIcon(Symbols.Tune)
-                Text(
-                    stringResource(R.string.glass_tuning),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    if (expanded) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = scheme.onSurfaceVariant,
-                )
-            }
-
-            if (expanded) {
-                GlassTuningSlider(
-                    label = stringResource(R.string.glass_refraction),
-                    value = state.glassRefraction,
-                    onValueChange = onRefraction,
-                )
-                GlassTuningSlider(
-                    label = stringResource(R.string.glass_dispersion),
-                    value = state.glassDispersion,
-                    onValueChange = onDispersion,
-                )
-                GlassTuningSlider(
-                    label = stringResource(R.string.glass_depth),
-                    value = state.glassDepth,
-                    onValueChange = onDepth,
-                )
-                GlassTuningSlider(
-                    label = stringResource(R.string.glass_highlight),
-                    value = state.glassHighlight,
-                    onValueChange = onHighlight,
-                )
-                GlassTuningSlider(
-                    label = stringResource(R.string.glass_noise),
-                    value = state.glassNoise,
-                    onValueChange = onNoise,
-                )
-                GlassTuningSlider(
-                    label = stringResource(R.string.glass_vibrancy),
-                    value = state.glassVibrancy,
-                    onValueChange = onVibrancy,
-                )
-                GlassTuningSlider(
-                    label = stringResource(R.string.glass_tint),
-                    value = state.glassTint,
-                    onValueChange = onTint,
-                )
-
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onReset)
-                        .padding(vertical = 4.dp, horizontal = 8.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.glass_reset_tuning),
-                        color = scheme.primary,
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun GlassTuningSlider(
-    label: String,
-    value: Int,
-    onValueChange: (Int) -> Unit,
-) {
-    val scheme = MaterialTheme.colorScheme
-    val shown = if (value == 0) "0 %" else "$value %"
-
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            Text(shown, style = MaterialTheme.typography.labelMedium, color = scheme.onSurfaceVariant)
-        }
-        DuckerSlider(
-            value = value / 5f,
-            onValueChange = { v ->
-                val next = (v.roundToInt() * 5).coerceIn(0, 100)
-                if (next != value) onValueChange(next)
-            },
-            valueRange = 0f..20f,
-            steps = 19,
-            modifier = Modifier.fillMaxWidth().semantics { stateDescription = "$label $shown" },
-        )
-    }
-}
-
 /** Theme choices wrap vertically when large text needs more room. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -1177,6 +1012,8 @@ private fun ChipsCard(
     options: List<Pair<String, String>>,
     selected: String,
     onSelect: (String) -> Unit,
+    /** A small mark beside a choice's label, by its value: «BETA» on Ducker Glass. */
+    badges: Map<String, String> = emptyMap(),
 ) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1188,7 +1025,11 @@ private fun ChipsCard(
                 val density = LocalDensity.current
                 val labelStyle = MaterialTheme.typography.labelLarge
                 val measurer = rememberTextMeasurer()
-                val widest = options.maxOf { measurer.measure(it.second, labelStyle).size.width }
+                val badgeStyle = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 0.08.em)
+                val widest = options.maxOf { (value, label) ->
+                    measurer.measure(label, labelStyle).size.width +
+                        (badges[value]?.let { with(density) { measurer.measure(it, badgeStyle).size.width + 18.dp.roundToPx() } } ?: 0)
+                }
                 val columns = with(density) {
                     if ((widest + 12.dp.roundToPx()) * options.size +
                         8.dp.roundToPx() * (options.size - 1) <= maxWidth.roundToPx()) options.size else 1
@@ -1220,11 +1061,21 @@ private fun ChipsCard(
                                 .padding(horizontal = 6.dp, vertical = 10.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(
-                                label, modifier = Modifier.fillMaxWidth(), style = labelStyle,
-                                textAlign = TextAlign.Center,
-                                color = if (chosen) scheme.onPrimaryContainer else scheme.onSurfaceVariant,
-                            )
+                            val ink = if (chosen) scheme.onPrimaryContainer else scheme.onSurfaceVariant
+                            val badge = badges[value]
+                            if (badge == null) {
+                                Text(label, modifier = Modifier.fillMaxWidth(), style = labelStyle, textAlign = TextAlign.Center, color = ink)
+                            } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(label, style = labelStyle, color = ink, maxLines = 1)
+                                Text(
+                                    badge,
+                                    style = badgeStyle,
+                                    color = ink.copy(alpha = 0.8f),
+                                    maxLines = 1,
+                                    modifier = Modifier.border(1.dp, ink.copy(alpha = 0.35f), CircleShape)
+                                        .padding(horizontal = 5.dp, vertical = 1.dp),
+                                )
+                            }
                         }
                     }
                 }

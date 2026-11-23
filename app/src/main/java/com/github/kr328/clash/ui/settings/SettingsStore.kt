@@ -102,66 +102,13 @@ class SettingsStore(context: Context) {
             if (value == null) remove(KEY_GLASS_IMAGE_TOP_DARK) else putBoolean(KEY_GLASS_IMAGE_TOP_DARK, value)
         }.apply()
 
-    // Clear glass suits the built-in gradients, which carry no detail; over a photo leaves and snow showed sharp under
-    // the letters and the rim stretched them into streaks (F-388). So an own picture has its own defaults until the
-    // person moves a slider; «Сбросить» returns to them.
-    private val photo: Boolean get() = glassBackdrop == BACKDROP_IMAGE || glassBackdrop in BACKDROPS
-
-    /** Experiment: how much the glass blurs what is under it, 0…100 %. */
-    var glassBlur: Int
-        get() = prefs.getInt(KEY_GLASS_BLUR, if (photo) PHOTO_BLUR else 0)
-        set(value) = prefs.edit().putInt(KEY_GLASS_BLUR, value).apply()
-
-    /** Experiment: refraction strength / distortion, 0…100 %. */
-    var glassRefraction: Int
-        get() = prefs.getInt(KEY_GLASS_REFRACTION, if (photo) PHOTO_REFRACTION else GLASS_REFRACTION)
-        set(value) = prefs.edit().putInt(KEY_GLASS_REFRACTION, value).apply()
-
-    /** Experiment: chromatic aberration / dispersion, 0…100 %. */
-    var glassDispersion: Int
-        get() = prefs.getInt(KEY_GLASS_DISPERSION, if (photo) PHOTO_DISPERSION else GLASS_DISPERSION)
-        set(value) = prefs.edit().putInt(KEY_GLASS_DISPERSION, value).apply()
-
-    /** Experiment: 3D convex lens depth, 0…100 %. */
-    var glassDepth: Int
-        get() = prefs.getInt(KEY_GLASS_DEPTH, GLASS_DEPTH)
-        set(value) = prefs.edit().putInt(KEY_GLASS_DEPTH, value).apply()
-
-    /** Experiment: directional specular highlight brightness, 0…100 %. */
-    var glassHighlight: Int
-        get() = prefs.getInt(KEY_GLASS_HIGHLIGHT, GLASS_HIGHLIGHT)
-        set(value) = prefs.edit().putInt(KEY_GLASS_HIGHLIGHT, value).apply()
-
-    /** Experiment: micro-frost surface noise / grain, 0…100 %. */
-    var glassNoise: Int
-        get() = prefs.getInt(KEY_GLASS_NOISE, GLASS_NOISE)
-        set(value) = prefs.edit().putInt(KEY_GLASS_NOISE, value).apply()
-
-    /** Experiment: saturation vibrancy boost, 0…100 %. */
-    var glassVibrancy: Int
-        get() = prefs.getInt(KEY_GLASS_VIBRANCY, 40)
-        set(value) = prefs.edit().putInt(KEY_GLASS_VIBRANCY, value).apply()
-
-    /** Experiment: glass tinting / opacity, 0…100 % (0 = clear transparent, 50 = default theme veil, 100 = dark smoked glass). */
-    var glassTint: Int
-        get() = prefs.getInt(KEY_GLASS_TINT, if (photo) PHOTO_TINT else 50)
-        set(value) = prefs.edit().putInt(KEY_GLASS_TINT, value).apply()
-
     /**
-     * Returns the tuning card's values to their defaults, which depend on the backdrop. Not the blur: it has a card of
-     * its own, and the tuning's reset took it too.
+     * Appearance's «Размытие»: how much blurrier than tuned the panes are, 0, 10, 20 or 30 points of 100. The glass's
+     * own sliders are gone (the owner, 23.11): its look is the owner's tuning.
      */
-    fun resetGlassTuning() {
-        prefs.edit()
-            .remove(KEY_GLASS_REFRACTION)
-            .remove(KEY_GLASS_DISPERSION)
-            .remove(KEY_GLASS_DEPTH)
-            .remove(KEY_GLASS_HIGHLIGHT)
-            .remove(KEY_GLASS_NOISE)
-            .remove(KEY_GLASS_VIBRANCY)
-            .remove(KEY_GLASS_TINT)
-            .apply()
-    }
+    var glassBlurBoost: Int
+        get() = prefs.getInt(KEY_GLASS_BLUR_BOOST, 0).coerceIn(0, GLASS_BLUR_BOOST_MAX)
+        set(value) = prefs.edit().putInt(KEY_GLASS_BLUR_BOOST, value).apply()
 
     /** Размер шрифта в редакторе конфига, sp (D-124): кому-то мелко, кому-то нужно больше строк. */
     var configTextSize: Float
@@ -186,29 +133,14 @@ class SettingsStore(context: Context) {
         private const val KEY_BETA = "beta_updates"
         private const val KEY_STYLE = "style"
         private const val KEY_GLASS_BACKDROP = "glass_backdrop"
-        private const val KEY_GLASS_BLUR = "glass_blur"
+        private const val KEY_GLASS_BLUR_BOOST = "glass_blur_boost"
         private const val KEY_GLASS_IMAGE_DARK = "glass_image_dark"
         private const val KEY_GLASS_IMAGE_TOP_DARK = "glass_image_top_dark"
-        private const val KEY_GLASS_REFRACTION = "glass_refraction"
-        private const val KEY_GLASS_DISPERSION = "glass_dispersion"
-        private const val KEY_GLASS_DEPTH = "glass_depth"
-        private const val KEY_GLASS_HIGHLIGHT = "glass_highlight"
-        private const val KEY_GLASS_NOISE = "glass_noise"
-        private const val KEY_GLASS_VIBRANCY = "glass_vibrancy"
-        private const val KEY_GLASS_TINT = "glass_tint"
 
-        // An own picture's defaults: frosted glass, denser (F-388); its rim now as the cards' (the owner, 22.11).
-        private const val PHOTO_BLUR = 35
-        private const val PHOTO_TINT = 65
-        private const val PHOTO_REFRACTION = 50
-        private const val PHOTO_DISPERSION = 0
-
-        /** The cards' glass as the owner tuned it (22.11): Appearance's sliders start there. */
-        const val GLASS_REFRACTION = 50
-        const val GLASS_DISPERSION = 0
-        const val GLASS_DEPTH = 65
-        const val GLASS_HIGHLIGHT = 70
-        const val GLASS_NOISE = 0
+        /** The glass's look beyond the panes' own (the header's buttons, the pills): frosted over the pictures (F-388). */
+        const val GLASS_BLUR = 35
+        const val GLASS_TINT = 65
+        const val GLASS_BLUR_BOOST_MAX = 30
 
         /** The own picture, a copy fitted to the screen: the picked file may go from the gallery later. */
         const val GLASS_IMAGE_FILE = "glass_backdrop.jpg"

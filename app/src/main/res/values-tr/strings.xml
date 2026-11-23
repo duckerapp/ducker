@@ -686,21 +686,12 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Stil</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Ducker Glass</string>
+    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Arka plan</string>
     <string name="glass_backdrop_fern">Eğrelti otu</string>
     <string name="glass_backdrop_liquid">Sıvı metal</string>
     <string name="glass_blur">Cam bulanıklığı</string>
-    <string name="glass_blur_none">Bulanıklık yok</string>
-    <string name="glass_tuning">Cam ayarları</string>
-    <string name="glass_refraction">Kırılma (bozulma)</string>
-    <string name="glass_dispersion">Renk sapması</string>
-    <string name="glass_depth">Mercek derinliği (eğrilik)</string>
-    <string name="glass_highlight">Kenar parıltısı</string>
-    <string name="glass_noise">İnce gürültü (buzlu cam)</string>
-    <string name="glass_vibrancy">Arka plan canlılığı</string>
-    <string name="glass_tint">Cam tonu</string>
-    <string name="glass_reset_tuning">Cam ayarlarını varsayılana sıfırla</string>
+    <string name="glass_blur_standard">Standart</string>
     <string name="glass_image_pick">Başka resim seç</string>
     <string name="glass_image_pick_hint">Kartlar kaydırılırken sabit kalır</string>
 </resources>

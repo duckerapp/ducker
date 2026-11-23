@@ -725,21 +725,12 @@
     <!-- The liquid glass style (phones with Android 13+); its strings are in English and Russian only for now -->
     <string name="style">Стиль</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Ducker Glass</string>
+    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Фон</string>
     <string name="glass_backdrop_fern">Папоротник</string>
     <string name="glass_backdrop_liquid">Жидкий металл</string>
     <string name="glass_blur">Размытие стекла</string>
-    <string name="glass_blur_none">Без размытия</string>
-    <string name="glass_tuning">Тюнинг жидкого стекла</string>
-    <string name="glass_refraction">Преломление (дисторсия)</string>
-    <string name="glass_dispersion">Хроматическая аберрация</string>
-    <string name="glass_depth">Выпуклость линзы (объём)</string>
-    <string name="glass_highlight">Световой блик кромки</string>
-    <string name="glass_noise">Микрошум (матовость)</string>
-    <string name="glass_vibrancy">Сочность фона (Vibrancy)</string>
-    <string name="glass_tint">Тонирование стекла</string>
-    <string name="glass_reset_tuning">Сбросить настройки стекла</string>
+    <string name="glass_blur_standard">Обычное</string>
     <string name="glass_image_pick">Выбрать другую картинку</string>
     <string name="glass_image_pick_hint">Стоит на месте, карточки едут поверх</string>
 </resources>

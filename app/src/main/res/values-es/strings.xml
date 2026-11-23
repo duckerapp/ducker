@@ -695,21 +695,12 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Estilo</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Ducker Glass</string>
+    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Fondo</string>
     <string name="glass_backdrop_fern">Helecho</string>
     <string name="glass_backdrop_liquid">Metal líquido</string>
     <string name="glass_blur">Desenfoque del cristal</string>
-    <string name="glass_blur_none">Sin desenfoque</string>
-    <string name="glass_tuning">Ajustes del cristal</string>
-    <string name="glass_refraction">Refracción (distorsión)</string>
-    <string name="glass_dispersion">Aberración cromática</string>
-    <string name="glass_depth">Profundidad de la lente (curvatura)</string>
-    <string name="glass_highlight">Brillo del borde</string>
-    <string name="glass_noise">Ruido fino (efecto mate)</string>
-    <string name="glass_vibrancy">Intensidad del fondo</string>
-    <string name="glass_tint">Tinte del cristal</string>
-    <string name="glass_reset_tuning">Restablecer los ajustes del cristal</string>
+    <string name="glass_blur_standard">Estándar</string>
     <string name="glass_image_pick">Elegir otra imagen</string>
     <string name="glass_image_pick_hint">Permanece fija al desplazar las tarjetas</string>
 </resources>

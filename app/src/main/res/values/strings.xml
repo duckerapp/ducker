@@ -722,21 +722,12 @@
     <!-- The liquid glass style (phones with Android 13+) -->
     <string name="style">Style</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Ducker Glass</string>
+    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Backdrop</string>
     <string name="glass_backdrop_fern">Fern</string>
     <string name="glass_backdrop_liquid">Liquid metal</string>
     <string name="glass_blur">Glass blur</string>
-    <string name="glass_blur_none">No blur</string>
-    <string name="glass_tuning">Glass tuning</string>
-    <string name="glass_refraction">Refraction (distortion)</string>
-    <string name="glass_dispersion">Chromatic aberration</string>
-    <string name="glass_depth">Lens depth (curvature)</string>
-    <string name="glass_highlight">Rim highlight sheen</string>
-    <string name="glass_noise">Micro-frost noise</string>
-    <string name="glass_vibrancy">Backdrop vibrancy</string>
-    <string name="glass_tint">Glass tinting</string>
-    <string name="glass_reset_tuning">Reset tuning to default</string>
+    <string name="glass_blur_standard">Standard</string>
     <string name="glass_image_pick">Pick another picture</string>
     <string name="glass_image_pick_hint">Stays still while the cards scroll over it</string>
 </resources>

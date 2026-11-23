@@ -677,21 +677,12 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Gaya</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Ducker Glass</string>
+    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Latar</string>
     <string name="glass_backdrop_fern">Pakis</string>
     <string name="glass_backdrop_liquid">Logam cair</string>
     <string name="glass_blur">Buram kaca</string>
-    <string name="glass_blur_none">Tanpa buram</string>
-    <string name="glass_tuning">Pengaturan kaca</string>
-    <string name="glass_refraction">Pembiasan (distorsi)</string>
-    <string name="glass_dispersion">Aberasi kromatik</string>
-    <string name="glass_depth">Kedalaman lensa (kelengkungan)</string>
-    <string name="glass_highlight">Kilau tepi</string>
-    <string name="glass_noise">Derau halus (efek buram)</string>
-    <string name="glass_vibrancy">Intensitas warna latar</string>
-    <string name="glass_tint">Rona kaca</string>
-    <string name="glass_reset_tuning">Reset pengaturan kaca ke default</string>
+    <string name="glass_blur_standard">Standar</string>
     <string name="glass_image_pick">Pilih gambar lain</string>
     <string name="glass_image_pick_hint">Tetap diam saat kartu digulir</string>
 </resources>

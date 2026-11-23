@@ -423,7 +423,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
             DuckerTheme(
                 dark = dark,
-                oled = settingsState.oled,
+                // Pure black is the theme's background; Ducker Glass lies on its pictures and its own black.
+                oled = settingsState.oled && !glassOn,
                 dynamicColor = settingsState.dynamicColor,
                 // Тему переключает кнопка в шапке, и новая палитра накатывает волной
                 // от неё же (D-66).
@@ -437,16 +438,12 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 glass = GlassStyle(
                     enabled = glassOn,
                     backdrop = settingsState.glassBackdrop,
-                    blur = settingsState.glassBlur,
+                    // The rest is the owner's tuning (GlassStyle's defaults); only the blur can be raised.
+                    blur = SettingsStore.GLASS_BLUR + settingsState.glassBlurBoost,
+                    blurBoost = settingsState.glassBlurBoost,
+                    tint = SettingsStore.GLASS_TINT,
                     image = settingsState.glassImage,
                     imageTopDark = settingsState.glassImageTopDark,
-                    refraction = settingsState.glassRefraction,
-                    dispersion = settingsState.glassDispersion,
-                    depth = settingsState.glassDepth,
-                    highlight = settingsState.glassHighlight,
-                    noise = settingsState.glassNoise,
-                    vibrancy = settingsState.glassVibrancy,
-                    tint = settingsState.glassTint,
                 ),
                 statusBarDark = if (overScreen.value) null else backdropTop,
             ) {
@@ -1479,15 +1476,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             onDynamicColor = { settingsViewModel.setDynamicColor(this@HomeActivity, it) },
                             onStyle = { settingsViewModel.setStyle(this@HomeActivity, it) },
                             onGlassBackdrop = { settingsViewModel.setGlassBackdrop(this@HomeActivity, it) },
-                            onGlassBlur = { settingsViewModel.setGlassBlur(this@HomeActivity, it) },
-                            onGlassRefraction = { settingsViewModel.setGlassRefraction(this@HomeActivity, it) },
-                            onGlassDispersion = { settingsViewModel.setGlassDispersion(this@HomeActivity, it) },
-                            onGlassDepth = { settingsViewModel.setGlassDepth(this@HomeActivity, it) },
-                            onGlassHighlight = { settingsViewModel.setGlassHighlight(this@HomeActivity, it) },
-                            onGlassNoise = { settingsViewModel.setGlassNoise(this@HomeActivity, it) },
-                            onGlassVibrancy = { settingsViewModel.setGlassVibrancy(this@HomeActivity, it) },
-                            onGlassTint = { settingsViewModel.setGlassTint(this@HomeActivity, it) },
-                            onResetGlassTuning = { settingsViewModel.resetGlassTuning(this@HomeActivity) },
+                            onGlassBlurBoost = { settingsViewModel.setGlassBlurBoost(this@HomeActivity, it) },
                             onPickGlassImage = {
                                 pickGlassImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                             },

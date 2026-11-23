@@ -120,6 +120,8 @@ data class GlassStyle(
     val enabled: Boolean = false,
     val backdrop: String = "sunset",
     val blur: Int = 0,
+    /** Appearance's «Размытие»: added to every pane's blur, not the dock's (0, 10, 20, 30). */
+    val blurBoost: Int = 0,
     val image: Long = 0L,
     /** The own picture's top, under the status bar and the headers, is dark. */
     val imageTopDark: Boolean = false,
@@ -1923,11 +1925,11 @@ internal fun GlassTuning?.paneKnob(group: GlassTuningGroup, key: String, fallbac
 @Composable
 internal fun paneDensity(): Float = LocalGlassTuning.current?.value(GlassTuningGroup.Pane, "denser", PaneGlass.DENSER) ?: PaneGlass.DENSER
 
-internal fun GlassStyle.asDock(): GlassStyle = copy(blur = PaneGlass.BLUR, tint = PaneGlass.TINT, vibrancy = PaneGlass.VIBRANCY)
+internal fun GlassStyle.asDock(): GlassStyle = copy(blur = PaneGlass.BLUR + blurBoost, tint = PaneGlass.TINT, vibrancy = PaneGlass.VIBRANCY)
 
 /** The panes' glass on the screens' plain background: the cards' ([asDock]) with [PlainPaneGlass]'s own blur, tint, light. */
 internal fun GlassStyle.asPlain(): GlassStyle =
-    copy(blur = PlainPaneGlass.BLUR, tint = PlainPaneGlass.TINT, highlight = PlainPaneGlass.HIGHLIGHT)
+    copy(blur = PlainPaneGlass.BLUR + blurBoost, tint = PlainPaneGlass.TINT, highlight = PlainPaneGlass.HIGHLIGHT)
 
 /**
  * The panes on the screens' plain background (iOS's black) as the owner tuned them (23.11, F-577): clearer, a little

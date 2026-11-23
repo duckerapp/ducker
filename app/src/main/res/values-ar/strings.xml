@@ -722,21 +722,12 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">النمط</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Ducker Glass</string>
+    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">الخلفية</string>
     <string name="glass_backdrop_fern">سرخس</string>
     <string name="glass_backdrop_liquid">معدن سائل</string>
     <string name="glass_blur">تمويه الزجاج</string>
-    <string name="glass_blur_none">بدون تمويه</string>
-    <string name="glass_tuning">ضبط الزجاج</string>
-    <string name="glass_refraction">الانكسار (التشوه)</string>
-    <string name="glass_dispersion">الزيغ اللوني</string>
-    <string name="glass_depth">عمق العدسة (الانحناء)</string>
-    <string name="glass_highlight">لمعان الحواف</string>
-    <string name="glass_noise">ضجيج دقيق (تأثير بلوري)</string>
-    <string name="glass_vibrancy">حيوية الخلفية</string>
-    <string name="glass_tint">تلوين الزجاج</string>
-    <string name="glass_reset_tuning">استعادة إعدادات الزجاج الافتراضية</string>
+    <string name="glass_blur_standard">عادي</string>
     <string name="glass_image_pick">اختيار صورة أخرى</string>
     <string name="glass_image_pick_hint">تبقى ثابتة أثناء تمرير البطاقات</string>
 </resources>
