@@ -238,28 +238,33 @@ internal fun DuckerSheet(
         // Полосы системы — прозрачные, значки — как у приложения: окно диалога заливало их
         // своими цветами, сверху чёрным, снизу белым.
         val light = MaterialTheme.colorScheme.background.luminance() > 0.5f
-
+        // Each set below asks the system to lay the window out anew (up to 5 ms of the main thread as a sheet opened or
+        // closed, with this run at every recomposition, F-584): set only what differs. Set once only, the soft input
+        // mode was lost after the window's first show, the dialog's own reset.
         SideEffect {
             window?.apply {
-                setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-                clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-                setWindowAnimations(0)
+                val attrs = attributes
+                val match = ViewGroup.LayoutParams.MATCH_PARENT
+                if (attrs.width != match || attrs.height != match) setLayout(match, match)
+                if (attrs.flags and WindowManager.LayoutParams.FLAG_DIM_BEHIND != 0) clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                if (attrs.flags and WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS == 0) {
+                    addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+                }
+                if (attrs.windowAnimations != 0) setWindowAnimations(0)
                 // On a TV the keyboard lies over the sheet; the sheet lifts the field itself (D-377).
+                val adjust = if (tv) WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+                else WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
                 @Suppress("DEPRECATION")
-                setSoftInputMode(
-                    if (tv) WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
-                    else WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE,
-                )
+                if (attrs.softInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_ADJUST != adjust) setSoftInputMode(adjust)
                 @Suppress("DEPRECATION")
-                statusBarColor = android.graphics.Color.TRANSPARENT
+                if (statusBarColor != android.graphics.Color.TRANSPARENT) statusBarColor = android.graphics.Color.TRANSPARENT
                 @Suppress("DEPRECATION")
-                navigationBarColor = android.graphics.Color.TRANSPARENT
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) isNavigationBarContrastEnforced = false
+                if (navigationBarColor != android.graphics.Color.TRANSPARENT) navigationBarColor = android.graphics.Color.TRANSPARENT
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && isNavigationBarContrastEnforced) isNavigationBarContrastEnforced = false
 
                 WindowCompat.getInsetsController(this, decorView).apply {
-                    isAppearanceLightStatusBars = light
-                    isAppearanceLightNavigationBars = light
+                    if (isAppearanceLightStatusBars != light) isAppearanceLightStatusBars = light
+                    if (isAppearanceLightNavigationBars != light) isAppearanceLightNavigationBars = light
                 }
             }
         }
