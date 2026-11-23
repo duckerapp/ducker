@@ -87,8 +87,9 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.Job
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.ui.zIndex
 import androidx.compose.animation.core.animate
-import kotlin.math.floor
 import androidx.compose.animation.core.FastOutSlowInEasing
 import kotlin.math.roundToInt
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -229,6 +230,21 @@ fun ProxyScreen(
     // 16 dp to the dock, as on «Подписки», whose last card carries its own 12 dp gap: the dock floats 12 dp above
     // the room the scaffold keeps for it (`DuckerScaffold`), and 16 alone left 4 dp.
     val bottomPadding = 28.dp + contentPadding.calculateBottomPadding()
+    val listTop = 16.dp + contentPadding.calculateTopPadding()
+    // While a group folds, a screen's height of space below the list's end, so Compose never cuts its scroll short
+    // as the content shrinks: the list's own travel ([foldGroup]) brings it where it ends. Read as the list is measured,
+    // so it comes and goes without recomposing the screen.
+    val listPadding = remember(start, end, listTop, bottomPadding, density) {
+        object : PaddingValues {
+            override fun calculateLeftPadding(layoutDirection: LayoutDirection) =
+                if (layoutDirection == LayoutDirection.Ltr) start else end
+            override fun calculateTopPadding() = listTop
+            override fun calculateRightPadding(layoutDirection: LayoutDirection) =
+                if (layoutDirection == LayoutDirection.Ltr) end else start
+            override fun calculateBottomPadding() =
+                bottomPadding + if (folds.isNotEmpty()) with(density) { viewportHeight.toDp() } else 0.dp
+        }
+    }
 
     /**
      * Unrolls a group's [total] rows under its header, or rolls them up into it ([closing]): one motion of [Fold.shown]
@@ -261,7 +277,8 @@ fun ProxyScreen(
                 if (last.key == "${group.name}-$i") past = true
             }
         }
-        val end = info.viewportEndOffset - info.afterContentPadding
+        // The list's own bottom padding, not the reserve a fold adds to it ([listPadding]).
+        val end = info.viewportEndOffset - with(density) { bottomPadding.roundToPx() }
         val short = end - (last.offset + last.size + below - shown)
         if (short <= 0f) return 0f to 0f
         val scrolled = if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset.toFloat() else Float.MAX_VALUE
@@ -284,32 +301,53 @@ fun ProxyScreen(
             withFrameNanos {}
             withFrameNanos {}
             val height = rowMeasure.height.takeIf { it > 0 } ?: estimate
+            val from = fold.shown
             val target = if (closing) 0f else (fold.rows * height).toFloat()
-            val spec = tween<Float>(FOLD_MS, easing = FastOutSlowInEasing)
-            val (back, room) = if (closing) backAfterFold(name, fold.shown) else 0f to 0f
-            if (back > 0f && room > 0f) {
-                // The list's end would rise above the screen's as the rows roll up: the list comes down with them in
-                // the same frames, at the rate that keeps its end at the screen's until it reaches its top, instead of
-                // jumping back once the content ran short (the title and the search fell 130 px in three frames, the
-                // owner, 24.11). In a job of its own: a finger takes the scroll from it.
-                val from = fold.shown
+            // How far the list travels meanwhile, worked out now and gone over on the rows' own curve, so the title,
+            // the search and the groups above move as smoothly as the rows (the owner, 24.11: «резковато падает
+            // шапка»): rolling up, down by as much as its end would rise above the screen's; unrolling, up by as much as
+            // the rows go below it, but never the header past the top. The reserve below ([listPadding]) keeps Compose
+            // from cutting the scroll short meanwhile, with the keyboard up too.
+            val travel = if (closing) {
+                val (short, room) = backAfterFold(name, fold.shown)
+                -minOf(short, room)
+            } else {
+                listState.layoutInfo.let { info ->
+                    val head = info.visibleItemsInfo.firstOrNull { it.key == "header-$name" }
+                    val end = info.viewportEndOffset - with(density) { bottomPadding.roundToPx() }
+                    if (head == null) 0f
+                    else (head.offset + head.size + total.toFloat() * height - end).coerceIn(0f, head.offset.toFloat().coerceAtLeast(0f))
+                }
+            }
+            // The rows and the list's travel on one curve over one time, in whole pixels taken from it: the list moves by
+            // [travel] of it, the items below the group by the rest; each of the two rounded alone, both only ever go one
+            // way. A travel longer than the rows' left the items below going back a little at the end; rounded apart,
+            // they went a pixel back.
+            val rest = target - from - travel
+            fun shownAt(progress: Float, moved: Int) = from + moved + (rest * FoldEasing.transform(progress)).roundToInt()
+            var progress = 0f
+            var moved = 0
+            if (travel != 0f) {
+                // In a job of its own: a finger takes the scroll from it, and the rows finish below.
                 launch {
                     listState.scroll {
-                        var done = 0f
-                        animate(from, 0f, animationSpec = spec) { value, _ ->
-                            fold.shown = value
-                            val step = floor(minOf(room, back * (1f - value / from)) - done)
-                            if (step > 0f) done -= scrollBy(-step)
+                        animate(0f, 1f, animationSpec = tween(FOLD_MS, easing = LinearEasing)) { value, _ ->
+                            progress = value
+                            val step = (travel * FoldEasing.transform(value)).roundToInt() - moved
+                            if (step != 0) moved += scrollBy(step.toFloat()).roundToInt()
+                            fold.shown = shownAt(value, moved).toFloat()
                         }
                     }
                 }.join()
-            } else if (!closing) {
-                val unroll = launch { animate(fold.shown, target, animationSpec = spec) { value, _ -> fold.shown = value } }
-                launch { listState.follow(fold, "header-$name", unroll) }
-                unroll.join()
             }
-            // Without a scroll alongside, or after a finger took it, the rows finish on their own.
-            if (fold.shown != target) animate(fold.shown, target, animationSpec = spec) { value, _ -> fold.shown = value }
+            if (progress < 1f) {
+                // Without a travel, or after a finger took the scroll: the rows alone, on from where they are.
+                val all = target - from
+                animate(progress, 1f, animationSpec = tween((FOLD_MS * (1f - progress)).roundToInt(), easing = LinearEasing)) { value, _ ->
+                    fold.shown = if (travel == 0f) from + (all * FoldEasing.transform(value)).roundToInt() else shownAt(value, moved).toFloat()
+                }
+            }
+            fold.shown = target
             folds.remove(name)
             foldJobs.remove(name)
         }
@@ -377,12 +415,7 @@ fun ProxyScreen(
                     // gap with it to nothing.
                     // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
                     // панель вкладок и видны в просветах по её бокам (D-74).
-                    contentPadding = PaddingValues(
-                        start = start,
-                        end = end,
-                        top = 16.dp + contentPadding.calculateTopPadding(),
-                        bottom = bottomPadding,
-                    ),
+                    contentPadding = listPadding,
                 ) {
                     item {
                         ScreenHeader(
@@ -460,7 +493,8 @@ fun ProxyScreen(
                                 onHealthCheck = { onHealthCheck(group.name) },
                                 // Пульт входит на «Прокси» на шапку первой группы: дальше вправо — замер,
                                 // вниз — узлы (этап 6).
-                                modifier = Modifier.padding(top = ITEM_GAP)
+                                modifier = Modifier.onSizeChanged { rowMeasure.header = it.height }
+                                    .padding(top = ITEM_GAP)
                                     .then(if (tv) Modifier.onFocusChanged { if (it.hasFocus) column[0] = 0 } else Modifier)
                                     .then(if (index == 0) Modifier.tabEntry().focusRequester(firstGroup) else Modifier)
                                     .then(
@@ -787,23 +821,33 @@ private class Fold(shown: Float, val rows: Int) {
     var shown by mutableFloatStateOf(shown)
 }
 
-/** The rows' height with their gap, as last measured: all rows are alike (two lines of name, the type and the delay). */
+/**
+ * The rows' and the group headers' heights with their gap, as last measured: all rows are alike (two lines of name, the
+ * type and the delay), and all headers.
+ */
 private class RowMeasure {
     var height = 0
+    var header = 0
 }
 
 /**
- * A row of a folding group shows only its share of [Fold.shown], its bottom first, sliding out from under the item above:
- * the row's height follows it, so all below moves with it. Without a fold, the row as it is.
+ * A row of a folding group takes only its share of [Fold.shown] of the list, one row after another, and slides out from
+ * behind the item above, drawn under it ([zIndex]) and whole — its round corners and its shadow — but where that item's
+ * card covers it: cut straight along the slot's top, the rows had sharp torn edges and lay over the header's shadow
+ * (the owner, 24.11). Without a fold, the row as it is.
  */
 private fun Modifier.foldRow(fold: Fold?, row: Int, measure: RowMeasure): Modifier =
-    (if (fold == null) this else drawWithContent {
+    (if (fold == null) this else zIndex(-1f - row).drawWithContent {
         // A row not out yet is not drawn at all: cut to nothing, its glass panes still rendered their layers, and a
         // fold on glass took twice the GPU of a scroll.
         if (size.height <= 0f) return@drawWithContent
-        // Only the top is cut, where the row comes out from under the one above: its shadow keeps its room at the sides.
+        // The card above: the group's header over the first row, the row before over the others. Cut a corner's
+        // height below its top, so nothing shows past it; its own corners at the bottom show the row behind.
+        val gap = ITEM_GAP.toPx()
+        val above = if (row == 0) measure.header else measure.height
         val room = 16.dp.toPx()
-        clipRect(left = -room, top = 0f, right = size.width + room, bottom = size.height + room) {
+        val top = if (above > 0) -(above - gap) + FOLD_CORNER.toPx() else 0f
+        clipRect(left = -room, top = top, right = size.width + room, bottom = size.height + room) {
             this@drawWithContent.drawContent()
         }
     }).layout { measurable, constraints ->
@@ -814,32 +858,12 @@ private fun Modifier.foldRow(fold: Fold?, row: Int, measure: RowMeasure): Modifi
         layout(placeable.width, shown) { placeable.place(0, shown - full) }
     }
 
-/**
- * While [unroll] runs, the list scrolls as far as the group's rows grow below the screen, but never takes its [header]
- * above the top. A finger on the list stops it; the rows go on unrolling.
- */
-private suspend fun LazyListState.follow(fold: Fold, header: String, unroll: Job) {
-    scroll {
-        var last = fold.shown
-        while (unroll.isActive) {
-            withFrameNanos {}
-            val now = fold.shown
-            val grown = now - last
-            if (grown <= 0f) continue
-            val info = layoutInfo
-            val head = info.visibleItemsInfo.firstOrNull { it.key == header } ?: break
-            val end = info.viewportEndOffset - info.afterContentPadding
-            val over = head.offset + head.size + now - end
-            // Whole pixels: the fractions left the items a pixel to and fro for a few frames as the scroll ended.
-            val step = floor(minOf(grown, over, head.offset.toFloat()))
-            last = now
-            if (step > 0f) scrollBy(step)
-        }
-    }
-}
+/** A group's unroll and roll-up, and the list's travel with it: 320 ms moved the title too fast (the owner, 24.11). */
+private const val FOLD_MS = 400
+private val FoldEasing = FastOutSlowInEasing
 
-/** A group's unroll and roll-up. */
-private const val FOLD_MS = 320
+/** Below the top of the card above a folding row, how far it is cut: past the card's round corners. */
+private val FOLD_CORNER = 24.dp
 
 /** A row's height before any was measured: a card of two lines of name, the type and the delay, and the gap. */
 private val ROW_ESTIMATE = 96.dp
