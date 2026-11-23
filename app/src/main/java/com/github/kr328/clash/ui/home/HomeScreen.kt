@@ -1060,7 +1060,8 @@ private fun HeroCard(
     // was still springing back from the dip, and the button grew back with a jerk.
     val buttonScale = pressScale(press, dips = !isGlass)
     // On glass the button is a pane like the cards: it swells and sways under a finger rather than sinks (the owner,
-    // 22.11), and swells softly as the state changes.
+    // 22.11). In both styles it swells softly as the state changes and springs back; Air's only sank under a finger
+    // (the owner, 23.11: its animation could be smoother).
     val buttonPress = rememberGlassPress()
     val buttonSwell = remember { Animatable(0f) }
     var swelledFor by remember { mutableStateOf(active) }
@@ -1068,7 +1069,7 @@ private fun HeroCard(
     val tuning = LocalGlassTuning.current
 
     LaunchedEffect(active) {
-        if (!isGlass || swelledFor == active) return@LaunchedEffect
+        if (swelledFor == active) return@LaunchedEffect
         swelledFor = active
         buttonSwell.animateTo(1f, tween(tuning.wave("swellMs").roundToInt(), easing = FastOutSlowInEasing))
         buttonSwell.animateTo(0f, spring(dampingRatio = tuning.wave("swellBounce"), stiffness = tuning.wave("swellSpeed")))
