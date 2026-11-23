@@ -53,6 +53,10 @@ import com.github.kr328.clash.common.util.providerLink
 import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.ui.components.BrandAvatar
 import com.github.kr328.clash.ui.components.DuckerSheet
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.liquidGlass
+import com.github.kr328.clash.ui.components.chosenGlassTint
+import androidx.compose.foundation.LocalIndication
 import com.github.kr328.clash.ui.components.LocalTv
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.asName
@@ -64,12 +68,15 @@ import java.util.UUID
 
 /**
  * The bell on «Подписки» (stage 15), there while some subscription has announcements. With one not seen yet it turns
- * into a filled pill with «Новое», so the mark is a word and not a dot alone.
+ * into a pill with «Новое», so the mark is a word and not a dot alone: in the chosen card's look, Proxies' chosen node
+ * (the owner, 23.11: the plain accent pill stood out of the glass), on glass its tinted glass that swells under a finger.
  */
 @Composable
 internal fun AnnouncementsBell(fresh: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    val tint = if (fresh) scheme.onPrimary else scheme.onSurface
+    val tint = if (fresh) scheme.onPrimaryContainer else scheme.onSurface
+    val backdrop = if (fresh) LocalGlassBackdrop.current else null
+    val press = if (backdrop != null) rememberGlassPress() else null
 
     // One node in both looks, as [HeaderButton] when nothing is new: opening the sheet marks all seen, and a button
     // swapped for another while it was open left the remote, once the sheet closed, on the card below.
@@ -77,9 +84,20 @@ internal fun AnnouncementsBell(fresh: Boolean, onClick: () -> Unit) {
         modifier = Modifier.minimumInteractiveComponentSize()
             .height(44.dp)
             .widthIn(min = 44.dp)
-            .clip(CircleShape)
-            .background(if (fresh) scheme.primary else Color.Transparent)
-            .clickable(role = Role.Button, onClick = onClick)
+            .glassPress(press, own = true)
+            .then(
+                if (backdrop != null) {
+                    Modifier.liquidGlass(
+                        backdrop,
+                        base = scheme.background,
+                        tint = chosenGlassTint(),
+                        shape = CircleShape,
+                        press = press,
+                        fixedTint = true,
+                    ).clip(CircleShape)
+                } else Modifier.clip(CircleShape).background(if (fresh) scheme.primaryContainer else Color.Transparent),
+            )
+            .clickable(role = Role.Button, indication = if (press != null) null else LocalIndication.current, interactionSource = null, onClick = onClick)
             .padding(start = if (fresh) 12.dp else 0.dp, end = if (fresh) 16.dp else 0.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),

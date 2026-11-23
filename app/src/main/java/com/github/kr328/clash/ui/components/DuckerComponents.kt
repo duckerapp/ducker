@@ -294,15 +294,7 @@ internal fun DuckerCard(
     // A selected card, in the accent fill, on the pane glass: its own density (the default as dense as before: the accent
     // tint × the panes' density), not thinned with the panes, and a share of white, both tunable (the owner, 22.11).
     val chosen = colors.containerColor == MaterialTheme.colorScheme.primaryContainer && LocalGlassPanes.current
-    val light = MaterialTheme.colorScheme.background.luminance() >= 0.5f
-    val tuning = LocalGlassTuning.current
-    val chosenTint = if (chosen) {
-        val opacity = tuning?.value(GlassTuningGroup.Chosen, "opacity", chosenDensity(!light), light) ?: chosenDensity(!light)
-        val white = tuning?.value(GlassTuningGroup.Chosen, "white", chosenWhite(!light), light) ?: chosenWhite(!light)
-        // No lerp at none: through Oklab it would shift the accent a little.
-        (if (white > 0f) androidx.compose.ui.graphics.lerp(colors.containerColor, Color.White, white) else colors.containerColor)
-            .copy(alpha = colors.containerColor.alpha * opacity)
-    } else null
+    val chosenTint = if (chosen) chosenGlassTint().let { it.copy(alpha = it.alpha * colors.containerColor.alpha) } else null
     val given = press
     val press = if (glass) given ?: rememberGlassPress() else null
 
@@ -1321,6 +1313,21 @@ private const val OUTCOME_MS = 2500L
 
 /** Меньше кольцо не крутится, как бы быстро ни пришёл ответ. */
 private const val MIN_SPIN_MS = 700L
+
+/**
+ * A chosen card's tint on the pane glass ([DuckerCard]'s, Proxies' chosen node): the accent at its own density and with
+ * a share of white, both tunable (the owner, 22.11); laid as a fixed tint, not thinned with the panes.
+ */
+@Composable
+internal fun chosenGlassTint(): Color {
+    val accent = MaterialTheme.colorScheme.primaryContainer
+    val light = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+    val tuning = LocalGlassTuning.current
+    val opacity = tuning?.value(GlassTuningGroup.Chosen, "opacity", chosenDensity(!light), light) ?: chosenDensity(!light)
+    val white = tuning?.value(GlassTuningGroup.Chosen, "white", chosenWhite(!light), light) ?: chosenWhite(!light)
+    // No lerp at none: through Oklab it would shift the accent a little.
+    return (if (white > 0f) androidx.compose.ui.graphics.lerp(accent, Color.White, white) else accent).copy(alpha = opacity)
+}
 
 /** A chosen card's accent density on the pane glass: the accent tint laid as densely as the panes lay theirs. */
 internal fun chosenDensity(dark: Boolean): Float = if (dark) CHOSEN_DENSITY_DARK else CHOSEN_DENSITY_LIGHT
