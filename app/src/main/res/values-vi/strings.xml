@@ -677,16 +677,10 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Kiểu</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Kính lỏng</string>
+    <string name="style_glass">Ducker Glass</string>
     <string name="glass_backdrop">Hình nền</string>
-    <string name="glass_backdrop_none">Không có</string>
-    <string name="glass_backdrop_sunset">Hoàng hôn</string>
-    <string name="glass_backdrop_grey">Xám</string>
-    <string name="glass_backdrop_black_gradient">Chuyển sắc đen</string>
-    <string name="glass_backdrop_green">Xanh lá</string>
-    <string name="glass_backdrop_pink">Hồng</string>
-    <string name="glass_backdrop_black">Đen trơn</string>
-    <string name="glass_backdrop_black_white">Đen trắng</string>
+    <string name="glass_backdrop_fern">Dương xỉ</string>
+    <string name="glass_backdrop_liquid">Kim loại lỏng</string>
     <string name="glass_blur">Độ mờ kính</string>
     <string name="glass_blur_none">Không làm mờ</string>
     <string name="glass_tuning">Tinh chỉnh kính</string>
@@ -698,7 +692,6 @@
     <string name="glass_vibrancy">Độ rực của nền</string>
     <string name="glass_tint">Sắc kính</string>
     <string name="glass_reset_tuning">Đặt lại các thiết lập kính mặc định</string>
-    <string name="glass_backdrop_image">Ảnh riêng</string>
     <string name="glass_image_pick">Chọn ảnh khác</string>
     <string name="glass_image_pick_hint">Giữ nguyên khi cuộn các thẻ</string>
 </resources>

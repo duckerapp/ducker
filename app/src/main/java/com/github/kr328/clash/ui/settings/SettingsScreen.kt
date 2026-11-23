@@ -13,6 +13,9 @@ import com.github.kr328.clash.ui.components.glassPressOwnTouch
 import com.github.kr328.clash.ui.components.paneIndication
 import com.github.kr328.clash.ui.components.rememberGlassPress
 import androidx.compose.foundation.Image
+import androidx.annotation.DrawableRes
+import androidx.compose.ui.platform.LocalResources
+import com.github.kr328.clash.ui.components.BACKDROP_PICTURES
 
 import android.annotation.SuppressLint
 import android.os.Build
@@ -23,10 +26,6 @@ import androidx.compose.runtime.produceState
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
-import java.io.File
-import com.github.kr328.clash.ui.components.glassBackground
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.semantics.stateDescription
@@ -122,7 +121,7 @@ data class SettingsState(
     val dynamicColor: Boolean = false,
     /** The look, Air or glass, and the glass's settings, see [SettingsStore.style]. */
     val style: String = SettingsStore.STYLE_AIR,
-    val glassBackdrop: String = SettingsStore.BACKDROP_SUNSET,
+    val glassBackdrop: String = SettingsStore.BACKDROPS.first(),
     val glassBlur: Int = 0,
     val glassRefraction: Int = SettingsStore.GLASS_REFRACTION,
     val glassDispersion: Int = SettingsStore.GLASS_DISPERSION,
@@ -431,14 +430,10 @@ fun SettingsScreen(
 
                         if (!tv && glassSupported && state.style == SettingsStore.STYLE_GLASS) {
                             item {
-                                BackdropCard(
-                                    selected = state.glassBackdrop,
-                                    image = state.glassImage,
-                                    onSelect = onGlassBackdrop,
-                                    onPick = onPickGlassImage,
-                                )
+                                BackdropCard(selected = state.glassBackdrop, onSelect = onGlassBackdrop)
                             }
 
+                            // The own picture is not offered for now (the owner, 23.11), see SettingsStore.glassBackdrop.
                             if (state.glassBackdrop == SettingsStore.BACKDROP_IMAGE) {
                                 item {
                                     LinkRow(
@@ -1242,17 +1237,10 @@ private fun ChipsCard(
  * text pills over two screens of scrolling showed none of them (F-388).
  */
 @Composable
-private fun BackdropCard(selected: String, image: Long, onSelect: (String) -> Unit, onPick: () -> Unit) {
+private fun BackdropCard(selected: String, onSelect: (String) -> Unit) {
     val options = listOf(
-        SettingsStore.BACKDROP_NONE to stringResource(R.string.glass_backdrop_none),
-        SettingsStore.BACKDROP_SUNSET to stringResource(R.string.glass_backdrop_sunset),
-        SettingsStore.BACKDROP_GREY to stringResource(R.string.glass_backdrop_grey),
-        SettingsStore.BACKDROP_GREEN to stringResource(R.string.glass_backdrop_green),
-        SettingsStore.BACKDROP_PINK to stringResource(R.string.glass_backdrop_pink),
-        SettingsStore.BACKDROP_BLACK_GRADIENT to stringResource(R.string.glass_backdrop_black_gradient),
-        SettingsStore.BACKDROP_BLACK to stringResource(R.string.glass_backdrop_black),
-        SettingsStore.BACKDROP_BLACK_WHITE to stringResource(R.string.glass_backdrop_black_white),
-        SettingsStore.BACKDROP_IMAGE to stringResource(R.string.glass_backdrop_image),
+        SettingsStore.BACKDROP_FERN to stringResource(R.string.glass_backdrop_fern),
+        SettingsStore.BACKDROP_LIQUID to stringResource(R.string.glass_backdrop_liquid),
     )
     val scheme = MaterialTheme.colorScheme
 
@@ -1282,22 +1270,11 @@ private fun BackdropCard(selected: String, image: Long, onSelect: (String) -> Un
                             .padding(4.dp)
                             .clip(CircleShape)
                             .border(1.dp, scheme.outlineVariant, CircleShape)
-                            .selectable(selected = chosen, interactionSource = null, indication = paneIndication(), role = Role.RadioButton, onClick = {
-                                // The own picture: picked first when there is none, and again when it is the one chosen.
-                                if (value == SettingsStore.BACKDROP_IMAGE && (image == 0L || chosen)) onPick() else onSelect(value)
-                            })
+                            .selectable(selected = chosen, interactionSource = null, indication = paneIndication(), role = Role.RadioButton, onClick = { onSelect(value) })
                             .semantics { contentDescription = label },
                         contentAlignment = Alignment.Center,
                     ) {
-                        when (value) {
-                            SettingsStore.BACKDROP_NONE -> Box(
-                                Modifier.fillMaxSize().background(scheme.background).drawBehind {
-                                    drawLine(scheme.outline, Offset(size.width * 0.78f, size.height * 0.22f), Offset(size.width * 0.22f, size.height * 0.78f), 1.5.dp.toPx())
-                                },
-                            )
-                            SettingsStore.BACKDROP_IMAGE -> PictureSample(image)
-                            else -> Box(Modifier.fillMaxSize().glassBackground(value, running = true))
-                        }
+                        PictureSample(BACKDROP_PICTURES.getValue(value))
                     }
                 }
             }
@@ -1305,29 +1282,19 @@ private fun BackdropCard(selected: String, image: Long, onSelect: (String) -> Un
     }
 }
 
-/** The own picture's thumbnail, or the gallery's sign while there is none. */
+/** A built-in picture's thumbnail. */
 @Composable
-private fun PictureSample(image: Long) {
-    val context = LocalContext.current
-    val thumbnail by produceState<ImageBitmap?>(null, image) {
-        value = if (image == 0L) null else withContext(Dispatchers.IO) {
+private fun PictureSample(@DrawableRes picture: Int) {
+    val resources = LocalResources.current
+    val thumbnail by produceState<ImageBitmap?>(null, picture) {
+        value = withContext(Dispatchers.IO) {
             runCatching {
-                BitmapFactory.decodeFile(
-                    File(context.filesDir, SettingsStore.GLASS_IMAGE_FILE).path,
-                    BitmapFactory.Options().apply { inSampleSize = 16 },
-                )?.asImageBitmap()
+                BitmapFactory.decodeResource(resources, picture, BitmapFactory.Options().apply { inSampleSize = 16 })?.asImageBitmap()
             }.getOrNull()
         }
     }
 
-    val picture = thumbnail
-    if (picture != null) {
-        Image(picture, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-    } else {
-        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-            Icon(Symbols.PhotoLibrary, contentDescription = null, modifier = Modifier.size(22.dp))
-        }
-    }
+    thumbnail?.let { Image(it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
 }
 
 private val SWATCH = 48.dp

@@ -686,16 +686,10 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Stil</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Sıvı cam</string>
+    <string name="style_glass">Ducker Glass</string>
     <string name="glass_backdrop">Arka plan</string>
-    <string name="glass_backdrop_none">Yok</string>
-    <string name="glass_backdrop_sunset">Gün batımı</string>
-    <string name="glass_backdrop_grey">Gri</string>
-    <string name="glass_backdrop_black_gradient">Siyah geçiş</string>
-    <string name="glass_backdrop_green">Yeşil</string>
-    <string name="glass_backdrop_pink">Pembe</string>
-    <string name="glass_backdrop_black">Düz siyah</string>
-    <string name="glass_backdrop_black_white">Siyah beyaz</string>
+    <string name="glass_backdrop_fern">Eğrelti otu</string>
+    <string name="glass_backdrop_liquid">Sıvı metal</string>
     <string name="glass_blur">Cam bulanıklığı</string>
     <string name="glass_blur_none">Bulanıklık yok</string>
     <string name="glass_tuning">Cam ayarları</string>
@@ -707,7 +701,6 @@
     <string name="glass_vibrancy">Arka plan canlılığı</string>
     <string name="glass_tint">Cam tonu</string>
     <string name="glass_reset_tuning">Cam ayarlarını varsayılana sıfırla</string>
-    <string name="glass_backdrop_image">Kendi resminiz</string>
     <string name="glass_image_pick">Başka resim seç</string>
     <string name="glass_image_pick_hint">Kartlar kaydırılırken sabit kalır</string>
 </resources>

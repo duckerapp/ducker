@@ -22,7 +22,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.content.Context
+import com.github.kr328.clash.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -161,8 +164,11 @@ internal fun backdropIsDark(key: String, imageDark: Boolean): Boolean =
 internal fun backdropTopDark(key: String, imageTopDark: Boolean): Boolean? = when (key) {
     "black_gradient", "black", "black_white" -> true
     "image" -> imageTopDark
-    else -> null
+    else -> if (key in BACKDROP_PICTURES) true else null
 }
+
+/** The built-in pictures by their keys (`SettingsStore.BACKDROPS`), all dark. WebP: about 0.6 MB for both. */
+internal val BACKDROP_PICTURES = mapOf("fern" to R.drawable.glass_wall_fern, "liquid" to R.drawable.glass_wall_liquid)
 
 /**
  * The chosen backdrop behind a screen's cards, so glass cards have something to show. Its patches are fainter
@@ -172,7 +178,10 @@ internal fun backdropTopDark(key: String, imageTopDark: Boolean): Boolean? = whe
 @Composable
 internal fun Modifier.glassBackground(key: String, running: Boolean): Modifier {
     if (key == "none") return this
-    if (key == "image") return LocalGlassStyle.current.let { glassImage(it.image, it.imageTopDark) }
+    if (key == "image") return LocalGlassStyle.current.let { style ->
+        glassImage(style.image, style.imageTopDark) { BitmapFactory.decodeFile(File(it.filesDir, "glass_backdrop.jpg").path) }
+    }
+    BACKDROP_PICTURES[key]?.let { picture -> return glassImage(picture, topDark = true) { BitmapFactory.decodeResource(it.resources, picture) } }
 
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val target = backdropOf(key, dark)
@@ -213,19 +222,16 @@ internal fun Modifier.glassBackground(key: String, running: Boolean): Modifier {
 }
 
 /**
- * The own picture, still behind the screen: it fills the whole window, cropped, wherever this element sits,
- * so it does not move as the cards scroll over it. [version] is the file's time, to load a new one. Its top lies
- * under a soft veil in its own tone, [topDark]: the headers stand there, straight on the picture.
+ * A picture, the own one or a built-in, still behind the screen: it fills the whole window, cropped, wherever this
+ * element sits, so it does not move as the cards scroll over it. [key] says when to [load] it again: the own file's
+ * time, or the built-in's resource. Its top lies under a soft veil in its own tone, [topDark]: the headers stand
+ * there, straight on the picture.
  */
 @Composable
-private fun Modifier.glassImage(version: Long, topDark: Boolean): Modifier {
+private fun Modifier.glassImage(key: Any, topDark: Boolean, load: (Context) -> Bitmap?): Modifier {
     val context = LocalContext.current
-    val picture by produceState<ImageBitmap?>(null, version) {
-        value = withContext(Dispatchers.IO) {
-            runCatching {
-                BitmapFactory.decodeFile(File(context.filesDir, "glass_backdrop.jpg").path)?.asImageBitmap()
-            }.getOrNull()
-        }
+    val picture by produceState<ImageBitmap?>(null, key) {
+        value = withContext(Dispatchers.IO) { runCatching { load(context)?.asImageBitmap() }.getOrNull() }
     }
     val window = LocalWindowInfo.current.containerSize
     var at by remember { mutableStateOf(Offset.Zero) }

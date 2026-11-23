@@ -687,16 +687,10 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">سبک</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">شیشه مایع</string>
+    <string name="style_glass">Ducker Glass</string>
     <string name="glass_backdrop">پس‌زمینه</string>
-    <string name="glass_backdrop_none">هیچ‌کدام</string>
-    <string name="glass_backdrop_sunset">غروب</string>
-    <string name="glass_backdrop_grey">خاکستری</string>
-    <string name="glass_backdrop_black_gradient">گرادیان سیاه</string>
-    <string name="glass_backdrop_green">سبز</string>
-    <string name="glass_backdrop_pink">صورتی</string>
-    <string name="glass_backdrop_black">سیاه ساده</string>
-    <string name="glass_backdrop_black_white">سیاه و سفید</string>
+    <string name="glass_backdrop_fern">سرخس</string>
+    <string name="glass_backdrop_liquid">فلز مایع</string>
     <string name="glass_blur">تاری شیشه</string>
     <string name="glass_blur_none">بدون تاری</string>
     <string name="glass_tuning">تنظیم شیشه</string>
@@ -708,7 +702,6 @@
     <string name="glass_vibrancy">شدت رنگ پس‌زمینه</string>
     <string name="glass_tint">رنگ شیشه</string>
     <string name="glass_reset_tuning">بازنشانی تنظیمات شیشه</string>
-    <string name="glass_backdrop_image">تصویر شخصی</string>
     <string name="glass_image_pick">انتخاب تصویر دیگر</string>
     <string name="glass_image_pick_hint">هنگام پیمایش کارت‌ها ثابت می‌ماند</string>
 </resources>

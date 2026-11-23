@@ -82,9 +82,12 @@ class SettingsStore(context: Context) {
         get() = prefs.getString(KEY_STYLE, STYLE_AIR) ?: STYLE_AIR
         set(value) = prefs.edit().putString(KEY_STYLE, value).apply()
 
-    /** The glass style: the backdrop behind Home's glass, one of `BACKDROP_*`. */
+    /**
+     * The glass style: the picture behind Home's glass, one of [BACKDROPS]. The gradients and the own picture are not
+     * offered for now (the owner, 23.11), so a choice made among them earlier reads as the first picture.
+     */
     var glassBackdrop: String
-        get() = prefs.getString(KEY_GLASS_BACKDROP, BACKDROP_SUNSET) ?: BACKDROP_SUNSET
+        get() = prefs.getString(KEY_GLASS_BACKDROP, null)?.takeIf { it in BACKDROPS } ?: BACKDROPS.first()
         set(value) = prefs.edit().putString(KEY_GLASS_BACKDROP, value).apply()
 
     /** Experiment: the own picture is dark on average, so the app takes the dark palette over it. */
@@ -102,7 +105,7 @@ class SettingsStore(context: Context) {
     // Clear glass suits the built-in gradients, which carry no detail; over a photo leaves and snow showed sharp under
     // the letters and the rim stretched them into streaks (F-388). So an own picture has its own defaults until the
     // person moves a slider; «Сбросить» returns to them.
-    private val photo: Boolean get() = glassBackdrop == BACKDROP_IMAGE
+    private val photo: Boolean get() = glassBackdrop == BACKDROP_IMAGE || glassBackdrop in BACKDROPS
 
     /** Experiment: how much the glass blurs what is under it, 0…100 %. */
     var glassBlur: Int
@@ -222,6 +225,11 @@ class SettingsStore(context: Context) {
         const val BACKDROP_BLACK = "black"
         const val BACKDROP_BLACK_WHITE = "black_white"
         const val BACKDROP_IMAGE = "image"
+        const val BACKDROP_FERN = "fern"
+        const val BACKDROP_LIQUID = "liquid"
+
+        /** The built-in pictures, the only backdrops offered. */
+        val BACKDROPS = listOf(BACKDROP_FERN, BACKDROP_LIQUID)
 
         const val THEME_SYSTEM = "system"
         const val THEME_LIGHT = "light"

@@ -696,16 +696,10 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Style</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Verre liquide</string>
+    <string name="style_glass">Ducker Glass</string>
     <string name="glass_backdrop">Arrière-plan</string>
-    <string name="glass_backdrop_none">Aucun</string>
-    <string name="glass_backdrop_sunset">Coucher de soleil</string>
-    <string name="glass_backdrop_grey">Gris</string>
-    <string name="glass_backdrop_black_gradient">Dégradé noir</string>
-    <string name="glass_backdrop_green">Vert</string>
-    <string name="glass_backdrop_pink">Rose</string>
-    <string name="glass_backdrop_black">Noir uni</string>
-    <string name="glass_backdrop_black_white">Noir et blanc</string>
+    <string name="glass_backdrop_fern">Fougère</string>
+    <string name="glass_backdrop_liquid">Métal liquide</string>
     <string name="glass_blur">Flou du verre</string>
     <string name="glass_blur_none">Sans flou</string>
     <string name="glass_tuning">Réglages du verre</string>
@@ -717,7 +711,6 @@
     <string name="glass_vibrancy">Intensité du fond</string>
     <string name="glass_tint">Teinte du verre</string>
     <string name="glass_reset_tuning">Réinitialiser les réglages du verre</string>
-    <string name="glass_backdrop_image">Image personnelle</string>
     <string name="glass_image_pick">Choisir une autre image</string>
     <string name="glass_image_pick_hint">Reste fixe pendant le défilement des cartes</string>
 </resources>

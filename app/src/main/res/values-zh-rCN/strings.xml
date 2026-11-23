@@ -677,16 +677,10 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">样式</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">液态玻璃</string>
+    <string name="style_glass">Ducker Glass</string>
     <string name="glass_backdrop">背景</string>
-    <string name="glass_backdrop_none">无</string>
-    <string name="glass_backdrop_sunset">日落</string>
-    <string name="glass_backdrop_grey">灰色</string>
-    <string name="glass_backdrop_black_gradient">黑色渐变</string>
-    <string name="glass_backdrop_green">绿色</string>
-    <string name="glass_backdrop_pink">粉色</string>
-    <string name="glass_backdrop_black">纯黑</string>
-    <string name="glass_backdrop_black_white">黑白</string>
+    <string name="glass_backdrop_fern">蕨类</string>
+    <string name="glass_backdrop_liquid">液态金属</string>
     <string name="glass_blur">玻璃模糊</string>
     <string name="glass_blur_none">无模糊</string>
     <string name="glass_tuning">玻璃调节</string>
@@ -698,7 +692,6 @@
     <string name="glass_vibrancy">背景鲜艳度</string>
     <string name="glass_tint">玻璃着色</string>
     <string name="glass_reset_tuning">恢复玻璃默认设置</string>
-    <string name="glass_backdrop_image">自选图片</string>
     <string name="glass_image_pick">选择其他图片</string>
     <string name="glass_image_pick_hint">卡片滚动时保持静止</string>
 </resources>

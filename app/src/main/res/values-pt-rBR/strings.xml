@@ -696,16 +696,10 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Estilo</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">Vidro líquido</string>
+    <string name="style_glass">Ducker Glass</string>
     <string name="glass_backdrop">Fundo</string>
-    <string name="glass_backdrop_none">Nenhum</string>
-    <string name="glass_backdrop_sunset">Pôr do sol</string>
-    <string name="glass_backdrop_grey">Cinza</string>
-    <string name="glass_backdrop_black_gradient">Degradê preto</string>
-    <string name="glass_backdrop_green">Verde</string>
-    <string name="glass_backdrop_pink">Rosa</string>
-    <string name="glass_backdrop_black">Preto liso</string>
-    <string name="glass_backdrop_black_white">Preto e branco</string>
+    <string name="glass_backdrop_fern">Samambaia</string>
+    <string name="glass_backdrop_liquid">Metal líquido</string>
     <string name="glass_blur">Desfoque do vidro</string>
     <string name="glass_blur_none">Sem desfoque</string>
     <string name="glass_tuning">Ajustes do vidro</string>
@@ -717,7 +711,6 @@
     <string name="glass_vibrancy">Intensidade do fundo</string>
     <string name="glass_tint">Tonalidade do vidro</string>
     <string name="glass_reset_tuning">Restaurar os ajustes padrão do vidro</string>
-    <string name="glass_backdrop_image">Imagem própria</string>
     <string name="glass_image_pick">Escolher outra imagem</string>
     <string name="glass_image_pick_hint">Permanece fixa ao rolar os cartões</string>
 </resources>
