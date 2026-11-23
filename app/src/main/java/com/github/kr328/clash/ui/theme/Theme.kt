@@ -239,11 +239,13 @@ private val LocalSchemes = staticCompositionLocalOf<Pair<ColorScheme, ColorSchem
 fun BackdropTone(content: @Composable () -> Unit) {
     val tone = LocalBackdropTone.current
     val schemes = LocalSchemes.current
-    if (tone == null || schemes == null || tone == LocalThemeDark.current) return content()
+    val own = tone != null && schemes != null && tone != LocalThemeDark.current
 
-    val scheme = if (tone) schemes.second else schemes.first
+    // One call either way (see GlassPanes): the content keeps its state as the glass comes and goes.
+    val scheme = if (own) { if (tone == true) schemes!!.second else schemes!!.first } else MaterialTheme.colorScheme
+    val ink = if (own) scheme.onBackground else LocalContentColor.current
     MaterialTheme(colorScheme = scheme) {
-        CompositionLocalProvider(LocalContentColor provides scheme.onBackground, content = content)
+        CompositionLocalProvider(LocalContentColor provides ink, content = content)
     }
 }
 

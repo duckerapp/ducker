@@ -246,15 +246,16 @@ fun BackLayer(
                 // The tabs' pane glass on a screen over Home's picture, so the two read as one glass (D-544).
                 GlassPanes(on = backdrop != null) {
                     // On a plain background the panes are tuned apart ([GlassTuningGroup.PlainPane]), from the cards'.
+                    // One call either way, as in GlassPanes: the content keeps its state when the background changes.
                     val tuning = LocalGlassTuning.current
-                    if (backdrop != null && screenWallMode(tuning) != WallMode.PICTURE) {
-                        CompositionLocalProvider(
-                            LocalPaneGroup provides GlassTuningGroup.PlainPane,
-                            LocalGlassStyle provides tuning.optics(GlassTuningGroup.PlainPane, LocalGlassStyle.current.asPlain()),
-                        ) {
-                            if (frameContent) ScreenFrame(wide, content = content) else content()
-                        }
-                    } else if (frameContent) ScreenFrame(wide, content = content) else content()
+                    val plain = backdrop != null && screenWallMode(tuning) != WallMode.PICTURE
+                    CompositionLocalProvider(
+                        LocalPaneGroup provides if (plain) GlassTuningGroup.PlainPane else LocalPaneGroup.current,
+                        LocalGlassStyle provides
+                            if (plain) tuning.optics(GlassTuningGroup.PlainPane, LocalGlassStyle.current.asPlain()) else LocalGlassStyle.current,
+                    ) {
+                        if (frameContent) ScreenFrame(wide, content = content) else content()
+                    }
                 }
             }
 

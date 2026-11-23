@@ -1952,10 +1952,13 @@ internal object PlainPaneGlass {
  */
 @Composable
 internal fun GlassPanes(on: Boolean = true, content: @Composable () -> Unit) {
-    if (!on) return content()
+    // One call either way: content called from another place when [on] changed was a new one to Compose, and a screen
+    // over the tabs lost its state as Air became glass — Settings fell back to its first page and blinked (the owner,
+    // 23.11).
+    val style = LocalGlassStyle.current
     CompositionLocalProvider(
-        LocalGlassPanes provides true,
-        LocalGlassStyle provides LocalGlassTuning.current.optics(GlassTuningGroup.Pane, LocalGlassStyle.current.asDock()),
+        LocalGlassPanes provides (on || LocalGlassPanes.current),
+        LocalGlassStyle provides if (on) LocalGlassTuning.current.optics(GlassTuningGroup.Pane, style.asDock()) else style,
         content = content,
     )
 }
