@@ -42,6 +42,7 @@ import android.os.Build
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -889,6 +890,17 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // run before the effects of the same frame, so the tab knows it is open when it loads.
                 val proxiesShown = pagerState.settledPage == 1 && overlay == null
                 SideEffect { proxyViewModel.tabShown = proxiesShown }
+                // The pages see the pager only through these, each changing as its own answer does, and read where it
+                // is used: read in each page's content, the pager's page and scroll recomposed all three pages on
+                // every tab switch, 10–13 ms of the main thread (F-590).
+                val onHome = remember(pagerState) { derivedStateOf { pagerState.currentPage == 0 || pagerState.isScrollInProgress } }
+                val onProxies = remember(pagerState) { derivedStateOf { pagerState.currentPage == 1 || pagerState.isScrollInProgress } }
+                val settledHome = remember(pagerState) { derivedStateOf { pagerState.settledPage == 0 } }
+                val noOverlay = overlay == null
+                val homeMetrics = remember(noOverlay) {
+                    { if (noOverlay && onHome.value) metrics.value else Snapshot.withoutReadObservation { metrics.value } }
+                }
+                val proxiesOnScreen = remember(noOverlay) { { noOverlay && onProxies.value } }
 
                 // Пульт (этап 6). Старт — на вкладке в доке. «Назад» со страницы — в её вкладку,
                 // из дока — на «Главную», с неё — выход. Экран поверх закрылся — фокус обратно
@@ -1244,8 +1256,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                 // Главную не видно — её часы стоят. Иначе раз в секунду пересобиралась и
                                 // перерисовывалась страница за краем экрана, и телефон рисовал ради неё
                                 // кадр на любой вкладке и поверх любого экрана (F-231). Пока ленту
-                                // листают, главная может быть на экране — считаем её видимой.
-                                val homeVisible = overlay == null && (pagerState.currentPage == 0 || pagerState.isScrollInProgress)
+                                // листают, главная может быть на экране — считаем её видимой ([homeMetrics]).
 
                                 when (page) {
                                     1 -> ProxyScreen(
@@ -1263,7 +1274,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onSort = { proxyViewModel.setSort(this@HomeActivity, it) },
                                         modifier = Modifier.consumeWindowInsets(insets),
                                         contentPadding = insets,
-                                        shown = overlay == null && (pagerState.currentPage == 1 || pagerState.isScrollInProgress),
+                                        shown = proxiesOnScreen,
                                         // Потянуть вниз — перемерить основную группу; если мерить нечем
                                         // (туннель выключен, профиль не загружен) — перечитать список.
                                         refreshing = proxyState.checking != null,
@@ -1319,7 +1330,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                     else -> HomeScreen(
                                         state = state,
                                         header = !tv,
-                                        metrics = { if (homeVisible) metrics.value else Snapshot.withoutReadObservation { metrics.value } },
+                                        metrics = homeMetrics,
                                         onToggle = { toggle() },
                                         onSettings = { showSettings = true },
                                         onSupport = { open(it) },
@@ -1385,7 +1396,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         pickerState = proxyState,
                                         onSortNodes = { proxyViewModel.setSort(this@HomeActivity, it) },
                                         onCheckNodes = { proxyViewModel.healthCheck(this@HomeActivity, it) },
-                                        shown = pagerState.settledPage == 0 && overlay == null,
+                                        shown = noOverlay && settledHome.value,
                                         onOpenPicker = { proxyViewModel.refresh(this@HomeActivity) },
                                         onPickerShown = { proxyViewModel.sheetShown = it },
                                         onPickNode = { group, name ->

@@ -177,10 +177,11 @@ fun ProxyScreen(
     refreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     /**
-     * The page is on screen. Off it a running check does not spin its circle: the tab is composed beside
-     * home, and the circle drew a frame 60 times a second on any tab for as long as a check ran (F-393).
+     * Whether the page is on screen, read where it is used (F-590). Off it a running check does not spin its circle: the
+     * tab is composed beside home, and the circle drew a frame 60 times a second on any tab for as long as a check ran
+     * (F-393).
      */
-    shown: Boolean = true,
+    shown: () -> Boolean = { true },
 ) {
     val columns = if (LocalDensity.current.fontScale > 1.15f) 1 else 2
     val scope = rememberCoroutineScope()
@@ -361,7 +362,7 @@ fun ProxyScreen(
                             GroupHeader(
                                 group = group,
                                 open = open,
-                                checking = shown && state.checking == group.name,
+                                checking = shown() && state.checking == group.name,
                                 checkEnabled = state.checking == null,
                                 canCheck = state.canCheck,
                                 onExpand = {

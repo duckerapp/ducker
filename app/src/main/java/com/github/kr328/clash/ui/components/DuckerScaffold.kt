@@ -807,61 +807,23 @@ internal fun DockTabs(
     val group = modifier.fillMaxWidth()
         .then(if (onSelect != null) Modifier.selectableGroup().focusGroup() else Modifier)
 
-    // [slot] — the tab's share of the row, or its row in the column.
+    // [slot] — the tab's share of the row, or its row in the column. Each tab a function of its own, skipped when its own
+    // state did not change: as one lambda all three tabs of both copies recomposed on every switch and at «+ Добавить»,
+    // 2–4 ms of the main thread as the page settled (F-590).
     val tab: @Composable (Int, Modifier) -> Unit = { index, slot ->
-        val (label, icon) = DockTabItems[index]
-        val active = selected == index
-        val name = stringResource(label)
-
-        Column(
-            modifier = slot
-                .clip(if (vertical) RoundedCornerShape(RAIL_CORNER) else RoundedCornerShape(percent = 50))
-                .then(
-                    if (onSelect != null) {
-                        // What `selectable` is, plus a click label: turned into «+ Добавить», the tab keeps
-                        // its name and role, and TalkBack says what a tap does (D-390).
-                        Modifier.semantics {
-                            if (index == ACTION_TAB) {
-                                // Compose takes TalkBack's click away from a selected tab, so this one says
-                                // its selection in words. Its name is its own: a label at zero alpha is
-                                // hidden from TalkBack.
-                                contentDescription = name
-                                if (active) stateDescription = selectedWord
-                            } else {
-                                this.selected = active
-                            }
-                        }
-                            .clickable(
-                                onClickLabel = if (index == ACTION_TAB) actionLabel else null,
-                                role = Role.Tab,
-                                onClick = { onSelect(index) },
-                            )
-                    } else {
-                        Modifier
-                    },
-                )
-                .heightIn(min = 48.dp)
-                .padding(horizontal = 6.dp, vertical = 7.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
-        ) {
-            if (index == ACTION_TAB) {
-                ActionFace(turn, icon, name, style, content, iconSize)
-            } else {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(iconSize),
-                    tint = content,
-                )
-
-                FitLabel(
-                    text = name,
-                    style = style,
-                    color = content,
-                )
-            }
-        }
+        DockTab(
+            index = index,
+            active = selected == index,
+            content = content,
+            onSelect = onSelect,
+            turn = turn,
+            actionLabel = if (index == ACTION_TAB) actionLabel else null,
+            vertical = vertical,
+            style = style,
+            selectedWord = selectedWord,
+            iconSize = iconSize,
+            modifier = slot,
+        )
     }
 
     if (vertical) {
@@ -872,6 +834,75 @@ internal fun DockTabs(
     } else {
         Row(group, verticalAlignment = Alignment.CenterVertically) {
             DockTabItems.indices.forEach { tab(it, Modifier.weight(1f)) }
+        }
+    }
+}
+
+/** One tab of [DockTabs]: [actionLabel] only for [ACTION_TAB]. */
+@Composable
+private fun DockTab(
+    index: Int,
+    active: Boolean,
+    content: Color,
+    onSelect: ((Int) -> Unit)?,
+    turn: Transition<Boolean>,
+    actionLabel: String?,
+    vertical: Boolean,
+    style: TextStyle,
+    selectedWord: String,
+    iconSize: Dp,
+    modifier: Modifier,
+) {
+    val (label, icon) = DockTabItems[index]
+    val name = stringResource(label)
+
+    Column(
+        modifier = modifier
+            .clip(if (vertical) RoundedCornerShape(RAIL_CORNER) else RoundedCornerShape(percent = 50))
+            .then(
+                if (onSelect != null) {
+                    // What `selectable` is, plus a click label: turned into «+ Добавить», the tab keeps
+                    // its name and role, and TalkBack says what a tap does (D-390).
+                    Modifier.semantics {
+                        if (index == ACTION_TAB) {
+                            // Compose takes TalkBack's click away from a selected tab, so this one says
+                            // its selection in words. Its name is its own: a label at zero alpha is
+                            // hidden from TalkBack.
+                            contentDescription = name
+                            if (active) stateDescription = selectedWord
+                        } else {
+                            this.selected = active
+                        }
+                    }
+                        .clickable(
+                            onClickLabel = if (index == ACTION_TAB) actionLabel else null,
+                            role = Role.Tab,
+                            onClick = { onSelect(index) },
+                        )
+                } else {
+                    Modifier
+                },
+            )
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 6.dp, vertical = 7.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
+    ) {
+        if (index == ACTION_TAB) {
+            ActionFace(turn, icon, name, style, content, iconSize)
+        } else {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(iconSize),
+                tint = content,
+            )
+
+            FitLabel(
+                text = name,
+                style = style,
+                color = content,
+            )
         }
     }
 }
