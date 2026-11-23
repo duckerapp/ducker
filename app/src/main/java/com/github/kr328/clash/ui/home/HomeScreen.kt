@@ -1516,7 +1516,17 @@ private fun HeroFace(
                     }
                 }
 
-                UptimePill(running, metrics, isGlass = isGlass)
+                // Centred on the title's line, a little below its middle where the letters are: at its top it stood
+                // 5 dp above them (the owner, 23.11: «высоко задран»).
+                val titleLine = MaterialTheme.typography.headlineSmall
+                val density = LocalDensity.current
+                Box(
+                    Modifier.height(with(density) { titleLine.lineHeight.toDp() })
+                        .offset(y = with(density) { (titleLine.fontSize * 0.08f).toDp() }),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    UptimePill(running, metrics, isGlass = isGlass)
+                }
             }
 
             PowerButton(
@@ -1582,15 +1592,19 @@ internal fun Size.farthestFrom(point: Offset): Float = maxOf(
 @Composable
 private fun UptimePill(running: Boolean, metrics: () -> HomeMetrics, isGlass: Boolean = false) {
     val hiFactor = if (isGlass) (LocalGlassStyle.current.highlight / 60f).coerceIn(0f, 1.8f) else 1f
+    // Over a picture: a glass pill as the subscription's «Обновить» (the owner, 23.11).
+    val backdrop = if (isGlass) LocalGlassBackdrop.current else null
     Row(
         // Своим слоем: часы тикают каждую секунду и не должны тянуть за собой карточку.
         modifier = Modifier.graphicsLayer()
             .then(
-                if (isGlass) {
-                    Modifier.background(LocalContentColor.current.copy(alpha = 0.08f), CircleShape)
-                } else Modifier
+                when {
+                    backdrop != null -> Modifier.glass(backdrop, GlassMaterial.Control, CircleShape)
+                    isGlass -> Modifier.background(LocalContentColor.current.copy(alpha = 0.08f), CircleShape)
+                        .border(1.dp, LocalContentColor.current.copy(alpha = 0.30f * hiFactor), CircleShape)
+                    else -> Modifier.border(1.dp, LocalContentColor.current.copy(alpha = 0.22f), CircleShape)
+                },
             )
-            .border(1.dp, LocalContentColor.current.copy(alpha = if (isGlass) 0.30f * hiFactor else 0.22f), CircleShape)
             .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
