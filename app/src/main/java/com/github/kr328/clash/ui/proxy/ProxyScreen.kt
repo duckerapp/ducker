@@ -526,10 +526,12 @@ fun ProxyScreen(
                             },
                             key = { i, _ -> "${group.name}-$i" },
                         ) { row, proxies ->
+                            val rowFold = if (query.isBlank()) folds[group.name] else null
                             ProxyRow(
                                 group = group, proxies = proxies, columns = columns, column = column,
                                 onSelect = onSelect, onFavorite = onFavorite,
-                                modifier = Modifier.foldRow(if (query.isBlank()) folds[group.name] else null, row, rowMeasure)
+                                narrow = rowFold?.let { fold -> { with(density) { fold.narrowing(row, rowMeasure, ITEM_GAP.toPx(), FOLD_NARROW.toPx()) } } },
+                                modifier = Modifier.foldRow(rowFold, row, rowMeasure)
                                     .padding(top = ITEM_GAP)
                                     .then(if (index == 0 && row == 0) Modifier.focusRequester(firstRow) else Modifier),
                             )
@@ -591,6 +593,8 @@ private fun ProxyRow(
     onSelect: (String, String) -> Unit,
     onFavorite: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /** While the row folds: how far each card stands in from its sides, in pixels ([Fold.narrowing]). */
+    narrow: (() -> Float)? = null,
 ) {
     val tv = LocalTv.current
     // Пульт (D-158) идёт по группе строго: карточка, её звёздочка, следующая
@@ -636,7 +640,14 @@ private fun ProxyRow(
                 wrap = more && i == proxies.lastIndex,
                 onFocused = { column[0] = i },
                 onWrap = { column[0] = 0 },
-                modifier = Modifier.weight(1f).fillMaxHeight(),
+                modifier = Modifier.weight(1f).fillMaxHeight().then(
+                    // Narrowed about its own middle as it goes under the card above, so its edges stay inside that
+                    // card's: drawn behind it at full width, they showed past its round corners and sides.
+                    if (narrow != null) Modifier.graphicsLayer {
+                        val inset = narrow()
+                        scaleX = if (inset > 0f && size.width > 0f) 1f - 2f * inset / size.width else 1f
+                    } else Modifier,
+                ),
             )
         }
         if (proxies.size < columns) Spacer(Modifier.weight(1f))
@@ -828,6 +839,19 @@ private fun GroupHeader(
  */
 private class Fold(shown: Float, val rows: Int) {
     var shown by mutableFloatStateOf(shown)
+
+    /**
+     * How far [row]'s cards stand in from their sides: [most] once they are [NARROW_BY] of their height under the item
+     * above, eased in from none as they go under, and out again as they come out (the owner's idea, 24.11).
+     */
+    fun narrowing(row: Int, measure: RowMeasure, gap: Float, most: Float): Float {
+        val full = measure.height.toFloat()
+        val card = full - gap
+        if (card <= 0f) return 0f
+        val out = (shown - row * full).coerceIn(0f, full).coerceAtMost(card)
+        val under = ((1f - out / card) / NARROW_BY).coerceIn(0f, 1f)
+        return most * under * under * (3f - 2f * under)
+    }
 }
 
 /**
@@ -869,6 +893,13 @@ private fun Modifier.foldRow(fold: Fold?, row: Int, measure: RowMeasure): Modifi
         val shown = if (fold == null) full else (fold.shown - row * full).coerceIn(0f, full.toFloat()).roundToInt()
         layout(placeable.width, shown) { placeable.place(0, shown - full) }
     }
+
+/**
+ * How far each card of a folding row narrows on either side as it goes under the card above, and how much of its height
+ * must be under by then.
+ */
+private val FOLD_NARROW = 6.dp
+private const val NARROW_BY = 0.4f
 
 /** A group's unroll and roll-up, and the list's travel with it: 320 ms moved the title too fast (the owner, 24.11). */
 private const val FOLD_MS = 400
