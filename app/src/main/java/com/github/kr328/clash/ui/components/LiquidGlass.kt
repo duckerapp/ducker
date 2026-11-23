@@ -2359,6 +2359,17 @@ half4 main(float2 coord) {
 
     float depth = -sd;
     float b = clamp(band, 1.0, max(min(halfSize.x, halfSize.y) * 0.6, 1.0));
+    // Past the roll and the light line with its glow the glass is flat: what the rest below gives there, with one read of
+    // the picture instead of three (most of a pane, a sheet's whole body).
+    if (depth >= b && depth >= lineWidth + 0.5 && depth >= lineSpread) {
+        half4 inner = sample(coord);
+        half innerLum = dot(inner.rgb, half3(0.299, 0.587, 0.114));
+        inner.rgb = clamp(mix(half3(innerLum), inner.rgb, half(saturation)), half3(0.0), half3(inner.a));
+        if (noiseStrength > 0.0) {
+            inner.rgb = clamp(inner.rgb + half3(hash(coord) * noiseStrength), half3(0.0), half3(inner.a));
+        }
+        return inner;
+    }
     float t = clamp(depth / b, 0.0, 1.0);
     float2 n = gradSdRoundedRect(p, halfSize, min(radius * 1.5, min(halfSize.x, halfSize.y)));
     float u = 1.0 - t;
