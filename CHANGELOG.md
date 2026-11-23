@@ -13,7 +13,7 @@ repository was closed; they are listed here for history. APK files are on the
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
 
-## 0.4.52 — 2026-11-24
+## 0.4.53 — 2026-11-24
 
 - DUCKER Glass (beta), a new look: Settings → Appearance. Cards, the dock, sheets and buttons are glass over a
   picture that blurs and bends it, their edges catching the light; the connect wave runs over the whole screen. Dark
@@ -25,6 +25,7 @@ repository was closed; they are listed here for history. APK files are on the
 - Proxies: a group opens and closes in one smooth motion — the nodes slide out from under the group's card and back
   in, and the list scrolls with them, with the keyboard up too. The cards' shadows no longer come in with a jump, and
   big groups do not stutter. Switching tabs takes less work.
+- Subscriptions: the first card starts level with the search on Proxies.
 - A provider can fill the "Mobile network" list, with a `ducker: {mobile-group: …}` key in the config or the
   `ducker-mobile-group` header. While the page is not set up, such a subscription turns "Switch by network" on by
   itself. The "Provider's list" switch keeps the provider's list current; editing the list turns it off, turning it
