@@ -465,7 +465,7 @@ internal fun DuckerSheet(
             Modifier.fillMaxSize()
                 .drawBehind {
                     val shown = if (height > 0f) (1f - offset / height).coerceIn(0f, 1f) else 0f
-                    // Over a blurred screen a light dim is enough.
+                    // Over a blurred screen a light dim, or none, is enough.
                     drawRect(Color.Black, alpha = (if (glass) glassScrim else SCRIM) * shown)
                 }
                 .pointerInput(Unit) { detectTapGestures { close() } },
@@ -533,7 +533,7 @@ internal fun DuckerSheet(
                             if (pane != null) Modifier.liquidGlass(
                                 pane,
                                 base = MaterialTheme.colorScheme.background,
-                                tint = MaterialTheme.colorScheme.surface.copy(alpha = sheetBody("tint", GlassMaterial.Surface.tint)),
+                                tint = MaterialTheme.colorScheme.surface.copy(alpha = sheetBody("tint", SHEET_TINT)),
                                 shape = sheetShape,
                                 blurBoost = sheetBlur(),
                                 // The light catches the top and fades down the sides: cut off at the screen's bottom edge
@@ -698,7 +698,9 @@ private val LIFT_ROOM = 540.dp
 private val LIFT_GAP = 16.dp
 private const val SETTLE_MS = 200
 private const val SCRIM = 0.32f
-internal const val GLASS_SCRIM = 0.12f
+/** The owner's (23.11, F-585): no dim under a glass sheet, and its body dense; 0.12 and the panes' 0.55 before. */
+internal const val GLASS_SCRIM = 0f
+internal const val SHEET_TINT = 1f
 
 /** A glass sheet's blur, its own and the screen's under it: [SHEET_BLUR], or as tuned in the review app. */
 @Composable

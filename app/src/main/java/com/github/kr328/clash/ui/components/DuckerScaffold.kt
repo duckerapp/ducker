@@ -734,8 +734,8 @@ internal fun BoxScope.SingleFace(face: DockFace, single: String?, onSingle: () -
     }
 }
 
-// The owner's (23.11, F-581); 18 dp before.
-internal val SHEET_BLUR = 13.dp
+// The owner's (23.11, F-585); 18 dp, then 13 dp (F-581) before.
+internal val SHEET_BLUR = 19.dp
 
 /** How far below a glass sheet's top corners the light on its rim fades out. */
 internal val SHEET_RIM_FADE = 160.dp

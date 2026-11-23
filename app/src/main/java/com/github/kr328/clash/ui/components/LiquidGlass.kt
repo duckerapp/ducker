@@ -1873,23 +1873,24 @@ internal fun paneDensity(): Float = LocalGlassTuning.current?.value(GlassTuningG
 
 internal fun GlassStyle.asDock(): GlassStyle = copy(blur = PaneGlass.BLUR + blurBoost, tint = PaneGlass.TINT, vibrancy = PaneGlass.VIBRANCY)
 
-/** The panes' glass in the sheets: the cards' ([asDock]) with [SheetPaneGlass]'s own blur, tint, refraction and depth. */
+/** The panes' glass in the sheets: the cards' ([asDock]) with [SheetPaneGlass]'s own blur, tint, refraction, depth and light. */
 internal fun GlassStyle.asSheet(): GlassStyle = copy(
     blur = SheetPaneGlass.BLUR + blurBoost, tint = SheetPaneGlass.TINT,
-    refraction = SheetPaneGlass.REFRACTION, depth = SheetPaneGlass.DEPTH,
+    refraction = SheetPaneGlass.REFRACTION, depth = SheetPaneGlass.DEPTH, highlight = SheetPaneGlass.HIGHLIGHT,
 )
 
 /**
- * The panes in the sheets as the owner tuned them (23.11, F-581, then the export of F-583): clearer than the cards (the
- * sheet under them is glass already), bent a little more and deeper, a narrower roll and a stronger own light line. The
- * rest is the cards'. Their blur is the sheet body's too, which lies in their style.
+ * The panes in the sheets as the owner tuned them (23.11, F-581, the exports of F-583 and F-585): clearer than the cards
+ * (the sheet under them is glass already), bent a little more and shallower, a narrower roll drawn from a little further.
+ * The rest is the cards'. Their blur is the sheet body's too, which lies in their style.
  */
 internal object SheetPaneGlass {
     const val BLUR = 10
-    const val TINT = 35
+    const val TINT = 45
     const val REFRACTION = 60
-    const val DEPTH = 87
-    val KNOBS = mapOf("band" to 5.45f, "line" to 1.2f)
+    const val DEPTH = 35
+    const val HIGHLIGHT = 60
+    val KNOBS = mapOf("band" to 4.33f, "push" to 15.1f, "lineSpread" to 5.5f)
 }
 
 /** A pane group's own knob defaults, apart from the cards' ([GlassTuningGroup.fromCards]). */

@@ -100,7 +100,8 @@ internal object DockGlass {
      */
     // Tuned by the owner (22.11, the panel's export).
     const val BLUR = 0
-    const val TINT = 45
+    // 45 until the owner's export of 23.11 (F-585).
+    const val TINT = 40
     const val REFRACTION = 66
     const val DISPERSION = 50
     const val DEPTH = 70

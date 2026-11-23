@@ -108,7 +108,7 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
         "height" to TOOLBAR_LENS_HEIGHT, "aspect" to TOOLBAR_LENS_ASPECT, "widen" to TOOLBAR_WIDEN,
     )
     GlassTuningGroup.Wave -> HeroWave.defaults
-    GlassTuningGroup.SheetBody -> mapOf("blur" to SHEET_BLUR.value, "tint" to GlassMaterial.Surface.tint, "scrim" to GLASS_SCRIM)
+    GlassTuningGroup.SheetBody -> mapOf("blur" to SHEET_BLUR.value, "tint" to SHEET_TINT, "scrim" to GLASS_SCRIM)
     GlassTuningGroup.Wall -> mapOf(
         "blur" to wallBlur(!light), "tint" to wallTint(!light), "tone" to if (light) 1f else 0f, "saturation" to 1f,
     )
@@ -170,7 +170,10 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                         mapOf("blur" to it.blur.toFloat(), "tint" to it.tint.toFloat(), "highlight" to it.highlight.toFloat())
                     }
                     else -> fromCards + group.ownKnobs + style.asSheet().let {
-                        mapOf("blur" to it.blur.toFloat(), "tint" to it.tint.toFloat(), "refraction" to it.refraction.toFloat(), "depth" to it.depth.toFloat())
+                        mapOf(
+                            "blur" to it.blur.toFloat(), "tint" to it.tint.toFloat(), "refraction" to it.refraction.toFloat(),
+                            "depth" to it.depth.toFloat(), "highlight" to it.highlight.toFloat(),
+                        )
                     }
                 }
             }
