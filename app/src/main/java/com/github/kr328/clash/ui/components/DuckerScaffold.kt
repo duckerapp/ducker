@@ -212,7 +212,7 @@ fun DuckerScaffold(
     val sheetGlass = LocalSheetGlass.current
     // Under an open glass sheet the screen stands still: drawn once for the sheet's panes, see SheetStillPictures.
     if (backdrop != null && sheetGlass != null) {
-        SheetStillPictures(backdrop, sheetGlass, extra = SHEET_BLUR)
+        SheetStillPictures(backdrop, sheetGlass, extra = sheetBlur())
         DisposableEffect(sheetGlass, backdrop) {
             sheetGlass.screen = backdrop
             onDispose { if (sheetGlass.screen === backdrop) sheetGlass.screen = null }
@@ -223,6 +223,7 @@ fun DuckerScaffold(
     var waveAt by remember { mutableStateOf(Offset.Zero) }
     val tuning = LocalGlassTuning.current
 
+    val sheetBlur = sheetBlur()
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { insets ->
         Box(
             Modifier.fillMaxSize().then(
@@ -231,7 +232,7 @@ fun DuckerScaffold(
                 if (LocalGlassStyle.current.enabled) Modifier.onGloballyPositioned { waveAt = it.positionInRoot() }.graphicsLayer {
                     val shown = sheetGlass?.shown ?: 0f
                     renderEffect = when {
-                        shown > 0.01f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> sheetBlurEffect(SHEET_BLUR.toPx(), shown)
+                        shown > 0.01f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> sheetBlurEffect(sheetBlur.toPx(), shown)
                         wave != null && waveShader != null -> screenWaveEffect(waveShader, wave, waveAt, tuning)
                         else -> null
                     }

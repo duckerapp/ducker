@@ -357,10 +357,12 @@ private fun stillLooks(extra: Dp, own: Boolean, dock: Boolean): List<Pair<Int, I
     val dockGlass = LocalGlassTuning.current.optics(GlassTuningGroup.Dock, style.dockDefaults())
     // And the panes' on a plain background, when tuned apart.
     val plain = LocalGlassTuning.current.optics(GlassTuningGroup.PlainPane, pane.asPlain())
-    return remember(style.blur, style.vibrancy, pane.blur, pane.vibrancy, dockGlass.blur, dockGlass.vibrancy, plain.blur, plain.vibrancy, density, extra, own, dock) {
+    // And the panes in the sheets, tuned apart too.
+    val sheet = LocalGlassTuning.current.optics(GlassTuningGroup.SheetPane, pane)
+    return remember(style.blur, style.vibrancy, pane.blur, pane.vibrancy, dockGlass.blur, dockGlass.vibrancy, plain.blur, plain.vibrancy, sheet.blur, sheet.vibrancy, density, extra, own, dock) {
         with(density) {
             val looks = (if (own) listOf(style.blur to style.vibrancy) else emptyList()) +
-                if (dock) listOf(pane.blur to pane.vibrancy, dockGlass.blur to dockGlass.vibrancy, plain.blur to plain.vibrancy) else emptyList()
+                if (dock) listOf(pane.blur to pane.vibrancy, dockGlass.blur to dockGlass.vibrancy, plain.blur to plain.vibrancy, sheet.blur to sheet.vibrancy) else emptyList()
             looks.flatMap { (b, v) ->
                 listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (b / 100f) + (it + extra).toPx()).roundToInt() to v }
             }.distinct()
@@ -744,7 +746,7 @@ internal fun Modifier.liquidGlass(
                     val a = (if (fixedTint && panes) tint.alpha
                     else tint.alpha * tintProgress * (if (panes) paneValue("denser", PaneGlass.DENSER) * clear else 1f)).coerceIn(0f, 0.92f)
                     // The panes on a plain background may take a share of white, to part from black (the owner, 23.11).
-                    val lift = if (panes && !fixedTint && paneGroup == GlassTuningGroup.PlainPane) paneValue("lift", 0f) else 0f
+                    val lift = if (panes && !fixedTint && paneGroup.fromCards) paneValue("lift", 0f) else 0f
                     val veilColor = if (lift > 0f) androidx.compose.ui.graphics.lerp(tint.copy(alpha = 1f), Color.White, lift) else tint
                     if (veilShader != null && veilBrush != null) {
                         // Premultiplied, as the shader's output is.
@@ -1911,7 +1913,7 @@ internal fun GlassTuning?.paneKnob(group: GlassTuningGroup, key: String, fallbac
     val own = if (group == GlassTuningGroup.PlainPane) PlainPaneGlass.KNOBS[key] else null
     if (this == null) return own ?: fallback
     // Only the knobs the cards have: «Белая тонировка» is the plain panes' own.
-    val base = own ?: if (group == GlassTuningGroup.PlainPane && glassKnobs.getValue(GlassTuningGroup.Pane).any { it.key == key }) {
+    val base = own ?: if (group.fromCards && glassKnobs.getValue(GlassTuningGroup.Pane).any { it.key == key }) {
         value(GlassTuningGroup.Pane, key, fallback)
     } else fallback
     return value(group, key, base)

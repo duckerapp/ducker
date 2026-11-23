@@ -139,6 +139,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.kr328.clash.R
 
@@ -455,18 +456,26 @@ internal fun DuckerSheet(
         }
 
         // Затемнение — отдельным слоем под панелью: касание панели до него не доходит.
+        val glassScrim = sheetBody("scrim", GLASS_SCRIM)
         Box(
             Modifier.fillMaxSize()
                 .drawBehind {
                     val shown = if (height > 0f) (1f - offset / height).coerceIn(0f, 1f) else 0f
                     // Over a blurred screen a light dim is enough.
-                    drawRect(Color.Black, alpha = (if (glass) GLASS_SCRIM else SCRIM) * shown)
+                    drawRect(Color.Black, alpha = (if (glass) glassScrim else SCRIM) * shown)
                 }
                 .pointerInput(Unit) { detectTapGestures { close() } },
         )
 
-        // A glass sheet over the screen is a pane of the pane glass, and so is everything on it (F-552).
+        // A glass sheet over the screen is a pane of the pane glass, and so is everything on it (F-552); its panes are
+        // tuned apart ([GlassTuningGroup.SheetPane], the owner, 23.11), from the cards'. One call either way (GlassPanes).
         GlassPanes(on = pane != null) {
+            val sheetTuning = LocalGlassTuning.current
+            CompositionLocalProvider(
+                LocalPaneGroup provides if (pane != null) GlassTuningGroup.SheetPane else LocalPaneGroup.current,
+                LocalGlassStyle provides
+                    if (pane != null) sheetTuning.optics(GlassTuningGroup.SheetPane, LocalGlassStyle.current) else LocalGlassStyle.current,
+            ) {
             Box(
                 // Панель — своё окно, и рамка выделения пультом (этап 6) у неё своя.
                 Modifier.fillMaxSize()
@@ -520,9 +529,9 @@ internal fun DuckerSheet(
                             if (pane != null) Modifier.liquidGlass(
                                 pane,
                                 base = MaterialTheme.colorScheme.background,
-                                tint = MaterialTheme.colorScheme.surface.copy(alpha = GlassMaterial.Surface.tint),
+                                tint = MaterialTheme.colorScheme.surface.copy(alpha = sheetBody("tint", GlassMaterial.Surface.tint)),
                                 shape = sheetShape,
-                                blurBoost = SHEET_BLUR,
+                                blurBoost = sheetBlur(),
                                 // The light catches the top and fades down the sides: cut off at the screen's bottom edge
                                 // it read as a stray stripe (the owner, 18.11).
                                 rimFade = SHEET_RIM_FADE,
@@ -598,7 +607,7 @@ internal fun DuckerSheet(
                             CompositionLocalProvider(
                                 LocalContentColor provides MaterialTheme.colorScheme.onBackground,
                                 LocalTvTyping provides typing,
-                                LocalGlassExtraBlur provides if (pane != null) SHEET_BLUR else 0.dp,
+                                LocalGlassExtraBlur provides if (pane != null) sheetBlur() else 0.dp,
                                 LocalFrosted provides (glass && pane == null),
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -640,6 +649,7 @@ internal fun DuckerSheet(
                         }
                     }
                 }
+            }
             }
         }
         if (tuning != null && glassVisible && tuning.sheets.lastOrNull() === sheet) {
@@ -684,7 +694,16 @@ private val LIFT_ROOM = 540.dp
 private val LIFT_GAP = 16.dp
 private const val SETTLE_MS = 200
 private const val SCRIM = 0.32f
-private const val GLASS_SCRIM = 0.12f
+internal const val GLASS_SCRIM = 0.12f
+
+/** A glass sheet's blur, its own and the screen's under it: [SHEET_BLUR], or as tuned in the review app. */
+@Composable
+internal fun sheetBlur(): Dp = sheetBody("blur", SHEET_BLUR.value).dp
+
+/** A glass sheet's body knob ([GlassTuningGroup.SheetBody]). */
+@Composable
+internal fun sheetBody(key: String, fallback: Float): Float =
+    LocalGlassTuning.current?.value(GlassTuningGroup.SheetBody, key, fallback) ?: fallback
 
 /**
  * Вопрос перед тем, как бросить несохранённое: правку конфига (D-124), новое правило (D-135)
