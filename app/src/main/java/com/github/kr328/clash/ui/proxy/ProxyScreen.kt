@@ -93,7 +93,7 @@ import androidx.compose.animation.core.animate
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import android.os.SystemClock
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import kotlinx.coroutines.flow.collectLatest
@@ -186,13 +186,9 @@ fun ProxyScreen(
     val scope = rememberCoroutineScope()
     var returnToken by remember { mutableStateOf<Any?>(null) }
     var groupScroll by remember { mutableStateOf<Job?>(null) }
-    // The group opened just now: its rows fade in themselves, see the rows below.
-    var opening by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(opening) {
-        if (opening == null) return@LaunchedEffect
-        delay(ITEM_FADE_IN_MS.toLong())
-        opening = null
-    }
+    // The group opened just now, its rows fading in themselves (see the rows below). Not a state: a row reads it once
+    // as it first composes, and a state's change recomposed every row on screen in the middle of the opening's scroll.
+    val opening = remember { Opening() }
     // Пульт (этап 6): строка поиска висит над списком, и список целиком охватывает её — стрелка
     // вниз его не находила. Вниз из поиска — на первую группу, а если она уехала — в список.
     val listFocus = remember { FocusRequester() }
@@ -372,7 +368,10 @@ fun ProxyScreen(
                                     val beforeLayout = listState.layoutInfo
                                     groupScroll?.cancel()
                                     if (group.name in flipped) flipped -= group.name else flipped += group.name
-                                    if (!open) opening = group.name
+                                    if (!open) {
+                                        opening.group = group.name
+                                        opening.until = SystemClock.uptimeMillis() + ITEM_FADE_IN_MS
+                                    }
 
                                     if (query.isBlank() && (open || returnToken != null)) {
                                         // Keep scroll space while native item fades remove the rows.
@@ -422,7 +421,9 @@ fun ProxyScreen(
                             // A row of a group just opened fades in in a layer with room for its cards' shadows: the
                             // list's own fade drew it cut to its bounds, and the shadows came in with a jump as it
                             // ended (as on «Подключения», D-425).
-                            val appear = remember { Animatable(if (opening == group.name) 0f else 1f) }
+                            val appear = remember {
+                                Animatable(if (opening.group == group.name && SystemClock.uptimeMillis() < opening.until) 0f else 1f)
+                            }
                             LaunchedEffect(Unit) { appear.animateTo(1f, ItemFadeIn) }
                             ProxyRow(
                                 group = group, proxies = proxies, columns = columns, column = column,
@@ -776,6 +777,12 @@ private const val REVEAL_WAIT_MS = 300L
 private const val REVEAL_MS = 320
 
 private const val ITEM_FADE_IN_MS = 220
+
+/** The group opened last and until when ([SystemClock.uptimeMillis]) its newly shown rows fade in. */
+private class Opening {
+    var group: String? = null
+    var until = 0L
+}
 private val ItemFadeIn = tween<Float>(ITEM_FADE_IN_MS)
 private val ItemFadeOut = tween<Float>(120)
 private val ItemMove = spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = IntOffset.VisibilityThreshold)
