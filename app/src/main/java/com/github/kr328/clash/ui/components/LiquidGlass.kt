@@ -354,7 +354,7 @@ private fun stillLooks(extra: Dp, own: Boolean, dock: Boolean): List<Pair<Int, I
     // and without a picture of its own it bent its glass live every frame.
     val dockGlass = LocalGlassTuning.current.optics(GlassTuningGroup.Dock, style.dockDefaults())
     // And the panes' on a plain background, when tuned apart.
-    val plain = LocalGlassTuning.current.optics(GlassTuningGroup.PlainPane, pane)
+    val plain = LocalGlassTuning.current.optics(GlassTuningGroup.PlainPane, pane.asPlain())
     return remember(style.blur, style.vibrancy, pane.blur, pane.vibrancy, dockGlass.blur, dockGlass.vibrancy, plain.blur, plain.vibrancy, density, extra, own, dock) {
         with(density) {
             val looks = (if (own) listOf(style.blur to style.vibrancy) else emptyList()) +
@@ -1902,13 +1902,14 @@ internal val LocalGlassPanes = staticCompositionLocalOf { false }
 internal val LocalPaneGroup = staticCompositionLocalOf { GlassTuningGroup.Pane }
 
 /**
- * A pane knob of [group]: [GlassTuningGroup.PlainPane]'s falls back to the cards' as they are tuned, so it starts where
- * they stand.
+ * A pane knob of [group]: [GlassTuningGroup.PlainPane]'s own default ([PlainPaneGlass.KNOBS]), or else the cards' as
+ * they are tuned, so it starts where they stand.
  */
 internal fun GlassTuning?.paneKnob(group: GlassTuningGroup, key: String, fallback: Float): Float {
-    if (this == null) return fallback
+    val own = if (group == GlassTuningGroup.PlainPane) PlainPaneGlass.KNOBS[key] else null
+    if (this == null) return own ?: fallback
     // Only the knobs the cards have: «Белая тонировка» is the plain panes' own.
-    val base = if (group == GlassTuningGroup.PlainPane && glassKnobs.getValue(GlassTuningGroup.Pane).any { it.key == key }) {
+    val base = own ?: if (group == GlassTuningGroup.PlainPane && glassKnobs.getValue(GlassTuningGroup.Pane).any { it.key == key }) {
         value(GlassTuningGroup.Pane, key, fallback)
     } else fallback
     return value(group, key, base)
@@ -1923,6 +1924,25 @@ internal fun GlassTuning?.paneKnob(group: GlassTuningGroup, key: String, fallbac
 internal fun paneDensity(): Float = LocalGlassTuning.current?.value(GlassTuningGroup.Pane, "denser", PaneGlass.DENSER) ?: PaneGlass.DENSER
 
 internal fun GlassStyle.asDock(): GlassStyle = copy(blur = PaneGlass.BLUR, tint = PaneGlass.TINT, vibrancy = PaneGlass.VIBRANCY)
+
+/** The panes' glass on the screens' plain background: the cards' ([asDock]) with [PlainPaneGlass]'s own blur, tint, light. */
+internal fun GlassStyle.asPlain(): GlassStyle =
+    copy(blur = PlainPaneGlass.BLUR, tint = PlainPaneGlass.TINT, highlight = PlainPaneGlass.HIGHLIGHT)
+
+/**
+ * The panes on the screens' plain background (iOS's black) as the owner tuned them (23.11, F-577): clearer, a little
+ * denser and whiter than the cards, a stronger own light line, so they part from the black. The rest is the cards'.
+ */
+internal object PlainPaneGlass {
+    const val BLUR = 0
+    const val TINT = 55
+    const val HIGHLIGHT = 60
+    /** Its pane knobs that differ from the cards' ([PaneGlass]); «lift» is the veil towards white, its own only. */
+    val KNOBS = mapOf(
+        "line" to 1.3f, "lineGlow" to 0.35f, "lineDirect" to 1f, "ring" to 0f,
+        "denser" to 0.16f, "pressClear" to 0.6f, "lift" to 0.5f,
+    )
+}
 
 /**
  * The pane glass over [content] — Home's cards, Proxies' and Subscriptions' lists, a glass sheet and all on it — in one
@@ -1956,7 +1976,7 @@ internal object PaneGlass {
     /** The panes' own blur, tint and colour lift (the dock's were theirs until the owner tuned both apart, 22.11). */
     const val BLUR = 13
     const val TINT = 50
-    const val VIBRANCY = 0
+    const val VIBRANCY = 15
     /**
      * How wide the rim's roll is: over it the picture is drawn in from beyond the rim, its colours livelier, and the
      * glass lighter towards the rim. iOS's player rolls over ~8 pt (F-550); at 9 dp ours read as a thin hard frame, so

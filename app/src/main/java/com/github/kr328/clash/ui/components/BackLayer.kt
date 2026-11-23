@@ -250,7 +250,7 @@ fun BackLayer(
                     if (backdrop != null && screenWallMode(tuning) != WallMode.PICTURE) {
                         CompositionLocalProvider(
                             LocalPaneGroup provides GlassTuningGroup.PlainPane,
-                            LocalGlassStyle provides tuning.optics(GlassTuningGroup.PlainPane, LocalGlassStyle.current),
+                            LocalGlassStyle provides tuning.optics(GlassTuningGroup.PlainPane, LocalGlassStyle.current.asPlain()),
                         ) {
                             if (frameContent) ScreenFrame(wide, content = content) else content()
                         }

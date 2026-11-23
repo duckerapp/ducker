@@ -167,7 +167,10 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
             if (group != GlassTuningGroup.PlainPane) base
             else {
                 val cards = glassKnobs.getValue(GlassTuningGroup.Pane).map { it.key }.toSet()
-                base.mapValues { (key, value) -> if (key in cards) tuning.value(GlassTuningGroup.Pane, key, value) else value }
+                base.mapValues { (key, value) -> if (key in cards) tuning.value(GlassTuningGroup.Pane, key, value) else value } +
+                    PlainPaneGlass.KNOBS + style.asPlain().let {
+                        mapOf("blur" to it.blur.toFloat(), "tint" to it.tint.toFloat(), "highlight" to it.highlight.toFloat())
+                    }
             }
         }
         val listHeight = (maxHeight * 0.36f).coerceIn(120.dp, 320.dp)
