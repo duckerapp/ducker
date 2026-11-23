@@ -87,12 +87,15 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.Job
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.graphics.Path
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.ui.zIndex
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.FastOutSlowInEasing
 import kotlin.math.roundToInt
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.LaunchedEffect
@@ -529,7 +532,7 @@ fun ProxyScreen(
                             ProxyRow(
                                 group = group, proxies = proxies, columns = columns, column = column,
                                 onSelect = onSelect, onFavorite = onFavorite,
-                                modifier = Modifier.foldRow(if (query.isBlank()) folds[group.name] else null, row, rowMeasure)
+                                modifier = Modifier.foldRow(if (query.isBlank()) folds[group.name] else null, row, columns, rowMeasure)
                                     .padding(top = ITEM_GAP)
                                     .then(if (index == 0 && row == 0) Modifier.focusRequester(firstRow) else Modifier),
                             )
@@ -619,7 +622,7 @@ private fun ProxyRow(
                     }.focusGroup()
                 } else Modifier.focusGroup(),
             ),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(CARD_SPACE),
     ) {
         proxies.forEachIndexed { i, proxy ->
             ProxyOption(
@@ -844,24 +847,41 @@ private class RowMeasure {
 
 /**
  * A row of a folding group takes only its share of [Fold.shown] of the list, one row after another, and slides out from
- * behind the item above, drawn under it ([zIndex]) and whole — its round corners and its shadow — but where that item's
- * card covers it: cut straight along the slot's top, the rows had sharp torn edges and lay over the header's shadow
- * (the owner, 24.11). Without a fold, the row as it is.
+ * under the item above, its bottom first. Nothing of it is drawn above the line it comes out from: drawn behind the card
+ * above, its cards' edges and glass rims showed past that card's round corners and sides, and what was left there went
+ * at once as the fold ended (the owner, 24.11). Below the line each card shows in a card's own shape — round corners
+ * where it comes out, at most as round as it is tall — so it grows from a thin rounded sliver and shrinks back into one.
+ * Below a corner's height the sides are open for the shadows. Without a fold, the row as it is.
  */
-private fun Modifier.foldRow(fold: Fold?, row: Int, measure: RowMeasure): Modifier =
+private fun Modifier.foldRow(fold: Fold?, row: Int, columns: Int, measure: RowMeasure): Modifier =
     (if (fold == null) this else zIndex(-1f - row).drawWithContent {
-        // A row not out yet is not drawn at all: cut to nothing, its glass panes still rendered their layers, and a
-        // fold on glass took twice the GPU of a scroll.
+        // A row not out yet is not drawn at all: its glass panes still rendered their layers, and a fold on glass took
+        // twice the GPU of a scroll.
         if (size.height <= 0f) return@drawWithContent
-        // The card above: the group's header over the first row, the row before over the others. Cut a corner's
-        // height below its top, so nothing shows past it; its own corners at the bottom show the row behind.
         val gap = ITEM_GAP.toPx()
-        val above = if (row == 0) measure.header else measure.height
-        val room = 16.dp.toPx()
-        val top = if (above > 0) -(above - gap) + FOLD_CORNER.toPx() else 0f
-        clipRect(left = -room, top = top, right = size.width + room, bottom = size.height + room) {
-            this@drawWithContent.drawContent()
+        val cardTop = size.height - (measure.height - gap)
+        // Out whole, its top below the line: only the gap is still going, nothing to cut.
+        if (cardTop >= 0f) {
+            drawContent()
+            return@drawWithContent
         }
+        val room = 16.dp.toPx()
+        val round = minOf(CARD_CORNER.toPx(), size.height)
+        val space = CARD_SPACE.toPx()
+        val width = (size.width - space * (columns - 1)) / columns
+        val window = Path().apply {
+            for (i in 0 until columns) {
+                val left = i * (width + space)
+                addRoundRect(
+                    RoundRect(
+                        left = left, top = 0f, right = left + width, bottom = size.height + room,
+                        topLeftCornerRadius = CornerRadius(round), topRightCornerRadius = CornerRadius(round),
+                    ),
+                )
+            }
+            addRect(Rect(-room, round, size.width + room, size.height + room))
+        }
+        clipPath(window) { this@drawWithContent.drawContent() }
     }).layout { measurable, constraints ->
         val placeable = measurable.measure(constraints)
         val full = placeable.height
@@ -874,8 +894,9 @@ private fun Modifier.foldRow(fold: Fold?, row: Int, measure: RowMeasure): Modifi
 private const val FOLD_MS = 400
 private val FoldEasing = FastOutSlowInEasing
 
-/** Below the top of the card above a folding row, how far it is cut: past the card's round corners. */
-private val FOLD_CORNER = 24.dp
+/** A node card's corners (`shapes.medium`) and the space between two cards in a row ([ProxyRow]). */
+private val CARD_CORNER = 18.dp
+private val CARD_SPACE = 10.dp
 
 /** A row's height before any was measured: a card of two lines of name, the type and the delay, and the gap. */
 private val ROW_ESTIMATE = 96.dp
