@@ -49,6 +49,19 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
 import com.github.kr328.clash.ui.components.Pill
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import com.github.kr328.clash.ui.components.GlassBackdrop
+import com.github.kr328.clash.ui.components.glassSourceOver
+import com.github.kr328.clash.ui.components.rememberGlassBackdrop
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -335,10 +348,14 @@ fun SubscriptionsScreen(
             top = contentPadding.calculateTopPadding(),
             modifier = modifier.fillMaxSize(),
         ) {
+            val tabBackdrop = LocalGlassBackdrop.current
+            val listBackdrop = rememberGlassBackdrop()
+            val lifted = remember(listBackdrop) { listBackdrop?.let(::LiftedCards) }
+
             TvLazyColumn(
                 state = list,
                 overscrollEffect = bounce,
-                modifier = Modifier.fillMaxSize().screenInsets(),
+                modifier = Modifier.fillMaxSize().drawLifted(lifted, reorder).glassSourceOver(listBackdrop, tabBackdrop).screenInsets(),
                 // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
                 // панель вкладок и видны в просветах по её бокам (D-74). Each card owns its trailing
                 // gap so the lazy item's bounds remain stable while it is dragged.
@@ -441,6 +458,7 @@ fun SubscriptionsScreen(
                             } else null,
                         ),
                         reorder = reorder,
+                        moved = lifted,
                         onLift = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                         onStep = { haptic.performHapticFeedback(HapticFeedbackType.SegmentTick) },
                         // TalkBack перетаскивать не умеет — те же перестановки действиями, в своей группе.
@@ -625,6 +643,7 @@ private fun ActiveCard(
 private fun ProfileRow(
     modifier: Modifier,
     reorder: ProfileReorder,
+    moved: LiftedCards?,
     onLift: () -> Unit,
     onStep: () -> Unit,
     moves: List<CustomAccessibilityAction>,
@@ -652,6 +671,16 @@ private fun ProfileRow(
     val shape = MaterialTheme.shapes.large
     val backdrop = LocalGlassBackdrop.current
     val glass = backdrop != null
+    val liftedCard = if (moved != null) {
+        val layer = rememberGraphicsLayer()
+        remember(layer) { LiftedCard(layer) }.also { card ->
+            DisposableEffect(moved, key, card) {
+                moved.cards[key] = card
+                onDispose { moved.cards.remove(key) }
+            }
+        }
+    } else null
+    val onList = liftedCard != null && reorder.over(key)
     // The pane glass: the row swells under a finger, not under its «⋯».
     val swell = rememberGlassPress()
 
@@ -678,7 +707,15 @@ private fun ProfileRow(
     val menu = remember { FocusRequester() }
     val tv = LocalTv.current
 
-    Box(modifier.fillMaxWidth().padding(bottom = ROW_GAP).zIndex(if (raised) 1f else 0f)) {
+    Box(
+        modifier.fillMaxWidth().padding(bottom = ROW_GAP).zIndex(if (raised) 1f else 0f).then(
+            if (liftedCard == null) Modifier
+            else Modifier.onGloballyPositioned { liftedCard.position = it.positionInRoot() }.drawWithContent {
+                // Moved, it is drawn over the list ([drawLifted]); never here while its glass shows the list, then with it.
+                if (onList || reorder.over(key)) liftedCard.layer.record { this@drawWithContent.drawContent() } else drawContent()
+            },
+        ),
+    ) {
         // The opaque surface and its cached Air shadow travel together in the existing drag layer.
         Row(
             modifier = Modifier.fillMaxWidth()
@@ -692,7 +729,7 @@ private fun ProfileRow(
                 .glassPressSwell(swell)
                 .then(
                     if (glass) {
-                        Modifier.glass(backdrop, GlassMaterial.Surface, shape, press = swell)
+                        Modifier.glass(if (onList) moved?.backdrop else backdrop, GlassMaterial.Surface, shape, press = swell)
                     } else {
                         Modifier.airShadow(shape)
                     }
@@ -1260,6 +1297,35 @@ private const val OTHERS_KEY = "others"
 
 /** The list's step: below the header (twice), the skeletons and the error card. */
 private val GAP = 12.dp
+
+/**
+ * The glass style's cards being moved: each records itself into its [LiftedCard.layer] at its place, and [drawLifted]
+ * draws it over the list, its glass on [backdrop], the list on the screen's picture. In the list its glass showed the
+ * picture alone, a hole over the card beneath it (the owner, 24.11); on the list's picture it would show itself.
+ */
+private class LiftedCards(val backdrop: GlassBackdrop) {
+    val cards = mutableStateMapOf<Any, LiftedCard>()
+}
+
+private class LiftedCard(val layer: GraphicsLayer) {
+    /** Its place in the window. */
+    var position by mutableStateOf(Offset.Zero)
+}
+
+/** The card [key] is drawn over the list: moved, or going back to its place and put down. */
+private fun ProfileReorder.over(key: Any) = dragged == key || settling == key
+
+/** Draws [lifted]'s moved cards over the list, the one under the finger on top. */
+private fun Modifier.drawLifted(lifted: LiftedCards?, reorder: ProfileReorder): Modifier =
+    if (lifted == null) this
+    else drawWithContent {
+        drawContent()
+        val origin = lifted.backdrop.origin
+        for (key in listOfNotNull(reorder.settling, reorder.dragged).distinct()) {
+            val card = lifted.cards[key] ?: continue
+            translate(card.position.x - origin.x, card.position.y - origin.y) { drawLayer(card.layer) }
+        }
+    }
 
 /** Text inset and spacing for the compact subscription cards. */
 private val ROW_INSET = 16.dp
