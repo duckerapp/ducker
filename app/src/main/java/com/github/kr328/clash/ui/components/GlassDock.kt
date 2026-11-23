@@ -61,6 +61,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
@@ -80,6 +81,23 @@ import com.github.kr328.clash.R
  * Every number of the glass dock, tuned here only. Fitted frame by frame to the owner's two iOS videos of the App
  * Store's tab bar (18.11; evidence `private/qa/glass-session6-20261118/ios-dock/`), the switch's lens (D-542) the model.
  */
+/**
+ * The phone dock as wide as its tabs need, on glass and Air alike: English's tab ([DockGlass.TAB_MIN]), or the widest
+ * label (or «+ Добавить») with a little room; a narrow screen still squeezes it. Air's dock spread over the screen's
+ * width, up to 420 dp, and read massive beside the glass one (the owner, 23.11).
+ */
+@Composable
+internal fun dockWidth(): Dp {
+    val labelStyle = dockLabelStyle()
+    val labels = DockTabItems.map { stringResource(it.first) } + stringResource(R.string.add)
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    return remember(labels, labelStyle, density) {
+        val widest = labels.maxOf { measurer.measure(it, labelStyle, maxLines = 1, softWrap = false).size.width }
+        with(density) { maxOf(DockGlass.TAB_MIN, maxOf(widest.toDp(), DockGlass.ICON) + DockGlass.LABEL_ROOM) * TABS + DOCK_PAD * 2 }
+    }
+}
+
 internal object DockGlass {
     /** The whole dock grows by this share under a finger (iOS: +4.6 % at the peak, +4.2 % held), about its middle. */
     const val BREATH = 0.1f
@@ -477,16 +495,7 @@ internal fun GlassDock(
     }
 
     val chosenColor = scheme.primary
-    // The dock as wide as its tabs need: English's tab ([DockGlass.TAB_MIN]), or the widest label (or «+ Добавить»)
-    // with a little room; a narrow screen still squeezes it.
-    val labelStyle = dockLabelStyle()
-    val labels = DockTabItems.map { stringResource(it.first) } + stringResource(R.string.add)
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val dockWidth = remember(labels, labelStyle, density) {
-        val widest = labels.maxOf { measurer.measure(it, labelStyle, maxLines = 1, softWrap = false).size.width }
-        with(density) { maxOf(DockGlass.TAB_MIN, maxOf(widest.toDp(), DockGlass.ICON) + DockGlass.LABEL_ROOM) * TABS + DOCK_PAD * 2 }
-    }
+    val dockWidth = dockWidth()
     val paneTint = scheme.surface.copy(alpha = (GlassMaterial.Surface.tint * (bodyStyle.tint / 50f).coerceIn(0f, 2f)).coerceIn(0f, 0.92f))
     val veilShade = Color.Black.copy(alpha = veilValue("shade", if (dark) DockGlass.VEIL_SHADE_DARK else DockGlass.VEIL_SHADE_LIGHT, byTheme = true))
 

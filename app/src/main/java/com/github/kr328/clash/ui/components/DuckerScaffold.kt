@@ -59,7 +59,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -406,6 +405,7 @@ private fun FloatingDock(
     val onPill = MaterialTheme.colorScheme.onPrimaryContainer
     val face = rememberDockFace(single, onAction, position, glass = backdrop != null)
     val alone = single != null
+    val tabIcon = if (vertical) 20.dp else DockGlass.ICON
 
     // Brighter on the light theme's black highlight than on the dark theme's white one, as in the mockup.
     val tabShineColor = onPill.copy(alpha = if (pill.luminance() < 0.5f) 0.38f else 0.2f)
@@ -427,7 +427,8 @@ private fun FloatingDock(
     val tuning = LocalGlassTuning.current
     CompositionLocalProvider(LocalGlassStyle provides tuning.optics(GlassTuningGroup.Dock, LocalGlassStyle.current)) {
     Surface(
-        modifier = modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.widthIn(max = 420.dp)).airShadow(shape)
+        // At the bottom as wide as the glass dock, and its icons as large ([dockWidth], [DockGlass.ICON]).
+        modifier = modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.width(dockWidth())).airShadow(shape)
             .liquidGlass(
                 backdrop,
                 base = screen,
@@ -496,6 +497,7 @@ private fun FloatingDock(
                 turn = face.turn,
                 actionLabel = if (face.added) actionLabel else null,
                 vertical = vertical,
+                iconSize = tabIcon,
                 modifier = Modifier
                     .then(if (alone) Modifier.clearAndSetSemantics { } else Modifier)
                     .graphicsLayer { alpha = 1f - (face.merge * 2f).coerceIn(0f, 1f) },
@@ -508,6 +510,7 @@ private fun FloatingDock(
                 turn = face.turn,
                 actionLabel = null,
                 vertical = vertical,
+                iconSize = tabIcon,
                 // Нажатия и озвучка живут в нижней копии: верхняя только перекрашивает,
                 // иначе TalkBack читал бы каждую вкладку дважды.
                 modifier = Modifier.clearAndSetSemantics { }
