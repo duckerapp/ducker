@@ -10,6 +10,7 @@ import com.github.kr328.clash.ui.components.glassBackground
 import com.github.kr328.clash.ui.components.glassSource
 import com.github.kr328.clash.ui.components.glassSourceChanges
 import com.github.kr328.clash.ui.components.rememberGlassBackdrop
+import com.github.kr328.clash.ui.components.StillFor
 import com.github.kr328.clash.ui.components.rememberScreenWall
 import com.github.kr328.clash.ui.components.WallMode
 import com.github.kr328.clash.ui.components.screenWallMode
@@ -511,7 +512,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // The glass style: one picture under all three tabs, still as they move over it, and under the screens
                 // over them (D-540, F-557's second half); the bird's game keeps its own. Air has none.
                 val wallpaper = !tv && glassOn && settingsState.glassBackdrop != SettingsStore.BACKDROP_NONE
-                val wallpaperBackdrop = if (wallpaper) rememberGlassBackdrop(still = true) else null
+                val wallpaperBackdrop = if (wallpaper) rememberGlassBackdrop(still = StillFor.Tabs) else null
                 // The screens over the tabs lie on iOS's plain background, or on it as the tuning panel says (the review app).
                 val screenWall = rememberScreenWall(wallpaperBackdrop)
                 // A plain background there (the same panel): the status bar and headers in the theme's tone, not the picture's.

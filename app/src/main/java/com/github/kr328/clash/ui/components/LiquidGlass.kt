@@ -236,32 +236,39 @@ private fun Modifier.glassImage(key: Any, topDark: Boolean, load: (Context) -> B
     val veilEnd = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + HEADER_VEIL
     val tone = if (topDark) Color.Black else Color.White
 
-    return onGloballyPositioned { at = it.positionInRoot() }.drawBehind {
-        val image = picture ?: return@drawBehind
-        val scale = maxOf(window.width / image.width.toFloat(), window.height / image.height.toFloat())
-        val width = image.width * scale
-        val height = image.height * scale
+    // Kept across recompositions: a new drawing counts as a change of the wallpaper (glassSourceChanges), and every screen
+    // opened over the tabs recomposed Home's window, so the tabs' still pictures were made anew each time, their panes
+    // drawing live meanwhile (F-582).
+    return then(
+        remember(window, veilEnd, tone) {
+            Modifier.onGloballyPositioned { at = it.positionInRoot() }.drawBehind {
+                val image = picture ?: return@drawBehind
+                val scale = maxOf(window.width / image.width.toFloat(), window.height / image.height.toFloat())
+                val width = image.width * scale
+                val height = image.height * scale
 
-        drawImage(
-            image,
-            dstOffset = IntOffset(((window.width - width) / 2f - at.x).toInt(), ((window.height - height) / 2f - at.y).toInt()),
-            dstSize = IntSize(width.toInt(), height.toInt()),
-        )
+                drawImage(
+                    image,
+                    dstOffset = IntOffset(((window.width - width) / 2f - at.x).toInt(), ((window.height - height) / 2f - at.y).toInt()),
+                    dstSize = IntSize(width.toInt(), height.toInt()),
+                )
 
-        // White titles vanished in clouds, black ones in dark leaves; the veil evens the picture under them out.
-        val end = veilEnd.toPx()
-        drawRect(
-            Brush.verticalGradient(
-                0f to tone.copy(alpha = 0.42f),
-                0.55f to tone.copy(alpha = 0.22f),
-                1f to Color.Transparent,
-                startY = -at.y,
-                endY = end - at.y,
-            ),
-            topLeft = Offset(0f, -at.y),
-            size = Size(size.width, end),
-        )
-    }
+                // White titles vanished in clouds, black ones in dark leaves; the veil evens the picture under them out.
+                val end = veilEnd.toPx()
+                drawRect(
+                    Brush.verticalGradient(
+                        0f to tone.copy(alpha = 0.42f),
+                        0.55f to tone.copy(alpha = 0.22f),
+                        1f to Color.Transparent,
+                        startY = -at.y,
+                        endY = end - at.y,
+                    ),
+                    topLeft = Offset(0f, -at.y),
+                    size = Size(size.width, end),
+                )
+            }
+        },
+    )
 }
 
 /** A source layer recorded when its draw node is invalidated and sampled again inside the glass. */
@@ -278,14 +285,28 @@ class GlassBackdrop(val layer: GraphicsLayer) {
     var waveActive by mutableStateOf(false)
 }
 
+/**
+ * What lies on a backdrop that is drawn still ([StillBackdropPictures]): only those panes' looks are drawn, each a
+ * picture of the whole screen. Every backdrop drew every look, twice at full size (10.4 MB each on the OnePlus 12) for
+ * the dock, which shows the screen live, and nine for each sheet, which reads three (F-582).
+ */
+internal enum class StillFor {
+    /** The tabs over Home's picture: the cards' pane glass, and Appearance's own look for anything outside it. */
+    Tabs,
+    /** The screens over the tabs: their panes on the plain background, or on the picture in the review app. */
+    Screens,
+    /** The screen under a glass sheet: the sheets' panes, see [SheetStillPictures]. */
+    Sheets,
+}
+
 @Composable
-internal fun rememberGlassBackdrop(still: Boolean = false): GlassBackdrop? {
+internal fun rememberGlassBackdrop(still: StillFor? = null): GlassBackdrop? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || !LocalGlassStyle.current.enabled) return null
 
     val layer = rememberGraphicsLayer()
     val backdrop = remember(layer) { GlassBackdrop(layer) }
 
-    if (still) StillBackdropPictures(backdrop)
+    if (still != null) StillBackdropPictures(backdrop, still)
 
     return backdrop
 }
@@ -344,28 +365,28 @@ internal fun rememberPaneUnder(plain: Boolean = false): (DrawScope.(position: Of
 }
 
 /**
- * Every blur (pixels) and colour lift a pane on this backdrop asks for: the panes, the controls on them, the power button;
- * in Appearance's look ([own]) and in the dock's, which the pane glass takes ([dock], F-550, [asDock]).
+ * Every blur (pixels) and colour lift a pane on a backdrop for [kind] asks for: the panes and the controls on them, and on
+ * the tabs the power button. The styles are the ones [GlassPanes], [BackLayer] and [DuckerSheet] give their panes. The
+ * dock and its veil lie on the scaffold's backdrop and draw it live, so none is drawn for them.
  */
 @Composable
-private fun stillLooks(extra: Dp, own: Boolean, dock: Boolean): List<Pair<Int, Int>> {
+private fun stillLooks(extra: Dp, kind: StillFor): List<Pair<Int, Int>> {
     val density = LocalDensity.current
     val style = LocalGlassStyle.current
-    val pane = LocalGlassTuning.current.optics(GlassTuningGroup.Pane, style.asDock())
-    // The dock's own glass too: since the owner tuned it apart from the panes (22.11) its blur and lift are not theirs,
-    // and without a picture of its own it bent its glass live every frame.
-    val dockGlass = LocalGlassTuning.current.optics(GlassTuningGroup.Dock, style.dockDefaults())
-    // And the panes' on a plain background, when tuned apart.
-    val plain = LocalGlassTuning.current.optics(GlassTuningGroup.PlainPane, pane.asPlain())
-    // And the panes in the sheets, tuned apart too.
-    val sheet = LocalGlassTuning.current.optics(GlassTuningGroup.SheetPane, pane.asSheet())
-    return remember(style.blur, style.vibrancy, pane.blur, pane.vibrancy, dockGlass.blur, dockGlass.vibrancy, plain.blur, plain.vibrancy, sheet.blur, sheet.vibrancy, density, extra, own, dock) {
+    val tuning = LocalGlassTuning.current
+    val pane = tuning.optics(GlassTuningGroup.Pane, style.asDock())
+    val styles = when (kind) {
+        StillFor.Tabs -> listOf(style, pane)
+        StillFor.Screens ->
+            listOf(if (screenWallMode(tuning) != WallMode.PICTURE) tuning.optics(GlassTuningGroup.PlainPane, pane.asPlain()) else pane)
+        StillFor.Sheets -> listOf(tuning.optics(GlassTuningGroup.SheetPane, pane.asSheet()))
+    }
+    val looks = styles.map { it.blur to it.vibrancy }
+    // The power button's extra blur is Home's only.
+    val raises = if (kind == StillFor.Tabs) listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST) else listOf(0.dp, INNER_BLUR)
+    return remember(looks, raises, density, extra) {
         with(density) {
-            val looks = (if (own) listOf(style.blur to style.vibrancy) else emptyList()) +
-                if (dock) listOf(pane.blur to pane.vibrancy, dockGlass.blur to dockGlass.vibrancy, plain.blur to plain.vibrancy, sheet.blur to sheet.vibrancy) else emptyList()
-            looks.flatMap { (b, v) ->
-                listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (b / 100f) + (it + extra).toPx()).roundToInt() to v }
-            }.distinct()
+            looks.flatMap { (b, v) -> raises.map { (MAX_BLUR.toPx() * (b / 100f) + (it + extra).toPx()).roundToInt() to v } }.distinct()
         }
     }
 }
@@ -377,14 +398,17 @@ private fun stillLooks(extra: Dp, own: Boolean, dock: Boolean): List<Pair<Int, I
  * backdrop has rested after a change, and while the connect wave runs through it, the panes draw it live as before.
  */
 @Composable
-internal fun StillBackdropPictures(backdrop: GlassBackdrop) {
+internal fun StillBackdropPictures(backdrop: GlassBackdrop, kind: StillFor) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
 
     val graphics = LocalGraphicsContext.current
     val density = LocalDensity.current
-    val looks = stillLooks(0.dp, own = true, dock = true)
+    val looks = stillLooks(0.dp, kind)
+    // The screens' plain background is one colour, the same at a quarter of the size: their sharp panes took two whole
+    // pictures of it, 10.4 MB each.
+    val smooth = kind == StillFor.Screens && screenWallMode(LocalGlassTuning.current) != WallMode.PICTURE
 
-    LaunchedEffect(backdrop, looks) {
+    LaunchedEffect(backdrop, looks, smooth) {
         backdrop.still = null
         snapshotFlow { backdrop.version }.collectLatest { version ->
             // A backdrop changing for a while (a theme's colours fading over) is drawn once it has settled.
@@ -392,7 +416,7 @@ internal fun StillBackdropPictures(backdrop: GlassBackdrop) {
             val size = backdrop.layer.size
             if (size.width <= 0 || size.height <= 0) return@collectLatest
 
-            val pictures = looks.associate { (blur, vibrancy) -> stillKey(blur, vibrancy) to stillPicture(graphics, density, backdrop.layer, size, blur, vibrancy) }
+            val pictures = looks.associate { (blur, vibrancy) -> stillKey(blur, vibrancy) to stillPicture(graphics, density, backdrop.layer, size, blur, vibrancy, smooth) }
             if (backdrop.version == version) backdrop.still = StillBackdrop(version, pictures)
         }
     }
@@ -410,8 +434,7 @@ internal fun SheetStillPictures(backdrop: GlassBackdrop, sheets: SheetGlass, ext
 
     val graphics = LocalGraphicsContext.current
     val density = LocalDensity.current
-    // A glass sheet and its panes are in the pane glass (F-552): the dock's look alone.
-    val looks = stillLooks(extra, own = false, dock = true)
+    val looks = stillLooks(extra, StillFor.Sheets)
 
     LaunchedEffect(backdrop, sheets, looks) {
         backdrop.still = null
@@ -440,9 +463,12 @@ private suspend fun stillPicture(
     size: IntSize,
     blur: Int,
     vibrancy: Int,
+    /** The backdrop has no detail to lose (one colour): drawn at the smallest size whatever the blur. */
+    smooth: Boolean = false,
 ): android.graphics.BitmapShader {
     // Drawn smaller as the blur hides detail: sharp at none, a quarter of the pixels from a blur of 16.
     val factor = when {
+        smooth -> 4
         blur < 4 -> 1
         blur < 16 -> 2
         else -> 4

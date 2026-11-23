@@ -304,13 +304,15 @@ private class Placement {
 @Composable
 internal fun rememberScreenWall(wall: GlassBackdrop?): GlassBackdrop? {
     if (wall == null) return null
-    val screens = rememberGlassBackdrop(still = true) ?: return wall
+    val screens = rememberGlassBackdrop(still = StillFor.Screens) ?: return wall
 
-    // It draws [wall]'s layer, so shows its changes at once; its still pictures are made anew with them.
-    LaunchedEffect(wall, screens) {
+    // On the picture it draws [wall]'s layer, so shows its changes at once; its still pictures are made anew with them.
+    // The plain background shows none of the picture: those changes are not its own.
+    val picture = screenWallMode(LocalGlassTuning.current) == WallMode.PICTURE
+    LaunchedEffect(wall, screens, picture) {
         snapshotFlow { wall.origin to wall.version }.collect { (origin, _) ->
             screens.origin = origin
-            screens.version++
+            if (picture) screens.version++
         }
     }
 
@@ -325,16 +327,22 @@ internal fun Modifier.screenWallSource(screens: GlassBackdrop?, wall: GlassBackd
     val plain = MaterialTheme.colorScheme.background
     val light = plain.luminance() > 0.5f
     val picture = rememberGraphicsLayer()
+    // The plain background as last recorded: drawn again with the window around it (a screen coming over the tabs), it
+    // counted as a new one, and the screens' panes drew their glass live through their first frames (F-582).
+    val recorded = remember { arrayOfNulls<Color>(1) }
 
     return drawBehind {
         val mode = screenWallMode(tuning)
         if (mode != WallMode.PICTURE) {
             val color = if (mode == WallMode.IOS) (if (light) IOS_GROUPED_LIGHT else Color.Black) else plain
+            if (recorded[0] == color) return@drawBehind
+            recorded[0] = color
             screens.layer.record { drawRect(color) }
             // Not a read of this draw: it would invalidate itself and draw again forever.
             Snapshot.withoutReadObservation { screens.version++ }
             return@drawBehind
         }
+        recorded[0] = null
         val group = GlassTuningGroup.Wall
         fun value(key: String, fallback: Float) = tuning?.value(group, key, fallback, light) ?: fallback
         val blur = value("blur", wallBlur(!light)).dp.toPx()
