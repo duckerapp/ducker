@@ -143,6 +143,14 @@ internal object DockGlass {
      */
     val TAB_GAP = 36.dp
 
+    /**
+     * A tab's width at least: English's, the widest label («Profiles», ~46 dp) and [TAB_GAP]. A longer label takes only
+     * [LABEL_ROOM] beside it: by the widest label alone «Подписки» (~62 dp) made the Russian dock 300 dp, Air's width
+     * (the owner, 23.11: «на англ все норм а на ру нет»).
+     */
+    val TAB_MIN = 46.dp + TAB_GAP
+    val LABEL_ROOM = 20.dp
+
     /** The tabs' icons, a little larger than Air's 20 dp (the owner, 18.11); the labels unchanged. */
     val ICON = 23.dp
 
@@ -468,15 +476,15 @@ internal fun GlassDock(
     }
 
     val chosenColor = scheme.primary
-    // The dock as wide as its tabs need: the widest label (or «+ Добавить») and [DockGlass.TAB_GAP] each; a narrow
-    // screen still squeezes it.
+    // The dock as wide as its tabs need: English's tab ([DockGlass.TAB_MIN]), or the widest label (or «+ Добавить»)
+    // with a little room; a narrow screen still squeezes it.
     val labelStyle = dockLabelStyle()
     val labels = DockTabItems.map { stringResource(it.first) } + stringResource(R.string.add)
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val dockWidth = remember(labels, labelStyle, density) {
         val widest = labels.maxOf { measurer.measure(it, labelStyle, maxLines = 1, softWrap = false).size.width }
-        with(density) { (maxOf(widest.toDp(), DockGlass.ICON) + DockGlass.TAB_GAP) * TABS + DOCK_PAD * 2 }
+        with(density) { maxOf(DockGlass.TAB_MIN, maxOf(widest.toDp(), DockGlass.ICON) + DockGlass.LABEL_ROOM) * TABS + DOCK_PAD * 2 }
     }
     val paneTint = scheme.surface.copy(alpha = (GlassMaterial.Surface.tint * (bodyStyle.tint / 50f).coerceIn(0f, 2f)).coerceIn(0f, 0.92f))
     val veilShade = Color.Black.copy(alpha = veilValue("shade", if (dark) DockGlass.VEIL_SHADE_DARK else DockGlass.VEIL_SHADE_LIGHT, byTheme = true))
