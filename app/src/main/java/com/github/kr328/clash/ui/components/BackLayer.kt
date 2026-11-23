@@ -245,7 +245,17 @@ fun BackLayer(
             ) {
                 // The tabs' pane glass on a screen over Home's picture, so the two read as one glass (D-544).
                 GlassPanes(on = backdrop != null) {
-                    if (frameContent) ScreenFrame(wide, content = content) else content()
+                    val tuning = LocalGlassTuning.current?.takeIf { it.enabled }
+                    val plain = if (backdrop != null && screenWallMode(tuning) != WallMode.PICTURE) {
+                        val light = MaterialTheme.colorScheme.background.luminance() > 0.5f
+                        PlainPanes(
+                            tuning?.value(GlassTuningGroup.Wall, "plainDensity", WallMode.PLAIN_DENSITY, light) ?: WallMode.PLAIN_DENSITY,
+                            tuning?.value(GlassTuningGroup.Wall, "plainLift", WallMode.PLAIN_LIFT, light) ?: WallMode.PLAIN_LIFT,
+                        )
+                    } else null
+                    CompositionLocalProvider(LocalPlainPanes provides plain) {
+                        if (frameContent) ScreenFrame(wide, content = content) else content()
+                    }
                 }
             }
 

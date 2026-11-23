@@ -194,7 +194,9 @@ internal val glassKnobs = mapOf(
             knob("blur", "Размытие обоев, dp", 0f, 40f, 0.5f),
             knob("tint", "Тонировка: плотность", 0f, 0.9f),
             knob("tone", "Тонировка: 0 — чёрная, 1 — белая", 0f, 1f),
-            knob("saturation", "Насыщенность обоев", 0f, 2f)
+            knob("saturation", "Насыщенность обоев", 0f, 2f),
+            knob("plainDensity", "Карточки на ровном фоне: плотность", 0f, 8f),
+            knob("plainLift", "Карточки на ровном фоне: светлота", 0f, 0.5f)
     ),
 )
 
@@ -458,6 +460,10 @@ internal object WallMode {
     const val IOS = 2
     /** The owner's choice (22.11). */
     const val DEFAULT = IOS
+
+    /** The panes on a plain background ([PlainPanes]): their tint density's factor and lift towards white. */
+    const val PLAIN_DENSITY = 1f
+    const val PLAIN_LIFT = 0f
 }
 
 /** The picture's blur (dp) and tint over it in «Обои экранов»: the owner's on the dark theme (22.11), none on the light. */

@@ -114,6 +114,7 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
     GlassTuningGroup.Wave -> HeroWave.defaults
     GlassTuningGroup.Wall -> mapOf(
         "blur" to wallBlur(!light), "tint" to wallTint(!light), "tone" to if (light) 1f else 0f, "saturation" to 1f,
+        "plainDensity" to WallMode.PLAIN_DENSITY, "plainLift" to WallMode.PLAIN_LIFT,
     )
 }
 
@@ -285,6 +286,7 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                                 "lineGlow", "lineFall" -> tuning.ownRimOf(group) && current("lineSpread") > 0f
                                 // The picture's blur and tint mean nothing on a plain background.
                                 "blur", "tint", "tone", "saturation" -> group != GlassTuningGroup.Wall || tuning.wallMode == WallMode.PICTURE
+                                "plainDensity", "plainLift" -> tuning.wallMode != WallMode.PICTURE
                                 else -> true
                             }
                         }

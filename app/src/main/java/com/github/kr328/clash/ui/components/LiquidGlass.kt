@@ -584,6 +584,7 @@ internal fun Modifier.liquidGlass(
     val paneHighlight = tuning?.value(paneGroup, "highlight", DockGlass.HIGHLIGHT.toFloat())?.roundToInt() ?: DockGlass.HIGHLIGHT
     fun paneValue(key: String, fallback: Float) = tuning?.value(paneGroup, key, fallback) ?: fallback
 
+    val plainPanes = if (panes && !fixedTint) LocalPlainPanes.current else null
     val glass = rememberGraphicsLayer()
     // The pane glass's live picture is bent in a layer of its own, drawn whole: drawn straight under the pane's clip, its
     // bend was handed the blurred backdrop only up to the clip's edge, and the rim, drawn from beyond it, came out empty
@@ -736,12 +737,15 @@ internal fun Modifier.liquidGlass(
                 } else if ((tintProgress > 0f || fixedTint && panes) && tint.alpha > 0f) {
                     // A chosen card keeps its colour under a finger and only swells (the owner, 22.11).
                     val a = (if (fixedTint && panes) tint.alpha
-                    else tint.alpha * tintProgress * (if (panes) paneValue("denser", PaneGlass.DENSER) * clear else 1f)).coerceIn(0f, 0.92f)
+                    else tint.alpha * tintProgress * (plainPanes?.density ?: 1f) *
+                        (if (panes) paneValue("denser", PaneGlass.DENSER) * clear else 1f)).coerceIn(0f, 0.92f)
+                    val veilColor = plainPanes?.lift?.takeIf { it > 0f }
+                        ?.let { androidx.compose.ui.graphics.lerp(tint.copy(alpha = 1f), Color.White, it) } ?: tint
                     if (veilShader != null && veilBrush != null) {
                         // Premultiplied, as the shader's output is.
-                        veilShader.setFloatUniform("color", tint.red * a, tint.green * a, tint.blue * a, a)
+                        veilShader.setFloatUniform("color", veilColor.red * a, veilColor.green * a, veilColor.blue * a, a)
                         drawRect(veilBrush)
-                    } else drawRect(tint.copy(alpha = a))
+                    } else drawRect(veilColor.copy(alpha = a))
                 }
             }
 
@@ -1886,6 +1890,15 @@ internal fun Modifier.glass(
  * and a press that swells it like jelly and eases its tint. The dock keeps its own optics.
  */
 internal val LocalGlassPanes = staticCompositionLocalOf { false }
+
+/**
+ * The panes on a plain background (the screens over the tabs on iOS's black, [WallMode]): their tint [density] times the
+ * panes', and lifted towards white by [lift] — over black the panes' thin tint left them hardly apart from it (the
+ * owner, 23.11). Null — as everywhere else.
+ */
+internal class PlainPanes(val density: Float, val lift: Float)
+
+internal val LocalPlainPanes = staticCompositionLocalOf<PlainPanes?> { null }
 
 /**
  * The pane glass's settings: the dock's blur, tint and colour, so the cards and the dock read as one glass (the owner,
