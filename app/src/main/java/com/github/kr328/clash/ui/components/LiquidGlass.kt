@@ -914,27 +914,28 @@ internal fun heroWaveEffect(shader: GlassWave, center: Offset, currentRadius: Fl
  * through a lens. [RING]: its width; [STRENGTH], [CHROMA], [LIGHT]: the bend, the colours' parting, the light on its crest.
  */
 internal object HeroWave {
-    val RING = 46.dp
-    const val STRENGTH = 1.5f
-    const val CHROMA = 0.35f
-    const val LIGHT = 0.3f
+    // The owner's (23.11, the panel's export).
+    val RING = 25.dp
+    const val STRENGTH = 2f
+    const val CHROMA = 1f
+    const val LIGHT = 0.2f
     /** Its way: how long, and how it slows (1 − (1 − t)^[BRAKE]: out of the button fast, slowing as a ripple). */
     const val DURATION = 1150f
     const val BRAKE = 2.2f
     /** It comes in over [FADE_IN] rings of radius, weakens by [DECAY] as it spreads, and fades out from [FADE_FROM] of its way. */
     const val FADE_IN = 1.5f
-    const val DECAY = 0.45f
+    const val DECAY = 0.7f
     const val FADE_FROM = 0.72f
     /** The glass power button's swell as the state changes: how much, its rise, and the spring it settles by. */
-    const val SWELL = 0.07f
-    const val SWELL_MS = 240f
-    const val SWELL_BOUNCE = 0.38f
-    const val SWELL_SPEED = 170f
-    /** The connected glow round the button: its strength (a quarter of the first, the owner, 22.11) and reach in its radii. */
-    const val GLOW = 0.0875f
-    const val GLOW_REACH = 2.6f
+    const val SWELL = 0.1f
+    const val SWELL_MS = 280f
+    const val SWELL_BOUNCE = 0.3f
+    const val SWELL_SPEED = 150f
+    /** The connected glow round the button, its strength and reach in its radii: none, the owner's choice (23.11). */
+    const val GLOW = 0f
+    const val GLOW_REACH = 1f
     /** Connected: how much more the card's rim bends and shines. */
-    const val ON_BEND = 1.5f
+    const val ON_BEND = 2.65f
     const val ON_RIM = 1.6f
 
     val defaults: Map<String, Float> get() = mapOf(

@@ -1326,7 +1326,7 @@ private const val MIN_SPIN_MS = 700L
 internal fun chosenDensity(dark: Boolean): Float = if (dark) CHOSEN_DENSITY_DARK else CHOSEN_DENSITY_LIGHT
 
 /** The chosen card's density: the owner's on the dark theme (22.11); on the light one as before, the accent's × 1.2. */
-private const val CHOSEN_DENSITY_DARK = 0.81f
+private const val CHOSEN_DENSITY_DARK = 0.75f
 private const val CHOSEN_DENSITY_LIGHT = 0.96f
 
 /** And its share of white: the owner's touch on the dark theme. */
