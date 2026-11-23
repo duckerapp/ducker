@@ -105,8 +105,8 @@ import kotlin.math.roundToInt
  * the rim highlight are adapted from Kyant's AndroidLiquidGlass (https://github.com/Kyant0/AndroidLiquidGlass,
  * backdrop/src/commonMain/kotlin/com/kyant/backdrop/internal/Shaders.kt, commit 65ab177),
  * Copyright 2025 Kyant, licensed under the Apache License, Version 2.0; changed here: the inner bevel, the lens
- * dome, the frost and the corner gradient. Notice: assets/licenses/AndroidLiquidGlass-NOTICE.txt. The dock's lens
- * and bubble and the state wave are ours, from the general technique, not from Telegram's code (GPL v2).
+ * dome, the frost and the corner gradient. Notice: assets/licenses/AndroidLiquidGlass-NOTICE.txt. The lens and the
+ * state wave are ours, from the general technique, not from Telegram's code (GPL v2).
  */
 
 /** Whether this phone can draw the glass at all. */
@@ -1020,26 +1020,6 @@ internal fun Density.screenWaveEffect(shader: GlassWave, wave: GlassBackdrop, at
     )
 }
 
-internal interface GlassBubble {
-    fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, zoom: Float, base: Color, tuning: GlassTuning?, under: DrawScope.() -> Unit)
-}
-
-@Keep
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private class Api33GlassBubble : GlassBubble {
-    private val shader = RuntimeShader(BUBBLE_SHADER)
-    override fun draw(scope: DrawScope, layer: GraphicsLayer, center: Offset, halfWidth: Float, halfHeight: Float, presence: Float, zoom: Float, base: Color, tuning: GlassTuning?, under: DrawScope.() -> Unit) {
-        scope.drawShaderBubble(layer, shader, center, halfWidth, halfHeight, presence, zoom, base, tuning, under)
-    }
-}
-
-/** One for every slider: it sets all its uniforms each time it draws, and the effect it makes keeps them (F-582). */
-private val sharedBubble: GlassBubble? by lazy(LazyThreadSafetyMode.NONE) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) null else Api33GlassBubble()
-}
-
-internal fun bubbleShader(): GlassBubble? = sharedBubble
-
 /**
  * The switch's lens, after iOS's (the owner's video, 18.11): thick clear glass that draws the surroundings in from
  * beyond its edge, so what lies under it looks smaller and the rim holds what lies outside; a thin band at the very rim
@@ -1200,21 +1180,6 @@ private val sharedLens: GlassLens? by lazy(LazyThreadSafetyMode.NONE) {
 
 internal fun lensShader(): GlassLens? = sharedLens
 
-internal fun DrawScope.drawGlassBubble(
-    layer: GraphicsLayer,
-    shader: GlassBubble,
-    center: Offset,
-    halfWidth: Float,
-    halfHeight: Float,
-    presence: Float,
-    base: Color,
-    /** How much the middle is magnified: the dock's by default; a switch's lens over its thumb, little. */
-    zoom: Float = 1f + BUBBLE_ZOOM * presence,
-    tuning: GlassTuning? = null,
-    under: DrawScope.() -> Unit,
-) =
-    shader.draw(this, layer, center, halfWidth, halfHeight, presence, zoom, base, tuning, under)
-
 /**
  * A refractive liquid glass shockwave expanding from [center] with radius [currentRadius].
  * Refracts the layer content with a 3D fluid meniscus, 7-band spectral dispersion, and specular sheen.
@@ -1243,62 +1208,6 @@ private fun shaderWaveEffect(
     return RenderEffect.createRuntimeShaderEffect(shader, "img").asComposeRenderEffect()
 }
 
-/**
- * A clear bubble [halfWidth] × [halfHeight] around [center]: what [under] draws, magnified in the middle, bent
- * at the rim with a faint split of colours, under a light rim. [presence] 0…1 fades it in; [base] is the
- * screen's background, for the rim.
- */
-private fun DrawScope.drawShaderBubble(
-    layer: GraphicsLayer,
-    shader: RuntimeShader,
-    center: Offset,
-    halfWidth: Float,
-    halfHeight: Float,
-    presence: Float,
-    zoom: Float,
-    base: Color,
-    tuning: GlassTuning?,
-    under: DrawScope.() -> Unit,
-) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-
-    val margin = GLASS_MARGIN.toPx()
-    val left = center.x - halfWidth - margin
-    val top = center.y - halfHeight - margin
-    fun value(key: String, fallback: Float) =
-        tuning?.value(GlassTuningGroup.Slider, key, fallback, base.luminance() >= 0.5f) ?: fallback
-    val bezel = minOf(value("bezel", BUBBLE_BEZEL.value).dp.toPx(), halfHeight)
-
-    shader.setFloatUniform("center", halfWidth + margin, halfHeight + margin)
-    shader.setFloatUniform("halfSize", halfWidth, halfHeight)
-    shader.setFloatUniform("radius", halfHeight)
-    shader.setFloatUniform("zoom", zoom)
-    shader.setFloatUniform("bezel", bezel)
-    shader.setFloatUniform("strength", value("strength", 0.28f))
-    shader.setFloatUniform("spread", value("spread", 0.12f))
-
-    layer.renderEffect = RenderEffect.createRuntimeShaderEffect(shader, "img").asComposeRenderEffect()
-    layer.alpha = presence
-    // A density of its own: recorded with this scope as its density, a size in dp read inside [under] asked this
-    // scope's drawing for it, which asked the scope again, until the stack ran out (the subscription interval slider).
-    layer.record(Density(density, fontScale), layoutDirection, IntSize((2 * (halfWidth + margin)).toInt(), (2 * (halfHeight + margin)).toInt())) {
-        translate(-left, -top) { under() }
-    }
-
-    val corner = CornerRadius(halfHeight)
-    val topLeft = Offset(center.x - halfWidth, center.y - halfHeight)
-    val size = androidx.compose.ui.geometry.Size(2 * halfWidth, 2 * halfHeight)
-    val pill = Path().apply {
-        addRoundRect(androidx.compose.ui.geometry.RoundRect(topLeft.x, topLeft.y, topLeft.x + size.width, topLeft.y + size.height, corner))
-    }
-
-    clipPath(pill) { translate(left, top) { drawLayer(layer) } }
-    drawRoundRect(
-        glassRim(base).let { it.copy(alpha = (it.alpha * presence * value("rim", 1f)).coerceIn(0f, 1f)) },
-        topLeft, size, corner, style = Stroke(value("rimWidth", 1.2f).dp.toPx()),
-    )
-}
-
 /** How dense the accent colour lies over glass: Home's card when on, and a selected card. */
 internal fun glassAccentTint(dark: Boolean): Float = if (dark) 0.68f else 0.80f
 
@@ -1317,9 +1226,6 @@ internal fun glassRim(base: Color): Color =
 private val VEIL_BLUR = 10.dp
 /** How far below the status bar the veil over an own picture's top reaches: past the tabs' headers. */
 private val HEADER_VEIL = 120.dp
-internal val BUBBLE_BEZEL = 14.dp
-/** How much the bubble magnifies at its middle when fully grown. */
-private const val BUBBLE_ZOOM = 0.22f
 
 /** Room around the pane in the recorded picture: the rim samples from just outside it. */
 private val GLASS_MARGIN = 24.dp
@@ -1520,100 +1426,6 @@ half4 main(float2 coord) {
         rim *= 1.0 - smoothstep(top, top + fade, coord.y);
     }
     return color * rim;
-}
-"""
-
-/**
- * The bubble: the middle magnified, easing to none at the ends; the rim takes the picture from just outside,
- * with full 7-spectral rainbow dispersion, as thick curved glass splits light at its edge.
- */
-private const val BUBBLE_SHADER = """
-uniform shader img;
-uniform float2 center;
-uniform float2 halfSize;
-uniform float radius;
-uniform float zoom;
-uniform float bezel;
-uniform float strength;
-uniform float spread;
-
-float sdRoundedRect(float2 coord, float2 halfSize, float radius) {
-    float2 cornerCoord = abs(coord) - (halfSize - float2(radius));
-    float outside = length(max(cornerCoord, 0.0)) - radius;
-    float inside = min(max(cornerCoord.x, cornerCoord.y), 0.0);
-    return outside + inside;
-}
-
-float2 gradSdRoundedRect(float2 coord, float2 halfSize, float radius) {
-    float2 cornerCoord = abs(coord) - (halfSize - float2(radius));
-    if (cornerCoord.x >= 0.0 || cornerCoord.y >= 0.0) {
-        float2 m = max(cornerCoord, 0.0);
-        float len = length(m);
-        return (len > 0.0001) ? sign(coord) * (m / len) : float2(0.0);
-    } else {
-        float2 w = max(cornerCoord + float2(radius), float2(0.0001));
-        float len = length(w);
-        return (len > 0.0001) ? sign(coord) * (w / len) : float2(0.0);
-    }
-}
-
-float circleMap(float x) {
-    return 1.0 - sqrt(max(1.0 - x * x, 0.0));
-}
-
-half4 main(float2 coord) {
-    float2 p = coord - center;
-    float d = sdRoundedRect(p, halfSize, radius);
-    if (d > 0.0) return img.eval(coord);
-
-    float x = p.x / halfSize.x;
-    float z = 1.0 + (zoom - 1.0) * (1.0 - x * x);
-    float2 uv = center + p / z;
-    if (d < -bezel) return img.eval(uv);
-
-    float2 grad = gradSdRoundedRect(p, halfSize, radius);
-    float t = 1.0 + d / max(bezel, 0.001);
-    float bend = circleMap(t);
-    float2 off = -grad * bend * bezel * strength;
-
-    float2 refractedCoord = uv + off;
-    float2 dispersedCoord = off * spread;
-
-    half4 color = half4(0.0);
-
-    half4 red = img.eval(refractedCoord + dispersedCoord);
-    color.r += red.r / 3.5;
-    color.a += red.a / 7.0;
-
-    half4 orange = img.eval(refractedCoord + dispersedCoord * (2.0 / 3.0));
-    color.r += orange.r / 3.5;
-    color.g += orange.g / 7.0;
-    color.a += orange.a / 7.0;
-
-    half4 yellow = img.eval(refractedCoord + dispersedCoord * (1.0 / 3.0));
-    color.r += yellow.r / 3.5;
-    color.g += yellow.g / 3.5;
-    color.a += yellow.a / 7.0;
-
-    half4 green = img.eval(refractedCoord);
-    color.g += green.g / 3.5;
-    color.a += green.a / 7.0;
-
-    half4 cyan = img.eval(refractedCoord - dispersedCoord * (1.0 / 3.0));
-    color.g += cyan.g / 3.5;
-    color.b += cyan.b / 3.0;
-    color.a += cyan.a / 7.0;
-
-    half4 blue = img.eval(refractedCoord - dispersedCoord * (2.0 / 3.0));
-    color.b += blue.b / 3.0;
-    color.a += blue.a / 7.0;
-
-    half4 purple = img.eval(refractedCoord - dispersedCoord);
-    color.r += purple.r / 7.0;
-    color.b += purple.b / 3.0;
-    color.a += purple.a / 7.0;
-
-    return color;
 }
 """
 

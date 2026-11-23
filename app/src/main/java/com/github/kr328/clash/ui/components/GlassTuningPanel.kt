@@ -101,11 +101,7 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
     )
     GlassTuningGroup.Chosen -> mapOf("opacity" to chosenDensity(!light), "white" to chosenWhite(!light))
     GlassTuningGroup.Switch -> lensDefaults(if (light) LensLook.SwitchLight else LensLook.Switch) + mapOf("swell" to SWITCH_LENS_SWELL)
-    GlassTuningGroup.Slider -> mapOf(
-        "swell" to LENS_SWELL, "zoom" to LENS_ZOOM, "bezel" to BUBBLE_BEZEL.value,
-        "strength" to 0.28f, "spread" to 0.12f, "rim" to 1f, "rimWidth" to 1.2f,
-    )
-    GlassTuningGroup.PillLens -> lensDefaults(if (light) TOOLBAR_LOOK_LIGHT else TOOLBAR_LOOK) + mapOf(
+    GlassTuningGroup.PillLens, GlassTuningGroup.SliderLens -> lensDefaults(if (light) TOOLBAR_LOOK_LIGHT else TOOLBAR_LOOK) + mapOf(
         "height" to TOOLBAR_LENS_HEIGHT, "aspect" to TOOLBAR_LENS_ASPECT, "widen" to TOOLBAR_WIDEN,
     )
     GlassTuningGroup.Toolbar -> lensDefaults(if (light) TOOLBAR_LOOK_LIGHT else TOOLBAR_LOOK) + mapOf(

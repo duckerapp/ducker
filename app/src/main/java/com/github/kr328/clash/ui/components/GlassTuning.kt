@@ -26,7 +26,7 @@ internal enum class GlassTuningGroup(val title: String) {
     Pane("Карточки"),
     Chosen("Выделение"),
     Switch("Тумблер"),
-    Slider("Ползунок"),
+    SliderLens("Ползунок: линза как в редакторе"),
     PillLens("Сегменты: линза как в редакторе"),
     Toolbar("Панели редактора"),
     Wall("Обои экранов"),
@@ -159,15 +159,11 @@ internal val glassKnobs = mapOf(
     GlassTuningGroup.Switch to listOf(
             knob("swell", "Размер под пальцем", 1f, 2.2f)
     ) + lensKnobs,
-    GlassTuningGroup.Slider to listOf(
-            knob("swell", "Размер под пальцем", 1f, 2.2f),
-            knob("zoom", "Увеличение под пальцем", -0.15f, 0.4f),
-            knob("bezel", "Ширина края, dp", 0.5f, 24f),
-            knob("strength", "Преломление", 0f, 0.8f),
-            knob("spread", "Разделение цветов", 0f, 0.6f),
-            knob("rim", "Сила ободка", 0f, 2f),
-            knob("rimWidth", "Ширина ободка, dp", 0.25f, 3f)
-    ),
+    GlassTuningGroup.SliderLens to listOf(
+            knob("height", "Высота линзы", 0.85f, 1.65f),
+            knob("aspect", "Ширина к высоте", 0.8f, 2.05f),
+            knob("widen", "Рост по ширине", 0f, 0.4f)
+    ) + lensKnobs,
     GlassTuningGroup.PillLens to listOf(
             knob("height", "Высота линзы", 0.85f, 1.65f),
             knob("aspect", "Ширина к высоте", 0.8f, 2.05f),
@@ -456,7 +452,7 @@ internal fun GlassTuning?.lens(group: GlassTuningGroup, fallback: LensLook, ligh
 /** The lens groups: a preset applies to them. */
 internal val GlassTuningGroup.lens: Boolean
     get() = this == GlassTuningGroup.DockLens || this == GlassTuningGroup.Switch ||
-        this == GlassTuningGroup.PillLens || this == GlassTuningGroup.Toolbar
+        this == GlassTuningGroup.PillLens || this == GlassTuningGroup.SliderLens || this == GlassTuningGroup.Toolbar
 
 /**
  * «Мягкие края»: a starting point after a lens the owner liked (FlClashX's glass dock, 22.11): the middle magnified, the

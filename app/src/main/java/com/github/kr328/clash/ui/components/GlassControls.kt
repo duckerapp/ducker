@@ -341,9 +341,8 @@ private val SWITCH_THUMB_WIDTH = 37.dp
 internal const val SWITCH_LENS_SWELL = 1.55f
 private val THUMB_HEIGHT = 24.dp
 private val PAD = 2.dp
-// The lens grows, its picture barely: the thumb keeps room inside it (the owner, 18.11).
-internal const val LENS_SWELL = 1.6f
-internal const val LENS_ZOOM = 0.06f
+/** Room around the slider's thumb its lens grows from, as the segments' pad around their pill. */
+private val SLIDER_LENS_PAD = 4.dp
 private const val LENS_IN_MS = 120
 private const val LENS_OUT_MS = 220
 /** How far past an end the switch's thumb gives under a pulling finger: iOS's, about 8 dp in the owner's video. */
@@ -362,9 +361,10 @@ private val THUMB_SPRING = spring<Float>(dampingRatio = 0.8f, stiffness = 420f)
 private const val HOME = 0.04f
 
 /**
- * A slider with Material's steps, speech and remote keys. The glass style (D-541): Kyant's liquid slider — a thin track in
- * the accent up to the value, a white thumb under a clear lens of the dock's kind that swells while held or dragged,
- * magnifying the thumb and the track under it. Elsewhere Material's look in the app's colours.
+ * A slider with Material's steps, speech and remote keys. The glass style (D-541): a thin track in the accent up to the
+ * value and a white thumb that turns under a finger into the config editor's bars' lens one to one (the owner, 23.11:
+ * its own bubble lens read as worn), sized from the thumb as the segments' lens from their pill. Elsewhere Material's
+ * look in the app's colours.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -378,11 +378,11 @@ internal fun DuckerSlider(
 ) {
     val scheme = MaterialTheme.colorScheme
     val glass = LocalGlassBackdrop.current != null || LocalFrosted.current
-    val bubble = remember(glass) { if (glass) bubbleShader() else null }
+    val lensGlass = remember(glass) { if (glass) lensShader() else null }
     val tuning = LocalGlassTuning.current
     val light = scheme.background.luminance() >= 0.5f
-    fun sliderValue(key: String, fallback: Float) = tuning?.value(GlassTuningGroup.Slider, key, fallback, light) ?: fallback
-    if (bubble == null) {
+    fun sliderValue(key: String, fallback: Float) = tuning?.value(GlassTuningGroup.SliderLens, key, fallback, light) ?: fallback
+    if (lensGlass == null) {
         val haptics = LocalHapticFeedback.current
         // Each step ticks here, as the glass slider's drag does: the screens ticked too, and on glass every step twice.
         // Against the last value ticked: Material repeats a step's value until the screen catches up.
@@ -411,7 +411,6 @@ internal fun DuckerSlider(
     val dark = scheme.background.luminance() < 0.5f
     val off = if (dark) Color(0xFF787880).copy(alpha = 0.36f) else Color(0xFF787878).copy(alpha = 0.2f)
     val on = chosenFill()
-    val base = scheme.background
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val interaction = remember { MutableInteractionSource() }
     val touch = remember { LensTouch() }
@@ -447,15 +446,20 @@ internal fun DuckerSlider(
                     val center = Offset(size.width / 2f, size.height / 2f)
                     val shadowDrop = 1.dp.toPx()
                     drawThumb(center, size.width / 2f, size.height / 2f, Color.White, shadowDrop)
-                    // Over the white thumb, always, a lens of the dock's kind, swollen under a finger.
-                    val swell = 1f + (sliderValue("swell", LENS_SWELL) - 1f) * lens.value
-                    val halfW = size.width / 2f * swell
-                    val halfH = size.height / 2f * swell
+                    val s = lens.value
+                    if (s < 0.01f) return@drawBehind
+                    // The bars' lens: the thumb as a segment's pill, the room around it as the segments' pad.
+                    val lensHalfHeight = (size.height / 2f + SLIDER_LENS_PAD.toPx()) * sliderValue("height", TOOLBAR_LENS_HEIGHT)
+                    val dockHalfWidth = lensHalfHeight * sliderValue("aspect", TOOLBAR_LENS_ASPECT)
+                    val wide = maxOf(size.width / 2f * (1f + sliderValue("widen", TOOLBAR_WIDEN)), dockHalfWidth)
+                    val halfW = androidx.compose.ui.util.lerp(size.width / 2f, wide, s)
+                    val halfH = androidx.compose.ui.util.lerp(size.height / 2f, lensHalfHeight, s)
                     val origin = Offset(at[0], at[1])
                     val thick = SLIDER_TRACK.toPx()
                     val width = size.width
                     val height = size.height
-                    drawGlassBubble(layer, bubble, center, halfW, halfH, 1f, base, zoom = 1f + sliderValue("zoom", LENS_ZOOM) * lens.value, tuning = tuning) {
+                    val look = tuning.lens(GlassTuningGroup.SliderLens, if (light) TOOLBAR_LOOK_LIGHT else TOOLBAR_LOOK, light)
+                    drawDockLens(lensGlass, layer, center, halfW, halfH, s, !light, look) {
                         under(origin)
                         // At the thumb's middle: this scope is the lens layer's, taller, and the line slid below the
                         // lens, a gap in the scale under the held thumb (the owner, 18.11).

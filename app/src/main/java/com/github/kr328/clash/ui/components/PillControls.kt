@@ -394,7 +394,7 @@ private fun segmentMiddle(spans: FloatArray, i: Int): Float {
  * The dock's lens at [center], [shown] 0…1: its shader and look, its bend growing with it, its lightness and light line
  * with its last third, as the dock's (`GlassDock`).
  */
-private fun DrawScope.drawDockLens(
+internal fun DrawScope.drawDockLens(
     lens: GlassLens,
     layer: GraphicsLayer,
     center: Offset,
