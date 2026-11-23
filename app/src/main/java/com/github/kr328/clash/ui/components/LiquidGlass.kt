@@ -401,8 +401,8 @@ internal fun StillBackdropPictures(backdrop: GlassBackdrop) {
 /**
  * The screen under a glass sheet, drawn still for the sheet's panes when it is asked to open, before it moves (F-532):
  * the sheet and each of its rows had blurred their own copy of the screen every frame of the slide, 10-17 ms a frame on
- * the OnePlus at 120 Hz. Kept between opens while the screen is the same, and held while the sheet is open though the
- * screen changes under it (the tap's ripple, a number): blurred past reading, the older picture shows as well.
+ * the OnePlus at 120 Hz. Made at each open, and held while the sheet is open though the screen changes under it (the
+ * tap's ripple, a number): blurred past reading, the older picture shows as well.
  */
 @Composable
 internal fun SheetStillPictures(backdrop: GlassBackdrop, sheets: SheetGlass, extra: Dp) {
@@ -420,7 +420,10 @@ internal fun SheetStillPictures(backdrop: GlassBackdrop, sheets: SheetGlass, ext
             if (!wanted) return@collectLatest
             val version = backdrop.version
             val size = backdrop.layer.size
-            if (backdrop.still?.version != version && size.width > 0 && size.height > 0) {
+            // Made anew at every open: the version counts the screen's own recordings only, not its pages' and lists'
+            // layers, so a picture kept from a sheet opened on «Подписки» showed them under a sheet on Home (the owner,
+            // 23.11).
+            if (size.width > 0 && size.height > 0) {
                 val pictures = looks.associate { (blur, vibrancy) -> stillKey(blur, vibrancy) to stillPicture(graphics, density, backdrop.layer, size, blur, vibrancy) }
                 backdrop.still = StillBackdrop(version, pictures, held = true)
             }
