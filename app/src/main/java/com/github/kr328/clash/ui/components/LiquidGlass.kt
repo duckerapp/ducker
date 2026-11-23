@@ -630,12 +630,19 @@ internal fun Modifier.liquidGlass(
             )
         }
     }.drawWithCache {
-        val margin = GLASS_MARGIN.toPx()
         val outline = shape.createOutline(size, layoutDirection, this)
         val radii = extractCornerRadii(outline, size)
         val blur = MAX_BLUR.toPx() * blurPart + (blurBoost + extra).toPx()
         val amount = MAX_REFRACTION_AMOUNT.toPx() * (style.refraction / 100f) * bendBoost
         val bent = if (bendBoost != 1f) style.copy(dispersion = (style.dispersion * bendBoost).roundToInt()) else style
+        // The live picture reaches as far as the pane's rim draws from, and its blur beyond: Home's card connected bends
+        // from ~35 dp out, past the 24 dp drawn, and until the still picture was ready (the app just opened) its rim
+        // showed a sharp line over nothing there (the owner, 23.11).
+        val margin = if (panes) {
+            val reach = paneValue("push", PaneGlass.PUSH.value) * (style.refraction / 50f) * bendBoost * 1.06f +
+                paneValue("chroma", PaneGlass.CHROMA.value) * (bent.dispersion / 40f)
+            maxOf(GLASS_MARGIN.toPx(), reach.dp.toPx() + blur)
+        } else GLASS_MARGIN.toPx()
 
         if (panes) {
             paneBend(shader, margin, size.width, size.height, radii, bent, bendBoost, ownRim, tuning, paneGroup)
