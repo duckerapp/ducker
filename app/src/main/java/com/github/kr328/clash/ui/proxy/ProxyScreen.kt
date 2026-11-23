@@ -260,28 +260,30 @@ fun ProxyScreen(
     fun backAfterFold(name: String, shown: Float): Pair<Float, Float> {
         val info = listState.layoutInfo
         val last = info.visibleItemsInfo.lastOrNull() ?: return 0f to 0f
-        val header = info.visibleItemsInfo.firstOrNull { (it.key as? String)?.startsWith("header-") == true }?.size
+        val header = rowMeasure.header
         val row = rowMeasure.height
-        if (shown <= 0f || header == null || row <= 0) return 0f to 0f
-        // The groups' items in list order with their heights as they are now (as the list below lays them out).
-        var below = 0f
-        var past = false
-        groups.forEachIndexed { index, group ->
-            val fold = if (query.isBlank()) folds[group.name] else null
-            val open = query.isNotBlank() || ((index == 0) != (group.name in flipped))
-            val rows = fold?.rows ?: if (open) (group.proxies.size + columns - 1) / columns else 0
-            if (past) below += header
-            if (last.key == "header-${group.name}") past = true
-            for (i in 0 until rows) {
-                if (past) below += fold?.let { (it.shown - i * row).coerceIn(0f, row.toFloat()) } ?: row.toFloat()
-                if (last.key == "${group.name}-$i") past = true
+        if (shown <= 0f || header <= 0 || row <= 0 || rowMeasure.title <= 0) return 0f to 0f
+        // Every item's height in list order, as the list lays them out now: the title, the search's slot, then each
+        // group's header and rows. With the keyboard up the list is scrolled past the title, and «as far as it can» read
+        // as no limit, the travel overran the scroll and the rows stopped short, the rest snapped away at the end.
+        val heights = buildList {
+            add(rowMeasure.title.toFloat())
+            if (searchable) add(rowMeasure.search.toFloat())
+            groups.forEachIndexed { index, group ->
+                val fold = if (query.isBlank()) folds[group.name] else null
+                val open = query.isNotBlank() || ((index == 0) != (group.name in flipped))
+                val rows = fold?.rows ?: if (open) (group.proxies.size + columns - 1) / columns else 0
+                add(header.toFloat())
+                for (i in 0 until rows) add(fold?.let { (it.shown - i * row).coerceIn(0f, row.toFloat()) } ?: row.toFloat())
             }
         }
+        if (heights.size != info.totalItemsCount) return 0f to 0f
+        val below = heights.drop(last.index + 1).sum()
         // The list's own bottom padding, not the reserve a fold adds to it ([listPadding]).
         val end = info.viewportEndOffset - with(density) { bottomPadding.roundToPx() }
         val short = end - (last.offset + last.size + below - shown)
         if (short <= 0f) return 0f to 0f
-        val scrolled = if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset.toFloat() else Float.MAX_VALUE
+        val scrolled = heights.take(listState.firstVisibleItemIndex).sum() + listState.firstVisibleItemScrollOffset
         return short to scrolled
     }
 
@@ -324,7 +326,9 @@ fun ProxyScreen(
             // way. A travel longer than the rows' left the items below going back a little at the end; rounded apart,
             // they went a pixel back.
             val rest = target - from - travel
-            fun shownAt(progress: Float, moved: Int) = from + moved + (rest * FoldEasing.transform(progress)).roundToInt()
+            // The rows' own curve, whatever the scroll took: from what it took, the rows stopped short where the list met
+            // its top, and the rest snapped away at the end.
+            fun shownAt(progress: Float) = FoldEasing.transform(progress).let { from + (travel * it).roundToInt() + (rest * it).roundToInt() }
             var progress = 0f
             var moved = 0
             if (travel != 0f) {
@@ -335,7 +339,7 @@ fun ProxyScreen(
                             progress = value
                             val step = (travel * FoldEasing.transform(value)).roundToInt() - moved
                             if (step != 0) moved += scrollBy(step.toFloat()).roundToInt()
-                            fold.shown = shownAt(value, moved).toFloat()
+                            fold.shown = shownAt(value)
                         }
                     }
                 }.join()
@@ -344,7 +348,7 @@ fun ProxyScreen(
                 // Without a travel, or after a finger took the scroll: the rows alone, on from where they are.
                 val all = target - from
                 animate(progress, 1f, animationSpec = tween((FOLD_MS * (1f - progress)).roundToInt(), easing = LinearEasing)) { value, _ ->
-                    fold.shown = if (travel == 0f) from + (all * FoldEasing.transform(value)).roundToInt() else shownAt(value, moved).toFloat()
+                    fold.shown = if (travel == 0f) from + (all * FoldEasing.transform(value)).roundToInt() else shownAt(value)
                 }
             }
             fold.shown = target
@@ -420,9 +424,11 @@ fun ProxyScreen(
                     item {
                         ScreenHeader(
                             stringResource(R.string.proxies_tab),
-                            modifier = if (tv && searchable) {
-                                Modifier.focusRequester(headerFocus).focusProperties { down = searchFocus }
-                            } else Modifier,
+                            modifier = Modifier.onSizeChanged { rowMeasure.title = it.height }.then(
+                                if (tv && searchable) {
+                                    Modifier.focusRequester(headerFocus).focusProperties { down = searchFocus }
+                                } else Modifier,
+                            ),
                         ) {
                             // Global — в шапке, а не отдельным рядом над списком (D-136).
                             if (state.running && state.modeSwitch) GlobalChip(state.mode, onMode)
@@ -436,7 +442,10 @@ fun ProxyScreen(
 
                     if (searchable) {
                         item(key = SEARCH_KEY) {
-                            Spacer(Modifier.padding(top = ITEM_GAP).fillMaxWidth().height(with(density) { searchHeight.toDp() }))
+                            Spacer(
+                                Modifier.onSizeChanged { rowMeasure.search = it.height }
+                                    .padding(top = ITEM_GAP).fillMaxWidth().height(with(density) { searchHeight.toDp() }),
+                            )
                         }
                     }
 
@@ -828,6 +837,9 @@ private class Fold(shown: Float, val rows: Int) {
 private class RowMeasure {
     var height = 0
     var header = 0
+    /** The screen's title and the search's slot, the items above the groups. */
+    var title = 0
+    var search = 0
 }
 
 /**
