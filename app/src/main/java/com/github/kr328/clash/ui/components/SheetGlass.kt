@@ -43,6 +43,10 @@ internal class SheetGlass {
     var ready by mutableStateOf(false)
         internal set
 
+    /** The screen as it was when a sheet opened, half its size, for the blur behind the sheets ([sheetUnder]); null — none. */
+    var under by mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
+        internal set
+
     fun want(owner: Any, on: Boolean) {
         if (on) wanting += owner else wanting -= owner
         wanted = wanting.isNotEmpty()

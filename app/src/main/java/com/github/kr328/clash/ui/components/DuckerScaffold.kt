@@ -232,6 +232,8 @@ fun DuckerScaffold(
                 if (LocalGlassStyle.current.enabled) Modifier.onGloballyPositioned { waveAt = it.positionInRoot() }.graphicsLayer {
                     val shown = sheetGlass?.shown ?: 0f
                     renderEffect = when {
+                        // With the still picture the blur is [sheetUnder]'s; until it is made, the live screen's.
+                        shown > 0.01f && sheetGlass?.under != null -> null
                         shown > 0.01f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> sheetBlurEffect(sheetBlur.toPx(), shown)
                         wave != null && waveShader != null -> screenWaveEffect(waveShader, wave, waveAt, tuning)
                         else -> null
@@ -245,7 +247,7 @@ fun DuckerScaffold(
             val rtl = direction == LayoutDirection.Rtl
             val side = if (rtl) bars.getRight(density, direction) else bars.getLeft(density, direction)
 
-            Box(Modifier.fillMaxSize().glassSource(backdrop)) {
+            Box(Modifier.fillMaxSize().sheetUnder(if (backdrop != null) sheetGlass else null, sheetBlur).glassSource(backdrop)) {
             content(
                 if (rail) {
                     PaddingValues(

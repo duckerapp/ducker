@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -436,6 +437,11 @@ internal fun SheetStillPictures(backdrop: GlassBackdrop, sheets: SheetGlass, ext
     val density = LocalDensity.current
     val looks = stillLooks(extra, StillFor.Sheets)
 
+    // Let go once no sheet shows any more: half a screen's picture, and its blurred steps.
+    LaunchedEffect(sheets) {
+        snapshotFlow { sheets.shown <= 0f && !sheets.wanted }.collect { if (it) sheets.under = null }
+    }
+
     LaunchedEffect(backdrop, sheets, looks) {
         backdrop.still = null
         snapshotFlow { sheets.wanted }.collectLatest { wanted ->
@@ -449,6 +455,8 @@ internal fun SheetStillPictures(backdrop: GlassBackdrop, sheets: SheetGlass, ext
             if (size.width > 0 && size.height > 0) {
                 val pictures = looks.associate { (blur, vibrancy) -> stillKey(blur, vibrancy) to stillPicture(graphics, density, backdrop.layer, size, blur, vibrancy) }
                 backdrop.still = StillBackdrop(version, pictures, held = true)
+                // And the screen as it is, for the blur behind the sheets ([sheetUnder]).
+                sheets.under = stillImage(graphics, density, backdrop.layer, size, SHEET_UNDER_FACTOR)
             }
             sheets.ready = true
         }
@@ -483,6 +491,20 @@ private suspend fun stillPicture(
 
         return android.graphics.BitmapShader(layer.toImageBitmap().asAndroidBitmap(), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
             .apply { setLocalMatrix(android.graphics.Matrix().apply { setScale(factor.toFloat(), factor.toFloat()) }) }
+    } finally {
+        graphics.releaseGraphicsLayer(layer)
+    }
+}
+
+/** [source] as it is, drawn [factor] times smaller: no blur, no colour lift. */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private suspend fun stillImage(graphics: GraphicsContext, density: Density, source: GraphicsLayer, size: IntSize, factor: Int): ImageBitmap {
+    val layer = graphics.createGraphicsLayer()
+    try {
+        layer.record(density, LayoutDirection.Ltr, IntSize((size.width + factor - 1) / factor, (size.height + factor - 1) / factor)) {
+            scale(1f / factor, 1f / factor, pivot = Offset.Zero) { drawLayer(source) }
+        }
+        return layer.toImageBitmap()
     } finally {
         graphics.releaseGraphicsLayer(layer)
     }
@@ -1716,6 +1738,74 @@ internal fun sheetBlurEffect(radius: Float, shown: Float): androidx.compose.ui.g
 }
 
 private const val SHEET_STEPS = 6
+
+/** How much smaller the screen under the sheets is drawn for their blur: by its first step it is already 6 px. */
+private const val SHEET_UNDER_FACTOR = 2
+
+/**
+ * The screen under the glass sheets, blurred as they come out, in [sheetBlurEffect]'s steps and crossfades, from a still
+ * picture of it made as a sheet opens ([SheetGlass.under], half its size). Each step's blur is made once and kept: the
+ * live screen's two were made again every frame of the slide, and the GPU's frame about doubled (F-584). Below the first
+ * step it fades from the live screen, so nothing jumps as a sheet goes. Without the picture yet, the scaffold blurs the
+ * live screen as before. Placed outside the screen's [glassSource], which it covers and does not record.
+ */
+@Composable
+internal fun Modifier.sheetUnder(sheets: SheetGlass?, radius: Dp): Modifier {
+    if (sheets == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return this
+    val graphics = LocalGraphicsContext.current
+    val steps = remember(graphics) { SheetUnderSteps(graphics) }
+    DisposableEffect(steps) { onDispose { steps.release() } }
+    return then(
+        remember(sheets, steps, radius) {
+            Modifier.drawWithContent {
+                val shown = sheets.shown
+                val under = sheets.under
+                if (shown <= 0.01f || under == null) {
+                    steps.release()
+                    drawContent()
+                    return@drawWithContent
+                }
+                val at = shown.coerceIn(0f, 1f) * SHEET_STEPS
+                val step = at.toInt().coerceAtMost(SHEET_STEPS - 1)
+                val part = at - step
+                if (step == 0) drawContent() else steps.draw(this, under, step, 1f, radius.toPx())
+                if (part >= 0.004f) steps.draw(this, under, step + 1, part, radius.toPx())
+            }
+        },
+    )
+}
+
+/** [sheetUnder]'s steps: the picture blurred once per step in a layer of its own, which keeps its blur while it stands. */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private class SheetUnderSteps(private val graphics: GraphicsContext) {
+    private val layers = arrayOfNulls<GraphicsLayer>(SHEET_STEPS + 1)
+    private var image: ImageBitmap? = null
+    private var radius = 0f
+
+    fun draw(scope: DrawScope, under: ImageBitmap, level: Int, alpha: Float, radius: Float) = with(scope) {
+        if (under !== image || radius != this@SheetUnderSteps.radius) {
+            release()
+            image = under
+            this@SheetUnderSteps.radius = radius
+        }
+        val layer = layers[level] ?: graphics.createGraphicsLayer().also {
+            layers[level] = it
+            val blur = radius * level / SHEET_STEPS / SHEET_UNDER_FACTOR
+            it.renderEffect = RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.CLAMP).asComposeRenderEffect()
+            it.record(IntSize(under.width, under.height)) { drawImage(under) }
+        }
+        layer.alpha = alpha
+        scale(SHEET_UNDER_FACTOR.toFloat(), SHEET_UNDER_FACTOR.toFloat(), pivot = Offset.Zero) { drawLayer(layer) }
+    }
+
+    fun release() {
+        for (i in layers.indices) layers[i]?.let {
+            graphics.releaseGraphicsLayer(it)
+            layers[i] = null
+        }
+        image = null
+    }
+}
 
 /**
  * The glass style's materials, tuned here only: one glass everywhere (the owner, 17.11). [Surface] — panes lying on
