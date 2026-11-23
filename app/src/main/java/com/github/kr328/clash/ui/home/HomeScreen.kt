@@ -661,7 +661,10 @@ private fun HomeRegular(
             // Under the subscription card («До …»), or under the power card when a config of one's own has no subscription card.
             // A TV has it under the dock instead (`HomeActivity`, `tvTools`).
             if (profile != null && !tv) {
-                FeaturesPill(onFeatures, Modifier.align(Alignment.CenterHorizontally))
+                // Up by its touch room: its 40 dp pill lies in 48 dp for a finger, and the 4 dp above it widened the
+                // gap over it to 16 dp, past the cards' 12 (the owner, 23.11). The label's line is 40 dp at most even
+                // at the largest font, so the room stays 4 dp.
+                FeaturesPill(onFeatures, Modifier.align(Alignment.CenterHorizontally).offset(y = -FEATURES_TOUCH_ROOM))
             }
 
         }
@@ -1835,6 +1838,9 @@ private const val NODE_OUT_MS = 120
 private const val NODE_IN_MS = 220
 
 private const val WAVE_MS = 650
+
+/** The room around «Возможности»'s 40 dp pill to its 48 dp touch target, above and below. */
+private val FEATURES_TOUCH_ROOM = 4.dp
 
 /** Кольцо обводки главной карточки — как обводка остальных карточек. */
 private val HERO_RING = 1.dp
