@@ -12,6 +12,25 @@ repository was closed; they are listed here for history. APK files are on the
 
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
+
+## 0.4.52 — 2026-11-24
+
+- DUCKER Glass (beta), a new look: Settings → Appearance. Cards, the dock, sheets and buttons are glass over a
+  picture that blurs and bends it, their edges catching the light; the connect wave runs over the whole screen. Dark
+  theme only, two pictures to choose from, the blur in three steps. On Android 13 and later.
+- Air is tidier: the dock as wide as its tabs rather than the screen, with larger icons; the subscription card's
+  buttons are round and lower; the power button changes state with a soft wave from its centre and a gentle spring;
+  past the first and last tab the page springs back instead of stretching; a group's check and arrow, and the theme
+  and settings buttons, sit closer.
+- Proxies: a group opens and closes in one smooth motion — the nodes slide out from under the group's card and back
+  in, and the list scrolls with them, with the keyboard up too. The cards' shadows no longer come in with a jump, and
+  big groups do not stutter. Switching tabs takes less work.
+- A provider can fill the "Mobile network" list, with a `ducker: {mobile-group: …}` key in the config or the
+  `ducker-mobile-group` header. While the page is not set up, such a subscription turns "Switch by network" on by
+  itself. The "Provider's list" switch keeps the provider's list current; editing the list turns it off, turning it
+  on brings it back.
+- "Mobile network" moves to the next node of its list when the one in use stops answering, and checks the list
+  again when none answered. When the core refuses the subscription, the switch ends at once.
 - "About" is now the project's card: versions, the news channel and chat, source code, the core and the licence.
   "Support the project" holds the ways to donate: CryptoBot in Telegram or a wallet, with the coin and network
   to pick and the address to copy. The core version is shown without the build hash.
@@ -26,13 +45,14 @@ repository was closed; they are listed here for history. APK files are on the
   of waiting. For nodes that carry no UDP.
 - Subscriptions in URL-safe base64 or starting with a byte order mark now open. `vless://` and `vmess://` links keep
   `pqv` (the ML-DSA-65 key of REALITY) and `vcn` (the name the certificate is checked against).
+- The log for support says more: Wi-Fi and airplane mode switches, Android's Private DNS and its network check,
+  changes in node checks, nodes whose UDP gets no answer. Hidden addresses in an export are told apart by labels;
+  the addresses themselves are not shown.
+- On a TV the search's clear button takes the focus with the arrows. The splash shows the whole duck again. A
+  language change redraws the screen instead of restarting it.
 
 ## 0.4.51 — 2026-11-13
 
-- A provider can fill the "Mobile network" list, with a `ducker: {mobile-group: …}` key in the config or the
-  `ducker-mobile-group` header. While the page is not set up, such a subscription turns "Switch by network" on by
-  itself. The "Provider's list" switch keeps the provider's list current; editing the list turns it off, turning it
-  on brings it back.
 - Configuration templates: a link subscription can run on ducker's own configuration instead of the provider's. In
   Profiles, the subscription's “⋯” → “Configuration” → “ducker · Russia”: Russian sites and apps go direct, everything
   else through the VPN, and only the servers come from the subscription, its node providers too; its groups never
