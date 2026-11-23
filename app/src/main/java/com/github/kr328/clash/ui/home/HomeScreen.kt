@@ -72,6 +72,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.CompositingStrategy
 import com.github.kr328.clash.ui.components.airWave
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -1299,7 +1300,14 @@ private fun HeroCard(
                     } else Modifier
                 )
                 // After the glass: its faint dark line lies just outside the rim, and a clip before it cut that off.
-                .clip(HeroInner),
+                // On Air, while the wave runs, both copies are drawn into one layer and cut round once: cut each by
+                // itself, the old copy's smoothed edge showed under the new one's as a light dotted line round the
+                // corners until the old copy went (the owner, 23.11).
+                .graphicsLayer {
+                    shape = HeroInner
+                    clip = true
+                    compositingStrategy = if (!isGlass && settled != upper) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                },
         ) {
             // The wave's bend is the whole screen's now ([HeroWave]): the card's copies change under its ring.
             Box(Modifier.fillMaxWidth()) {
@@ -1368,13 +1376,13 @@ private fun HeroCard(
                                 val c = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f)
                                 val r = radius(wave.value)
                                 val outer = r + soft.dp.toPx()
-                                drawCircle(
+                                // Over the whole copy, the circle's clip its only edge: a circle of its own drew a
+                                // second smoothed edge there, a light line ahead of the colour.
+                                drawRect(
                                     Brush.radialGradient(
                                         0f to Color.Transparent, (r / outer).coerceIn(0f, 1f) to Color.Transparent, 1f to oldFill,
                                         center = c, radius = outer,
                                     ),
-                                    radius = outer,
-                                    center = c,
                                 )
                             } else Modifier,
                         ),
