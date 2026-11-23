@@ -1091,8 +1091,8 @@ private fun ChipsCard(
 @Composable
 private fun BackdropCard(selected: String, onSelect: (String) -> Unit) {
     val options = listOf(
-        SettingsStore.BACKDROP_FERN to stringResource(R.string.glass_backdrop_fern),
         SettingsStore.BACKDROP_LIQUID to stringResource(R.string.glass_backdrop_liquid),
+        SettingsStore.BACKDROP_FERN to stringResource(R.string.glass_backdrop_fern),
     )
     val scheme = MaterialTheme.colorScheme
 

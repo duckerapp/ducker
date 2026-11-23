@@ -161,7 +161,7 @@ class SettingsStore(context: Context) {
         const val BACKDROP_LIQUID = "liquid"
 
         /** The built-in pictures, the only backdrops offered. */
-        val BACKDROPS = listOf(BACKDROP_FERN, BACKDROP_LIQUID)
+        val BACKDROPS = listOf(BACKDROP_LIQUID, BACKDROP_FERN)
 
         const val THEME_SYSTEM = "system"
         const val THEME_LIGHT = "light"
