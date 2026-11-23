@@ -474,7 +474,7 @@ internal fun DuckerSheet(
             CompositionLocalProvider(
                 LocalPaneGroup provides if (pane != null) GlassTuningGroup.SheetPane else LocalPaneGroup.current,
                 LocalGlassStyle provides
-                    if (pane != null) sheetTuning.optics(GlassTuningGroup.SheetPane, LocalGlassStyle.current) else LocalGlassStyle.current,
+                    if (pane != null) sheetTuning.optics(GlassTuningGroup.SheetPane, LocalGlassStyle.current.asSheet()) else LocalGlassStyle.current,
             ) {
             Box(
                 // Панель — своё окно, и рамка выделения пультом (этап 6) у неё своя.

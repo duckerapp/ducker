@@ -358,7 +358,7 @@ private fun stillLooks(extra: Dp, own: Boolean, dock: Boolean): List<Pair<Int, I
     // And the panes' on a plain background, when tuned apart.
     val plain = LocalGlassTuning.current.optics(GlassTuningGroup.PlainPane, pane.asPlain())
     // And the panes in the sheets, tuned apart too.
-    val sheet = LocalGlassTuning.current.optics(GlassTuningGroup.SheetPane, pane)
+    val sheet = LocalGlassTuning.current.optics(GlassTuningGroup.SheetPane, pane.asSheet())
     return remember(style.blur, style.vibrancy, pane.blur, pane.vibrancy, dockGlass.blur, dockGlass.vibrancy, plain.blur, plain.vibrancy, sheet.blur, sheet.vibrancy, density, extra, own, dock) {
         with(density) {
             val looks = (if (own) listOf(style.blur to style.vibrancy) else emptyList()) +
@@ -1913,7 +1913,7 @@ internal val LocalPaneGroup = staticCompositionLocalOf { GlassTuningGroup.Pane }
  * they are tuned, so it starts where they stand.
  */
 internal fun GlassTuning?.paneKnob(group: GlassTuningGroup, key: String, fallback: Float): Float {
-    val own = if (group == GlassTuningGroup.PlainPane) PlainPaneGlass.KNOBS[key] else null
+    val own = group.ownKnobs[key]
     if (this == null) return own ?: fallback
     // Only the knobs the cards have: «Белая тонировка» is the plain panes' own.
     val base = own ?: if (group.fromCards && glassKnobs.getValue(GlassTuningGroup.Pane).any { it.key == key }) {
@@ -1931,6 +1931,32 @@ internal fun GlassTuning?.paneKnob(group: GlassTuningGroup, key: String, fallbac
 internal fun paneDensity(): Float = LocalGlassTuning.current?.value(GlassTuningGroup.Pane, "denser", PaneGlass.DENSER) ?: PaneGlass.DENSER
 
 internal fun GlassStyle.asDock(): GlassStyle = copy(blur = PaneGlass.BLUR + blurBoost, tint = PaneGlass.TINT, vibrancy = PaneGlass.VIBRANCY)
+
+/** The panes' glass in the sheets: the cards' ([asDock]) with [SheetPaneGlass]'s own blur, tint, refraction and depth. */
+internal fun GlassStyle.asSheet(): GlassStyle = copy(
+    blur = SheetPaneGlass.BLUR + blurBoost, tint = SheetPaneGlass.TINT,
+    refraction = SheetPaneGlass.REFRACTION, depth = SheetPaneGlass.DEPTH,
+)
+
+/**
+ * The panes in the sheets as the owner tuned them (23.11, F-581): clearer than the cards (the sheet under them is glass
+ * already), bent a little more, a narrower roll and a stronger own light line. The rest is the cards'.
+ */
+internal object SheetPaneGlass {
+    const val BLUR = 0
+    const val TINT = 40
+    const val REFRACTION = 60
+    const val DEPTH = 70
+    val KNOBS = mapOf("band" to 5.07f, "line" to 1.2f)
+}
+
+/** A pane group's own knob defaults, apart from the cards' ([GlassTuningGroup.fromCards]). */
+internal val GlassTuningGroup.ownKnobs: Map<String, Float>
+    get() = when (this) {
+        GlassTuningGroup.PlainPane -> PlainPaneGlass.KNOBS
+        GlassTuningGroup.SheetPane -> SheetPaneGlass.KNOBS
+        else -> emptyMap()
+    }
 
 /** The panes' glass on the screens' plain background: the cards' ([asDock]) with [PlainPaneGlass]'s own blur, tint, light. */
 internal fun GlassStyle.asPlain(): GlassStyle =

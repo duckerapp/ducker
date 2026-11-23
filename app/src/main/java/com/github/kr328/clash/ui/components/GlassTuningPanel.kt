@@ -169,9 +169,13 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
             else {
                 val cards = glassKnobs.getValue(GlassTuningGroup.Pane).map { it.key }.toSet()
                 val fromCards = base.mapValues { (key, value) -> if (key in cards) tuning.value(GlassTuningGroup.Pane, key, value) else value }
-                if (group != GlassTuningGroup.PlainPane) fromCards
-                else fromCards + PlainPaneGlass.KNOBS + style.asPlain().let {
-                    mapOf("blur" to it.blur.toFloat(), "tint" to it.tint.toFloat(), "highlight" to it.highlight.toFloat())
+                when (group) {
+                    GlassTuningGroup.PlainPane -> fromCards + group.ownKnobs + style.asPlain().let {
+                        mapOf("blur" to it.blur.toFloat(), "tint" to it.tint.toFloat(), "highlight" to it.highlight.toFloat())
+                    }
+                    else -> fromCards + group.ownKnobs + style.asSheet().let {
+                        mapOf("blur" to it.blur.toFloat(), "tint" to it.tint.toFloat(), "refraction" to it.refraction.toFloat(), "depth" to it.depth.toFloat())
+                    }
                 }
             }
         }
