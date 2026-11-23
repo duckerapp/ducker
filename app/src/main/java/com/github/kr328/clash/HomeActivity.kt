@@ -42,6 +42,8 @@ import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -469,7 +471,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         restore = { it.toMutableStateList() },
                     ),
                 ) { mutableStateListOf<String>() }
-                val proxyList = rememberLazyListState()
+                val proxyList = rememberProxyList()
 
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 var showProbe by rememberSaveable { mutableStateOf(false) }
@@ -2641,3 +2643,13 @@ private suspend fun PagerState.glide(page: Int, flight: PageFlight) {
     // A fraction of a pixel short is still a page between two: the dock read it as moving.
     if (currentPage != page || currentPageOffsetFraction != 0f) scrollToPage(page)
 }
+
+/**
+ * «Прокси»'s list, a screen's height above and below the view kept composed and laid out: the list moves by itself as
+ * a group unrolls or rolls up (`ProxyScreen`'s `foldGroup`), and the rows it brought into view were composed in the
+ * middle of that motion, a frame late at times (the owner, 23.11; F-591).
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun rememberProxyList() =
+    rememberLazyListState(cacheWindow = LazyLayoutCacheWindow(aheadFraction = 1f, behindFraction = 1f))
