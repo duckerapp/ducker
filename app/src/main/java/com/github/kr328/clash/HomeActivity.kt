@@ -4,7 +4,6 @@ import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animate
-import androidx.compose.foundation.rememberOverscrollEffect
 import com.github.kr328.clash.ui.components.BounceOverscroll
 import com.github.kr328.clash.ui.components.glassBackground
 import com.github.kr328.clash.ui.components.glassSource
@@ -1454,7 +1453,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         }
 
                         // Past the first or the last tab the page moves aside and springs back, as the lists do at their
-                        // ends: Android's stretch scaled the rendered page with its glass, like a stretched picture.
+                        // ends: Android's stretch scaled the rendered page with its glass, like a stretched picture, and
+                        // on Air stretched the cards (the owner, 23.11).
                         val pagerScope = rememberCoroutineScope()
                         val pagerBounce = remember(pagerScope) { BounceOverscroll(pagerScope) }
 
@@ -1462,7 +1462,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                             HorizontalPager(
                                 state = pagerState,
                                 modifier = pagerModifier,
-                                overscrollEffect = if (wallpaper) pagerBounce else rememberOverscrollEffect(),
+                                overscrollEffect = pagerBounce,
                                 key = { it },
                                 // Пока подписок нет, листать некуда: вкладкам нечего показывать (D-98).
                                 userScrollEnabled = !onboarding,
