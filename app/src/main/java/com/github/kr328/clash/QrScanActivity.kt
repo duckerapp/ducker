@@ -34,6 +34,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -226,7 +227,8 @@ class QrScanActivity : AppCompatActivity() {
         )
 
         setContent {
-            DuckerTheme(glass = glass) {
+            // Ducker Glass is dark only, as on Home (D-550): its light glass was never fitted.
+            DuckerTheme(dark = glass.enabled || isSystemInDarkTheme(), glass = glass) {
                 var torch by remember { mutableStateOf(false) }
 
                 ScanScreen(
