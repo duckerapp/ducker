@@ -899,7 +899,8 @@ private fun Modifier.foldRow(fold: Fold?, row: Int, measure: RowMeasure): Modifi
  * must be under by then.
  */
 private val FOLD_NARROW = 6.dp
-private const val NARROW_BY = 0.4f
+// 0.4 narrowed a lone row (a group of two nodes) in the quick middle of its fold, too sharply (the owner, 24.11).
+private const val NARROW_BY = 0.75f
 
 /** A group's unroll and roll-up, and the list's travel with it: 320 ms moved the title too fast (the owner, 24.11). */
 private const val FOLD_MS = 400
