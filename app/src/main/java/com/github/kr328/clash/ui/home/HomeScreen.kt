@@ -1036,11 +1036,11 @@ private fun HeroCard(
     val wave = remember { Animatable(0f) }
     // The connected glass's stronger bend and rim come in with the wave and go out with it: switched at its end,
     // the picture in the card jumped in size and its rim lit at once (the owner, 17.11).
-    // From none as the card first shows connected too (the app opened again): starting at its end, it was there at once
-    // there, while a change inside the app grew it (the owner, 23.11).
-    val connectedGlass = remember { Animatable(0f) }
-    LaunchedEffect(active) { connectedGlass.animateTo(if (active) 1f else 0f, tween(GLASS_ON_MS, easing = FastOutSlowInEasing)) }
-    val connected = connectedGlass.value
+    val connected by animateFloatAsState(
+        if (active) 1f else 0f,
+        tween(GLASS_ON_MS, easing = FastOutSlowInEasing),
+        label = "connected glass",
+    )
 
     var card by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var buttonCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
