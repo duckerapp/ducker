@@ -771,15 +771,18 @@ private fun BrandHeader(profile: Profile?, onSettings: () -> Unit, onBird: (() -
         BrandTitle(profile, onBird)
 
         // Side by side, each a whole 48 dp target (Q-106): with the theme button 6 dp over the settings one, it took
-        // touches on 42 dp only.
+        // touches on 42 dp only. Their 44 dp circles stand 2 dp towards each other inside their targets, to the targets'
+        // edge, so the icons are 4 dp closer and neither target loses a touch (the owner, 23.11).
         Row(verticalAlignment = Alignment.CenterVertically) {
-            ThemeButton()
+            ThemeButton { icon, description, onClick, modifier -> HeaderButton(icon, description, onClick, modifier, nudge = HEADER_NUDGE) }
 
             // Настройки с главной: раньше до них надо было идти через вкладку подписок.
             HeaderButton(
                 icon = Symbols.Settings,
                 description = stringResource(R.string.settings),
                 onClick = onSettings,
+                // Alone on glass (dark only, no theme button): in its place.
+                nudge = if (LocalGlassStyle.current.enabled) 0.dp else -HEADER_NUDGE,
             )
         }
     }
@@ -1875,6 +1878,9 @@ private const val NODE_OUT_MS = 120
 private const val NODE_IN_MS = 220
 
 private const val WAVE_MS = 650
+
+/** How far Home's theme and settings circles stand towards each other inside their 48 dp targets: to the targets' edge. */
+private val HEADER_NUDGE = 2.dp
 
 /** The room around «Возможности»'s 40 dp pill to its 48 dp touch target, above and below. */
 private val FEATURES_TOUCH_ROOM = 4.dp

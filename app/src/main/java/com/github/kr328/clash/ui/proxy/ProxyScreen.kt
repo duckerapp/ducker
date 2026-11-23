@@ -761,8 +761,9 @@ private fun GroupHeader(
                     )
                 }
             }
-            // The check and the arrow closer on the pane glass, 8 dp between their circles: the name took two lines.
-            Row(horizontalArrangement = Arrangement.spacedBy(if (glassPanesOn()) 4.dp else 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            // The check and the arrow closer, 8 dp between their glass circles: the name took two lines. Air's too (the owner,
+            // 23.11).
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
             // Замер — кружком рядом со стрелкой, а не кнопкой во всю ширину (D-120): та
             // занимала строку в каждой раскрытой группе. Замерять нечем, пока ядро не работает.
             if (canCheck) {

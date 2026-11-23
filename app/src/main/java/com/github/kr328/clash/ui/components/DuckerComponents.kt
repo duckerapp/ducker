@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.asPaddingValues
@@ -757,15 +759,23 @@ fun HeaderButton(
     description: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Its circle and its press moved this far towards the end inside its 48 dp target (negative: towards the start); the
+     * target itself stays where it is, whole.
+     */
+    nudge: Dp = 0.dp,
 ) {
+    val interaction = remember { MutableInteractionSource() }
     Box(
-        modifier = modifier.minimumInteractiveComponentSize()
-            .size(44.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick),
+        modifier = modifier.size(48.dp).clickable(interaction, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = description, tint = MaterialTheme.colorScheme.onSurface)
+        Box(
+            Modifier.offset(x = nudge).size(44.dp).clip(CircleShape).indication(interaction, LocalIndication.current),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = description, tint = MaterialTheme.colorScheme.onSurface)
+        }
     }
 }
 
