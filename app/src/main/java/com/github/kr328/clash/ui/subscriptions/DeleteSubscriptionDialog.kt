@@ -1,10 +1,10 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.GlassTextButton
 import com.github.kr328.clash.ui.components.isolated
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
@@ -60,7 +60,7 @@ fun DeleteSubscriptionDialog(
             danger = true,
         )
 
-        TextButton(onClick = onDismiss, enabled = !busy, modifier = Modifier.fillMaxWidth().focusRequester(cancel)) {
+        GlassTextButton(onClick = onDismiss, enabled = !busy, modifier = Modifier.fillMaxWidth().focusRequester(cancel)) {
             Text(stringResource(R.string.cancel))
         }
     }

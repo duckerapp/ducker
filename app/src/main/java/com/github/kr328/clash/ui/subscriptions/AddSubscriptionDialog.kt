@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.GlassTextButton
 import com.github.kr328.clash.ui.components.sheetButton
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.LocalContentColor
@@ -23,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -190,7 +190,7 @@ fun AddSubscriptionDialog(
                             textAlign = TextAlign.Center,
                         )
                     }
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                    GlassTextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -251,7 +251,7 @@ private fun ReceiveCode(receive: Receive?, onNewCode: () -> Unit, modifier: Modi
         }
 
         if (receive == Receive.Expired) {
-            TextButton(onClick = onNewCode) { Text(stringResource(R.string.receive_again)) }
+            GlassTextButton(onClick = onNewCode) { Text(stringResource(R.string.receive_again)) }
         }
     }
 }

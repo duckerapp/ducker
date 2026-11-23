@@ -124,7 +124,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -750,7 +749,7 @@ internal fun LeaveSheet(
             danger = danger,
         )
 
-        TextButton(onClick = { open = false }, modifier = Modifier.fillMaxWidth().focusRequester(safe)) {
+        GlassTextButton(onClick = { open = false }, modifier = Modifier.fillMaxWidth().focusRequester(safe)) {
             Text(stay)
         }
     }

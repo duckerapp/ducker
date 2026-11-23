@@ -1,5 +1,12 @@
 package com.github.kr328.clash.ui.settings
 
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.ui.graphics.Shape
+import com.github.kr328.clash.ui.components.GlassCardButton
+import com.github.kr328.clash.ui.components.GlassMaterial
+import com.github.kr328.clash.ui.components.LocalGlassBackdrop
+import com.github.kr328.clash.ui.components.glass
+import com.github.kr328.clash.ui.components.glassPanesOn
 import com.github.kr328.clash.ui.components.Symbols
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -146,7 +153,7 @@ internal fun LazyListScope.projectSupportItems(onLink: (String) -> Unit, onMail:
         }
     }
     item(key = "mail") {
-        OutlinedButton(onClick = onMail, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = MaterialTheme.shapes.extraLarge) {
+        SupportButton(onClick = onMail, outlined = true) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Symbols.Email, contentDescription = null, modifier = Modifier.size(22.dp))
                 Text(stringResource(R.string.settings_project_mail), style = MaterialTheme.typography.bodyLarge)
@@ -189,10 +196,7 @@ private fun AboutCard(appVersion: String, coreVersion: String, onSupport: () -> 
                 VersionChip(stringResource(R.string.version_app, appVersion))
                 if (coreVersion.isNotEmpty()) VersionChip(stringResource(R.string.version_core, coreVersion))
             }
-            Button(
-                onClick = onSupport, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                shape = MaterialTheme.shapes.extraLarge,
-            ) {
+            SupportButton(onClick = onSupport) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Symbols.Favorite, contentDescription = null, modifier = Modifier.size(20.dp))
                     Text(stringResource(R.string.settings_project), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
@@ -202,12 +206,31 @@ private fun AboutCard(appVersion: String, coreVersion: String, onSupport: () -> 
     }
 }
 
+/**
+ * A wide button: on the pane glass the glass buttons' look (Home's), whose solid fill stood out of the glass (the owner,
+ * 23.11); elsewhere Material's as before, [outlined] or filled.
+ */
+@Composable
+private fun SupportButton(onClick: () -> Unit, outlined: Boolean = false, content: @Composable RowScope.() -> Unit) {
+    val modifier = Modifier.fillMaxWidth().heightIn(min = if (outlined) 56.dp else 52.dp)
+    when {
+        glassPanesOn() -> GlassCardButton(onClick = onClick, modifier = modifier, padding = 16.dp, content = content)
+        outlined -> OutlinedButton(onClick = onClick, modifier = modifier, shape = MaterialTheme.shapes.extraLarge, content = content)
+        else -> Button(onClick = onClick, modifier = modifier, shape = MaterialTheme.shapes.extraLarge, content = content)
+    }
+}
+
+/** A grey plate under [shape]; on the pane glass a pane of the buttons' glass, as the cards' icons. */
+@Composable
+private fun Modifier.plate(shape: Shape): Modifier =
+    if (glassPanesOn()) glass(LocalGlassBackdrop.current, GlassMaterial.Control, shape).clip(shape)
+    else clip(shape).background(MaterialTheme.colorScheme.surfaceVariant)
+
 @Composable
 private fun VersionChip(text: String) {
     Text(
         text,
-        Modifier.clip(RoundedCornerShape(percent = 50)).background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+        Modifier.plate(RoundedCornerShape(percent = 50)).padding(horizontal = 12.dp, vertical = 6.dp),
         style = MaterialTheme.typography.labelLarge,
     )
 }
@@ -218,7 +241,7 @@ private fun CryptoBotCard(onOpen: () -> Unit) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 Box(
-                    Modifier.size(44.dp).clip(MaterialTheme.shapes.small).background(MaterialTheme.colorScheme.surfaceVariant),
+                    Modifier.size(44.dp).plate(MaterialTheme.shapes.small),
                     contentAlignment = Alignment.Center,
                 ) { Icon(Symbols.SmartToy, contentDescription = null, modifier = Modifier.size(24.dp)) }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -232,7 +255,7 @@ private fun CryptoBotCard(onOpen: () -> Unit) {
                     )
                 }
             }
-            Button(onClick = onOpen, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = MaterialTheme.shapes.extraLarge) {
+            SupportButton(onClick = onOpen) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(stringResource(R.string.donate_cryptobot_open), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                     Icon(Symbols.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -285,8 +308,7 @@ private fun WalletCard() {
             SelectionContainer {
                 Text(
                     network.address,
-                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium)
-                        .background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 12.dp),
+                    Modifier.fillMaxWidth().plate(MaterialTheme.shapes.medium).padding(horizontal = 14.dp, vertical = 12.dp),
                     style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace,
                 )
             }
@@ -300,7 +322,7 @@ private fun WalletCard() {
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Button(
+            SupportButton(
                 onClick = {
                     context.getSystemService(ClipboardManager::class.java)?.let { clipboard ->
                         clipboard.setPrimaryClip(ClipData.newPlainText("$coin · ${network.label}", network.address))
@@ -308,8 +330,6 @@ private fun WalletCard() {
                         if (Build.VERSION.SDK_INT < 33) Toast.makeText(context, copied, Toast.LENGTH_SHORT).show()
                     }
                 },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                shape = MaterialTheme.shapes.extraLarge,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Symbols.ContentCopy, contentDescription = null, modifier = Modifier.size(20.dp))

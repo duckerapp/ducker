@@ -1,9 +1,9 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.GlassTextButton
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -44,7 +44,7 @@ fun UpdateEditedDialog(
             danger = true,
         )
 
-        TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+        GlassTextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.cancel))
         }
     }

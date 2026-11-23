@@ -1,5 +1,14 @@
 package com.github.kr328.clash.ui.proxy
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.graphicsLayer
+import com.github.kr328.clash.ui.components.chosenGlassTint
+import com.github.kr328.clash.ui.components.glassPress
+import com.github.kr328.clash.ui.components.liquidGlass
+import com.github.kr328.clash.ui.components.rememberGlassPress
 import com.github.kr328.clash.ui.components.asName
 import com.github.kr328.clash.ui.components.named
 import com.github.kr328.clash.ui.components.isolated
@@ -556,21 +565,49 @@ private const val SEARCH_MS = 180
 @Composable
 private fun GlobalChip(mode: TunnelState.Mode?, onMode: (TunnelState.Mode) -> Unit) {
     val global = mode == TunnelState.Mode.Global
+    val label: @Composable () -> Unit = {
+        AnimatedContent(
+            targetState = global,
+            transitionSpec = {
+                fadeIn(tween(MODE_IN_MS, delayMillis = MODE_OUT_MS)) togetherWith fadeOut(tween(MODE_OUT_MS))
+            },
+            label = "mode",
+        ) {
+            Text(stringResource(if (it) R.string.mode_global else R.string.mode_rule))
+        }
+    }
+
+    // On the pane glass in the chosen card's glass, as the bell (F-579): the solid accent pill stood out of the glass
+    // (the owner, 23.11). It swells under a finger, without a ripple.
+    val backdrop = LocalGlassBackdrop.current
+    if (backdrop != null && glassPanesOn()) {
+        val scheme = MaterialTheme.colorScheme
+        val press = rememberGlassPress()
+        Box(
+            Modifier.minimumInteractiveComponentSize()
+                .height(32.dp)
+                .graphicsLayer { alpha = if (mode != null) 1f else 0.38f }
+                .glassPress(press?.takeIf { mode != null }, own = true)
+                .liquidGlass(backdrop, base = scheme.background, tint = chosenGlassTint(), shape = CircleShape, press = press, fixedTint = true)
+                .clip(CircleShape)
+                .clickable(enabled = mode != null, role = Role.Button, interactionSource = null, indication = null) {
+                    onMode(if (global) TunnelState.Mode.Rule else TunnelState.Mode.Global)
+                }
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            CompositionLocalProvider(
+                LocalContentColor provides scheme.onPrimaryContainer,
+                LocalTextStyle provides MaterialTheme.typography.labelLarge,
+            ) { label() }
+        }
+        return
+    }
 
     AssistChip(
         enabled = mode != null,
         onClick = { onMode(if (global) TunnelState.Mode.Rule else TunnelState.Mode.Global) },
-        label = {
-            AnimatedContent(
-                targetState = global,
-                transitionSpec = {
-                    fadeIn(tween(MODE_IN_MS, delayMillis = MODE_OUT_MS)) togetherWith fadeOut(tween(MODE_OUT_MS))
-                },
-                label = "mode",
-            ) {
-                Text(stringResource(if (it) R.string.mode_global else R.string.mode_rule))
-            }
-        },
+        label = label,
         shape = MaterialTheme.shapes.extraLarge,
         border = null,
         colors = AssistChipDefaults.assistChipColors(

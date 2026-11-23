@@ -1,5 +1,7 @@
 package com.github.kr328.clash.ui.features
 
+import com.github.kr328.clash.ui.components.accentMarkInk
+import com.github.kr328.clash.ui.components.accentMark
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.GlassMaterial
@@ -378,10 +380,9 @@ private fun NetworkRow(icon: ImageVector, title: String, hint: String, now: Bool
                     Text(
                         stringResource(R.string.mobile_now),
                         style = MaterialTheme.typography.labelSmall,
-                        color = scheme.onPrimary,
+                        color = accentMarkInk(),
                         maxLines = 1,
-                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(scheme.primary)
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        modifier = Modifier.accentMark(RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 2.dp),
                     )
                 }
             }

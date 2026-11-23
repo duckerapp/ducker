@@ -13,7 +13,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -35,7 +34,7 @@ import com.github.kr328.clash.core.model.ProxySort
 @Composable
 internal fun ProxySortToggle(sort: ProxySort, onSort: (ProxySort) -> Unit) {
     val byDelay = sort == ProxySort.Delay
-    TextButton(
+    GlassTextButton(
         onClick = { onSort(if (byDelay) ProxySort.Default else ProxySort.Delay) },
         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
         contentPadding = PaddingValues(horizontal = 8.dp),

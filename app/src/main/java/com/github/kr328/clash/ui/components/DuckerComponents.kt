@@ -1,5 +1,10 @@
 package com.github.kr328.clash.ui.components
 
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.LocalRippleConfiguration
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.math.roundToInt
 import androidx.compose.ui.unit.IntOffset
@@ -1313,6 +1318,49 @@ private const val OUTCOME_MS = 2500L
 
 /** Меньше кольцо не крутится, как бы быстро ни пришёл ответ. */
 private const val MIN_SPIN_MS = 700L
+
+/**
+ * A text button: on the pane glass it swells under a finger as the glass buttons do, without Material's grey ripple,
+ * which stood out of the glass (the owner, 23.11); elsewhere Material's as before.
+ */
+@Composable
+internal fun GlassTextButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    colors: ButtonColors = ButtonDefaults.textButtonColors(),
+    contentPadding: PaddingValues = ButtonDefaults.TextButtonContentPadding,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val press = rememberGlassPress()
+    CompositionLocalProvider(LocalRippleConfiguration provides if (press != null) null else LocalRippleConfiguration.current) {
+        TextButton(
+            onClick = onClick,
+            modifier = modifier.glassPress(press?.takeIf { enabled }, own = true),
+            enabled = enabled,
+            colors = colors,
+            contentPadding = contentPadding,
+            content = content,
+        )
+    }
+}
+
+/**
+ * A small mark in the accent («Новое», «сейчас»): on the pane glass in the chosen card's glass, as the bell (F-579); the
+ * plain accent fill stood out of the glass (the owner, 23.11). Its text in [accentMarkInk].
+ */
+@Composable
+internal fun Modifier.accentMark(shape: Shape): Modifier {
+    val backdrop = LocalGlassBackdrop.current
+    return if (backdrop != null && glassPanesOn()) {
+        liquidGlass(backdrop, base = MaterialTheme.colorScheme.background, tint = chosenGlassTint(), shape = shape, fixedTint = true).clip(shape)
+    } else clip(shape).background(MaterialTheme.colorScheme.primary)
+}
+
+/** The text's colour on an [accentMark]. */
+@Composable
+internal fun accentMarkInk(): Color =
+    if (LocalGlassBackdrop.current != null && glassPanesOn()) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary
 
 /**
  * A chosen card's tint on the pane glass ([DuckerCard]'s, Proxies' chosen node): the accent at its own density and with

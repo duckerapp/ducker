@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.GlassTextButton
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.github.kr328.clash.ui.components.LocalFrosted
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
@@ -17,7 +18,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,7 +72,7 @@ fun SendToTvSheet(
         if (sent || profiles.isEmpty()) {
             if (glass) {
                 SheetButton(text = stringResource(R.string.done), busyText = "", busy = false, enabled = true, onClick = onDismiss)
-            } else TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+            } else GlassTextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.done))
             }
 

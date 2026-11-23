@@ -1,5 +1,7 @@
 package com.github.kr328.clash.ui.subscriptions
 
+import com.github.kr328.clash.ui.components.accentMarkInk
+import com.github.kr328.clash.ui.components.accentMark
 import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.rememberGlassPress
 import com.github.kr328.clash.ui.components.sheetSurface
@@ -305,8 +307,8 @@ private fun AnnouncementRow(item: AnnouncementItem, onOpenLink: (String) -> Unit
                         text = stringResource(R.string.announcement_new),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = scheme.onPrimary,
-                        modifier = Modifier.clip(CircleShape).background(scheme.primary).padding(horizontal = 8.dp, vertical = 2.dp),
+                        color = accentMarkInk(),
+                        modifier = Modifier.accentMark(CircleShape).padding(horizontal = 8.dp, vertical = 2.dp),
                     )
                 }
             }

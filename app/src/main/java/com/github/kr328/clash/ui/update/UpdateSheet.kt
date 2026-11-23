@@ -1,5 +1,6 @@
 package com.github.kr328.clash.ui.update
 
+import com.github.kr328.clash.ui.components.GlassTextButton
 import com.github.kr328.clash.ui.components.sheetSurface
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -134,7 +134,7 @@ fun UpdateSheet(
             progress = if (state.installing) 1f else state.progress,
         )
 
-        TextButton(onClick = if (ask) ({ onAuto(false) }) else onDismiss, modifier = Modifier.fillMaxWidth()) {
+        GlassTextButton(onClick = if (ask) ({ onAuto(false) }) else onDismiss, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(if (ask) R.string.app_update_auto_no else R.string.not_now))
         }
     }
