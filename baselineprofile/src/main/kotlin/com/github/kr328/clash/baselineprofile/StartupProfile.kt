@@ -89,10 +89,9 @@ class StartupProfile {
     private fun MacrobenchmarkScope.tour() {
         val width = device.displayWidth
         val middle = device.displayHeight / 2
-        val bottom = device.displayHeight - device.displayHeight / 12
 
-        // Нижняя панель: три вкладки равной ширины.
-        fun tab(index: Int) = device.click(width * (2 * index + 1) / 6, bottom)
+        // The dock is narrower than the screen and its width follows the labels: reach a tab by its label.
+        fun home() = device.findObject(By.text("Home"))?.click()
 
         // Листание пальцем — основной способ переключать вкладки (D-76). Код листалки и
         // жестов должен попасть в профиль: без него первый же свайп идёт интерпретатором.
@@ -109,7 +108,7 @@ class StartupProfile {
 
         // Главная. Первое включение VPN: Android спрашивает разрешение, а приложение следом
         // предлагает разрешить работу в фоне — эту панель закрывает «назад».
-        reach(By.desc("Connect")) { tab(0) }
+        reach(By.desc("Connect")) { home() }
         reach(By.desc("Disconnect")) {
             device.findObject(By.desc("Connect"))?.click()
             device.wait(Until.findObject(By.res("android:id/button1")), 2_000)?.click()
@@ -135,14 +134,14 @@ class StartupProfile {
             "Узел не выбрался. ${seen()}"
         }
 
-        // «Подписки»: правка и «Мои правила».
-        reach(By.text("Edit")) { nextTab() }
-        reach(By.text("My rules")) { tap(By.text("Edit")) }
+        // «Подписки»: правка и «Мои правила». On a phone the card's pencil is a round button named only for TalkBack.
+        reach(By.desc("Edit")) { nextTab() }
+        reach(By.text("My rules")) { tap(By.desc("Edit")) }
         reach(By.text("Add rule")) { tap(By.text("My rules")) }
         device.pressBack()
-        need(By.text("Edit"))
+        need(By.desc("Edit"))
 
-        reach(By.desc("Settings")) { tab(0) }
+        reach(By.desc("Settings")) { home() }
 
         // Quick node selection: the sheet opens from the node row on Home, which shows the node
         // chosen above. Only up the list: a pull down at its top would drag the sheet closed.
