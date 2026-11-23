@@ -352,9 +352,9 @@ fun SubscriptionsScreen(
                 ),
             ) {
                 item(key = HEADER_KEY) {
-                    // От заголовка до первой карточки — как на «Прокси», где под заголовком ещё
-                    // стоит строка режимов (без VPN — пустая): два шага списка, а не один (D-104).
-                    ScreenHeader(stringResource(R.string.subscriptions_tab), Modifier.padding(bottom = GAP * 2)) {
+                    // From the title to the first card as on «Прокси» to its search: one step. Two (D-104) matched the
+                    // modes row «Прокси» had under its title until it went into the header (D-136).
+                    ScreenHeader(stringResource(R.string.subscriptions_tab), Modifier.padding(bottom = GAP)) {
                         if (state.announcements.isNotEmpty()) {
                             AnnouncementsBell(fresh = state.announcements.any(state::fresh), onClick = { showAnnouncements(null) })
                         }
