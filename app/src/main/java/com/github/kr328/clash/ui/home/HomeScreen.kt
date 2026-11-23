@@ -948,6 +948,8 @@ internal fun ThemeButton(
     button: @Composable (icon: ImageVector, description: String, onClick: () -> Unit, modifier: Modifier) -> Unit =
         { icon, description, onClick, modifier -> HeaderButton(icon, description, onClick, modifier) },
 ) {
+    // Ducker Glass is dark only.
+    if (LocalGlassStyle.current.enabled) return
     val switch = LocalThemeSwitch.current
 
     // The theme itself, not the palette here: in Home's header over a picture the palette is the picture's tone.

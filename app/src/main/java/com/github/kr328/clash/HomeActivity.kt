@@ -15,7 +15,6 @@ import com.github.kr328.clash.ui.components.WallMode
 import com.github.kr328.clash.ui.components.screenWallMode
 import com.github.kr328.clash.ui.components.screenWallSource
 import androidx.activity.result.PickVisualMediaRequest
-import com.github.kr328.clash.ui.components.backdropIsDark
 import com.github.kr328.clash.ui.components.backdropTopDark
 import com.github.kr328.clash.ui.theme.LocalBackdropTone
 import androidx.compose.runtime.SideEffect
@@ -407,20 +406,15 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
             // The liquid glass style: chosen, on a phone that draws it; otherwise the app is Air.
             val glassOn = !tv && glassSupported && settingsState.style == SettingsStore.STYLE_GLASS
-            // With the glass, while the theme follows the system: a black backdrop or a dark own picture takes the app
-            // dark, as a wallpaper does, a light picture light. A chosen theme wins. Null — no say.
-            val backdropDark = when {
-                !glassOn -> null
-                backdropIsDark(settingsState.glassBackdrop, settingsState.glassImageDark) -> true
-                settingsState.glassBackdrop == SettingsStore.BACKDROP_IMAGE -> false
-                else -> null
-            }
-            val dark = when (settingsState.theme) {
-                SettingsStore.THEME_LIGHT -> false
-                SettingsStore.THEME_DARK -> true
+            // Ducker Glass is dark only, the light theme keeps Air (the owner, 23.11): its glass was tuned on the dark
+            // pictures, and Home's theme button and the theme choice hide while it is on.
+            val dark = when {
+                glassOn -> true
+                settingsState.theme == SettingsStore.THEME_LIGHT -> false
+                settingsState.theme == SettingsStore.THEME_DARK -> true
                 // Телевизор смотрят в полутьме — там тёмная, что бы ни сообщала система, пока
                 // проверки на настоящих телевизорах не покажут иного.
-                else -> backdropDark ?: (tv || isSystemInDarkTheme())
+                else -> tv || isSystemInDarkTheme()
             }
             // The backdrop's top, under the status bar and the tabs' headers: they take its tone, whatever the theme.
             val backdropTop = if (glassOn) backdropTopDark(settingsState.glassBackdrop, settingsState.glassImageTopDark) else null

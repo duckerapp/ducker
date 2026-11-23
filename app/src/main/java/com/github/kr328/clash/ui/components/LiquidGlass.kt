@@ -153,10 +153,6 @@ private fun backdropOf(key: String, dark: Boolean): Backdrop = when (key) {
     else Backdrop(Color(0xFFFFE6DA), Color(0xFFFFD5CC), listOf(Color(0xFFFF6B5A), Color(0xFFFF3F6E), Color(0xFFFFA45C)), 0.38f)
 }
 
-/** The black backdrops, and an own picture that is dark: on them the app takes the dark palette. */
-internal fun backdropIsDark(key: String, imageDark: Boolean): Boolean =
-    key == "black_gradient" || key == "black" || key == "black_white" || (key == "image" && imageDark)
-
 /**
  * Whether the backdrop's top, under the status bar and the tabs' headers, is dark: the black ones and a dark-topped
  * own picture. Null — the backdrop is drawn in the theme's own tones, so the headers follow the theme.

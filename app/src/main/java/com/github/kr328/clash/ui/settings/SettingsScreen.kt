@@ -377,7 +377,8 @@ fun SettingsScreen(
                         }
                     }
                     SettingsPage.Appearance -> {
-                        item {
+                        // Ducker Glass is dark only: no theme to choose while it is on.
+                        if (tv || !glassSupported || state.style != SettingsStore.STYLE_GLASS) item {
                             ChipsCard(
                                 title = stringResource(R.string.theme),
                                 icon = Symbols.DarkMode,
