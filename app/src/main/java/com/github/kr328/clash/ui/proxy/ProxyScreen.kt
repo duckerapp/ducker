@@ -6,6 +6,7 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.graphicsLayer
 import com.github.kr328.clash.ui.components.chosenGlassTint
+import com.github.kr328.clash.ui.components.DuckerShadowOutsets
 import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.liquidGlass
 import com.github.kr328.clash.ui.components.rememberGlassPress
@@ -92,6 +93,7 @@ import androidx.compose.animation.core.animate
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import kotlinx.coroutines.flow.collectLatest
@@ -184,6 +186,13 @@ fun ProxyScreen(
     val scope = rememberCoroutineScope()
     var returnToken by remember { mutableStateOf<Any?>(null) }
     var groupScroll by remember { mutableStateOf<Job?>(null) }
+    // The group opened just now: its rows fade in themselves, see the rows below.
+    var opening by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(opening) {
+        if (opening == null) return@LaunchedEffect
+        delay(ITEM_FADE_IN_MS.toLong())
+        opening = null
+    }
     // Пульт (этап 6): строка поиска висит над списком, и список целиком охватывает её — стрелка
     // вниз его не находила. Вниз из поиска — на первую группу, а если она уехала — в список.
     val listFocus = remember { FocusRequester() }
@@ -363,6 +372,7 @@ fun ProxyScreen(
                                     val beforeLayout = listState.layoutInfo
                                     groupScroll?.cancel()
                                     if (group.name in flipped) flipped -= group.name else flipped += group.name
+                                    if (!open) opening = group.name
 
                                     if (query.isBlank() && (open || returnToken != null)) {
                                         // Keep scroll space while native item fades remove the rows.
@@ -409,12 +419,22 @@ fun ProxyScreen(
                             if (open) group.proxies.chunked(columns) else emptyList(),
                             key = { i, _ -> "${group.name}-$i" },
                         ) { row, proxies ->
+                            // A row of a group just opened fades in in a layer with room for its cards' shadows: the
+                            // list's own fade drew it cut to its bounds, and the shadows came in with a jump as it
+                            // ended (as on «Подключения», D-425).
+                            val appear = remember { Animatable(if (opening == group.name) 0f else 1f) }
+                            LaunchedEffect(Unit) { appear.animateTo(1f, ItemFadeIn) }
                             ProxyRow(
                                 group = group, proxies = proxies, columns = columns, column = column,
                                 onSelect = onSelect, onFavorite = onFavorite,
                                 modifier = Modifier.animateItem(
-                                    fadeInSpec = ItemFadeIn, fadeOutSpec = ItemFadeOut, placementSpec = ItemMove,
-                                ).then(if (index == 0 && row == 0) Modifier.focusRequester(firstRow) else Modifier),
+                                    fadeInSpec = null, fadeOutSpec = ItemFadeOut, placementSpec = ItemMove,
+                                )
+                                    .graphicsLayer {
+                                        alpha = appear.value
+                                        outsets = DuckerShadowOutsets
+                                    }
+                                    .then(if (index == 0 && row == 0) Modifier.focusRequester(firstRow) else Modifier),
                             )
                         }
                     }
@@ -755,7 +775,8 @@ private suspend fun LazyListState.reveal(header: String, firstRow: String, rows:
 private const val REVEAL_WAIT_MS = 300L
 private const val REVEAL_MS = 320
 
-private val ItemFadeIn = tween<Float>(220)
+private const val ITEM_FADE_IN_MS = 220
+private val ItemFadeIn = tween<Float>(ITEM_FADE_IN_MS)
 private val ItemFadeOut = tween<Float>(120)
 private val ItemMove = spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = IntOffset.VisibilityThreshold)
 
