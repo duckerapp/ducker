@@ -72,12 +72,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.draw.drawBehind
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import com.github.kr328.clash.ui.components.airWave
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -1077,24 +1071,13 @@ private fun HeroCard(
     var swelledFor by remember { mutableStateOf(active) }
     // The wave's and the button's knobs: the tuning panel's in the review app, else [HeroWave]'s.
     val tuning = LocalGlassTuning.current
-    // Air's options in the review app ([AirWave]): the wave's soft edge (A), a ring leaving the button (B).
-    val airVariant = if (isGlass) 0 else tuning.airWave("variant").roundToInt()
-    val softEdge = airVariant == 1 || airVariant == 3
-    val ringOn = airVariant >= 2
-    val airRing = remember { Animatable(0f) }
+    // Air's wave with a soft edge ([AirWave]); 0 — the hard circle from the button's edge, as before.
+    val soft = if (isGlass) 0f else tuning.airWave("soft")
+    val softEdge = soft > 0f
 
     LaunchedEffect(active) {
         if (swelledFor == active) return@LaunchedEffect
         swelledFor = active
-        if (ringOn) launch {
-            try {
-                airRing.snapTo(0f)
-                airRing.animateTo(1f, tween(tuning.airWave("ms").roundToInt(), easing = LinearOutSlowInEasing))
-            } finally {
-                // Cut short by another change: no ring left standing.
-                withContext(NonCancellable) { airRing.snapTo(0f) }
-            }
-        }
         buttonSwell.animateTo(1f, tween(tuning.wave("swellMs").roundToInt(), easing = FastOutSlowInEasing))
         buttonSwell.animateTo(0f, spring(dampingRatio = tuning.wave("swellBounce"), stiffness = tuning.wave("swellSpeed")))
     }
@@ -1102,13 +1085,18 @@ private fun HeroCard(
     val buttonSize = { buttonScale.value * (1f + tuning.wave("swell") * buttonSwell.value) }
 
     // The ring's radius at the wave's [t]: one for the card's change and the screen's bend, so they meet.
-    fun radius(t: Float) = if (isGlass && screenReach > 0f) screenReach * t else start + (reach - start).coerceAtLeast(0f) * t
+    // Air's soft wave spreads from the button's centre, faded in, as ink: from its edge the new colour stood as a disc at once.
+    fun radius(t: Float) = if (isGlass && screenReach > 0f) screenReach * t else {
+        val from = if (softEdge) 0f else start
+        from + (reach - from).coerceAtLeast(0f) * t
+    }
     // How far the card's change has gone: on glass the ring crosses the card early on its way over the screen.
     fun cardWave(): Float = if (isGlass && reach > 0f && screenReach > 0f) (radius(wave.value) / reach).coerceIn(0f, 1f) else wave.value
     // On glass the ring crosses the whole screen: longer, out of the button fast and slowing as a ripple.
-    val waveMs = if (isGlass) tuning.wave("duration").roundToInt() else WAVE_MS
+    val waveMs = if (isGlass) tuning.wave("duration").roundToInt() else if (softEdge) tuning.airWave("ms").roundToInt() else WAVE_MS
     val brake = tuning.wave("brake")
-    val waveEasing = if (isGlass) Easing { 1f - (1f - it).pow(brake) } else WaveEasing
+    // The soft wave eases out of the button rather than shooting out of it.
+    val waveEasing = if (isGlass) Easing { 1f - (1f - it).pow(brake) } else if (softEdge) FastOutSlowInEasing else WaveEasing
 
     LaunchedEffect(active) {
         buttonCoords?.takeIf { it.isAttached }?.let { b ->
@@ -1342,6 +1330,7 @@ private fun HeroCard(
                 )
 
                 if (settled != upper) {
+                    val oldFill = if (settled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
                     HeroFace(
                         running = upper,
                         state = state,
@@ -1360,52 +1349,35 @@ private fun HeroCard(
                         textAlpha = { fade(cardWave(), TEXT_IN, 1f) },
                         isGlass = isGlass,
                         cardTint = if (upper) tintOn else tintOff,
-                        modifier = if (softEdge) {
-                            // A: the circle solid to the wave's radius and fading out over a soft band beyond it.
-                            Modifier.matchParentSize().graphicsLayer {
-                                clip = true
-                                alpha = fade(cardWave(), 0f, BUTTON_FADE)
-                                compositingStrategy = CompositingStrategy.Offscreen
-                            }.drawWithContent {
-                                drawContent()
-                                val c = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f)
-                                val r = radius(wave.value)
-                                val outer = r + tuning.airWave("soft").dp.toPx()
-                                drawRect(
-                                    Brush.radialGradient(
-                                        0f to Color.Black, (r / outer).coerceIn(0f, 1f) to Color.Black, 1f to Color.Transparent,
-                                        center = c, radius = outer,
-                                    ),
-                                    blendMode = BlendMode.DstIn,
-                                )
-                            }
-                        } else Modifier.matchParentSize().graphicsLayer {
+                        modifier = Modifier.matchParentSize().graphicsLayer {
                             clip = true
-                            // The button changes by a crossfade and the wave leaves from its edge: a circle growing from
-                            // the centre crossed the small button in a frame or two, and the press filled it with a jerk.
+                            // The button changes by a crossfade, and the hard wave leaves from its edge: a hard circle
+                            // growing from the centre crossed the small button in a frame or two, and the press filled
+                            // it with a jerk. The soft one starts at the centre, under the crossfade.
                             alpha = fade(cardWave(), 0f, if (isGlass) GLASS_BUTTON_FADE else BUTTON_FADE)
                             shape = WaveShape(
                                 center = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f),
-                                radius = radius(wave.value),
+                                radius = radius(wave.value) + soft.dp.toPx(),
                             )
-                        },
-                    )
-                }
-
-                // B: a ring of the new state's button colour (the letters') leaves the button and fades, with a faint
-                // glow round it.
-                if (ringOn) {
-                    val ringColor = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                    Spacer(
-                        Modifier.matchParentSize().drawBehind {
-                            val t = airRing.value
-                            if (t <= 0f || t >= 1f || !center.isSpecified || buttonRadius <= 0f) return@drawBehind
-                            val r = buttonRadius * buttonSize() * (1f + (tuning.airWave("reach") - 1f) * t)
-                            val a = tuning.airWave("ring") * (1f - t) * (1f - t)
-                            val w = tuning.airWave("width").dp.toPx() * (1f - 0.5f * t)
-                            drawCircle(ringColor.copy(alpha = a * 0.25f), r, center, style = Stroke(w * 3f))
-                            drawCircle(ringColor.copy(alpha = a), r, center, style = Stroke(w))
-                        },
+                        }.then(
+                            // The soft edge: over its last [soft] the circle takes back the old state's colour. Drawn
+                            // inside the clipped circle, not by masking an offscreen copy: such a copy came out past the
+                            // card's round corners, jagged, until it went (the owner, 23.11).
+                            if (softEdge) Modifier.drawWithContent {
+                                drawContent()
+                                val c = if (center.isSpecified) center else Offset(size.width / 2f, size.height / 2f)
+                                val r = radius(wave.value)
+                                val outer = r + soft.dp.toPx()
+                                drawCircle(
+                                    Brush.radialGradient(
+                                        0f to Color.Transparent, (r / outer).coerceIn(0f, 1f) to Color.Transparent, 1f to oldFill,
+                                        center = c, radius = outer,
+                                    ),
+                                    radius = outer,
+                                    center = c,
+                                )
+                            } else Modifier,
+                        ),
                     )
                 }
             }

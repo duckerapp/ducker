@@ -247,7 +247,7 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                 }
                 if (group == GlassTuningGroup.AirButton) {
                     Text(
-                        if (style.enabled) "Только для Air: включи Air и нажми кнопку на главной." else "Кнопка на главной при вкл/выкл. А — мягкий край волны, Б — кольцо от кнопки.",
+                        if (style.enabled) "Только для Air: включи Air и нажми кнопку на главной." else "Кнопка на главной при вкл/выкл: волна из центра кнопки с мягким краем.",
                         style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant,
                     )
                 } else if (!style.enabled) {
