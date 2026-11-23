@@ -955,9 +955,11 @@ private fun ActiveDetails(
         val action = if (profile.hwidBlocked) scheme.surface else scheme.onPrimaryContainer
         val onAction = if (profile.hwidBlocked) scheme.onSurface else scheme.primaryContainer
         val first = focus?.let { Modifier.focusRequester(it) } ?: Modifier
+        // The glass buttons' sizes and layout on the phone's Air too (the owner, 23.11); the TV keeps its labelled ones.
+        val round = LocalGlassBackdrop.current != null || !LocalTv.current
 
         // Half as much air again above and below the buttons as the card's other steps.
-        // Centred: «Обновить» takes 48 dp for its 40 dp pane, the round ones on glass 40, which stood 4 dp higher (the owner, 19.11).
+        // Centred: «Обновить» takes 48 dp for its 40 dp pane, the round ones 40, which stood 4 dp higher (the owner, 19.11).
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 7.dp)) {
             // Своему конфигу обновляться неоткуда: «Обновить» шло по пустой ссылке с ошибкой.
             // Итог — в самой кнопке, как на главной (D-119): «Обновлено» или «Не удалось».
@@ -973,12 +975,12 @@ private fun ActiveDetails(
                 }
             }
 
-            // On glass «Обновить» alone is wide and the pencil is round, as «⋯»: a labelled middle button stood off the
+            // «Обновить» alone is wide and the pencil is round, as «⋯» (glass, the phone's Air): a labelled middle button stood off the
             // card's centre and read as shifted (the owner, 17.11). A config of one's own has no «Обновить».
-            // Round on glass, 40 dp as the rows' «⋯»: 48 wide on the 40 dp tall row, they were ovals (the owner, 19.11).
-            val round = if (LocalGlassBackdrop.current != null) Modifier.size(GLASS_ICON_BUTTON) else Modifier.width(48.dp)
-            if (LocalGlassBackdrop.current != null && !profile.local) {
-                CardAction(onClick = onEdit, container = action, content = onAction, modifier = round) {
+            // Round, 40 dp as the rows' «⋯»: 48 wide on the 40 dp tall row, they were ovals (the owner, 19.11).
+            val roundSize = if (round) Modifier.size(GLASS_ICON_BUTTON) else Modifier.width(48.dp)
+            if (round && !profile.local) {
+                CardAction(onClick = onEdit, container = action, content = onAction, modifier = roundSize) {
                     Icon(Symbols.Edit, contentDescription = stringResource(R.string.edit), modifier = Modifier.size(20.dp))
                 }
             } else {
@@ -989,12 +991,12 @@ private fun ActiveDetails(
                 }
             }
 
-            CardAction(onClick = onMenu, container = action, content = onAction, modifier = round) {
+            CardAction(onClick = onMenu, container = action, content = onAction, modifier = roundSize) {
                 Icon(
                     Symbols.MoreHoriz,
                     contentDescription = stringResource(R.string.more_actions),
-                    // On glass the rows' bolder 24 dp dots.
-                    modifier = Modifier.size(if (LocalGlassBackdrop.current != null) 24.dp else 20.dp),
+                    // The rows' bolder 24 dp dots.
+                    modifier = Modifier.size(if (round) 24.dp else 20.dp),
                 )
             }
         }
@@ -1110,7 +1112,8 @@ private fun CardAction(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = 48.dp),
+        // On the phone 40 dp, as the glass ones, the touch still 48 dp; 48 read heavy (the owner, 23.11).
+        modifier = modifier.heightIn(min = if (LocalTv.current) 48.dp else 40.dp),
         contentPadding = PaddingValues(horizontal = 8.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = container,
