@@ -634,9 +634,10 @@ internal fun Modifier.liquidGlass(
     val lineShader = remember(dockLine) { if (dockLine) RuntimeShader(DOCK_LINE_SHADER) else null }
     val lineStillShader = remember(dockLine) { if (dockLine) RuntimeShader(DOCK_LINE_SHADER) else null }
     val lineStillBrush = remember(lineStillShader) { lineStillShader?.let(::ShaderBrush) }
-    val shader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
+    // The panes share one shader of each kind ([PaneShaders]); the dock's glass keeps its own.
+    val shader = remember(panes) { if (panes) PaneShaders.glass else RuntimeShader(GLASS_SHADER) }
     // The same glass drawn straight from a still backdrop's picture: no layer of its own, no blur of its own.
-    val stillShader = remember(panes) { RuntimeShader(if (panes) PANE_SHADER else GLASS_SHADER) }
+    val stillShader = remember(panes) { if (panes) PaneShaders.glass else RuntimeShader(GLASS_SHADER) }
     val stillBrush = remember(stillShader) { ShaderBrush(stillShader) }
     // The pane glass draws its own light line, unless it takes the dock's rim ([PaneGlass.DOCK_RIM]).
     val highlightShader = remember(panes, ownRim, dockLine) { if (panes && ownRim || dockLine) null else RuntimeShader(HIGHLIGHT_SHADER) }
@@ -644,9 +645,9 @@ internal fun Modifier.liquidGlass(
     // The pane glass's veil, thinner over the rim so its roll and light line show through: a flat tint drawn by it, an
     // own [veil] masked by the second.
     val ownVeil = veil != null
-    val veilShader = remember(panes) { if (panes) RuntimeShader(PANE_VEIL_SHADER) else null }
+    val veilShader = remember(panes) { if (panes) PaneShaders.veil else null }
     val veilBrush = remember(veilShader) { veilShader?.let(::ShaderBrush) }
-    val maskShader = remember(panes, ownVeil) { if (panes && ownVeil) RuntimeShader(PANE_VEIL_SHADER) else null }
+    val maskShader = remember(panes, ownVeil) { if (panes && ownVeil) PaneShaders.veil else null }
     val maskBrush = remember(maskShader) { maskShader?.let(::ShaderBrush) }
     var position by remember { mutableStateOf(Offset.Zero) }
     // How much the layers around it scale it (a pressed card around its button): measured, so its glass still shows what
@@ -682,16 +683,11 @@ internal fun Modifier.liquidGlass(
         } else GLASS_MARGIN.toPx()
 
         if (panes) {
+            // Set right before the effect is made, which keeps them: the shader is every pane's.
             paneBend(shader, margin, size.width, size.height, radii, bent, bendBoost, ownRim, tuning, paneGroup)
             val bend = RenderEffect.createRuntimeShaderEffect(shader, "img")
             glass.renderEffect = (paneLift(blur, style.vibrancy)?.let { RenderEffect.createChainEffect(bend, it) } ?: bend)
                 .asComposeRenderEffect()
-            paneBend(stillShader, 0f, size.width, size.height, radii, bent, bendBoost, ownRim, tuning, paneGroup)
-            veilShader?.let { paneVeil(it, size.width, size.height, radii, tuning, paneGroup) }
-            maskShader?.let {
-                paneVeil(it, size.width, size.height, radii, tuning, paneGroup)
-                it.setFloatUniform("color", 1f, 1f, 1f, 1f)
-            }
         } else {
             val effect = glassEffect(shader, margin, size.width, size.height, radii, BEZEL.toPx(), amount, blur, bent)
             glass.renderEffect = (if (lineShader != null) {
@@ -730,6 +726,8 @@ internal fun Modifier.liquidGlass(
                     it.record(paneSize) { drawLayer(glass) }
                 }
             } else {
+                // The panes' shader is shared: all of its uniforms set again for this pane, right before it draws.
+                if (panes) paneBend(stillShader, 0f, size.width, size.height, radii, bent, bendBoost, ownRim, tuning, paneGroup)
                 stillShader.setInputShader("img", still)
                 stillShader.setFloatUniform("shift", position.x - backdrop.origin.x, position.y - backdrop.origin.y)
                 if (panes) stillShader.setFloatUniform("zoom", scaled.scaleX, scaled.scaleY)
@@ -764,9 +762,11 @@ internal fun Modifier.liquidGlass(
                 // A press eases the tint, gentler than the dock's (F-550).
                 val clear = 1f - paneValue("pressClear", PaneGlass.PRESS_CLEAR) * pressed
                 if (veil != null) {
-                    if (maskBrush != null) {
+                    if (maskShader != null && maskBrush != null) {
                         drawContext.canvas.saveLayer(paneBounds, androidx.compose.ui.graphics.Paint().apply { alpha = clear })
                         veil()
+                        paneVeil(maskShader, size.width, size.height, radii, tuning, paneGroup)
+                        maskShader.setFloatUniform("color", 1f, 1f, 1f, 1f)
                         drawRect(maskBrush, blendMode = BlendMode.DstIn)
                         drawContext.canvas.restore()
                     } else veil()
@@ -778,6 +778,7 @@ internal fun Modifier.liquidGlass(
                     val lift = if (panes && !fixedTint && paneGroup.fromCards) paneValue("lift", 0f) else 0f
                     val veilColor = if (lift > 0f) androidx.compose.ui.graphics.lerp(tint.copy(alpha = 1f), Color.White, lift) else tint
                     if (veilShader != null && veilBrush != null) {
+                        paneVeil(veilShader, size.width, size.height, radii, tuning, paneGroup)
                         // Premultiplied, as the shader's output is.
                         veilShader.setFloatUniform("color", veilColor.red * a, veilColor.green * a, veilColor.blue * a, a)
                         drawRect(veilBrush)
@@ -1032,8 +1033,12 @@ private class Api33GlassBubble : GlassBubble {
     }
 }
 
-internal fun bubbleShader(): GlassBubble? =
+/** One for every slider: it sets all its uniforms each time it draws, and the effect it makes keeps them (F-582). */
+private val sharedBubble: GlassBubble? by lazy(LazyThreadSafetyMode.NONE) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) null else Api33GlassBubble()
+}
+
+internal fun bubbleShader(): GlassBubble? = sharedBubble
 
 /**
  * The switch's lens, after iOS's (the owner's video, 18.11): thick clear glass that draws the surroundings in from
@@ -1184,8 +1189,16 @@ private class Api33GlassLens : GlassLens {
         }
 }
 
-internal fun lensShader(): GlassLens? =
+/**
+ * One for every lens (the switches, the segments, the dock, the config's bars): it sets all its uniforms each time it
+ * draws and makes its effect before it records what lies under it, which keeps them (F-582). A Settings page compiled one
+ * per switch, ~0.5 ms each.
+ */
+private val sharedLens: GlassLens? by lazy(LazyThreadSafetyMode.NONE) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) null else Api33GlassLens()
+}
+
+internal fun lensShader(): GlassLens? = sharedLens
 
 internal fun DrawScope.drawGlassBubble(
     layer: GraphicsLayer,
@@ -2121,6 +2134,18 @@ internal object PaneGlass {
     const val PULL_ACROSS = 0.01f
     val PULL_FOLLOW = spring<Float>(dampingRatio = 0.42f, stiffness = 320f)
     val PULL_BACK = spring<Float>(dampingRatio = 0.38f, stiffness = 260f)
+}
+
+/**
+ * One of each of the pane glass's shaders for all its panes (F-582): compiling the pane's took the main thread ~1.9 ms on
+ * the OnePlus 12, and each pane compiled two of them and a veil as it came into composition, ~4 ms a pane. A pane sets
+ * all of a shader's uniforms right before it makes its effect or draws with it; an effect or a drawing keeps the uniforms
+ * it was made with, so the next pane's do not reach it. The main thread only, as all drawing here.
+ */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private object PaneShaders {
+    val glass by lazy(LazyThreadSafetyMode.NONE) { RuntimeShader(PANE_SHADER) }
+    val veil by lazy(LazyThreadSafetyMode.NONE) { RuntimeShader(PANE_VEIL_SHADER) }
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
