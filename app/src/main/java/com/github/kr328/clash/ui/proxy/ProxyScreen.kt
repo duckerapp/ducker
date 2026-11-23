@@ -6,7 +6,6 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.graphicsLayer
 import com.github.kr328.clash.ui.components.chosenGlassTint
-import com.github.kr328.clash.ui.components.DuckerShadowOutsets
 import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.liquidGlass
 import com.github.kr328.clash.ui.components.rememberGlassPress
@@ -65,7 +64,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
@@ -75,9 +73,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.VisibilityThreshold
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
@@ -89,14 +84,16 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animate
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.Job
-import androidx.compose.foundation.lazy.LazyListLayoutInfo
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
-import android.os.SystemClock
+import androidx.compose.animation.core.animate
+import kotlin.math.floor
+import androidx.compose.animation.core.FastOutSlowInEasing
+import kotlin.math.roundToInt
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import kotlinx.coroutines.flow.collectLatest
@@ -148,7 +145,6 @@ import com.github.kr328.clash.ui.components.screenInsets
 import com.github.kr328.clash.ui.components.DuckerCard as Card
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Вкладка «Прокси» (этап 4): режим работы, группы, выбор узла и проверка задержки.
@@ -188,14 +184,10 @@ fun ProxyScreen(
 ) {
     val columns = if (LocalDensity.current.fontScale > 1.15f) 1 else 2
     val scope = rememberCoroutineScope()
-    var returnToken by remember { mutableStateOf<Any?>(null) }
-    var groupScroll by remember { mutableStateOf<Job?>(null) }
-    // The group opened just now, its rows fading in themselves (see the rows below). Not a state: a row reads it once
-    // as it first composes, and a state's change recomposed every row on screen in the middle of the opening's scroll.
-    val opening = remember { Opening() }
-    // The group closing now, its rows fading by [closingFade] before it folds (see onExpand). Read in the rows' layers only.
-    val closing = remember { Opening() }
-    val closingFade = remember { Animatable(1f) }
+    // The groups unrolling or rolling up now ([Fold]), their jobs, and the rows' measured height.
+    val folds = remember { mutableStateMapOf<String, Fold>() }
+    val foldJobs = remember { mutableMapOf<String, Job>() }
+    val rowMeasure = remember { RowMeasure() }
     // Пульт (этап 6): строка поиска висит над списком, и список целиком охватывает её — стрелка
     // вниз его не находила. Вниз из поиска — на первую группу, а если она уехала — в список.
     val listFocus = remember { FocusRequester() }
@@ -237,20 +229,89 @@ fun ProxyScreen(
     // 16 dp to the dock, as on «Подписки», whose last card carries its own 12 dp gap: the dock floats 12 dp above
     // the room the scaffold keeps for it (`DuckerScaffold`), and 16 alone left 4 dp.
     val bottomPadding = 28.dp + contentPadding.calculateBottomPadding()
-    val bottomPaddingPx = with(density) { bottomPadding.roundToPx() }
-    val listTop = 16.dp + contentPadding.calculateTopPadding()
-    // While a fold returns the list, a screen's height of space below its end, so the list does not jump back as the rows
-    // go: read as the list is measured, so it comes and goes without recomposing the screen — as an item of its own it
-    // recomposed «Прокси» whole twice a fold, up to 8 ms mid-scroll (F-590).
-    val listPadding = remember(start, end, listTop, bottomPadding, density) {
-        object : PaddingValues {
-            override fun calculateLeftPadding(layoutDirection: LayoutDirection) =
-                if (layoutDirection == LayoutDirection.Ltr) start else end
-            override fun calculateTopPadding() = listTop
-            override fun calculateRightPadding(layoutDirection: LayoutDirection) =
-                if (layoutDirection == LayoutDirection.Ltr) end else start
-            override fun calculateBottomPadding() =
-                bottomPadding + if (returnToken != null) with(density) { viewportHeight.toDp() } else 0.dp
+
+    /**
+     * Unrolls a group's [total] rows under its header, or rolls them up into it ([closing]): one motion of [Fold.shown]
+     * that every row and everything below follow in the same layout pass. Opening, the list scrolls with it as far as
+     * the rows go below the screen, up to the header. Rolling up at the list's end, the list itself brings the items
+     * above down as the content shrinks. Tapped again midway, the same fold turns back from where it is.
+     */
+    /**
+     * How far the list must come down as [name]'s [shown] rows roll up ([first]), and how far it can ([second]): its end
+     * would rise above the screen's, the items beyond the screen counted at their measured heights (the headers are
+     * alike, and so are the rows); no further than the list is scrolled.
+     */
+    fun backAfterFold(name: String, shown: Float): Pair<Float, Float> {
+        val info = listState.layoutInfo
+        val last = info.visibleItemsInfo.lastOrNull() ?: return 0f to 0f
+        val header = info.visibleItemsInfo.firstOrNull { (it.key as? String)?.startsWith("header-") == true }?.size
+        val row = rowMeasure.height
+        if (shown <= 0f || header == null || row <= 0) return 0f to 0f
+        // The groups' items in list order with their heights as they are now (as the list below lays them out).
+        var below = 0f
+        var past = false
+        groups.forEachIndexed { index, group ->
+            val fold = if (query.isBlank()) folds[group.name] else null
+            val open = query.isNotBlank() || ((index == 0) != (group.name in flipped))
+            val rows = fold?.rows ?: if (open) (group.proxies.size + columns - 1) / columns else 0
+            if (past) below += header
+            if (last.key == "header-${group.name}") past = true
+            for (i in 0 until rows) {
+                if (past) below += fold?.let { (it.shown - i * row).coerceIn(0f, row.toFloat()) } ?: row.toFloat()
+                if (last.key == "${group.name}-$i") past = true
+            }
+        }
+        val end = info.viewportEndOffset - info.afterContentPadding
+        val short = end - (last.offset + last.size + below - shown)
+        if (short <= 0f) return 0f to 0f
+        val scrolled = if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset.toFloat() else Float.MAX_VALUE
+        return short to scrolled
+    }
+
+    fun foldGroup(name: String, total: Int, closing: Boolean) {
+        if (total == 0) return
+        val estimate = rowMeasure.height.takeIf { it > 0 } ?: with(density) { ROW_ESTIMATE.roundToPx() }
+        val fold = folds[name] ?: run {
+            // The rows a screen can show, and two more: a big group's hundreds stay out of the list meanwhile.
+            val cap = minOf(total, viewportHeight / estimate + 2)
+            Fold(if (closing) (cap * estimate).toFloat() else 0f, cap).also { folds[name] = it }
+        }
+        foldJobs.remove(name)?.cancel()
+        foldJobs[name] = scope.launch {
+            // The motion starts a frame after the tap: in that frame the list takes the new rows or lets them go
+            // (composed, laid out and drawn for the first time when opening, 15–20 ms), and a time-based motion begun in
+            // it leapt ahead by that frame's length. The rows are measured in it too.
+            withFrameNanos {}
+            withFrameNanos {}
+            val height = rowMeasure.height.takeIf { it > 0 } ?: estimate
+            val target = if (closing) 0f else (fold.rows * height).toFloat()
+            val spec = tween<Float>(FOLD_MS, easing = FastOutSlowInEasing)
+            val (back, room) = if (closing) backAfterFold(name, fold.shown) else 0f to 0f
+            if (back > 0f && room > 0f) {
+                // The list's end would rise above the screen's as the rows roll up: the list comes down with them in
+                // the same frames, at the rate that keeps its end at the screen's until it reaches its top, instead of
+                // jumping back once the content ran short (the title and the search fell 130 px in three frames, the
+                // owner, 24.11). In a job of its own: a finger takes the scroll from it.
+                val from = fold.shown
+                launch {
+                    listState.scroll {
+                        var done = 0f
+                        animate(from, 0f, animationSpec = spec) { value, _ ->
+                            fold.shown = value
+                            val step = floor(minOf(room, back * (1f - value / from)) - done)
+                            if (step > 0f) done -= scrollBy(-step)
+                        }
+                    }
+                }.join()
+            } else if (!closing) {
+                val unroll = launch { animate(fold.shown, target, animationSpec = spec) { value, _ -> fold.shown = value } }
+                launch { listState.follow(fold, "header-$name", unroll) }
+                unroll.join()
+            }
+            // Without a scroll alongside, or after a finger took it, the rows finish on their own.
+            if (fold.shown != target) animate(fold.shown, target, animationSpec = spec) { value, _ -> fold.shown = value }
+            folds.remove(name)
+            foldJobs.remove(name)
         }
     }
     val search = remember(density) { FloatingSearch(with(density) { 8.dp.toPx() }) }
@@ -281,7 +342,7 @@ fun ProxyScreen(
         val info = listState.layoutInfo
         // Пружина на краю сдвигает список слоем, мимо раскладки, — строка едет вместе с ним.
         val slot = info.visibleItemsInfo.firstOrNull { it.key == SEARCH_KEY }
-            ?.let { it.offset + info.beforeContentPadding + (overscroll?.offset ?: 0f).toInt() }
+            ?.let { it.offset + ITEM_GAP.roundToPx() + info.beforeContentPadding + (overscroll?.offset ?: 0f).toInt() }
             ?: Int.MIN_VALUE
         val hidden = -searchHeight - 1f
 
@@ -312,10 +373,16 @@ fun ProxyScreen(
                     overscrollEffect = overscroll,
                     modifier = Modifier.fillMaxSize().glassSourceOver(listBackdrop, tabBackdrop).screenInsets().focusRequester(listFocus)
                         .onSizeChanged { viewportHeight = it.height },
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    // The 12 dp between the items lies inside each but the first ([ITEM_GAP]): a folding row takes its
+                    // gap with it to nothing.
                     // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
                     // панель вкладок и видны в просветах по её бокам (D-74).
-                    contentPadding = listPadding,
+                    contentPadding = PaddingValues(
+                        start = start,
+                        end = end,
+                        top = 16.dp + contentPadding.calculateTopPadding(),
+                        bottom = bottomPadding,
+                    ),
                 ) {
                     item {
                         ScreenHeader(
@@ -336,35 +403,39 @@ fun ProxyScreen(
 
                     if (searchable) {
                         item(key = SEARCH_KEY) {
-                            Spacer(Modifier.fillMaxWidth().height(with(density) { searchHeight.toDp() }))
+                            Spacer(Modifier.padding(top = ITEM_GAP).fillMaxWidth().height(with(density) { searchHeight.toDp() }))
                         }
                     }
 
                     // Заглушки, а не бесконечная полоска (D-92): так же, как на главной, и ничего не
                     // крутится на невидимой странице — лента держит её собранной рядом с главной (D-91).
                     if (!state.loaded) {
-                        item { ProxySkeleton() }
+                        item { Box(Modifier.padding(top = ITEM_GAP)) { ProxySkeleton() } }
                     }
 
                     if (state.loaded && state.groups.isEmpty()) {
                         item {
-                            EmptyState(
-                                icon = Symbols.Language,
-                                title = stringResource(R.string.ducker_no_proxies),
-                                message = stringResource(
-                                    if (state.running) R.string.proxies_empty_direct else R.string.proxies_empty_stopped
-                                ),
-                            )
+                            Box(Modifier.padding(top = ITEM_GAP)) {
+                                EmptyState(
+                                    icon = Symbols.Language,
+                                    title = stringResource(R.string.ducker_no_proxies),
+                                    message = stringResource(
+                                        if (state.running) R.string.proxies_empty_direct else R.string.proxies_empty_stopped
+                                    ),
+                                )
+                            }
                         }
                     }
 
                     if (state.loaded && groups.isEmpty() && state.groups.isNotEmpty()) {
                         item {
-                            EmptyState(
-                                icon = Symbols.Language,
-                                title = stringResource(R.string.proxy_search_empty),
-                                message = stringResource(R.string.proxy_search_empty_hint),
-                            )
+                            Box(Modifier.padding(top = ITEM_GAP)) {
+                                EmptyState(
+                                    icon = Symbols.Language,
+                                    title = stringResource(R.string.proxy_search_empty),
+                                    message = stringResource(R.string.proxy_search_empty_hint),
+                                )
+                            }
                         }
                     }
 
@@ -373,6 +444,7 @@ fun ProxyScreen(
                         // а узлов в каждой под десяток — развёрнутый список не помещается на экран.
                         // При поиске группы раскрыты: свёрнутый список прятал бы найденное.
                         val open = query.isNotBlank() || ((index == 0) != (group.name in flipped))
+                        val rows = group.proxies.chunked(columns)
 
                         item(key = "header-${group.name}") {
                             GroupHeader(
@@ -382,69 +454,13 @@ fun ProxyScreen(
                                 checkEnabled = state.checking == null,
                                 canCheck = state.canCheck,
                                 onExpand = {
-                                    groupScroll?.cancel()
-
-                                    // Keeps scroll space while the rows go and returns the list to its end if it was
-                                    // there, once the layout after [beforeLayout] comes.
-                                    suspend fun returnFrom(beforeLayout: LazyListLayoutInfo) {
-                                        val token = Any()
-                                        returnToken = token
-                                        try {
-                                            withTimeoutOrNull(REVEAL_WAIT_MS) {
-                                                snapshotFlow { listState.layoutInfo }.first { it !== beforeLayout }
-                                            }
-                                            listState.returnAfterCollapse(bottomPaddingPx)
-                                            withFrameNanos {}
-                                        } finally {
-                                            if (returnToken === token) returnToken = null
-                                        }
-                                    }
-
-                                    if (query.isBlank() && open) {
-                                        // Closing in two steps: the rows fade out in their own layers, shadows and all,
-                                        // while the list stands still; then the group folds at once. The list's own fade
-                                        // drew them cut to their bounds, the shadows gone at the first frame, and its
-                                        // heavier frames fell in the middle of the motion (the owner, 23.11: «то плавно
-                                        // то чутка нет»; F-590).
-                                        groupScroll = scope.launch {
-                                            closing.group = group.name
-                                            try {
-                                                closingFade.snapTo(1f)
-                                                closingFade.animateTo(0f, ItemFadeOut)
-                                                val beforeLayout = listState.layoutInfo
-                                                if (group.name in flipped) flipped -= group.name else flipped += group.name
-                                                returnFrom(beforeLayout)
-                                            } finally {
-                                                closing.group = null
-                                                withContext(NonCancellable) { closingFade.snapTo(1f) }
-                                            }
-                                        }
-                                    } else {
-                                        if (group.name in flipped) flipped -= group.name else flipped += group.name
-                                        if (!open) {
-                                            opening.group = group.name
-                                            opening.until = SystemClock.uptimeMillis() + ITEM_FADE_IN_MS
-                                        }
-
-                                        if (query.isBlank() && returnToken != null) {
-                                            // Opened again while the list still returns from a fold: finish the return.
-                                            val beforeLayout = listState.layoutInfo
-                                            groupScroll = scope.launch { returnFrom(beforeLayout) }
-                                        } else if (!open && group.proxies.isNotEmpty()) {
-                                            groupScroll = scope.launch {
-                                                listState.reveal(
-                                                    header = "header-${group.name}",
-                                                    firstRow = "${group.name}-0",
-                                                    rows = (group.proxies.size + columns - 1) / columns,
-                                                )
-                                            }
-                                        }
-                                    }
+                                    if (group.name in flipped) flipped -= group.name else flipped += group.name
+                                    if (query.isBlank()) foldGroup(group.name, rows.size, closing = open)
                                 },
                                 onHealthCheck = { onHealthCheck(group.name) },
                                 // Пульт входит на «Прокси» на шапку первой группы: дальше вправо — замер,
                                 // вниз — узлы (этап 6).
-                                modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = ItemMove)
+                                modifier = Modifier.padding(top = ITEM_GAP)
                                     .then(if (tv) Modifier.onFocusChanged { if (it.hasFocus) column[0] = 0 } else Modifier)
                                     .then(if (index == 0) Modifier.tabEntry().focusRequester(firstGroup) else Modifier)
                                     .then(
@@ -456,28 +472,22 @@ fun ProxyScreen(
                         }
 
                         // Rows are keyed by position: a starred node moving up changes the cards in place
-                        // rather than crossfading every row below it (D-359).
+                        // rather than crossfading every row below it (D-359). While the group unrolls or rolls up,
+                        // only the rows that can be seen stay in the list ([Fold.rows]).
+                        val fold = if (query.isBlank()) folds[group.name] else null
                         itemsIndexed(
-                            if (open) group.proxies.chunked(columns) else emptyList(),
+                            when {
+                                fold != null -> rows.take(fold.rows)
+                                open -> rows
+                                else -> emptyList()
+                            },
                             key = { i, _ -> "${group.name}-$i" },
                         ) { row, proxies ->
-                            // A row of a group just opened fades in in a layer with room for its cards' shadows: the
-                            // list's own fade drew it cut to its bounds, and the shadows came in with a jump as it
-                            // ended (as on «Подключения», D-425).
-                            val appear = remember {
-                                Animatable(if (opening.group == group.name && SystemClock.uptimeMillis() < opening.until) 0f else 1f)
-                            }
-                            LaunchedEffect(Unit) { appear.animateTo(1f, ItemFadeIn) }
                             ProxyRow(
                                 group = group, proxies = proxies, columns = columns, column = column,
                                 onSelect = onSelect, onFavorite = onFavorite,
-                                modifier = Modifier.animateItem(
-                                    fadeInSpec = null, fadeOutSpec = null, placementSpec = ItemMove,
-                                )
-                                    .graphicsLayer {
-                                        alpha = appear.value * if (closing.group == group.name) closingFade.value else 1f
-                                        outsets = DuckerShadowOutsets
-                                    }
+                                modifier = Modifier.foldRow(if (query.isBlank()) folds[group.name] else null, row, rowMeasure)
+                                    .padding(top = ITEM_GAP)
                                     .then(if (index == 0 && row == 0) Modifier.focusRequester(firstRow) else Modifier),
                             )
                         }
@@ -528,28 +538,6 @@ fun ProxyScreen(
     }
 }
 
-
-private suspend fun LazyListState.returnAfterCollapse(bottom: Int) {
-    val info = layoutInfo
-    // The reserve is padding below the end ([listPadding]): the last item is the real content end.
-    val tail = info.visibleItemsInfo.firstOrNull { it.index == info.totalItemsCount - 1 } ?: return
-    val gap = (info.viewportEndOffset - bottom - tail.offset - tail.size).coerceAtLeast(0).toFloat()
-    if (gap <= 0f || (firstVisibleItemIndex == 0 && firstVisibleItemScrollOffset == 0)) return
-
-    scroll {
-        var remaining = gap
-        var previous = 0f
-        animate(0f, 1f, animationSpec = tween(REVEAL_MS)) { fraction, _ ->
-            // Only consume real travel when a compact page reaches its first item.
-            val toStart = if (firstVisibleItemIndex == 0) firstVisibleItemScrollOffset
-                else layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }?.offset?.let { -it }
-            if (toStart != null) remaining = minOf(remaining, toStart.coerceAtLeast(0).toFloat())
-            val portion = if (previous < 1f) ((fraction - previous) / (1f - previous)).coerceIn(0f, 1f) else 0f
-            remaining = (remaining + scrollBy(-remaining * portion)).coerceAtLeast(0f)
-            previous = fraction
-        }
-    }
-}
 
 @Composable
 private fun ProxyRow(
@@ -788,42 +776,76 @@ private fun GroupHeader(
     }
 }
 
-/** Раскрытие групп (D-120): проявление, растворение и сдвиг соседей. */
 /**
- * Раскрытую группу подтягиваем в видимую часть. У нижней группы узлы появлялись под панелью
- * вкладок и за краем экрана: у верхних соседи ниже съезжают, а здесь не двигалось ничего, и
- * раскрытие выглядело как «не сработало». Сдвиг — ровно до последнего узла, но не дальше
- * заголовка: он остаётся на экране.
+ * Раскрытие групп (D-120), with [ProxyScreen]'s `foldGroup`: a group's rows unroll under its header and roll up into it,
+ * the rows below following in the same layout pass (the owner, 24.11: the rows faded in and out where they stood while
+ * the headers below slid over them on springs of their own, items from beyond the screen came in at other times, and the
+ * list then scrolled after them by itself; F-591). [shown] — the pixels of the rows that show, one row after another
+ * from the top; [rows] — how many rows the list keeps meanwhile.
  */
-private suspend fun LazyListState.reveal(header: String, firstRow: String, rows: Int) {
-    val layout = withTimeoutOrNull(REVEAL_WAIT_MS) {
-        snapshotFlow { layoutInfo }.first { info -> info.visibleItemsInfo.any { it.key == firstRow } }
-    } ?: return
-
-    val head = layout.visibleItemsInfo.firstOrNull { it.key == header } ?: return
-    val row = layout.visibleItemsInfo.first { it.key == firstRow }
-
-    // Отступы элементов считаются от конца верхнего поля списка; нижнее поле — под панелью вкладок.
-    val bottom = row.offset + rows * row.size + (rows - 1) * layout.mainAxisItemSpacing
-    val visibleEnd = layout.viewportEndOffset - layout.afterContentPadding
-    val shift = minOf(bottom - visibleEnd, head.offset)
-
-    if (shift > 0) animateScrollBy(shift.toFloat(), tween(REVEAL_MS))
+private class Fold(shown: Float, val rows: Int) {
+    var shown by mutableFloatStateOf(shown)
 }
 
-private const val REVEAL_WAIT_MS = 300L
-private const val REVEAL_MS = 320
-
-private const val ITEM_FADE_IN_MS = 220
-
-/** The group opened last and until when ([SystemClock.uptimeMillis]) its newly shown rows fade in; or the one closing. */
-private class Opening {
-    var group: String? = null
-    var until = 0L
+/** The rows' height with their gap, as last measured: all rows are alike (two lines of name, the type and the delay). */
+private class RowMeasure {
+    var height = 0
 }
-private val ItemFadeIn = tween<Float>(ITEM_FADE_IN_MS)
-private val ItemFadeOut = tween<Float>(120)
-private val ItemMove = spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = IntOffset.VisibilityThreshold)
+
+/**
+ * A row of a folding group shows only its share of [Fold.shown], its bottom first, sliding out from under the item above:
+ * the row's height follows it, so all below moves with it. Without a fold, the row as it is.
+ */
+private fun Modifier.foldRow(fold: Fold?, row: Int, measure: RowMeasure): Modifier =
+    (if (fold == null) this else drawWithContent {
+        // A row not out yet is not drawn at all: cut to nothing, its glass panes still rendered their layers, and a
+        // fold on glass took twice the GPU of a scroll.
+        if (size.height <= 0f) return@drawWithContent
+        // Only the top is cut, where the row comes out from under the one above: its shadow keeps its room at the sides.
+        val room = 16.dp.toPx()
+        clipRect(left = -room, top = 0f, right = size.width + room, bottom = size.height + room) {
+            this@drawWithContent.drawContent()
+        }
+    }).layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        val full = placeable.height
+        measure.height = full
+        val shown = if (fold == null) full else (fold.shown - row * full).coerceIn(0f, full.toFloat()).roundToInt()
+        layout(placeable.width, shown) { placeable.place(0, shown - full) }
+    }
+
+/**
+ * While [unroll] runs, the list scrolls as far as the group's rows grow below the screen, but never takes its [header]
+ * above the top. A finger on the list stops it; the rows go on unrolling.
+ */
+private suspend fun LazyListState.follow(fold: Fold, header: String, unroll: Job) {
+    scroll {
+        var last = fold.shown
+        while (unroll.isActive) {
+            withFrameNanos {}
+            val now = fold.shown
+            val grown = now - last
+            if (grown <= 0f) continue
+            val info = layoutInfo
+            val head = info.visibleItemsInfo.firstOrNull { it.key == header } ?: break
+            val end = info.viewportEndOffset - info.afterContentPadding
+            val over = head.offset + head.size + now - end
+            // Whole pixels: the fractions left the items a pixel to and fro for a few frames as the scroll ended.
+            val step = floor(minOf(grown, over, head.offset.toFloat()))
+            last = now
+            if (step > 0f) scrollBy(step)
+        }
+    }
+}
+
+/** A group's unroll and roll-up. */
+private const val FOLD_MS = 320
+
+/** A row's height before any was measured: a card of two lines of name, the type and the delay, and the gap. */
+private val ROW_ESTIMATE = 96.dp
+
+/** The space above each item of «Прокси»'s list but the first, inside the item. */
+private val ITEM_GAP = 12.dp
 
 // One message at a time: OK pressed again replaces it instead of queuing the same text for seconds.
 private var groupToast: Toast? = null
