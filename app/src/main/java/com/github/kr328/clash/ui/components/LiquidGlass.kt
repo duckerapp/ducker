@@ -351,10 +351,12 @@ private fun stillLooks(extra: Dp, own: Boolean, dock: Boolean): List<Pair<Int, I
     // The dock's own glass too: since the owner tuned it apart from the panes (22.11) its blur and lift are not theirs,
     // and without a picture of its own it bent its glass live every frame.
     val dockGlass = LocalGlassTuning.current.optics(GlassTuningGroup.Dock, style.dockDefaults())
-    return remember(style.blur, style.vibrancy, pane.blur, pane.vibrancy, dockGlass.blur, dockGlass.vibrancy, density, extra, own, dock) {
+    // And the panes' on a plain background, when tuned apart.
+    val plain = LocalGlassTuning.current.optics(GlassTuningGroup.PlainPane, pane)
+    return remember(style.blur, style.vibrancy, pane.blur, pane.vibrancy, dockGlass.blur, dockGlass.vibrancy, plain.blur, plain.vibrancy, density, extra, own, dock) {
         with(density) {
             val looks = (if (own) listOf(style.blur to style.vibrancy) else emptyList()) +
-                if (dock) listOf(pane.blur to pane.vibrancy, dockGlass.blur to dockGlass.vibrancy) else emptyList()
+                if (dock) listOf(pane.blur to pane.vibrancy, dockGlass.blur to dockGlass.vibrancy, plain.blur to plain.vibrancy) else emptyList()
             looks.flatMap { (b, v) ->
                 listOf(0.dp, INNER_BLUR, INNER_BLUR + POWER_BLUR_BOOST).map { (MAX_BLUR.toPx() * (b / 100f) + (it + extra).toPx()).roundToInt() to v }
             }.distinct()
@@ -564,7 +566,7 @@ internal fun Modifier.liquidGlass(
      */
     fixedTint: Boolean = false,
     /** The review app's tuning group of this pane's glass: the cards', or the dock body's second mode («Док 2»). */
-    paneGroup: GlassTuningGroup = GlassTuningGroup.Pane,
+    paneGroup: GlassTuningGroup = LocalPaneGroup.current,
     /** Its settings, if not [LocalGlassStyle]'s: the dock's body in its second mode inside the dock's own style. */
     glassStyle: GlassStyle? = null,
     /**
@@ -582,9 +584,8 @@ internal fun Modifier.liquidGlass(
     val tuning = LocalGlassTuning.current
     val ownRim = if (tuning?.enabled == true) tuning.ownRimOf(paneGroup) else !PaneGlass.DOCK_RIM
     val paneHighlight = tuning?.value(paneGroup, "highlight", DockGlass.HIGHLIGHT.toFloat())?.roundToInt() ?: DockGlass.HIGHLIGHT
-    fun paneValue(key: String, fallback: Float) = tuning?.value(paneGroup, key, fallback) ?: fallback
+    fun paneValue(key: String, fallback: Float) = tuning.paneKnob(paneGroup, key, fallback)
 
-    val plainPanes = if (panes && !fixedTint) LocalPlainPanes.current else null
     val glass = rememberGraphicsLayer()
     // The pane glass's live picture is bent in a layer of its own, drawn whole: drawn straight under the pane's clip, its
     // bend was handed the blurred backdrop only up to the clip's edge, and the rim, drawn from beyond it, came out empty
@@ -737,10 +738,10 @@ internal fun Modifier.liquidGlass(
                 } else if ((tintProgress > 0f || fixedTint && panes) && tint.alpha > 0f) {
                     // A chosen card keeps its colour under a finger and only swells (the owner, 22.11).
                     val a = (if (fixedTint && panes) tint.alpha
-                    else tint.alpha * tintProgress * (plainPanes?.density ?: 1f) *
-                        (if (panes) paneValue("denser", PaneGlass.DENSER) * clear else 1f)).coerceIn(0f, 0.92f)
-                    val veilColor = plainPanes?.lift?.takeIf { it > 0f }
-                        ?.let { androidx.compose.ui.graphics.lerp(tint.copy(alpha = 1f), Color.White, it) } ?: tint
+                    else tint.alpha * tintProgress * (if (panes) paneValue("denser", PaneGlass.DENSER) * clear else 1f)).coerceIn(0f, 0.92f)
+                    // The panes on a plain background may take a share of white, to part from black (the owner, 23.11).
+                    val lift = if (panes && !fixedTint && paneGroup == GlassTuningGroup.PlainPane) paneValue("lift", 0f) else 0f
+                    val veilColor = if (lift > 0f) androidx.compose.ui.graphics.lerp(tint.copy(alpha = 1f), Color.White, lift) else tint
                     if (veilShader != null && veilBrush != null) {
                         // Premultiplied, as the shader's output is.
                         veilShader.setFloatUniform("color", veilColor.red * a, veilColor.green * a, veilColor.blue * a, a)
@@ -1892,13 +1893,24 @@ internal fun Modifier.glass(
 internal val LocalGlassPanes = staticCompositionLocalOf { false }
 
 /**
- * The panes on a plain background (the screens over the tabs on iOS's black, [WallMode]): their tint [density] times the
- * panes', and lifted towards white by [lift] — over black the panes' thin tint left them hardly apart from it (the
- * owner, 23.11). Null — as everywhere else.
+ * The tuning group the panes here read their knobs from: the cards' ([GlassTuningGroup.Pane]), or on the screens over the
+ * tabs on a plain background its own ([GlassTuningGroup.PlainPane]) — over black the cards' glass hardly parted from it
+ * (the owner, 23.11).
  */
-internal class PlainPanes(val density: Float, val lift: Float)
+internal val LocalPaneGroup = staticCompositionLocalOf { GlassTuningGroup.Pane }
 
-internal val LocalPlainPanes = staticCompositionLocalOf<PlainPanes?> { null }
+/**
+ * A pane knob of [group]: [GlassTuningGroup.PlainPane]'s falls back to the cards' as they are tuned, so it starts where
+ * they stand.
+ */
+internal fun GlassTuning?.paneKnob(group: GlassTuningGroup, key: String, fallback: Float): Float {
+    if (this == null) return fallback
+    // Only the knobs the cards have: «Белая тонировка» is the plain panes' own.
+    val base = if (group == GlassTuningGroup.PlainPane && glassKnobs.getValue(GlassTuningGroup.Pane).any { it.key == key }) {
+        value(GlassTuningGroup.Pane, key, fallback)
+    } else fallback
+    return value(group, key, base)
+}
 
 /**
  * The pane glass's settings: the dock's blur, tint and colour, so the cards and the dock read as one glass (the owner,
@@ -2032,7 +2044,7 @@ private fun Density.paneBend(
     shader: RuntimeShader, margin: Float, width: Float, height: Float, cornerRadii: FloatArray, style: GlassStyle, boost: Float,
     ownRim: Boolean, tuning: GlassTuning?, group: GlassTuningGroup = GlassTuningGroup.Pane,
 ) {
-    fun value(key: String, fallback: Float) = tuning?.value(group, key, fallback) ?: fallback
+    fun value(key: String, fallback: Float) = tuning.paneKnob(group, key, fallback)
     shader.setFloatUniform("size", width, height)
     shader.setFloatUniform("offset", -margin, -margin)
     shader.setFloatUniform("shift", 0f, 0f)
@@ -2062,8 +2074,8 @@ private fun Density.paneVeil(
 ) {
     shader.setFloatUniform("size", width, height)
     shader.setFloatUniform("cornerRadii", cornerRadii)
-    val band = tuning?.value(group, "band", PaneGlass.BAND.value) ?: PaneGlass.BAND.value
-    val spare = tuning?.value(group, "spare", PaneGlass.SPARE) ?: PaneGlass.SPARE
+    val band = tuning.paneKnob(group, "band", PaneGlass.BAND.value)
+    val spare = tuning.paneKnob(group, "spare", PaneGlass.SPARE)
     shader.setFloatUniform("band", band.dp.toPx())
     shader.setFloatUniform("spare", spare)
 }

@@ -88,7 +88,7 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
         "height" to DockGlass.LENS_HEIGHT, "aspect" to DockGlass.LENS_ASPECT,
         "swellWide" to DockGlass.SWELL_WIDE, "swellFlat" to DockGlass.SWELL_FLAT, "swellZoom" to DockGlass.SWELL_ZOOM,
     )
-    GlassTuningGroup.Pane, GlassTuningGroup.DockPane -> style.asDock().numbers() + mapOf(
+    GlassTuningGroup.Pane, GlassTuningGroup.DockPane, GlassTuningGroup.PlainPane -> style.asDock().numbers() + mapOf("lift" to 0f) + mapOf(
         "lineSpread" to PaneGlass.LINE_SPREAD.value, "lineGlow" to PaneGlass.LINE_GLOW, "lineFall" to PaneGlass.LINE_FALL,
         "lineDirect" to PaneGlass.LINE_DIRECT,
         "highlight" to DockGlass.HIGHLIGHT.toFloat(),
@@ -114,7 +114,6 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
     GlassTuningGroup.Wave -> HeroWave.defaults
     GlassTuningGroup.Wall -> mapOf(
         "blur" to wallBlur(!light), "tint" to wallTint(!light), "tone" to if (light) 1f else 0f, "saturation" to 1f,
-        "plainDensity" to WallMode.PLAIN_DENSITY, "plainLift" to WallMode.PLAIN_LIFT,
     )
 }
 
@@ -163,7 +162,14 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
         }
 
         val group = tuning.group
-        val defaults = remember(group, style, light) { group.defaults(style, light) }
+        // The panes on black start from the cards as they are tuned.
+        val defaults = group.defaults(style, light).let { base ->
+            if (group != GlassTuningGroup.PlainPane) base
+            else {
+                val cards = glassKnobs.getValue(GlassTuningGroup.Pane).map { it.key }.toSet()
+                base.mapValues { (key, value) -> if (key in cards) tuning.value(GlassTuningGroup.Pane, key, value) else value }
+            }
+        }
         val listHeight = (maxHeight * 0.36f).coerceIn(120.dp, 320.dp)
         Surface(
             modifier = edge.widthIn(max = 380.dp).fillMaxWidth(),
@@ -263,6 +269,14 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                         if (group == GlassTuningGroup.Dock) {
                             item { PanelToggle("Собственный блик дока 1 (как у карточек)", tuning.ownRimOf(group), tuning::dock1Rim) }
                         }
+                        if (group == GlassTuningGroup.PlainPane) {
+                            item {
+                                Text(
+                                    "Карточки на экранах поверх вкладок, когда у них ровный фон (настройки, возможности и др.). Начинают с «Карточек»; собственный блик включается там же.",
+                                    style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant,
+                                )
+                            }
+                        }
                         if (group == GlassTuningGroup.Pane || group == GlassTuningGroup.DockPane) {
                             item {
                                 PanelToggle(
@@ -286,14 +300,13 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                                 "lineGlow", "lineFall" -> tuning.ownRimOf(group) && current("lineSpread") > 0f
                                 // The picture's blur and tint mean nothing on a plain background.
                                 "blur", "tint", "tone", "saturation" -> group != GlassTuningGroup.Wall || tuning.wallMode == WallMode.PICTURE
-                                "plainDensity", "plainLift" -> tuning.wallMode != WallMode.PICTURE
                                 else -> true
                             }
                         }
                         items(shown, key = { it.key }) { knob ->
                             val themed = group.usesLightValues(knob.key, light)
                             val saved = tuning.saved(group, knob.key, themed)
-                            val fallback = if ((group == GlassTuningGroup.Pane || group == GlassTuningGroup.DockPane) && knob.key == "highlight" && tuning.ownRimOf(group)) {
+                            val fallback = if ((group == GlassTuningGroup.Pane || group == GlassTuningGroup.DockPane || group == GlassTuningGroup.PlainPane) && knob.key == "highlight" && tuning.ownRimOf(group)) {
                                 style.highlight.toFloat()
                             } else defaults.getValue(knob.key)
                             GlassTuningRow(
