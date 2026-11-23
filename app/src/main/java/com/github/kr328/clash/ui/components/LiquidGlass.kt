@@ -1021,6 +1021,29 @@ internal fun GlassTuning?.wave(key: String): Float =
     this?.value(GlassTuningGroup.Wave, key, HeroWave.defaults.getValue(key)) ?: HeroWave.defaults.getValue(key)
 
 /**
+ * Air's power button as the state changes, two options for the owner to try in the review app (23.11): [VARIANT] 0 —
+ * as it is, 1 — the wave's circle with a soft edge [SOFT] wide (A), 2 — a ring of the new state's button colour
+ * leaving the button (B), 3 — both. The ring: its brightness, how far it goes in the button's radii, how long, how thick.
+ */
+internal object AirWave {
+    const val VARIANT = 0f
+    val SOFT = 56.dp
+    const val RING = 0.7f
+    const val REACH = 2.4f
+    const val RING_MS = 900f
+    val RING_WIDTH = 3.dp
+
+    val defaults: Map<String, Float> get() = mapOf(
+        "variant" to VARIANT, "soft" to SOFT.value, "ring" to RING, "reach" to REACH, "ms" to RING_MS,
+        "width" to RING_WIDTH.value,
+    )
+}
+
+/** An Air button knob: the tuning panel's in the review app, else [AirWave]'s. */
+internal fun GlassTuning?.airWave(key: String): Float =
+    this?.value(GlassTuningGroup.AirButton, key, AirWave.defaults.getValue(key)) ?: AirWave.defaults.getValue(key)
+
+/**
  * The wave of [wave] over a layer at [at] in the window; null while none runs. It comes in as the ring leaves the
  * button's middle, narrower while it is small, and weakens as it spreads, gone before it leaves the screen.
  */

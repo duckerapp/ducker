@@ -109,6 +109,7 @@ private fun GlassTuningGroup.defaults(style: GlassStyle, light: Boolean) = when 
     )
     GlassTuningGroup.Wave -> HeroWave.defaults
     GlassTuningGroup.SheetBody -> mapOf("blur" to SHEET_BLUR.value, "tint" to SHEET_TINT, "scrim" to GLASS_SCRIM)
+    GlassTuningGroup.AirButton -> AirWave.defaults
     GlassTuningGroup.Wall -> mapOf(
         "blur" to wallBlur(!light), "tint" to wallTint(!light), "tone" to if (light) 1f else 0f, "saturation" to 1f,
     )
@@ -244,7 +245,12 @@ internal fun GlassTuningPanel(tuning: GlassTuning, changeStyle: (() -> Unit)? = 
                 if (!tuning.enabled) {
                     Text("Правки выключены: видно стекло по умолчанию.", style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                 }
-                if (!style.enabled) {
+                if (group == GlassTuningGroup.AirButton) {
+                    Text(
+                        if (style.enabled) "Только для Air: включи Air и нажми кнопку на главной." else "Кнопка на главной при вкл/выкл. А — мягкий край волны, Б — кольцо от кнопки.",
+                        style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant,
+                    )
+                } else if (!style.enabled) {
                     Text("Сейчас Air: включи стекло, чтобы увидеть правки.", style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                 }
                 androidx.compose.runtime.key(group) {

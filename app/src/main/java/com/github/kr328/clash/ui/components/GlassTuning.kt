@@ -33,7 +33,8 @@ internal enum class GlassTuningGroup(val title: String) {
     Wave("Волна вкл/выкл"),
     PlainPane("Карточки на чёрном фоне"),
     SheetPane("Карточки в шторках"),
-    SheetBody("Шторка: подложка");
+    SheetBody("Шторка: подложка"),
+    AirButton("Air: кнопка");
 
     /** A group of the panes' knobs that starts from the cards' as tuned ([Pane]). */
     val fromCards: Boolean get() = this == PlainPane || this == SheetPane
@@ -206,10 +207,18 @@ internal val glassKnobs = mapOf(
             knob("tint", "Плотность подложки", 0f, 1f),
             knob("scrim", "Затемнение экрана под шторкой", 0f, 0.5f),
     ),
+    GlassTuningGroup.AirButton to listOf(
+            knob("variant", "Вариант: 0 — как сейчас, 1 — А, 2 — Б, 3 — оба", 0f, 3f, 1f),
+            knob("soft", "А: ширина мягкого края волны, dp", 4f, 160f, 1f),
+            knob("ring", "Б: яркость кольца", 0.1f, 1f),
+            knob("reach", "Б: докуда уходит кольцо, в радиусах кнопки", 1.2f, 5f),
+            knob("ms", "Б: длительность кольца, мс", 300f, 2000f, 10f),
+            knob("width", "Б: толщина кольца, dp", 1f, 12f, 0.5f),
+    ),
 )
 
 internal fun GlassTuningGroup.usesLightValues(key: String, light: Boolean): Boolean = light && when (this) {
-    GlassTuningGroup.Pane, GlassTuningGroup.DockPane, GlassTuningGroup.Wave, GlassTuningGroup.PlainPane, GlassTuningGroup.SheetPane, GlassTuningGroup.SheetBody -> false
+    GlassTuningGroup.Pane, GlassTuningGroup.DockPane, GlassTuningGroup.Wave, GlassTuningGroup.PlainPane, GlassTuningGroup.SheetPane, GlassTuningGroup.SheetBody, GlassTuningGroup.AirButton -> false
     GlassTuningGroup.Dock -> key == "tintEase" || key == "tintNear"
     GlassTuningGroup.Veil -> key == "shade"
     else -> true
