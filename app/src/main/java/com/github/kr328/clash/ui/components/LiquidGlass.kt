@@ -1978,15 +1978,16 @@ internal fun GlassStyle.asSheet(): GlassStyle = copy(
 )
 
 /**
- * The panes in the sheets as the owner tuned them (23.11, F-581): clearer than the cards (the sheet under them is glass
- * already), bent a little more, a narrower roll and a stronger own light line. The rest is the cards'.
+ * The panes in the sheets as the owner tuned them (23.11, F-581, then the export of F-583): clearer than the cards (the
+ * sheet under them is glass already), bent a little more and deeper, a narrower roll and a stronger own light line. The
+ * rest is the cards'. Their blur is the sheet body's too, which lies in their style.
  */
 internal object SheetPaneGlass {
-    const val BLUR = 0
-    const val TINT = 40
+    const val BLUR = 10
+    const val TINT = 35
     const val REFRACTION = 60
-    const val DEPTH = 70
-    val KNOBS = mapOf("band" to 5.07f, "line" to 1.2f)
+    const val DEPTH = 87
+    val KNOBS = mapOf("band" to 5.45f, "line" to 1.2f)
 }
 
 /** A pane group's own knob defaults, apart from the cards' ([GlassTuningGroup.fromCards]). */
