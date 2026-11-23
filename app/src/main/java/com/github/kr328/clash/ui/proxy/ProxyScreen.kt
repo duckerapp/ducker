@@ -93,6 +93,9 @@ import androidx.compose.animation.core.animate
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.Job
+import androidx.compose.foundation.lazy.LazyListLayoutInfo
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import android.os.SystemClock
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
@@ -190,6 +193,9 @@ fun ProxyScreen(
     // The group opened just now, its rows fading in themselves (see the rows below). Not a state: a row reads it once
     // as it first composes, and a state's change recomposed every row on screen in the middle of the opening's scroll.
     val opening = remember { Opening() }
+    // The group closing now, its rows fading by [closingFade] before it folds (see onExpand). Read in the rows' layers only.
+    val closing = remember { Opening() }
+    val closingFade = remember { Animatable(1f) }
     // Пульт (этап 6): строка поиска висит над списком, и список целиком охватывает её — стрелка
     // вниз его не находила. Вниз из поиска — на первую группу, а если она уехала — в список.
     val listFocus = remember { FocusRequester() }
@@ -232,6 +238,21 @@ fun ProxyScreen(
     // the room the scaffold keeps for it (`DuckerScaffold`), and 16 alone left 4 dp.
     val bottomPadding = 28.dp + contentPadding.calculateBottomPadding()
     val bottomPaddingPx = with(density) { bottomPadding.roundToPx() }
+    val listTop = 16.dp + contentPadding.calculateTopPadding()
+    // While a fold returns the list, a screen's height of space below its end, so the list does not jump back as the rows
+    // go: read as the list is measured, so it comes and goes without recomposing the screen — as an item of its own it
+    // recomposed «Прокси» whole twice a fold, up to 8 ms mid-scroll (F-590).
+    val listPadding = remember(start, end, listTop, bottomPadding, density) {
+        object : PaddingValues {
+            override fun calculateLeftPadding(layoutDirection: LayoutDirection) =
+                if (layoutDirection == LayoutDirection.Ltr) start else end
+            override fun calculateTopPadding() = listTop
+            override fun calculateRightPadding(layoutDirection: LayoutDirection) =
+                if (layoutDirection == LayoutDirection.Ltr) end else start
+            override fun calculateBottomPadding() =
+                bottomPadding + if (returnToken != null) with(density) { viewportHeight.toDp() } else 0.dp
+        }
+    }
     val search = remember(density) { FloatingSearch(with(density) { 8.dp.toPx() }) }
     var searchHeight by remember { mutableFloatStateOf(with(density) { 48.dp.toPx() }) }
     // Анимация читается только при раскладке и отрисовке строки: смена «показать/спрятать»
@@ -294,12 +315,7 @@ fun ProxyScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     // Отступы списка, а не самого экрана: тогда карточки уходят под плавающую
                     // панель вкладок и видны в просветах по её бокам (D-74).
-                    contentPadding = PaddingValues(
-                        start = start,
-                        end = end,
-                        top = 16.dp + contentPadding.calculateTopPadding(),
-                        bottom = bottomPadding,
-                    ),
+                    contentPadding = listPadding,
                 ) {
                     item {
                         ScreenHeader(
@@ -366,36 +382,62 @@ fun ProxyScreen(
                                 checkEnabled = state.checking == null,
                                 canCheck = state.canCheck,
                                 onExpand = {
-                                    val beforeLayout = listState.layoutInfo
                                     groupScroll?.cancel()
-                                    if (group.name in flipped) flipped -= group.name else flipped += group.name
-                                    if (!open) {
-                                        opening.group = group.name
-                                        opening.until = SystemClock.uptimeMillis() + ITEM_FADE_IN_MS
-                                    }
 
-                                    if (query.isBlank() && (open || returnToken != null)) {
-                                        // Keep scroll space while native item fades remove the rows.
+                                    // Keeps scroll space while the rows go and returns the list to its end if it was
+                                    // there, once the layout after [beforeLayout] comes.
+                                    suspend fun returnFrom(beforeLayout: LazyListLayoutInfo) {
                                         val token = Any()
                                         returnToken = token
+                                        try {
+                                            withTimeoutOrNull(REVEAL_WAIT_MS) {
+                                                snapshotFlow { listState.layoutInfo }.first { it !== beforeLayout }
+                                            }
+                                            listState.returnAfterCollapse(bottomPaddingPx)
+                                            withFrameNanos {}
+                                        } finally {
+                                            if (returnToken === token) returnToken = null
+                                        }
+                                    }
+
+                                    if (query.isBlank() && open) {
+                                        // Closing in two steps: the rows fade out in their own layers, shadows and all,
+                                        // while the list stands still; then the group folds at once. The list's own fade
+                                        // drew them cut to their bounds, the shadows gone at the first frame, and its
+                                        // heavier frames fell in the middle of the motion (the owner, 23.11: «то плавно
+                                        // то чутка нет»; F-590).
                                         groupScroll = scope.launch {
+                                            closing.group = group.name
                                             try {
-                                                withTimeoutOrNull(REVEAL_WAIT_MS) {
-                                                    snapshotFlow { listState.layoutInfo }.first { it !== beforeLayout }
-                                                }
-                                                listState.returnAfterCollapse(bottomPaddingPx)
-                                                withFrameNanos {}
+                                                closingFade.snapTo(1f)
+                                                closingFade.animateTo(0f, ItemFadeOut)
+                                                val beforeLayout = listState.layoutInfo
+                                                if (group.name in flipped) flipped -= group.name else flipped += group.name
+                                                returnFrom(beforeLayout)
                                             } finally {
-                                                if (returnToken === token) returnToken = null
+                                                closing.group = null
+                                                withContext(NonCancellable) { closingFade.snapTo(1f) }
                                             }
                                         }
-                                    } else if (!open && group.proxies.isNotEmpty()) {
-                                        groupScroll = scope.launch {
-                                            listState.reveal(
-                                                header = "header-${group.name}",
-                                                firstRow = "${group.name}-0",
-                                                rows = (group.proxies.size + columns - 1) / columns,
-                                            )
+                                    } else {
+                                        if (group.name in flipped) flipped -= group.name else flipped += group.name
+                                        if (!open) {
+                                            opening.group = group.name
+                                            opening.until = SystemClock.uptimeMillis() + ITEM_FADE_IN_MS
+                                        }
+
+                                        if (query.isBlank() && returnToken != null) {
+                                            // Opened again while the list still returns from a fold: finish the return.
+                                            val beforeLayout = listState.layoutInfo
+                                            groupScroll = scope.launch { returnFrom(beforeLayout) }
+                                        } else if (!open && group.proxies.isNotEmpty()) {
+                                            groupScroll = scope.launch {
+                                                listState.reveal(
+                                                    header = "header-${group.name}",
+                                                    firstRow = "${group.name}-0",
+                                                    rows = (group.proxies.size + columns - 1) / columns,
+                                                )
+                                            }
                                         }
                                     }
                                 },
@@ -430,19 +472,14 @@ fun ProxyScreen(
                                 group = group, proxies = proxies, columns = columns, column = column,
                                 onSelect = onSelect, onFavorite = onFavorite,
                                 modifier = Modifier.animateItem(
-                                    fadeInSpec = null, fadeOutSpec = ItemFadeOut, placementSpec = ItemMove,
+                                    fadeInSpec = null, fadeOutSpec = null, placementSpec = ItemMove,
                                 )
                                     .graphicsLayer {
-                                        alpha = appear.value
+                                        alpha = appear.value * if (closing.group == group.name) closingFade.value else 1f
                                         outsets = DuckerShadowOutsets
                                     }
                                     .then(if (index == 0 && row == 0) Modifier.focusRequester(firstRow) else Modifier),
                             )
-                        }
-                    }
-                    if (returnToken != null) {
-                        item(key = RETURN_RESERVE_KEY) {
-                            Spacer(Modifier.height(with(density) { viewportHeight.toDp() }))
                         }
                     }
                 }
@@ -491,12 +528,11 @@ fun ProxyScreen(
     }
 }
 
-private const val RETURN_RESERVE_KEY = "proxy-scroll-return-reserve"
 
 private suspend fun LazyListState.returnAfterCollapse(bottom: Int) {
     val info = layoutInfo
-    // The last item is only a reserve. Use the real content end to find the legal offset.
-    val tail = info.visibleItemsInfo.firstOrNull { it.index == info.totalItemsCount - 2 } ?: return
+    // The reserve is padding below the end ([listPadding]): the last item is the real content end.
+    val tail = info.visibleItemsInfo.firstOrNull { it.index == info.totalItemsCount - 1 } ?: return
     val gap = (info.viewportEndOffset - bottom - tail.offset - tail.size).coerceAtLeast(0).toFloat()
     if (gap <= 0f || (firstVisibleItemIndex == 0 && firstVisibleItemScrollOffset == 0)) return
 
@@ -779,7 +815,7 @@ private const val REVEAL_MS = 320
 
 private const val ITEM_FADE_IN_MS = 220
 
-/** The group opened last and until when ([SystemClock.uptimeMillis]) its newly shown rows fade in. */
+/** The group opened last and until when ([SystemClock.uptimeMillis]) its newly shown rows fade in; or the one closing. */
 private class Opening {
     var group: String? = null
     var until = 0L
