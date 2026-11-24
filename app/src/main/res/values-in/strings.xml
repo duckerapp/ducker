@@ -413,11 +413,11 @@
     <string name="app_update_available">Versi %s tersedia</string>
     <string name="app_update_beta">Versi beta</string>
     <string name="app_update_beta_hint">Dapatkan versi baru beberapa hari lebih awal</string>
-    <string name="app_update_auto">Perbarui otomatis</string>
-    <string name="app_update_auto_hint">Melalui Wi-Fi saat layar mati</string>
-    <string name="app_update_auto_question">Perbarui ducker secara otomatis?</string>
-    <string name="app_update_auto_text">Versi baru akan diunduh melalui Wi-Fi dan terpasang sendiri saat layar mati — biasanya pada malam hari. Berubah pikiran? Ada sakelar di pengaturan</string>
-    <string name="app_update_auto_yes">Ya, perbarui</string>
+    <string name="app_update_auto">Unduh pembaruan lebih awal</string>
+    <string name="app_update_auto_hint">Melalui Wi-Fi, pasang dengan sekali ketuk</string>
+    <string name="app_update_auto_question">Unduh pembaruan lebih awal?</string>
+    <string name="app_update_auto_text">Versi baru akan diunduh sendiri melalui Wi-Fi — lalu cukup ketuk notifikasi untuk memasangnya. Berubah pikiran? Ada sakelar di pengaturan</string>
+    <string name="app_update_auto_yes">Ya, unduh</string>
     <string name="app_update_auto_no">Saya akan memperbarui sendiri</string>
     <string name="app_update_card">Pembaruan tersedia: ducker %s</string>
     <string name="app_update_card_downloading">Mengunduh ducker %1$s — %2$d%%</string>
@@ -436,6 +436,9 @@
     <string name="app_update_notice_channel">Pembaruan aplikasi</string>
     <string name="app_update_notice_title">Pembaruan tersedia: ducker %s</string>
     <string name="app_update_notice_text">Ketuk untuk memperbarui</string>
+    <string name="app_update_ready_title">ducker %s siap dipasang</string>
+    <string name="app_update_ready_text">Ketuk untuk memasang</string>
+    <string name="app_update_later">Nanti</string>
     <string name="app_update_done_title">ducker diperbarui ke %s</string>
     <string name="app_update_done_text">Ketuk untuk membuka</string>
     <string name="stack_from_profile_value">ikuti profil: %s</string>

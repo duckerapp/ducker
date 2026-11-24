@@ -444,11 +444,11 @@
     <string name="app_update_available">Доступна версия %s</string>
     <string name="app_update_beta">Бета-версии</string>
     <string name="app_update_beta_hint">Новые версии на несколько дней раньше</string>
-    <string name="app_update_auto">Обновлять автоматически</string>
-    <string name="app_update_auto_hint">По Wi-Fi, пока экран погашен</string>
-    <string name="app_update_auto_question">Обновлять ducker автоматически?</string>
-    <string name="app_update_auto_text">Новые версии скачаются по Wi-Fi и встанут сами, пока экран погашен, — обычно ночью. Передумаете — переключатель в настройках</string>
-    <string name="app_update_auto_yes">Да, обновлять</string>
+    <string name="app_update_auto">Скачивать обновления заранее</string>
+    <string name="app_update_auto_hint">По Wi-Fi, установка — одним нажатием</string>
+    <string name="app_update_auto_question">Скачивать обновления заранее?</string>
+    <string name="app_update_auto_text">Новые версии будут скачиваться сами по Wi-Fi — останется нажать на уведомление, чтобы установить. Передумаете — переключатель в настройках</string>
+    <string name="app_update_auto_yes">Да, скачивать</string>
     <string name="app_update_auto_no">Буду обновлять сам</string>
     <string name="app_update_card">Доступно обновление ducker %s</string>
     <string name="app_update_card_downloading">Скачиваю ducker %1$s — %2$d %%</string>
@@ -467,6 +467,9 @@
     <string name="app_update_notice_channel">Обновления приложения</string>
     <string name="app_update_notice_title">Доступно обновление ducker %s</string>
     <string name="app_update_notice_text">Нажмите, чтобы обновить</string>
+    <string name="app_update_ready_title">ducker %s готов к установке</string>
+    <string name="app_update_ready_text">Нажмите, чтобы установить</string>
+    <string name="app_update_later">Позже</string>
     <string name="app_update_done_title">ducker обновлён до %s</string>
     <string name="app_update_done_text">Нажмите, чтобы открыть</string>
     <string name="stack_from_profile_value">как в профиле: %s</string>

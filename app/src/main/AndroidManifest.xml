@@ -26,9 +26,8 @@
     <!-- Окно «Разрешить работу в фоне?» после первого подключения (D-106). -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Обновление из самого приложения: ducker ставит только собственную новую версию.
-         Второе разрешение — чтобы Android 12+ не показывал системное окно при каждом обновлении. -->
+         No UPDATE_PACKAGES_WITHOUT_USER_ACTION: with it Play Protect blocks the app as harmful (F-603). -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
     <application
         android:name=".MainApplication"

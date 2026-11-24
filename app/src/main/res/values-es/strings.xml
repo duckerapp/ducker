@@ -419,11 +419,11 @@
     <string name="app_update_available">La versión %s está disponible</string>
     <string name="app_update_beta">Versiones beta</string>
     <string name="app_update_beta_hint">Recibe nuevas versiones unos días antes</string>
-    <string name="app_update_auto">Actualizar automáticamente</string>
-    <string name="app_update_auto_hint">Por Wi-Fi, con la pantalla apagada</string>
-    <string name="app_update_auto_question">¿Actualizar ducker automáticamente?</string>
-    <string name="app_update_auto_text">Las nuevas versiones se descargarán por Wi-Fi y se instalarán solas con la pantalla apagada, normalmente de noche. Si cambias de opinión, hay un interruptor en los ajustes</string>
-    <string name="app_update_auto_yes">Sí, actualizar</string>
+    <string name="app_update_auto">Descargar actualizaciones por adelantado</string>
+    <string name="app_update_auto_hint">Por Wi-Fi; se instalan con un toque</string>
+    <string name="app_update_auto_question">¿Descargar las actualizaciones por adelantado?</string>
+    <string name="app_update_auto_text">Las nuevas versiones se descargarán solas por Wi-Fi; luego bastará con tocar la notificación para instalarlas. Si cambias de opinión, hay un interruptor en los ajustes</string>
+    <string name="app_update_auto_yes">Sí, descargar</string>
     <string name="app_update_auto_no">Actualizaré manualmente</string>
     <string name="app_update_card">Actualización disponible: ducker %s</string>
     <string name="app_update_card_downloading">Descargando ducker %1$s — %2$d %%</string>
@@ -442,6 +442,9 @@
     <string name="app_update_notice_channel">Actualizaciones de la aplicación</string>
     <string name="app_update_notice_title">Actualización disponible: ducker %s</string>
     <string name="app_update_notice_text">Toca para actualizar</string>
+    <string name="app_update_ready_title">ducker %s está listo para instalar</string>
+    <string name="app_update_ready_text">Toca para instalar</string>
+    <string name="app_update_later">Más tarde</string>
     <string name="app_update_done_title">ducker se actualizó a %s</string>
     <string name="app_update_done_text">Toca para abrir</string>
     <string name="stack_from_profile_value">del perfil: %s</string>

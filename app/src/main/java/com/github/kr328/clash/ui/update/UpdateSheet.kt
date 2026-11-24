@@ -40,13 +40,13 @@ fun UpdateSheet(
     /** Android уже разрешил ducker ставить приложения; нет — «Обновить» сначала ведёт в настройки. */
     permitted: Boolean,
     onInstall: () -> Unit,
-    /** The answer to “update ducker automatically?”; “yes” installs this version as well. */
+    /** The answer to “download updates in advance?”; “yes” installs this version as well. */
     onAuto: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
 ) {
     // Asked once, with the first update the person opens (D-287).
-    val ask = state.autoAvailable && state.auto == null
+    val ask = state.auto == null
 
     DuckerSheet(
         open = open,

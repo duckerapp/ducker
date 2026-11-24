@@ -325,16 +325,14 @@ fun SettingsScreen(
                                     icon = Symbols.Update,
                                     busy = update.checking, onClick = onUpdate, action = true,
                                 )
-                                if (update.autoAvailable) {
-                                    SettingsNavigationDivider()
-                                    SettingsSwitchRow(
-                                        title = stringResource(R.string.app_update_auto),
-                                        subtitle = stringResource(R.string.app_update_auto_hint),
-                                        icon = Symbols.SystemUpdate,
-                                        checked = update.auto == true,
-                                        onChange = onAutoUpdate,
-                                    )
-                                }
+                                SettingsNavigationDivider()
+                                SettingsSwitchRow(
+                                    title = stringResource(R.string.app_update_auto),
+                                    subtitle = stringResource(R.string.app_update_auto_hint),
+                                    icon = Symbols.SystemUpdate,
+                                    checked = update.auto == true,
+                                    onChange = onAutoUpdate,
+                                )
                                 SettingsNavigationDivider()
                                 SettingsSwitchRow(
                                     title = stringResource(R.string.app_update_beta),

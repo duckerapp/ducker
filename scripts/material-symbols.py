@@ -28,6 +28,7 @@ ICONS = [
     ("Apps", "apps", False, False),
     ("Article", "article", False, False),
     ("ArrowBack", "arrow_back", False, True),
+    ("ArrowCircleDown", "arrow_circle_down", False, False),
     ("BatteryChargingFull", "battery_charging_full", False, False),
     ("BugReport", "bug_report", False, False),
     ("Calculate", "calculate", False, False),

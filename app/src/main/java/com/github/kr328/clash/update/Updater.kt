@@ -6,12 +6,10 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
-import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
-import android.os.PowerManager
 import androidx.core.content.IntentCompat
 import com.github.kr328.clash.BuildConfig
 import com.github.kr328.clash.common.Global
@@ -65,10 +63,10 @@ data class UpdateState(
      * update closed the app, and the notification reaches only those who allowed notifications.
      */
     val updated: Updated? = null,
-    /** Android 12+: only there an update installs without a system dialog (F-248). */
-    val autoAvailable: Boolean = false,
-    /** The answer to “update ducker automatically?” (D-287); `null` — not asked yet. */
+    /** The answer to “download updates in advance?” (D-287, F-603); `null` — not asked yet. */
     val auto: Boolean? = null,
+    /** «Позже» on Home's card, for which version, within the last [REMIND_INTERVAL]; the header's button stands in for the card. */
+    val postponed: Long = 0,
 ) {
     val busy: Boolean
         get() = progress != null || installing
@@ -85,7 +83,7 @@ object Updater {
     /** Уведомление о новой версии открывает приложение с панелью обновления. */
     const val ACTION_SHOW = "${BuildConfig.APPLICATION_ID}.action.SHOW_UPDATE"
 
-    private val _state = MutableStateFlow(UpdateState(autoAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S))
+    private val _state = MutableStateFlow(UpdateState())
     val state: StateFlow<UpdateState> = _state.asStateFlow()
 
     private val context: Context
@@ -98,9 +96,9 @@ object Updater {
     private var checkJob: Job? = null
     private var installJob: Job? = null
 
-    /** The download in flight belongs to the automatic update: install it only while nobody uses the phone. */
+    /** The download in flight is the one in advance: keep the file for the person's tap, do not install. */
     @Volatile
-    private var quietOnly = false
+    private var prefetchOnly = false
 
     /**
      * Приложение на экране: показать то, что знали в прошлый раз, и проверить заново, если
@@ -113,7 +111,7 @@ object Updater {
 
             val known = pick()
 
-            _state.update { it.copy(release = known, updated = updated(), auto = store.auto) }
+            _state.update { it.copy(release = known, updated = updated(), auto = store.auto, postponed = postponed()) }
 
             if (System.currentTimeMillis() - store.checkedAt > OPEN_INTERVAL) check()
         }
@@ -129,11 +127,12 @@ object Updater {
     }
 
     /**
-     * The automatic update (D-287), from [UpdateJob] while the phone lies idle. `false` — not done
-     * yet: the system runs the job again in its next idle window, and the file downloaded so far
-     * stays.
+     * The download in advance (D-287, F-603), from [UpdateJob]. Android installs only after the
+     * person confirms: ducker no longer asks for `UPDATE_PACKAGES_WITHOUT_USER_ACTION`, which made
+     * Play Protect block the app. `false` — not done yet: the system runs the job again, and the
+     * file downloaded so far stays.
      */
-    suspend fun unattended(): Boolean {
+    suspend fun prefetch(): Boolean {
         if (!autoReady()) return true
 
         val release = pick() ?: return true
@@ -142,19 +141,34 @@ object Updater {
 
         if (!onWifi()) return false
 
-        install(unattended = true)?.join()
+        install(prefetch = true)?.join()
 
-        // The installer has the file — the app is about to be replaced.
-        return _state.value.installing
+        return _state.value.error == null
     }
 
-    /** The answer to “update ducker automatically?”, from the sheet or the settings switch. */
+    /**
+     * «Позже» on Home's card: hide it for [REMIND_INTERVAL], as long as the reminders' step; a newer version shows it
+     * at once. The header's button stays meanwhile.
+     */
+    fun postpone() {
+        val code = _state.value.release?.code ?: return
+
+        store.postponed = code
+        store.postponedAt = System.currentTimeMillis()
+
+        _state.update { it.copy(postponed = code) }
+    }
+
+    private fun postponed(): Long =
+        store.postponed.takeIf { System.currentTimeMillis() - store.postponedAt < REMIND_INTERVAL } ?: 0
+
+    /** The answer to “download updates in advance?”, from the sheet or the settings switch. */
     fun setAuto(value: Boolean) {
         store.auto = value
 
         _state.update { it.copy(auto = value) }
 
-        if (!value) UpdateJob.cancelInstall(context) else if (_state.value.release != null) UpdateJob.scheduleInstall(context)
+        if (!value) UpdateJob.cancelPrefetch(context) else if (_state.value.release != null) UpdateJob.schedulePrefetch(context)
     }
 
     /**
@@ -210,30 +224,54 @@ object Updater {
 
         val auto = autoReady()
 
-        if (release != null && auto) UpdateJob.scheduleInstall(context)
+        if (release != null && auto) UpdateJob.schedulePrefetch(context)
 
         // Уведомление — один раз на версию и только когда приложения нет на экране: на экране
-        // о ней говорит карточка главной. The automatic update says so itself once installed.
+        // о ней говорит карточка главной. The download in advance says so itself once the file is ready.
         if (release != null && release.code != store.notified) {
             store.notified = release.code
 
             if (!ApplicationObserver.visible && !auto) UpdateNotice.available(context, release.version)
         }
+
+        if (release != null) remind(release)
+    }
+
+    /**
+     * The file downloaded in advance waits for the person: say so when it is ready, and again every
+     * [REMIND_INTERVAL] while it is not installed — so that nobody stays on an old version by forgetting.
+     * Not while the app is on screen: there the home card says it.
+     */
+    private fun remind(release: Release) {
+        // A file still downloading is shorter.
+        if (file(release).length() != release.apk.size || ApplicationObserver.visible) return
+
+        val now = System.currentTimeMillis()
+
+        if (store.reminded == release.code && now - store.remindedAt < REMIND_INTERVAL) return
+
+        // Only a file that is this release: one re-published under the same code may keep the old file's size.
+        if (runCatching { sha256(file(release)) }.getOrNull() != release.apk.sha256) return
+
+        store.reminded = release.code
+        store.remindedAt = now
+
+        UpdateNotice.ready(context, release.version)
     }
 
     /**
      * Скачать, сверить и отдать установщику. Повторное нажатие, пока идёт, ничего не делает.
-     * A tap while the automatic update downloads turns that download into an ordinary one.
+     * A tap while the download in advance runs turns it into an ordinary one.
      */
     @Synchronized
-    fun install(unattended: Boolean = false): Job? {
-        if (!unattended) quietOnly = false
+    fun install(prefetch: Boolean = false): Job? {
+        if (!prefetch) prefetchOnly = false
 
         val release = _state.value.release ?: return null
 
         installJob?.takeIf { it.isActive }?.let { return it }
 
-        quietOnly = unattended
+        prefetchOnly = prefetch
 
         return Global.launch {
             _state.update { it.copy(progress = 0f, installing = false, error = null, errorDetail = "") }
@@ -266,10 +304,11 @@ object Updater {
                 return@launch stale(UpdateError.Foreign)
             }
 
-            // Replacing the app drops the tunnel for a couple of seconds: the automatic update
-            // waits until nobody uses the phone, and the file stays for the next idle window.
-            if (quietOnly && !quiet()) {
+            // In advance: the file waits for the person's tap on the notification or the card.
+            if (prefetchOnly) {
+                prefetchOnly = false
                 _state.update { it.copy(installing = false) }
+                remind(release)
 
                 return@launch
             }
@@ -305,7 +344,10 @@ object Updater {
     /** Приложение заменено новой версией — нашей установкой или руками. */
     fun replaced() {
         UpdateJob.schedule(context)
-        UpdateJob.cancelInstall(context)
+        UpdateJob.cancelPrefetch(context)
+
+        // A «Позже» said to the version before does not carry over.
+        store.postponed = 0
 
         // Сказать «обновлён» стоит только про своё обновление: его человек не видел — приложение
         // просто исчезло с экрана. Поставил сам — прежнее «вышла версия» больше не правда.
@@ -366,9 +408,9 @@ object Updater {
 
     private fun file(release: Release) = File(dir, "ducker-${release.code}.apk")
 
-    /** The person said yes, and Android lets ducker install without asking (D-287). */
+    /** The person said yes, and Android lets ducker open its install dialog with one tap (D-287). */
     private fun autoReady(): Boolean =
-        _state.value.autoAvailable && store.auto == true && context.packageManager.canRequestPackageInstalls()
+        store.auto == true && context.packageManager.canRequestPackageInstalls()
 
     /**
      * Wi-Fi or a cable (D-287), not mobile data even where the carrier marks it unmetered: the file
@@ -383,11 +425,6 @@ object Updater {
             network.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) &&
             !network.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
     }
-
-    /** Nobody uses the phone: the screen is off, and no call goes on — cellular or in a messenger. */
-    private fun quiet(): Boolean =
-        context.getSystemService(PowerManager::class.java)?.isInteractive == false &&
-            context.getSystemService(AudioManager::class.java)?.mode == AudioManager.MODE_NORMAL
 
     private fun fetchText(url: String): String {
         val connection = URL(url).openConnection() as HttpURLConnection
@@ -456,15 +493,10 @@ object Updater {
         // Брошенные попытки держат на диске копию файла.
         installer.mySessions.forEach { runCatching { installer.abandonSession(it.sessionId) } }
 
+        // Android always shows its install dialog: ducker does not ask for the permission to skip it (F-603).
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
             setAppPackageName(context.packageName)
             setSize(file.length())
-
-            // Android 12+: без системного окна, если «установка из этого источника» уже
-            // разрешена. Раньше, и пока не разрешена, — окно покажет сам Android.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
-            }
         }
 
         store.installing = code
@@ -488,6 +520,7 @@ object Updater {
 
     /** При открытии приложения — не чаще: адрес у людей за одним узлом общий, а сервер считает запросы. */
     private const val OPEN_INTERVAL = 6 * 60 * 60 * 1000L
+    private const val REMIND_INTERVAL = 3 * 24 * 60 * 60 * 1000L
     private const val JUST_CHECKED = 60 * 1000L
     private const val CONNECT_MS = 10_000
     private const val READ_MS = 15_000
@@ -511,10 +544,27 @@ private class UpdateStore(context: Context) {
         get() = prefs.getLong("notified", 0)
         set(value) = prefs.edit().putLong("notified", value).apply()
 
-    /** The answer to “update ducker automatically?”; `null` — not asked yet. */
+    /** The answer to “download updates in advance?”; `null` — not asked yet. */
     var auto: Boolean?
         get() = if (prefs.contains("auto")) prefs.getBoolean("auto", false) else null
         set(value) = prefs.edit().putBoolean("auto", value == true).apply()
+
+    var postponed: Long
+        get() = prefs.getLong("postponed", 0)
+        set(value) = prefs.edit().putLong("postponed", value).apply()
+
+    var postponedAt: Long
+        get() = prefs.getLong("postponed_at", 0)
+        set(value) = prefs.edit().putLong("postponed_at", value).apply()
+
+    /** Which version the “ready to install” notification was last shown for, and when. */
+    var reminded: Long
+        get() = prefs.getLong("reminded", 0)
+        set(value) = prefs.edit().putLong("reminded", value).apply()
+
+    var remindedAt: Long
+        get() = prefs.getLong("reminded_at", 0)
+        set(value) = prefs.edit().putLong("reminded_at", value).apply()
 
     /** Which version the app updated itself to and has not yet said so on screen. */
     var updated: Long

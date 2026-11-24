@@ -417,11 +417,11 @@
     <string name="app_update_available">نسخه %s در دسترس است</string>
     <string name="app_update_beta">نسخه‌های آزمایشی (Beta)</string>
     <string name="app_update_beta_hint">دریافت نسخه‌های جدید چند روز زودتر</string>
-    <string name="app_update_auto">به‌روزرسانی خودکار</string>
-    <string name="app_update_auto_hint">از طریق Wi-Fi، وقتی صفحه خاموش است</string>
-    <string name="app_update_auto_question">ducker به‌طور خودکار به‌روز شود؟</string>
-    <string name="app_update_auto_text">نسخه‌های جدید از طریق Wi-Fi دانلود می‌شوند و وقتی صفحه خاموش است، معمولاً شب‌ها، خودشان نصب می‌شوند. اگر نظرتان عوض شد، کلیدی در تنظیمات هست</string>
-    <string name="app_update_auto_yes">بله، به‌روز شود</string>
+    <string name="app_update_auto">دانلود پیشاپیش به‌روزرسانی‌ها</string>
+    <string name="app_update_auto_hint">از طریق Wi-Fi، نصب با یک ضربه</string>
+    <string name="app_update_auto_question">به‌روزرسانی‌ها پیشاپیش دانلود شوند؟</string>
+    <string name="app_update_auto_text">نسخه‌های جدید خودشان از طریق Wi-Fi دانلود می‌شوند؛ بعد کافی است برای نصب روی اعلان بزنید. اگر نظرتان عوض شد، کلیدی در تنظیمات هست</string>
+    <string name="app_update_auto_yes">بله، دانلود شود</string>
     <string name="app_update_auto_no">خودم به‌روز می‌کنم</string>
     <string name="app_update_card">به‌روزرسانی در دسترس است: ducker %s</string>
     <string name="app_update_card_downloading">در حال دانلود ducker %1$s — %2$d%%</string>
@@ -440,6 +440,9 @@
     <string name="app_update_notice_channel">به‌روزرسانی‌های برنامه</string>
     <string name="app_update_notice_title">به‌روزرسانی در دسترس است: ducker %s</string>
     <string name="app_update_notice_text">برای به‌روزرسانی بزنید</string>
+    <string name="app_update_ready_title">ducker %s آماده نصب است</string>
+    <string name="app_update_ready_text">برای نصب بزنید</string>
+    <string name="app_update_later">بعداً</string>
     <string name="app_update_done_title">ducker به نسخه %s به‌روز شد</string>
     <string name="app_update_done_text">برای باز کردن بزنید</string>
     <string name="stack_from_profile_value">مطابق پروفایل: %s</string>

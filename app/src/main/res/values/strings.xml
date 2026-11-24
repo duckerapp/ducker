@@ -451,11 +451,11 @@
     <string name="app_update_available">Version %s is available</string>
     <string name="app_update_beta">Beta versions</string>
     <string name="app_update_beta_hint">Get new versions a few days early</string>
-    <string name="app_update_auto">Update automatically</string>
-    <string name="app_update_auto_hint">Over Wi-Fi while the screen is off</string>
-    <string name="app_update_auto_question">Update ducker automatically?</string>
-    <string name="app_update_auto_text">New versions will download over Wi-Fi and install by themselves while the screen is off — usually at night. Changed your mind? There\'s a switch in settings</string>
-    <string name="app_update_auto_yes">Yes, update</string>
+    <string name="app_update_auto">Download updates in advance</string>
+    <string name="app_update_auto_hint">Over Wi-Fi; install with one tap</string>
+    <string name="app_update_auto_question">Download updates in advance?</string>
+    <string name="app_update_auto_text">New versions will download over Wi-Fi by themselves — then just tap the notification to install. Changed your mind? There\'s a switch in settings</string>
+    <string name="app_update_auto_yes">Yes, download</string>
     <string name="app_update_auto_no">I\'ll update myself</string>
     <string name="app_update_card">Update available: ducker %s</string>
     <string name="app_update_card_downloading">Downloading ducker %1$s — %2$d%%</string>
@@ -474,6 +474,9 @@
     <string name="app_update_notice_channel">App updates</string>
     <string name="app_update_notice_title">Update available: ducker %s</string>
     <string name="app_update_notice_text">Tap to update</string>
+    <string name="app_update_ready_title">ducker %s is ready to install</string>
+    <string name="app_update_ready_text">Tap to install</string>
+    <string name="app_update_later">Later</string>
     <string name="app_update_done_title">ducker is updated to %s</string>
     <string name="app_update_done_text">Tap to open</string>
     <string name="stack_from_profile_value">from profile: %s</string>

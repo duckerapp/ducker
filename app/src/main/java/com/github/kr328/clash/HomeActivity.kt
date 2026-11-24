@@ -649,7 +649,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                 // «Установка из этого источника» ещё не разрешена — сначала экран Android с этим
                 // тумблером, и уже потом установщик. Иначе тот сам уводит в настройки, а после
                 // возврата считает, что человек отказался: «Обновить» пришлось бы жать дважды.
-                // Turning the automatic update on waits for it too: without it Android would ask.
+                // Turning the download in advance on waits for it too: its notification installs with one tap.
                 var afterInstallPermission by remember { mutableStateOf<(() -> Unit)?>(null) }
                 val withInstallPermission: (() -> Unit) -> Unit = { action ->
                     // Экрана с тумблером у системы нет — пусть спрашивает установщик.
@@ -1361,6 +1361,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                                         onCopyError = { copyReport(it, R.string.error_copied) },
                                         update = updateState.release?.version,
                                         onUpdate = openUpdate,
+                                        updatePostponed = updateState.release?.code == updateState.postponed,
+                                        onUpdateLater = Updater::postpone,
                                         updateProgress = updateState.progress?.let { (it * 100).toInt() },
                                         updateInstalling = updateState.installing,
                                         updated = updateState.updated?.version,
@@ -2156,6 +2158,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
             return
         }
+
 
         val uri = intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data ?: return
 

@@ -413,11 +413,11 @@
     <string name="app_update_available">Đã có phiên bản %s</string>
     <string name="app_update_beta">Phiên bản thử nghiệm</string>
     <string name="app_update_beta_hint">Nhận phiên bản mới sớm hơn vài ngày</string>
-    <string name="app_update_auto">Tự động cập nhật</string>
-    <string name="app_update_auto_hint">Qua Wi-Fi khi màn hình tắt</string>
-    <string name="app_update_auto_question">Tự động cập nhật ducker?</string>
-    <string name="app_update_auto_text">Phiên bản mới sẽ được tải qua Wi-Fi và tự cài đặt khi màn hình tắt — thường là vào ban đêm. Nếu đổi ý, bạn có thể tắt trong phần cài đặt</string>
-    <string name="app_update_auto_yes">Có, cập nhật</string>
+    <string name="app_update_auto">Tải trước bản cập nhật</string>
+    <string name="app_update_auto_hint">Qua Wi-Fi, cài đặt chỉ với một chạm</string>
+    <string name="app_update_auto_question">Tải trước bản cập nhật?</string>
+    <string name="app_update_auto_text">Phiên bản mới sẽ tự tải qua Wi-Fi — sau đó chỉ cần nhấn vào thông báo để cài đặt. Nếu đổi ý, bạn có thể tắt trong phần cài đặt</string>
+    <string name="app_update_auto_yes">Có, tải trước</string>
     <string name="app_update_auto_no">Tôi sẽ tự cập nhật</string>
     <string name="app_update_card">Có bản cập nhật: ducker %s</string>
     <string name="app_update_card_downloading">Đang tải ducker %1$s — %2$d%%</string>
@@ -436,6 +436,9 @@
     <string name="app_update_notice_channel">Cập nhật ứng dụng</string>
     <string name="app_update_notice_title">Có bản cập nhật: ducker %s</string>
     <string name="app_update_notice_text">Nhấn để cập nhật</string>
+    <string name="app_update_ready_title">ducker %s đã sẵn sàng để cài đặt</string>
+    <string name="app_update_ready_text">Nhấn để cài đặt</string>
+    <string name="app_update_later">Để sau</string>
     <string name="app_update_done_title">ducker đã cập nhật lên %s</string>
     <string name="app_update_done_text">Nhấn để mở</string>
     <string name="stack_from_profile_value">theo hồ sơ: %s</string>

@@ -420,11 +420,11 @@
     <string name="app_update_available">A versão %s está disponível</string>
     <string name="app_update_beta">Versões beta</string>
     <string name="app_update_beta_hint">Receba novas versões alguns dias antes</string>
-    <string name="app_update_auto">Atualizar automaticamente</string>
-    <string name="app_update_auto_hint">Pelo Wi-Fi, com a tela apagada</string>
-    <string name="app_update_auto_question">Atualizar o ducker automaticamente?</string>
-    <string name="app_update_auto_text">As novas versões serão baixadas pelo Wi-Fi e instaladas sozinhas com a tela apagada, geralmente à noite. Mudou de ideia? Há uma chave nas configurações</string>
-    <string name="app_update_auto_yes">Sim, atualizar</string>
+    <string name="app_update_auto">Baixar atualizações antecipadamente</string>
+    <string name="app_update_auto_hint">Pelo Wi-Fi; instale com um toque</string>
+    <string name="app_update_auto_question">Baixar as atualizações antecipadamente?</string>
+    <string name="app_update_auto_text">As novas versões serão baixadas sozinhas pelo Wi-Fi; depois é só tocar na notificação para instalar. Mudou de ideia? Há uma chave nas configurações</string>
+    <string name="app_update_auto_yes">Sim, baixar</string>
     <string name="app_update_auto_no">Vou atualizar manualmente</string>
     <string name="app_update_card">Atualização disponível: ducker %s</string>
     <string name="app_update_card_downloading">Baixando ducker %1$s — %2$d%%</string>
@@ -443,6 +443,9 @@
     <string name="app_update_notice_channel">Atualizações do aplicativo</string>
     <string name="app_update_notice_title">Atualização disponível: ducker %s</string>
     <string name="app_update_notice_text">Toque para atualizar</string>
+    <string name="app_update_ready_title">ducker %s está pronto para instalar</string>
+    <string name="app_update_ready_text">Toque para instalar</string>
+    <string name="app_update_later">Mais tarde</string>
     <string name="app_update_done_title">O ducker foi atualizado para %s</string>
     <string name="app_update_done_text">Toque para abrir</string>
     <string name="stack_from_profile_value">do perfil: %s</string>

@@ -413,11 +413,11 @@
     <string name="app_update_available">发现新版本 %s</string>
     <string name="app_update_beta">测试版 (Beta)</string>
     <string name="app_update_beta_hint">提前几天体验新版本</string>
-    <string name="app_update_auto">自动更新</string>
-    <string name="app_update_auto_hint">通过 Wi-Fi，在屏幕关闭时</string>
-    <string name="app_update_auto_question">自动更新 ducker？</string>
-    <string name="app_update_auto_text">新版本将通过 Wi-Fi 下载，并在屏幕关闭时自动安装（通常在夜间）。如果改变主意，可在设置中关闭</string>
-    <string name="app_update_auto_yes">好的，自动更新</string>
+    <string name="app_update_auto">提前下载更新</string>
+    <string name="app_update_auto_hint">通过 Wi-Fi，一键安装</string>
+    <string name="app_update_auto_question">提前下载更新？</string>
+    <string name="app_update_auto_text">新版本将通过 Wi-Fi 自动下载，之后只需点击通知即可安装。如果改变主意，可在设置中关闭</string>
+    <string name="app_update_auto_yes">好的，提前下载</string>
     <string name="app_update_auto_no">我自己更新</string>
     <string name="app_update_card">有可用更新：ducker %s</string>
     <string name="app_update_card_downloading">正在下载 ducker %1$s — %2$d%%</string>
@@ -436,6 +436,9 @@
     <string name="app_update_notice_channel">应用更新</string>
     <string name="app_update_notice_title">有可用更新：ducker %s</string>
     <string name="app_update_notice_text">点击更新</string>
+    <string name="app_update_ready_title">ducker %s 已可安装</string>
+    <string name="app_update_ready_text">点击安装</string>
+    <string name="app_update_later">稍后</string>
     <string name="app_update_done_title">ducker 已更新至 %s</string>
     <string name="app_update_done_text">点击打开</string>
     <string name="stack_from_profile_value">跟随配置文件：%s</string>

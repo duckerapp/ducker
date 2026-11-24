@@ -304,6 +304,9 @@ fun HomeScreen(
     /** Вышла новая версия приложения — её номер; `null` — ставить нечего. */
     update: String? = null,
     onUpdate: () -> Unit = {},
+    /** «Позже» was pressed for this version: the header's button stands in for the card. */
+    updatePostponed: Boolean = false,
+    onUpdateLater: () -> Unit = {},
     /** Its download in percent while it runs, and the installation after it. */
     updateProgress: Int? = null,
     updateInstalling: Boolean = false,
@@ -317,9 +320,15 @@ fun HomeScreen(
     /** Six quick taps on the header's title: Ducker Bird, the easter egg. */
     onBird: (() -> Unit)? = null,
 ) {
+    // «Позже» only where the header can hold the button that replaces the card: not on a TV (D-161).
+    val later = onUpdateLater.takeIf { header }
+    val postponed = update != null && updatePostponed && later != null
+    val card = update.takeIf { !postponed }
+    val headerUpdate: HeaderUpdate? = if (postponed && update != null) HeaderUpdate(update, onUpdate) else null
+
     // The cards about the app's own version are the same with and without a subscription.
-    val appCards: (@Composable () -> Unit)? = if (update == null && updated == null) null else {
-        { AppUpdateCards(update, updateProgress, updateInstalling, onUpdate, updated, onWhatsNew, onUpdatedSeen) }
+    val appCards: (@Composable () -> Unit)? = if (card == null && updated == null) null else {
+        { AppUpdateCards(card, updateProgress, updateInstalling, onUpdate, later, updated, onWhatsNew, onUpdatedSeen) }
     }
 
     // Подписок нет — показывать нечего, кроме одного действия: добавить. Приветствие
@@ -327,7 +336,7 @@ fun HomeScreen(
     // мягкая: после первой подписки главная проявляется на месте приветствия.
     Crossfade(targetState = onboarding, animationSpec = tween(ONBOARDING_MS), label = "onboarding") { first ->
         if (first) {
-            Welcome(onSettings, onBird, header, appCards, outOfSpace, modifier.padding(contentPadding))
+            Welcome(onSettings, onBird, header, headerUpdate, appCards, outOfSpace, modifier.padding(contentPadding))
         } else {
             HomeRegular(
                 state = state,
@@ -358,6 +367,7 @@ fun HomeScreen(
                 header = header,
                 onCopyError = onCopyError,
                 appCards = appCards,
+                headerUpdate = headerUpdate,
                 onFeatures = onFeatures,
                 onBird = onBird,
                 contentPadding = contentPadding,
@@ -376,6 +386,7 @@ private fun Welcome(
     onSettings: () -> Unit,
     onBird: (() -> Unit)?,
     header: Boolean,
+    headerUpdate: HeaderUpdate?,
     appCards: (@Composable () -> Unit)?,
     outOfSpace: Boolean,
     modifier: Modifier,
@@ -385,7 +396,7 @@ private fun Welcome(
             .screenInsets()
             .padding(horizontal = 16.dp, vertical = 12.dp + tvEdge()),
     ) {
-        if (header) BrandHeader(null, onSettings, onBird)
+        if (header) BrandHeader(null, onSettings, onBird, headerUpdate)
 
         // A new version matters before the first subscription too: whoever got an old file
         // from a friend should update before setting anything up. The notification cannot
@@ -469,6 +480,7 @@ private fun HomeRegular(
     header: Boolean,
     onCopyError: (String) -> Unit,
     appCards: (@Composable () -> Unit)?,
+    headerUpdate: HeaderUpdate?,
     onFeatures: () -> Unit,
     onBird: (() -> Unit)?,
     contentPadding: PaddingValues,
@@ -550,7 +562,7 @@ private fun HomeRegular(
                 .padding(horizontal = 16.dp, vertical = (if (tight) 0.dp else 12.dp) + tvEdge()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            if (header) BrandHeader(profile, onSettings, onBird)
+            if (header) BrandHeader(profile, onSettings, onBird, headerUpdate)
 
             if (profile != null && profile.hwidBlocked) {
                 LimitCard(profile, onSupport, onRefresh)
@@ -762,7 +774,7 @@ private fun HomeSkeleton(compact: Boolean) {
 }
 
 @Composable
-private fun BrandHeader(profile: Profile?, onSettings: () -> Unit, onBird: (() -> Unit)?) = BackdropTone {
+private fun BrandHeader(profile: Profile?, onSettings: () -> Unit, onBird: (() -> Unit)?, update: HeaderUpdate?) = BackdropTone {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -774,6 +786,9 @@ private fun BrandHeader(profile: Profile?, onSettings: () -> Unit, onBird: (() -
         // touches on 42 dp only. Their 44 dp circles stand 2 dp towards each other inside their targets, to the targets'
         // edge, so the icons are 4 dp closer and neither target loses a touch (the owner, 23.11).
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // After «Позже» on the update card: beside the theme button on Air, beside settings on glass.
+            if (update != null) UpdateHeaderButton(update)
+
             ThemeButton { icon, description, onClick, modifier -> HeaderButton(icon, description, onClick, modifier, nudge = HEADER_NUDGE) }
 
             // Настройки с главной: раньше до них надо было идти через вкладку подписок.
@@ -2044,6 +2059,7 @@ private fun AppUpdateCards(
     progress: Int?,
     installing: Boolean,
     onUpdate: () -> Unit,
+    onLater: (() -> Unit)?,
     updated: String?,
     onWhatsNew: (() -> Unit)?,
     onUpdatedSeen: () -> Unit,
@@ -2054,7 +2070,7 @@ private fun AppUpdateCards(
         val seen = stringResource(R.string.dismiss) to onUpdatedSeen
         val whatsNew = onWhatsNew?.let { stringResource(R.string.app_update_whats_new) to it }
 
-        InfoCard(
+        AppCard(
             stringResource(R.string.app_update_done_title, updated),
             Symbols.CheckCircle,
             action = whatsNew ?: seen,
@@ -2063,18 +2079,76 @@ private fun AppUpdateCards(
     }
 
     if (update != null) {
-        InfoCard(
+        // Nothing to press while it downloads: the installation follows by itself.
+        val idle = !installing && progress == null
+
+        AppCard(
             when {
                 installing -> stringResource(R.string.app_update_card_installing, update)
                 progress != null -> stringResource(R.string.app_update_card_downloading, update, progress)
                 else -> stringResource(R.string.app_update_card, update)
             },
             Symbols.SystemUpdate,
-            // Nothing to press while it downloads: the installation follows by itself.
-            action = (stringResource(R.string.update) to onUpdate).takeIf { !installing && progress == null },
+            action = (stringResource(R.string.update) to onUpdate).takeIf { idle },
+            secondary = onLater?.let { stringResource(R.string.app_update_later) to it }?.takeIf { idle },
         )
     }
 }
+
+/**
+ * A card about the app's own version: the same card as its neighbours (white on Air, glass on glass), not the grey
+ * of [InfoCard]; the icon on the text's line, and the buttons under them across the card, equal halves (the owner, 24.11).
+ */
+@Composable
+private fun AppCard(
+    text: String,
+    icon: ImageVector,
+    action: Pair<String, () -> Unit>?,
+    secondary: Pair<String, () -> Unit>? = null,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+                Text(text = text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            }
+
+            if (action != null) {
+                // The action black, the other one grey beside it (D-326).
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Pill(action.first, action.second, Modifier.weight(1f), selected = true, onCard = true)
+                    secondary?.let { (label, onClick) -> Pill(label, onClick, Modifier.weight(1f), onCard = true) }
+                }
+            }
+        }
+    }
+}
+
+/** The new version Home's header offers after «Позже» on its card. */
+private class HeaderUpdate(val version: String, val onOpen: () -> Unit)
+
+/** The header's update button: a circled arrow with a small green dot, as an app icon's badge. */
+@Composable
+private fun UpdateHeaderButton(update: HeaderUpdate) {
+    Box {
+        HeaderButton(
+            Symbols.ArrowCircleDown,
+            stringResource(R.string.app_update_card, update.version),
+            update.onOpen,
+            nudge = HEADER_NUDGE,
+        )
+        // Centred on the arrow's ring at its lower right (the ring: radius 10 about the 24 dp icon's centre), over it;
+        // drawn in its own colour on Air and on glass.
+        Box(
+            Modifier.align(Alignment.Center)
+                .offset(x = 7.dp, y = 7.dp)
+                .size(7.dp)
+                .background(UPDATE_DOT, CircleShape),
+        )
+    }
+}
+
+private val UPDATE_DOT = Color(0xFF34C759)
 
 @Composable
 private fun AnnouncementCard(text: String) {

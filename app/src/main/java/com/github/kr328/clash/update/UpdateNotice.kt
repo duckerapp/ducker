@@ -13,9 +13,9 @@ import com.github.kr328.clash.common.compat.getColorCompat
 import com.github.kr328.clash.common.compat.pendingIntentFlags
 
 /**
- * Уведомления об обновлении приложения: «вышла версия» — один раз на версию, и «обновлён» —
- * после установки, которая закрыла приложение у человека на глазах. Место в шторке одно:
- * второе сменяет первое.
+ * Уведомления об обновлении приложения: «вышла версия» — один раз на версию, «готова к установке» —
+ * когда файл скачан заранее, и «обновлён» — после установки, которая закрыла приложение у человека
+ * на глазах. Место в шторке одно: следующее сменяет прежнее.
  */
 object UpdateNotice {
     private const val CHANNEL = "app_update_channel"
@@ -26,6 +26,14 @@ object UpdateNotice {
         context,
         title = context.getString(R.string.app_update_notice_title, version),
         text = context.getString(R.string.app_update_notice_text),
+        action = Updater.ACTION_SHOW,
+    )
+
+    fun ready(context: Context, version: String) = show(
+        context,
+        title = context.getString(R.string.app_update_ready_title, version),
+        text = context.getString(R.string.app_update_ready_text),
+        // The sheet with “what's new”; the file is there, so its button opens Android's dialog at once.
         action = Updater.ACTION_SHOW,
     )
 

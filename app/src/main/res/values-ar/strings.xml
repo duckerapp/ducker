@@ -428,11 +428,11 @@
     <string name="app_update_available">الإصدار %s متاح</string>
     <string name="app_update_beta">الإصدارات التجريبية</string>
     <string name="app_update_beta_hint">احصل على الإصدارات الجديدة قبل بضعة أيام</string>
-    <string name="app_update_auto">التحديث تلقائيًا</string>
-    <string name="app_update_auto_hint">عبر Wi-Fi أثناء إطفاء الشاشة</string>
-    <string name="app_update_auto_question">هل تريد تحديث ducker تلقائيًا؟</string>
-    <string name="app_update_auto_text">سيتم تنزيل الإصدارات الجديدة عبر Wi-Fi وتثبيتها تلقائيًا أثناء إطفاء الشاشة، عادةً في الليل. إذا غيّرت رأيك، يوجد مفتاح في الإعدادات</string>
-    <string name="app_update_auto_yes">نعم، حدّث</string>
+    <string name="app_update_auto">تنزيل التحديثات مسبقًا</string>
+    <string name="app_update_auto_hint">عبر Wi-Fi، والتثبيت بلمسة واحدة</string>
+    <string name="app_update_auto_question">هل تريد تنزيل التحديثات مسبقًا؟</string>
+    <string name="app_update_auto_text">ستُنزَّل الإصدارات الجديدة تلقائيًا عبر Wi-Fi، ثم يكفي الضغط على الإشعار لتثبيتها. إذا غيّرت رأيك، يوجد مفتاح في الإعدادات</string>
+    <string name="app_update_auto_yes">نعم، نزّلها</string>
     <string name="app_update_auto_no">سأحدّث بنفسي</string>
     <string name="app_update_card">تحديث متاح: ducker %s</string>
     <string name="app_update_card_downloading">جارٍ تنزيل ducker %1$s — %2$d%%</string>
@@ -451,6 +451,9 @@
     <string name="app_update_notice_channel">تحديثات التطبيق</string>
     <string name="app_update_notice_title">تحديث متاح: ducker %s</string>
     <string name="app_update_notice_text">اضغط للتحديث</string>
+    <string name="app_update_ready_title">ducker %s جاهز للتثبيت</string>
+    <string name="app_update_ready_text">اضغط للتثبيت</string>
+    <string name="app_update_later">لاحقًا</string>
     <string name="app_update_done_title">تم تحديث ducker إلى %s</string>
     <string name="app_update_done_text">اضغط للفتح</string>
     <string name="stack_from_profile_value">من ملف التعريف: %s</string>
