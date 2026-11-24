@@ -13,6 +13,19 @@ repository was closed; they are listed here for history. APK files are on the
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
 
+## 0.4.55 — draft
+
+- The phone's settings are arranged in compact groups, with shorter labels that fit on one line and explanations below
+  the groups. Sections slide in when opened.
+- In Appearance, Style comes first. The selected option slides along a single track in each of the Style and Theme controls.
+- Features and its pages use the same compact layout. Connections shows “Active connections”, and Wi-Fi sharing is
+  described as “VPN for other devices”.
+- The dock is a little wider in Air and DUCKER Glass, giving “Profiles” and “+ Add” more room inside the highlight.
+- During the back gesture, the page keeps the display's rounded corners and shrinks a little more. When you pause
+  midway through the gesture and then release, the page slides off the screen smoothly.
+- With “Download updates in advance” on, the download now stops when Android interrupts it, for example when
+  Wi-Fi drops or the battery is low. The interrupted background download no longer shows a failure message.
+
 ## 0.4.54 — 2026-11-24
 
 - Google Play Protect no longer blocks ducker as a harmful app. Updates no longer install by themselves: with
