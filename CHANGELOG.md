@@ -13,6 +13,19 @@ repository was closed; they are listed here for history. APK files are on the
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
 
+## 0.4.54 — 2026-11-24
+
+- Google Play Protect no longer blocks ducker as a harmful app. Updates no longer install by themselves: with
+  "Download updates in advance" on, the new version downloads over Wi-Fi, a notification says it is ready, and
+  installing takes a tap on Android's "Update". The notification comes back every three days until the update is in.
+- The update card on Home is a regular card with "Update" and "Later". "Later" hides it for three days and leaves an
+  arrow with a green dot in Home's header that opens the update.
+- Home's header buttons stand closer together.
+- Glass: a subscription dragged over another no longer shows the wrong piece of the picture for a moment; panes near
+  the screen's sides no longer show dark rims as they open; Home's node sheet marks the chosen node in the chosen tint.
+- Proxies: the title and search no longer jump down when a group below folds.
+- Android TV before Android 10: the power card's focus ring stays visible as the card turns over.
+
 ## 0.4.53 — 2026-11-24
 
 - DUCKER Glass (beta), a new look: Settings → Appearance. Cards, the dock, sheets and buttons are glass over a
