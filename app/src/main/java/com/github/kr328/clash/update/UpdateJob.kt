@@ -33,8 +33,12 @@ class UpdateJob : JobService() {
     }
 
     // Прервали — ничего не теряем: следующая проверка придёт по расписанию. The download in
-    // advance stops when Wi-Fi goes; it goes on from where it stopped next time.
-    override fun onStopJob(params: JobParameters): Boolean = params.jobId == PREFETCH_ID
+    // advance stops when Wi-Fi goes, the download itself too; it goes on from where it stopped next time.
+    override fun onStopJob(params: JobParameters): Boolean {
+        if (params.jobId == PREFETCH_ID) Updater.stopPrefetch()
+
+        return params.jobId == PREFETCH_ID
+    }
 
     companion object {
         private const val ID = 7001

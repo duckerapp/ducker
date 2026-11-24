@@ -15,7 +15,9 @@ import com.github.kr328.clash.BuildConfig
 import com.github.kr328.clash.common.Global
 import com.github.kr328.clash.ui.settings.SettingsStore
 import com.github.kr328.clash.util.ApplicationObserver
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -284,6 +286,9 @@ object Updater {
                 var shown = -1
 
                 download(release.apk, file) { done ->
+                    // Stopped by the system ([stopPrefetch]): out between two pieces of the file.
+                    ensureActive()
+
                     // Раз на процент: экрану незачем перерисовывать кнопку на каждый кусок файла.
                     val percent = (done * 100).toInt()
 
@@ -294,6 +299,10 @@ object Updater {
                 }
             } catch (e: IOException) {
                 return@launch stale(UpdateError.Download)
+            } catch (e: CancellationException) {
+                // No error to show: nobody asked for this download, and the part so far stays for the next run.
+                _state.update { it.copy(progress = null) }
+                throw e
             }
 
             _state.update { it.copy(progress = null, installing = true) }
@@ -319,6 +328,16 @@ object Updater {
                 fail(UpdateError.Install, e.message.orEmpty())
             }
         }.also { installJob = it }
+    }
+
+    /**
+     * The system stopped the download in advance ([UpdateJob]: Wi-Fi gone, battery low): stop it too, keeping what came.
+     * Left running, it went on over whatever network came next, and its broken connection showed the person a failed
+     * download they had not started. A tap on «Обновить» meanwhile made it the person's own: that one goes on.
+     */
+    @Synchronized
+    fun stopPrefetch() {
+        if (prefetchOnly) installJob?.cancel()
     }
 
     /** Ответ установщика, из [UpdateReceiver]. */
