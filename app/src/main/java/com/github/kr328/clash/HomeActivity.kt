@@ -1022,6 +1022,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                         if (page == 1) proxyList.scrollToItem(0)
                     }
+                    tvFocus.bird = { birdAsk = true }
 
                     // Ждёт подписку с телефона, пока открыта панель «+» (D-162).
                     DisposableEffect(subscriptionsState.adding) {

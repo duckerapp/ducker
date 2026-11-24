@@ -32,6 +32,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -46,6 +53,8 @@ import com.github.kr328.clash.ui.bird.BirdGame.Companion.DUCK_X
 import com.github.kr328.clash.ui.bird.BirdGame.Companion.GAP
 import com.github.kr328.clash.ui.bird.BirdGame.Companion.REED_SLACK
 import com.github.kr328.clash.ui.components.HeaderButton
+import com.github.kr328.clash.ui.components.LocalTv
+import com.github.kr328.clash.ui.components.ringHold
 import com.github.kr328.clash.ui.components.Symbols
 import com.github.kr328.clash.ui.components.formatCount
 import kotlin.math.ceil
@@ -67,6 +76,7 @@ internal fun BirdScreen(best: Int, onBest: (Int) -> Unit, onBack: () -> Unit) {
     val view = LocalView.current
     val density = LocalDensity.current
     val saveBest by rememberUpdatedState(onBest)
+    val tv = LocalTv.current
 
     BoxWithConstraints(Modifier.fillMaxSize().background(paper)) {
         val width = constraints.maxWidth
@@ -121,7 +131,20 @@ internal fun BirdScreen(best: Int, onBest: (Int) -> Unit, onBack: () -> Unit) {
                     awaitFirstDown()
                     game.tap()
                 }
-            },
+            }.then(
+                // The remote: OK or Up is a flap, on the press; the other arrows go nowhere, Back leaves. No focus ring
+                // round the whole field.
+                if (tv) Modifier.onKeyEvent {
+                    when (it.key) {
+                        Key.DirectionCenter, Key.Enter, Key.NumPadEnter, Key.DirectionUp -> {
+                            if (it.type == KeyEventType.KeyDown && it.nativeKeyEvent.repeatCount == 0) game.tap()
+                            true
+                        }
+                        Key.DirectionDown, Key.DirectionLeft, Key.DirectionRight -> true
+                        else -> false
+                    }
+                }.ringHold(true).focusable() else Modifier,
+            ),
         ) {
             // Read to draw again each frame; the screen around it does not recompose for it.
             frame
@@ -165,7 +188,9 @@ internal fun BirdScreen(best: Int, onBest: (Int) -> Unit, onBack: () -> Unit) {
             description = stringResource(R.string.back),
             onClick = onBack,
             // From the raw inset, as the field: a layer above may have consumed it for padding.
-            modifier = Modifier.padding(start = 4.dp, top = with(density) { status.toDp() } + 4.dp),
+            // Not for the remote, which leaves by Back: the screen's focus went to it, and OK left the game.
+            modifier = Modifier.padding(start = 4.dp, top = with(density) { status.toDp() } + 4.dp)
+                .then(if (tv) Modifier.focusProperties { canFocus = false } else Modifier),
         )
     }
 }

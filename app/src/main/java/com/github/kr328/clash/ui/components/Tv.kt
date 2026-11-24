@@ -213,9 +213,29 @@ class TvFocus {
      * перелистывалась на «Главную» (D-158).
      */
     val steering: Boolean get() = SystemClock.uptimeMillis() - steered < STEER_MS
+
+    /** Ducker Bird on a TV: six Up presses on Home's tab, each within a second of the last, as the phone's taps (D-422). */
+    var bird: (() -> Unit)? = null
+    private var birdUps = 0
+    private var birdAt = 0L
+
+    /** Counts Up on Home's tab; never takes the key. A held key's repeats do not count. */
+    fun birdKey(event: KeyEvent): Boolean {
+        if (event.type != KeyEventType.KeyDown || event.key != Key.DirectionUp || event.nativeKeyEvent.repeatCount != 0) return false
+        val now = SystemClock.uptimeMillis()
+        birdUps = if (now - birdAt <= BIRD_PAUSE_MS) birdUps + 1 else 1
+        birdAt = now
+        if (birdUps == BIRD_UPS) {
+            birdUps = 0
+            bird?.invoke()
+        }
+        return false
+    }
 }
 
 private const val STEER_MS = 500L
+private const val BIRD_UPS = 6
+private const val BIRD_PAUSE_MS = 1000L
 
 /**
  * Телевизор ли это. Всё, что сделано под пульт, работает только на нём: телефон с клавиатурой
@@ -1452,8 +1472,11 @@ internal fun TvScaffold(
                     when (it.key) {
                         inwardKey, Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> focus.parked = false
 
-                        // Выше первой вкладки идти некуда: остаёмся припаркованными.
-                        Key.DirectionUp, Key.DirectionDown -> if (it.key == Key.DirectionDown || selected() > 0) {
+                        // Выше первой вкладки идти некуда: остаёмся припаркованными. There Up counts for Ducker Bird, as on
+                        // the tab itself: left or Back from Home's page parks the remote on it.
+                        Key.DirectionUp, Key.DirectionDown -> if (it.key == Key.DirectionUp && selected() == 0) {
+                            focus.birdKey(it)
+                        } else if (it.key == Key.DirectionDown || selected() > 0) {
                             focus.parked = false
                             focus.steer()
                             focus.tabs[selected()].requestFocus()
@@ -1657,6 +1680,7 @@ private fun SideDock(
                         label = stringResource(label),
                         color = if (active) onPill else dim,
                         modifier = Modifier.then(FocusNudgeElement)
+                            .then(if (index == 0) Modifier.onPreviewKeyEvent(focus::birdKey) else Modifier)
                             .focusRequester(focus.tabs[index])
                             .onFocusChanged {
                                 if (it.isFocused && selected() != index) {
