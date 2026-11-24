@@ -114,7 +114,7 @@ fun BackLayer(
     backdropTone: Boolean? = LocalBackdropTone.current,
     /**
      * Comes in from the side the reading goes to and leaves back there, as a page turned over the one under it:
-     * Settings' sections and the screens opened from them, «Возможности» and its pages (the owner, 24.11). Otherwise it
+     * Settings' sections and the screens opened from them, «Возможности»' pages (the owner, 24.11). Otherwise it
      * grows in from the middle. Released, the back gesture closes it at once, its card's flight being its exit.
      */
     slide: Boolean = false,

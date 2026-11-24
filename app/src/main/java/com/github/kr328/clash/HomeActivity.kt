@@ -1702,8 +1702,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     BackLayer(
                         visible = showFeatures,
-                        // «Возможности» and its pages: in from the side as Settings' (the owner, 24.11).
-                        slide = !tv,
+                        // Opened from Home it grows in as Settings does; its pages slide in (the owner, 24.11).
                         onBack = closeFeatures,
                         backdrop = screenWall,
                         backdropTone = screenTone,
