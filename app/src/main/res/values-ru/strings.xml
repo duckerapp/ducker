@@ -266,7 +266,7 @@
     <string name="share_no_network">Нет Wi-Fi и точки доступа</string>
     <string name="share_failed">Порт не открылся, попробуйте ещё раз</string>
     <string name="share_own">Через точку доступа телефона</string>
-    <string name="share_wifi">Через Wi-Fi</string>
+    <string name="share_wifi">Через VPN</string>
     <string name="share_address">IP</string>
     <string name="share_port">Порт</string>
     <string name="share_login">Логин</string>
@@ -720,7 +720,7 @@
     <string name="mobile_card_off">Своя подписка и узлы вне Wi-Fi</string>
     <string name="mobile_card_no_profile">Выберите подписку</string>
     <string name="mobile_switch">Переключение по сети</string>
-    <string name="mobile_switch_hint">Ушли с Wi-Fi — включится то, что ниже</string>
+    <string name="mobile_switch_hint">Подписка для LTE</string>
     <string name="mobile_provider">Список провайдера</string>
     <string name="mobile_provider_on">Обновляется вместе с подпиской</string>
     <string name="mobile_provider_off">Вы изменили список. Включите, чтобы вернуть</string>

@@ -249,7 +249,7 @@
     <string name="share_no_network">Sem Wi-Fi nem ponto de acesso</string>
     <string name="share_failed">A porta não abriu, tente de novo</string>
     <string name="share_own">Pelo ponto de acesso deste celular</string>
-    <string name="share_wifi">Pelo Wi-Fi</string>
+    <string name="share_wifi">Pela VPN</string>
     <string name="share_address">IP</string>
     <string name="share_port">Porta</string>
     <string name="share_login">Usuário</string>
@@ -691,7 +691,7 @@
     <string name="mobile_card_off">Sua própria assinatura e servidores fora do Wi-Fi</string>
     <string name="mobile_card_no_profile">Escolha uma assinatura</string>
     <string name="mobile_switch">Trocar conforme a rede</string>
-    <string name="mobile_switch_hint">Fora do Wi-Fi, usa o que está abaixo</string>
+    <string name="mobile_switch_hint">Assinatura para LTE</string>
     <string name="mobile_provider">Lista do provedor</string>
     <string name="mobile_provider_on">Atualizada com a assinatura</string>
     <string name="mobile_provider_off">Você a alterou. Ative para restaurá-la</string>

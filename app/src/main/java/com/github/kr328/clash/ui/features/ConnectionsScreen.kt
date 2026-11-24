@@ -1,5 +1,12 @@
 package com.github.kr328.clash.ui.features
 
+import com.github.kr328.clash.ui.components.LocalTv
+import com.github.kr328.clash.ui.settings.SettingsGroupShape
+import com.github.kr328.clash.ui.settings.SettingsRow
+import com.github.kr328.clash.ui.settings.SettingsRowInset
+import com.github.kr328.clash.ui.settings.SettingsSurface
+import com.github.kr328.clash.ui.settings.settingsSupportingStyle
+import com.github.kr328.clash.ui.settings.settingsTitleStyle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -78,19 +85,26 @@ fun ConnectionsScreen(
 ) {
     val list = rememberLazyListState()
     val context = LocalContext.current
+    // On a phone the settings pages' type and insets (the owner, 24.11); a TV keeps its own.
+    val compact = !LocalTv.current
 
     TvLazyColumn(
         state = list,
         overscrollEffect = overscrollFor(list),
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(top = 16.dp + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
+        contentPadding = PaddingValues(top = (if (compact) 10.dp else 16.dp) + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
     ) {
         item { ScreenHeader(stringResource(R.string.connections), onBack = onBack) }
 
         if (!running) {
             item {
-                EmptyState(
+                if (compact) SettingsSurface(compact = true) {
+                    SettingsRow(
+                        stringResource(R.string.connections_off_title), compact = true,
+                        subtitle = stringResource(R.string.connections_off), icon = Symbols.Lan,
+                    )
+                } else EmptyState(
                     icon = Symbols.Lan,
                     title = stringResource(R.string.connections_off_title),
                     message = stringResource(R.string.connections_off),
@@ -108,16 +122,16 @@ fun ConnectionsScreen(
             // The speed on a line of its own, always there: changing every second beside the count, it moved the reset
             // from the line to under it and back, and the list with it.
             CountBesidePills(
-                modifier = Modifier.padding(start = 4.dp),
+                modifier = Modifier.padding(start = if (compact) SettingsRowInset else 4.dp),
                 count = {
                     Column {
                         Text(
                             text = pluralStringResource(R.plurals.connections_count, state.count, formatCount(state.count)),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = if (compact) settingsTitleStyle() else MaterialTheme.typography.bodyMedium,
                         )
                         Text(
                             text = context.formatSpeed(state.speed),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = if (compact) settingsSupportingStyle() else MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -145,9 +159,9 @@ fun ConnectionsScreen(
             item {
                 Text(
                     text = stringResource(R.string.connections_tap_hint),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = if (compact) settingsSupportingStyle() else MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp),
+                    modifier = Modifier.padding(start = if (compact) SettingsRowInset else 4.dp),
                 )
             }
         }
@@ -166,24 +180,25 @@ fun ConnectionsScreen(
         items(state.rows, key = { it.id }) { row ->
             // No fade: a fading item draws in a layer cut to its bounds, and the Air shadow under it came in with a jump at
             // the end, as on «Прокси».
-            ConnectionCard(row, onClick = { onPick(row) }, modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null))
+            ConnectionCard(row, compact, onClick = { onPick(row) }, modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null))
         }
     }
 }
 
 @Composable
-private fun ConnectionCard(row: ConnectionRow, onClick: () -> Unit, modifier: Modifier) {
+private fun ConnectionCard(row: ConnectionRow, compact: Boolean, onClick: () -> Unit, modifier: Modifier) {
     val scheme = MaterialTheme.colorScheme
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
+        shape = if (compact) SettingsGroupShape else MaterialTheme.shapes.large,
+        surfaceModifier = Modifier.clip(if (compact) SettingsGroupShape else MaterialTheme.shapes.large)
             .clickable(interactionSource = null, indication = paneIndication(), role = Role.Button, onClick = onClick),
         ownClick = true,
     ) {
         Row(
             // The card stays, its content fades: a closed one keeps its place and its shadow among the open ones.
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp).alpha(if (row.closed) CLOSED_ALPHA else 1f),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = if (compact) 10.dp else 12.dp).alpha(if (row.closed) CLOSED_ALPHA else 1f),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -193,8 +208,8 @@ private fun ConnectionCard(row: ConnectionRow, onClick: () -> Unit, modifier: Mo
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = appLabel(row.app),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
+                        style = if (compact) settingsTitleStyle() else MaterialTheme.typography.titleSmall,
+                        fontWeight = if (compact) null else FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         // The whole line but the speed: with a spacer beside it, a name had only half and was cut.
@@ -217,7 +232,7 @@ private fun ConnectionCard(row: ConnectionRow, onClick: () -> Unit, modifier: Mo
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = if (row.port == 443 || row.port == 80 || row.port == 0) row.site else "${row.site}:${row.port}",
-                        style = MaterialTheme.typography.bodyMedium.machine(),
+                        style = (if (compact) settingsSupportingStyle().copy(color = scheme.onSurface) else MaterialTheme.typography.bodyMedium).machine(),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
@@ -240,7 +255,7 @@ private fun ConnectionCard(row: ConnectionRow, onClick: () -> Unit, modifier: Mo
                 if (row.route.isNotEmpty()) {
                     Text(
                         text = row.route.isolated(),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = if (compact) settingsSupportingStyle() else MaterialTheme.typography.bodySmall,
                         color = scheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

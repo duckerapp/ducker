@@ -42,6 +42,17 @@ import com.github.kr328.clash.ui.components.navigationRoom
 import com.github.kr328.clash.ui.components.screenInsets
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.DuckerCard as Card
+import androidx.compose.ui.graphics.Color
+import com.github.kr328.clash.ui.components.LocalTv
+import com.github.kr328.clash.ui.settings.SettingsChevron
+import com.github.kr328.clash.ui.settings.SettingsNavigationDivider
+import com.github.kr328.clash.ui.settings.SettingsNavigationRow
+import com.github.kr328.clash.ui.settings.SettingsRowHeight
+import com.github.kr328.clash.ui.settings.SettingsRowInset
+import com.github.kr328.clash.ui.settings.SettingsSurface
+import com.github.kr328.clash.ui.settings.SettingsSwitchRow
+import com.github.kr328.clash.ui.settings.settingsSupportingStyle
+import com.github.kr328.clash.ui.settings.settingsTitleStyle
 
 /**
  * «Раздача по Wi-Fi» (D-419–D-421) on a page of its own, as «Мобильная сеть» (D-465): the switch, and while it is on
@@ -59,6 +70,8 @@ fun ShareScreen(
 ) {
     val list = rememberLazyListState()
     val usable = state.running && !state.closed
+    // On a phone the settings pages' rows and type (the owner, 24.11); a TV keeps its cards.
+    val compact = !LocalTv.current
 
     // As the settings' pages: no rubber edge (D-137 keeps it for long lists).
     TvLazyColumn(
@@ -66,12 +79,19 @@ fun ShareScreen(
         overscrollEffect = null,
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(top = 16.dp + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
+        contentPadding = PaddingValues(top = (if (compact) 10.dp else 16.dp) + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
     ) {
         item { ScreenHeader(stringResource(R.string.share), onBack = onBack) }
 
         // One line, so the status under it moves nothing in the card (D-464).
-        item {
+        if (compact) item {
+            SettingsSurface(compact = true) {
+                SettingsSwitchRow(
+                    stringResource(R.string.share_switch), null, Symbols.WifiTethering,
+                    checked = state.on, onChange = onTurn, compact = true, enabled = usable,
+                )
+            }
+        } else item {
             val press = remember { MutableInteractionSource() }
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -111,14 +131,44 @@ fun ShareScreen(
             item {
                 Text(
                     text = stringResource(note),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = if (compact) settingsSupportingStyle() else MaterialTheme.typography.bodySmall,
                     color = if (state.stopped != null && !state.on) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp),
+                    modifier = Modifier.padding(horizontal = if (compact) SettingsRowInset else 4.dp),
                 )
             }
         }
 
-        if (state.on) {
+        if (state.on && compact) {
+            item {
+                SettingsSurface(compact = true) {
+                    CopyRow(stringResource(R.string.share_address), state.address, compact = true)
+                    SettingsNavigationDivider(compact = true, reserveIcon = false)
+                    CopyRow(stringResource(R.string.share_port), state.port.toString(), compact = true)
+
+                    if (!state.own) {
+                        SettingsNavigationDivider(compact = true, reserveIcon = false)
+                        SettingsSwitchRow(
+                            stringResource(R.string.share_password),
+                            stringResource(if (state.password) R.string.share_password_hint else R.string.share_password_off),
+                            icon = null, checked = state.password, onChange = onPassword, compact = true, reserveIcon = false,
+                            subtitleColor = if (state.password) Color.Unspecified else MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    if (state.locked) {
+                        SettingsNavigationDivider(compact = true, reserveIcon = false)
+                        CopyRow(stringResource(R.string.share_login), state.login, compact = true)
+                        SettingsNavigationDivider(compact = true, reserveIcon = false)
+                        CopyRow(stringResource(R.string.share_secret), state.secret, compact = true)
+                        SettingsNavigationDivider(compact = true, reserveIcon = false)
+                        SettingsNavigationRow(
+                            stringResource(R.string.share_new_password), icon = null, onClick = onNewPassword,
+                            compact = true, destinationIcon = Symbols.Refresh, reserveIcon = false,
+                        )
+                    }
+                }
+            }
+        } else if (state.on) {
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(vertical = 8.dp)) {
@@ -173,12 +223,15 @@ fun ShareScreen(
                     }
                 }
             }
+        }
 
+        if (state.on) {
             item {
-                Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                val style = if (compact) settingsSupportingStyle() else MaterialTheme.typography.bodySmall
+                Column(Modifier.padding(horizontal = if (compact) SettingsRowInset else 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         text = stringResource(R.string.share_how),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = style,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
@@ -186,7 +239,7 @@ fun ShareScreen(
                     if (state.locked) {
                         Text(
                             text = stringResource(R.string.share_browser_only),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = style,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -209,23 +262,25 @@ internal fun shareStatus(state: ShareState): Int = when {
 
 /** A line to enter on the second device; a tap copies its value. */
 @Composable
-private fun CopyRow(label: String, value: String) {
+private fun CopyRow(label: String, value: String, compact: Boolean = false) {
     val context = LocalContext.current
     val copied = stringResource(R.string.share_copied)
 
     Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+        modifier = Modifier.fillMaxWidth().heightIn(min = if (compact) SettingsRowHeight else 48.dp)
             .clickable(role = Role.Button, onClickLabel = stringResource(R.string.share_copy)) {
                 context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText(label, value))
                 // Android 13+ already confirms clipboard copies itself.
                 if (Build.VERSION.SDK_INT < 33) Toast.makeText(context, copied, Toast.LENGTH_SHORT).show()
             }
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = if (compact) SettingsRowInset else 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Text(value, style = MaterialTheme.typography.bodyLarge.machine(), color = MaterialTheme.colorScheme.primary)
-        Icon(Symbols.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        val style = if (compact) settingsTitleStyle() else MaterialTheme.typography.bodyLarge
+        Text(label, style = style, modifier = Modifier.weight(1f))
+        Text(value, style = style.machine(), color = MaterialTheme.colorScheme.primary)
+        if (compact) SettingsChevron(Symbols.ContentCopy)
+        else Icon(Symbols.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

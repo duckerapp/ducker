@@ -247,7 +247,7 @@
     <string name="share_no_network">没有 Wi-Fi 或热点</string>
     <string name="share_failed">端口未能打开，请重试</string>
     <string name="share_own">通过本机热点</string>
-    <string name="share_wifi">通过 Wi-Fi</string>
+    <string name="share_wifi">通过 VPN</string>
     <string name="share_address">IP</string>
     <string name="share_port">端口</string>
     <string name="share_login">用户名</string>
@@ -674,7 +674,7 @@
     <string name="mobile_card_off">离开 Wi-Fi 时使用单独的订阅和节点</string>
     <string name="mobile_card_no_profile">选择一个订阅</string>
     <string name="mobile_switch">按网络切换</string>
-    <string name="mobile_switch_hint">离开 Wi-Fi 时启用下方设置</string>
+    <string name="mobile_switch_hint">LTE 专用订阅</string>
     <string name="mobile_provider">服务商列表</string>
     <string name="mobile_provider_on">随订阅一起更新</string>
     <string name="mobile_provider_off">你已修改列表。开启可恢复</string>

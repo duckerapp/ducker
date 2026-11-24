@@ -248,7 +248,7 @@
     <string name="share_no_network">Wi-Fi veya erişim noktası yok</string>
     <string name="share_failed">Bağlantı noktası açılmadı, yeniden deneyin</string>
     <string name="share_own">Bu telefonun erişim noktası üzerinden</string>
-    <string name="share_wifi">Wi-Fi üzerinden</string>
+    <string name="share_wifi">VPN üzerinden</string>
     <string name="share_address">IP</string>
     <string name="share_port">Port</string>
     <string name="share_login">Kullanıcı adı</string>
@@ -682,7 +682,7 @@
     <string name="mobile_card_off">Wi-Fi dışında kendi aboneliğiniz ve sunucularınız</string>
     <string name="mobile_card_no_profile">Bir abonelik seçin</string>
     <string name="mobile_switch">Ağa göre geçiş</string>
-    <string name="mobile_switch_hint">Wi-Fi dışında aşağıdakiler kullanılır</string>
+    <string name="mobile_switch_hint">LTE için abonelik</string>
     <string name="mobile_provider">Sağlayıcının listesi</string>
     <string name="mobile_provider_on">Abonelikle birlikte güncellenir</string>
     <string name="mobile_provider_off">Listeyi değiştirdiniz. Geri getirmek için açın</string>

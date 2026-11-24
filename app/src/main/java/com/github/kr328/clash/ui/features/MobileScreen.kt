@@ -2,7 +2,6 @@ package com.github.kr328.clash.ui.features
 
 import com.github.kr328.clash.ui.components.accentMarkInk
 import com.github.kr328.clash.ui.components.accentMark
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.github.kr328.clash.ui.components.LocalGlassBackdrop
 import com.github.kr328.clash.ui.components.GlassMaterial
 import com.github.kr328.clash.ui.components.glass
@@ -10,7 +9,6 @@ import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.glassPressOwnTouch
 import com.github.kr328.clash.ui.components.rememberGlassPress
 import com.github.kr328.clash.ui.components.paneIndication
-import com.github.kr328.clash.ui.components.DuckerSwitch
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateFloatAsState
@@ -35,7 +33,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -59,7 +56,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -82,6 +78,21 @@ import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.subscriptions.ProfileReorder
 import com.github.kr328.clash.ui.subscriptions.reorderable
 import com.github.kr328.clash.ui.components.DuckerCard as Card
+import androidx.compose.ui.text.style.TextAlign
+import com.github.kr328.clash.ui.settings.SettingsChevron
+import com.github.kr328.clash.ui.settings.SettingsGroupShape
+import com.github.kr328.clash.ui.settings.SettingsIconGap
+import com.github.kr328.clash.ui.settings.SettingsIconSize
+import com.github.kr328.clash.ui.settings.SettingsNavigationDivider
+import com.github.kr328.clash.ui.settings.SettingsNavigationRow
+import com.github.kr328.clash.ui.settings.SettingsRowHeight
+import com.github.kr328.clash.ui.settings.SettingsRowInset
+import com.github.kr328.clash.ui.settings.SettingsSectionHeading
+import com.github.kr328.clash.ui.settings.SettingsSurface
+import com.github.kr328.clash.ui.settings.SettingsSwitchRow
+import com.github.kr328.clash.ui.settings.SettingsTextGap
+import com.github.kr328.clash.ui.settings.settingsSupportingStyle
+import com.github.kr328.clash.ui.settings.settingsTitleStyle
 
 /**
  * «Мобильная сеть» (D-423, D-424), built from the settings' parts so it reads as part of the app: the switch as a
@@ -130,49 +141,24 @@ fun MobileScreen(
         overscrollEffect = null,
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(top = 16.dp + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
+        // The settings pages' top, rows and type (the owner, 24.11).
+        contentPadding = PaddingValues(top = 10.dp + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
     ) {
         item { ScreenHeader(stringResource(R.string.mobile), onBack = onBack) }
 
         item {
             // On with no subscription to switch to: the choice comes first, the switch follows it.
             val turn: (Boolean) -> Unit = { on -> if (on && state.profileName == null) pickProfile() else onTurn(on) }
-            val press = remember { MutableInteractionSource() }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).toggleable(
-                    value = settings.on,
-                    enabled = state.loaded,
-                    interactionSource = press,
-                    indication = paneIndication(),
-                    role = Role.Switch,
-                    onValueChange = turn,
-                ),
-                ownClick = true,
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(Symbols.CellWifi, contentDescription = null, modifier = Modifier.size(24.dp))
-
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(stringResource(R.string.mobile_switch), style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            stringResource(R.string.mobile_switch_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-
-                    DuckerSwitch(checked = settings.on, onDrag = turn, pressed = press, enabled = state.loaded)
-                }
+            SettingsSurface(compact = true) {
+                SettingsSwitchRow(
+                    stringResource(R.string.mobile_switch), stringResource(R.string.mobile_switch_hint), Symbols.CellWifi,
+                    checked = settings.on, onChange = turn, compact = true, enabled = state.loaded,
+                )
             }
         }
 
         item {
-            Card(modifier = Modifier.fillMaxWidth(), surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)) {
+            SettingsSurface(compact = true) {
                 NetworkRow(
                     icon = Symbols.Wifi,
                     title = stringResource(R.string.mobile_wifi),
@@ -182,10 +168,7 @@ fun MobileScreen(
                     onClick = null,
                 )
 
-                HorizontalDivider(
-                    Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-                )
+                SettingsNavigationDivider(compact = true)
 
                 NetworkRow(
                     icon = Symbols.SignalCellularAlt,
@@ -200,51 +183,22 @@ fun MobileScreen(
 
         // Only when the chosen subscription brings a provider's list (D-534): an edit turns it off, a tap brings it back.
         if (settings.preset) item {
-            val press = remember { MutableInteractionSource() }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                surfaceModifier = Modifier.clip(MaterialTheme.shapes.large).toggleable(
-                    value = settings.provider,
-                    enabled = state.loaded,
-                    interactionSource = press,
-                    indication = paneIndication(),
-                    role = Role.Switch,
-                    onValueChange = onProvider,
-                ),
-                ownClick = true,
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(Symbols.Checklist, contentDescription = null, modifier = Modifier.size(24.dp))
-
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(stringResource(R.string.mobile_provider), style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            stringResource(if (settings.provider) R.string.mobile_provider_on else R.string.mobile_provider_off),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-
-                    DuckerSwitch(checked = settings.provider, onDrag = onProvider, pressed = press, enabled = state.loaded)
-                }
+            SettingsSurface(compact = true) {
+                SettingsSwitchRow(
+                    stringResource(R.string.mobile_provider),
+                    stringResource(if (settings.provider) R.string.mobile_provider_on else R.string.mobile_provider_off),
+                    Symbols.Checklist, checked = settings.provider, onChange = onProvider, compact = true, enabled = state.loaded,
+                )
             }
         }
 
         item {
-            Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(
-                    stringResource(R.string.mobile_nodes),
-                    modifier = Modifier.semantics { heading() },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(SettingsTextGap)) {
+                SettingsSectionHeading(stringResource(R.string.mobile_nodes), compact = true)
                 Text(
                     stringResource(if (settings.nodes.isEmpty()) R.string.mobile_nodes_none else R.string.mobile_nodes_hint),
-                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = SettingsRowInset),
+                    style = settingsSupportingStyle(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -287,45 +241,24 @@ fun MobileScreen(
         }
 
         item {
-            val enabled = state.profileName != null
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
-                    .clickable(enabled = enabled, interactionSource = null, indication = paneIndication(), role = Role.Button) { nodesOpen = true; nodesShown = true },
-                ownClick = true,
-            ) {
-                // The nodes' height above it, so the list and its button line up.
-                Row(
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    val color = if (enabled) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-
-                    Icon(Symbols.Checklist, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
-                    Text(
-                        stringResource(R.string.mobile_nodes_pick),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = color,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Icon(Symbols.KeyboardArrowRight, contentDescription = null, tint = color)
-                }
+            SettingsSurface(compact = true) {
+                SettingsNavigationRow(
+                    stringResource(R.string.mobile_nodes_pick), Symbols.Checklist, { nodesOpen = true; nodesShown = true },
+                    compact = true, enabled = state.profileName != null,
+                )
             }
         }
 
         item {
-            Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.padding(horizontal = SettingsRowInset), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     stringResource(R.string.mobile_rule_pick),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = settingsSupportingStyle(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     stringResource(R.string.mobile_rule_time),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = settingsSupportingStyle(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -363,18 +296,18 @@ private fun NetworkRow(icon: ImageVector, title: String, hint: String, now: Bool
     val scheme = MaterialTheme.colorScheme
 
     Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 61.dp)
+        modifier = Modifier.fillMaxWidth().heightIn(min = SettingsRowHeight)
             .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = SettingsRowInset, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(SettingsIconGap),
     ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+        Icon(icon, contentDescription = null, modifier = Modifier.size(SettingsIconSize), tint = scheme.onSurfaceVariant)
 
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(SettingsTextGap)) {
             // «Сейчас» as a filled bubble right beside the network's name: at the row's end it read as nobody's.
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f, fill = false))
+                Text(title, style = settingsTitleStyle(), modifier = Modifier.weight(1f, fill = false))
 
                 if (now) {
                     Text(
@@ -387,14 +320,14 @@ private fun NetworkRow(icon: ImageVector, title: String, hint: String, now: Bool
                 }
             }
 
-            Text(hint, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(hint, style = settingsSupportingStyle(), color = scheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
 
         if (onClick != null) {
-            Icon(Symbols.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp))
+            SettingsChevron(Symbols.KeyboardArrowRight)
         } else {
             // The row without an arrow keeps its text where the other row's is.
-            Spacer(Modifier.size(20.dp))
+            Spacer(Modifier.size(16.dp))
         }
     }
 }
@@ -423,6 +356,7 @@ private fun NodeRow(
 
     Box(modifier.fillMaxWidth().zIndex(if (raised) 1f else 0f)) {
         Card(
+            shape = SettingsGroupShape,
             modifier = Modifier.fillMaxWidth().graphicsLayer {
                 translationY = reorder.offset(key)
                 scaleX = 1f + LIFT_SCALE * lift
@@ -435,21 +369,23 @@ private fun NodeRow(
                 .reorderable(reorder, key, scale = { 1f + LIFT_SCALE * lift }, onLift = onLift, onStep = onStep),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 16.dp, end = 4.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = SettingsRowHeight).padding(start = SettingsRowInset, end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(SettingsIconGap),
             ) {
+                // In the icons' column, so the names stand on the labels' line.
                 Text(
                     number.toString(),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = settingsTitleStyle(),
                     color = scheme.onSurfaceVariant,
-                    modifier = Modifier.widthIn(min = 16.dp),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.widthIn(min = SettingsIconSize),
                 )
 
-                Column(Modifier.weight(1f).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Column(Modifier.weight(1f).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(SettingsTextGap)) {
                     Text(
                         name.asName(),
-                        style = MaterialTheme.typography.bodyLarge.named(),
+                        style = settingsTitleStyle().named(),
                         color = if (missing) scheme.onSurfaceVariant else scheme.onSurface,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -457,12 +393,12 @@ private fun NodeRow(
 
                     // The provider renamed or removed it: it is skipped until it comes back.
                     if (missing) {
-                        Text(stringResource(R.string.mobile_node_missing), style = MaterialTheme.typography.bodySmall, color = scheme.error)
+                        Text(stringResource(R.string.mobile_node_missing), style = settingsSupportingStyle(), color = scheme.error)
                     }
                 }
 
                 Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                    Icon(Symbols.DragIndicator, contentDescription = null, tint = scheme.onSurfaceVariant)
+                    Icon(Symbols.DragIndicator, contentDescription = null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(SettingsIconSize))
                 }
             }
         }

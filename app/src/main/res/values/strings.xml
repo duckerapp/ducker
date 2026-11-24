@@ -275,7 +275,7 @@
     <string name="share_no_network">No Wi-Fi or hotspot</string>
     <string name="share_failed">The port did not open, try again</string>
     <string name="share_own">Through this phone\'s hotspot</string>
-    <string name="share_wifi">Through Wi-Fi</string>
+    <string name="share_wifi">Through the VPN</string>
     <string name="share_address">IP</string>
     <string name="share_port">Port</string>
     <string name="share_login">Login</string>
@@ -719,7 +719,7 @@
     <string name="mobile_card_off">Its own subscription and servers off Wi-Fi</string>
     <string name="mobile_card_no_profile">Choose a subscription</string>
     <string name="mobile_switch">Switch by network</string>
-    <string name="mobile_switch_hint">Off Wi-Fi, what’s set below is used</string>
+    <string name="mobile_switch_hint">A subscription for LTE</string>
     <string name="mobile_provider">Provider’s list</string>
     <string name="mobile_provider_on">Updated with the subscription</string>
     <string name="mobile_provider_off">You changed it. Turn on to bring it back</string>

@@ -248,7 +248,7 @@
     <string name="share_no_network">نه Wi-Fi هست نه هات‌اسپات</string>
     <string name="share_failed">درگاه باز نشد، دوباره امتحان کنید</string>
     <string name="share_own">از راه هات‌اسپات این گوشی</string>
-    <string name="share_wifi">از راه Wi-Fi</string>
+    <string name="share_wifi">از طریق VPN</string>
     <string name="share_address">IP</string>
     <string name="share_port">درگاه</string>
     <string name="share_login">نام کاربری</string>
@@ -683,7 +683,7 @@
     <string name="mobile_card_off">اشتراک و سرورهای جداگانه بیرون از Wi-Fi</string>
     <string name="mobile_card_no_profile">یک اشتراک انتخاب کنید</string>
     <string name="mobile_switch">تغییر بر اساس شبکه</string>
-    <string name="mobile_switch_hint">بیرون از Wi-Fi، تنظیمات پایین به کار می‌رود</string>
+    <string name="mobile_switch_hint">اشتراک برای LTE</string>
     <string name="mobile_provider">فهرست ارائه‌دهنده</string>
     <string name="mobile_provider_on">همراه اشتراک به‌روز می‌شود</string>
     <string name="mobile_provider_off">آن را تغییر دادید. برای بازگرداندن روشن کنید</string>

@@ -247,7 +247,7 @@
     <string name="share_no_network">Không có Wi-Fi hay điểm phát sóng</string>
     <string name="share_failed">Không mở được cổng, hãy thử lại</string>
     <string name="share_own">Qua điểm phát sóng của điện thoại này</string>
-    <string name="share_wifi">Qua Wi-Fi</string>
+    <string name="share_wifi">Qua VPN</string>
     <string name="share_address">IP</string>
     <string name="share_port">Cổng</string>
     <string name="share_login">Tên đăng nhập</string>
@@ -674,7 +674,7 @@
     <string name="mobile_card_off">Gói đăng ký và máy chủ riêng khi rời Wi-Fi</string>
     <string name="mobile_card_no_profile">Chọn một gói đăng ký</string>
     <string name="mobile_switch">Chuyển theo mạng</string>
-    <string name="mobile_switch_hint">Rời Wi-Fi sẽ dùng thiết lập bên dưới</string>
+    <string name="mobile_switch_hint">Gói đăng ký cho LTE</string>
     <string name="mobile_provider">Danh sách của nhà cung cấp</string>
     <string name="mobile_provider_on">Cập nhật cùng gói đăng ký</string>
     <string name="mobile_provider_off">Bạn đã thay đổi. Bật để khôi phục</string>

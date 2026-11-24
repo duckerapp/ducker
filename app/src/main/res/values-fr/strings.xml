@@ -249,7 +249,7 @@
     <string name="share_no_network">Ni Wi-Fi ni point d\'accès</string>
     <string name="share_failed">Le port ne s\'est pas ouvert, réessayez</string>
     <string name="share_own">Via le point d\'accès de ce téléphone</string>
-    <string name="share_wifi">Via le Wi-Fi</string>
+    <string name="share_wifi">Via le VPN</string>
     <string name="share_address">IP</string>
     <string name="share_port">Port</string>
     <string name="share_login">Identifiant</string>
@@ -691,7 +691,7 @@
     <string name="mobile_card_off">Votre abonnement et vos serveurs hors Wi-Fi</string>
     <string name="mobile_card_no_profile">Choisissez un abonnement</string>
     <string name="mobile_switch">Changer selon le réseau</string>
-    <string name="mobile_switch_hint">Hors Wi-Fi, ce qui est ci-dessous s’applique</string>
+    <string name="mobile_switch_hint">Abonnement pour la LTE</string>
     <string name="mobile_provider">Liste du fournisseur</string>
     <string name="mobile_provider_on">Mise à jour avec l’abonnement</string>
     <string name="mobile_provider_off">Vous l’avez modifiée. Activez pour la rétablir</string>

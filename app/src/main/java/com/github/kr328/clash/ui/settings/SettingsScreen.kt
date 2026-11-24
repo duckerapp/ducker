@@ -78,6 +78,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -1528,7 +1531,7 @@ private fun SettingsIcon(icon: ImageVector) {
     Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
 }
 
-private val SettingsGroupShape = RoundedCornerShape(16.dp)
+internal val SettingsGroupShape = RoundedCornerShape(16.dp)
 internal val SettingsGroupGap = 16.dp
 internal val SettingsRowInset = 14.dp
 internal val SettingsBodyInset = 12.dp
@@ -1536,8 +1539,10 @@ internal val SettingsTextGap = 2.dp
 internal val SettingsMinTouch = 48.dp
 // A size up from 19 dp, the labels' line kept; grey kept too, darker was tried and the grey liked more (the owner, 24.11).
 internal val SettingsIconSize = 20.dp
-private val SettingsIconGap = 10.dp
-private val SettingsLabelInset = SettingsRowInset + SettingsIconSize + SettingsIconGap
+internal val SettingsIconGap = 10.dp
+internal val SettingsLabelInset = SettingsRowInset + SettingsIconSize + SettingsIconGap
+/** A phone row's least height, its touch target with room. */
+internal val SettingsRowHeight = 50.dp
 
 @Composable
 internal fun settingsTitleStyle() =
@@ -1625,7 +1630,7 @@ internal fun SettingsNavigationDivider(compact: Boolean = false, reserveIcon: Bo
 }
 
 @Composable
-private fun SettingsChevron(icon: ImageVector) {
+internal fun SettingsChevron(icon: ImageVector) {
     Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
@@ -1641,10 +1646,12 @@ internal fun SettingsNavigationRow(
     action: Boolean = false,
     compact: Boolean = false,
     destinationIcon: ImageVector = Symbols.KeyboardArrowRight,
+    enabled: Boolean = true,
+    reserveIcon: Boolean = true,
 ) {
     SettingsRow(
-        title = title, subtitle = subtitle, value = value, icon = icon, compact = compact,
-        modifier = Modifier.clickable(enabled = !busy, role = Role.Button, onClick = onClick),
+        title = title, subtitle = subtitle, value = value, icon = icon, compact = compact, enabled = enabled, reserveIcon = reserveIcon,
+        modifier = Modifier.clickable(enabled = enabled && !busy, role = Role.Button, onClick = onClick),
         trailing = when {
             busy -> ({ CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) })
             // Reserve the progress width so that the text doesn't reflow when it appears.
@@ -1657,7 +1664,7 @@ internal fun SettingsNavigationRow(
 }
 
 @Composable
-private fun SettingsRow(
+internal fun SettingsRow(
     title: String,
     compact: Boolean,
     modifier: Modifier = Modifier,
@@ -1665,6 +1672,10 @@ private fun SettingsRow(
     value: String? = null,
     icon: ImageVector? = null,
     reserveIcon: Boolean = true,
+    /** Off: the row is dimmed as a disabled control; its click is the caller's to disable. */
+    enabled: Boolean = true,
+    /** A warning's colour for the subtitle; the secondary ink otherwise. */
+    subtitleColor: Color = Color.Unspecified,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val typography = MaterialTheme.typography
@@ -1675,7 +1686,8 @@ private fun SettingsRow(
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
     val inset = if (compact) SettingsRowInset else 16.dp
     Row(
-        Modifier.fillMaxWidth().heightIn(min = if (compact) 50.dp else 61.dp).then(modifier)
+        Modifier.fillMaxWidth().heightIn(min = if (compact) SettingsRowHeight else 61.dp).then(modifier)
+            .then(if (enabled) Modifier else Modifier.alpha(DISABLED_ROW_ALPHA))
             .padding(horizontal = inset, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (compact) SettingsIconGap else 12.dp),
@@ -1709,44 +1721,50 @@ private fun SettingsRow(
                     }
                 }
             }
-            if (subtitle != null) Text(subtitle, style = supportingStyle, color = secondary)
+            if (subtitle != null) Text(subtitle, style = supportingStyle, color = subtitleColor.takeOrElse { secondary })
         }
         trailing?.invoke()
     }
 }
 
 @Composable
-private fun SettingsSwitchRow(
+internal fun SettingsSwitchRow(
     title: String,
     subtitle: String?,
     icon: ImageVector?,
     checked: Boolean,
     onChange: (Boolean) -> Unit,
     compact: Boolean = false,
+    enabled: Boolean = true,
+    reserveIcon: Boolean = true,
+    subtitleColor: Color = Color.Unspecified,
 ) {
     val press = remember { MutableInteractionSource() }
     SettingsRow(
-        title = title, subtitle = subtitle, icon = icon, compact = compact,
-        modifier = Modifier.toggleable(value = checked, interactionSource = press,
+        title = title, subtitle = subtitle, icon = icon, compact = compact, reserveIcon = reserveIcon, subtitleColor = subtitleColor,
+        // The switch dims itself; the text stays readable, as the switch says why nothing moves.
+        modifier = Modifier.toggleable(value = checked, enabled = enabled, interactionSource = press,
             indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange),
-        trailing = { SettingsSwitch(checked, onChange, press, compact) },
+        trailing = { SettingsSwitch(checked, onChange, press, compact, enabled) },
     )
 }
 
 @Composable
-private fun SettingsSwitch(checked: Boolean, onChange: (Boolean) -> Unit, press: MutableInteractionSource, compact: Boolean) {
+private fun SettingsSwitch(checked: Boolean, onChange: (Boolean) -> Unit, press: MutableInteractionSource, compact: Boolean, enabled: Boolean = true) {
     if (compact && !glassPanesOn()) {
         // The row handles input. Scale just the visible track.
         Box(Modifier.width(44.dp), contentAlignment = Alignment.Center) {
             DuckerSwitch(checked, modifier = Modifier.requiredWidth(52.dp).graphicsLayer {
                 scaleX = 0.82f
                 scaleY = 0.82f
-            })
+            }, enabled = enabled)
         }
     } else {
-        DuckerSwitch(checked = checked, onDrag = onChange, pressed = press)
+        DuckerSwitch(checked = checked, onDrag = onChange, pressed = press, enabled = enabled)
     }
 }
+
+private const val DISABLED_ROW_ALPHA = 0.38f
 
 /**
  * A group's footer that opens the longer explanation: its icon on the rows' icon line and its text on their labels'
