@@ -1337,6 +1337,10 @@ private fun HeroCard(
                     // встречаются на экране — без этого волна резала заголовок пополам.
                     textAlpha = { if (settled != upper) 1f - fade(cardWave(), 0f, TEXT_OUT) else 1f },
                     isGlass = isGlass,
+                    // The focus stays in this copy, but the wave leaves from the button: around it the card is the new
+                    // state's at once, and below Android 10 the old ink drew the ring and its glow in the colour under
+                    // them until the wave ended (the owner, 24.11).
+                    ringState = upper,
                     cardTint = if (settled) tintOn else tintOff,
                 )
 
@@ -1483,6 +1487,8 @@ private fun HeroFace(
     /** Прозрачность надписей, которые у двух состояний разные. Читается при отрисовке. */
     textAlpha: () -> Float,
     isGlass: Boolean = false,
+    /** The state whose ink the remote's ring takes below Android 10, see [ringInk]: this copy's, or the one the wave brings. */
+    ringState: Boolean = running,
     /**
      * The glass card's tint in this copy's state. The button and the node row lay it under their own: they show
      * Home's backdrop, not the card, and without it they read as holes through the card to the backdrop.
@@ -1495,12 +1501,13 @@ private fun HeroFace(
     val fill = if (isGlass) Color.Transparent else solidFill
     // On glass the card does not turn over when connected: its letters keep the surface's colour.
     val ink = if (running && !isGlass) scheme.onPrimaryContainer else scheme.onSurface
+    val ringInk = if (ringState && !isGlass) scheme.onPrimaryContainer else scheme.onSurface
 
     CompositionLocalProvider(LocalContentColor provides ink) {
         Column(
             modifier = modifier.fillMaxWidth()
                 // The card turns over when connected: below Android 10 the ring inside it takes the card's ink.
-                .then(if (LocalTv.current) Modifier.ringInk(ink) else Modifier)
+                .then(if (LocalTv.current) Modifier.ringInk(ringInk) else Modifier)
                 .background(fill)
                 .padding(horizontal = 20.dp, vertical = if (tight) 12.dp else if (compact) 16.dp else 22.dp),
             verticalArrangement = Arrangement.spacedBy(if (tight) 8.dp else if (compact) 12.dp else 16.dp),
