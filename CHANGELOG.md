@@ -10,6 +10,10 @@ repository was closed; they are listed here for history. APK files are on the
 
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
+- TLS fingerprints of current browsers: `chrome` is Chrome 155 and `firefox` is Firefox 160, so connections that use
+  them look like today's browsers (since 0.4.51 and 0.4.53).
+- DUCKER Glass (beta), a second look beside Air: cards, the dock, sheets and buttons are glass over a picture.
+  Settings → Appearance; Android 13 and later, dark theme only (since 0.4.53).
 - The phone's settings are arranged in compact groups, with shorter labels that fit on one line and explanations below
   the groups. Sections slide in when opened.
 - In Appearance, Style comes first. The selected option slides along a single track in each of the Style and Theme controls.
