@@ -112,6 +112,26 @@ When the VPN stops or a subscription fails to update, you see why and what to do
 </div>
 </section>
 
+<section class="dk-slab dk-tv-slab" markdown>
+<div class="dk-split" markdown>
+<div markdown>
+
+## DUCKER Glass
+
+A second style for phones on Android 13 and newer: cards, the dock and sheets are liquid glass over a picture, Liquid metal or Fern. In beta; switch it in Settings → Appearance → Style.
+
+Air stays as it was, light or dark.
+{ .dk-quiet }
+
+</div>
+<div markdown>
+
+![DUCKER Glass: Home, an open group's nodes and the All nodes sheet over Liquid metal, and Home over Fern](assets/shots/glass.png){ .dk-poster loading=lazy }
+
+</div>
+</div>
+</section>
+
 <section class="dk-section dk-on-paper" markdown>
 <div class="dk-wrap" markdown>
 

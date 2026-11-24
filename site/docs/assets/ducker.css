@@ -611,6 +611,11 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover),
   border-radius: 1.1rem;
   border: 1px solid var(--dk-slab-line);
 }
+/* A poster has its own rounded card and rim. */
+.dk-tv-slab img.dk-poster {
+  border: 0;
+  border-radius: 0;
+}
 
 /* Providers: the User-Agent set large, the way a provider meets ducker. */
 .dk-ua {

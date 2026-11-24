@@ -112,6 +112,26 @@ hide:
 </div>
 </section>
 
+<section class="dk-slab dk-tv-slab" markdown>
+<div class="dk-split" markdown>
+<div markdown>
+
+## DUCKER Glass
+
+Второй стиль для телефонов с Android 13 и новее: карточки, док и шторки — жидкое стекло поверх картинки, «Жидкого металла» или «Папоротника». Пока бета; включается в «Настройки» → «Оформление» → «Стиль».
+
+Air остаётся прежним — светлым или тёмным.
+{ .dk-quiet }
+
+</div>
+<div markdown>
+
+![DUCKER Glass: главная, узлы открытой группы и шторка «Все узлы» поверх «Жидкого металла» и главная поверх «Папоротника»](assets/shots/glass.png){ .dk-poster loading=lazy }
+
+</div>
+</div>
+</section>
+
 <section class="dk-section dk-on-paper" markdown>
 <div class="dk-wrap" markdown>
 
