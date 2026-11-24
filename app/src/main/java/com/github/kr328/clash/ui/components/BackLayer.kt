@@ -52,6 +52,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -220,13 +221,19 @@ fun BackLayer(
     // Whether the page is composed, and whether anew for this opening: see the effect below. The transition's own
     // current state was found already gone while the flying page was still on screen.
     val life = remember { PageLife() }
+    // Closed since the gesture marked the card leaving: only such a page, shown again, is a reopened one. Without it a
+    // card still flying before its close (a layer that closes after the flight) counted as reopened and vanished at the
+    // release (the owner, 24.11).
+    var away by remember { mutableStateOf(false) }
+    SideEffect { if (!visible && leaving) away = true }
 
     LaunchedEffect(visible) {
         if (visible) {
             // Opened again while the gesture's card is still flying out (its page lives on as the exit): it comes back
             // in from the side as a page opening does. A page composed anew slides in by its own enter.
-            val back = slide && leaving && life.composed && !life.reborn
+            val back = slide && leaving && away && life.composed && !life.reborn
             life.reborn = false
+            away = false
             progress.snapTo(0f)
             leaving = false
             if (back) {
@@ -257,7 +264,7 @@ fun BackLayer(
             life.reborn = born
             onDispose { life.composed = false }
         }
-        val reopened = { leaving && transition.targetState == EnterExitState.Visible }
+        val reopened = { leaving && away && transition.targetState == EnterExitState.Visible }
         val pull = { if (reopened()) 0f else progress.value }
         val shift = {
             when {
