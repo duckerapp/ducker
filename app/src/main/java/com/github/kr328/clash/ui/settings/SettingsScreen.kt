@@ -910,7 +910,8 @@ private fun BackgroundRow(allowed: Boolean, autostart: Boolean?, onAllow: () -> 
         title = stringResource(R.string.background_title),
         subtitle = if (allowed) null else stringResource(R.string.background_restricted),
         value = if (allowed) stringResource(R.string.settings_background_allowed) else null,
-        icon = Symbols.BatteryChargingFull,
+        // As wide as the phone of the maker's steps below (the owner, 24.11).
+        icon = Symbols.MobileCharge,
         compact = true,
         trailing = if (allowed) ({ SettingsChevron(Symbols.Check) }) else null,
     )
@@ -1533,8 +1534,9 @@ internal val SettingsRowInset = 14.dp
 internal val SettingsBodyInset = 12.dp
 internal val SettingsTextGap = 2.dp
 internal val SettingsMinTouch = 48.dp
-internal val SettingsIconSize = 19.dp
-private val SettingsIconGap = 11.dp
+// In the text's colour, not grey, and a size up from 19 dp, the labels' line kept (the owner, 24.11: greyish, thin).
+internal val SettingsIconSize = 20.dp
+private val SettingsIconGap = 10.dp
 private val SettingsLabelInset = SettingsRowInset + SettingsIconSize + SettingsIconGap
 
 @Composable
@@ -1679,7 +1681,7 @@ private fun SettingsRow(
         horizontalArrangement = Arrangement.spacedBy(if (compact) SettingsIconGap else 12.dp),
     ) {
         if (compact) {
-            if (icon != null) Icon(icon, contentDescription = null, modifier = Modifier.size(SettingsIconSize), tint = secondary)
+            if (icon != null) Icon(icon, contentDescription = null, modifier = Modifier.size(SettingsIconSize), tint = androidx.compose.material3.LocalContentColor.current)
             else if (reserveIcon) Spacer(Modifier.width(SettingsIconSize))
         } else if (icon != null) {
             SettingsIcon(icon)

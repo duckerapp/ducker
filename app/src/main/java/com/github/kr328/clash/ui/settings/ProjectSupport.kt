@@ -100,6 +100,23 @@ internal fun LazyListScope.aboutItems(
     appVersion: String, coreVersion: String, compact: Boolean, onLink: (String) -> Unit, onSupport: () -> Unit,
 ) {
     item(key = "about-card") { AboutCard(appVersion, coreVersion, compact, onSupport) }
+    // The author right under the card, before the links (the owner, 24.11).
+    item(key = "about-author") {
+        SettingsNavigationGroup(stringResource(R.string.about_author), compact) {
+            FlowRow(
+                Modifier.fillMaxWidth().padding(horizontal = if (compact) SettingsRowInset else 16.dp, vertical = 10.dp),
+                // The pills go under the name together when a large font leaves no room beside it.
+                horizontalArrangement = Arrangement.SpaceBetween,
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(AUTHOR, Modifier.padding(end = 8.dp), style = if (compact) settingsTitleStyle() else MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Pill("Telegram", onClick = { onLink(AUTHOR_TELEGRAM) }, onCard = true)
+                    Pill("GitHub", onClick = { onLink(AUTHOR_GITHUB) }, onCard = true)
+                }
+            }
+        }
+    }
     item(key = "about-community") {
         SettingsNavigationGroup(stringResource(R.string.settings_project_community), compact) {
             ProjectLinkRow(stringResource(R.string.channel), Symbols.Campaign, stringResource(R.string.channel_hint), compact) { onLink(PROJECT_NEWS) }
@@ -118,22 +135,7 @@ internal fun LazyListScope.aboutItems(
             ProjectLinkRow(stringResource(R.string.about_license), Symbols.Article, stringResource(R.string.about_license_hint), compact) { onLink(PROJECT_LICENSE) }
         }
     }
-    item(key = "about-author") {
-        SettingsNavigationGroup(stringResource(R.string.about_author), compact) {
-            FlowRow(
-                Modifier.fillMaxWidth().padding(horizontal = if (compact) SettingsRowInset else 16.dp, vertical = 10.dp),
-                // The pills go under the name together when a large font leaves no room beside it.
-                horizontalArrangement = Arrangement.SpaceBetween,
-                itemVerticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(AUTHOR, Modifier.padding(end = 8.dp), style = if (compact) settingsTitleStyle() else MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Pill("Telegram", onClick = { onLink(AUTHOR_TELEGRAM) }, onCard = true)
-                    Pill("GitHub", onClick = { onLink(AUTHOR_GITHUB) }, onCard = true)
-                }
-            }
-        }
-    }
+
 }
 
 /** «Поддержать проект»: only the ways to give (D-524). */
