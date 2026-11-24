@@ -144,7 +144,11 @@ ducker 有两种样式：**Air**（浅色或深色）和 **DUCKER Glass**（测�
 - **已在真实电视上检验。** 欢迎反馈其他型号电视上的使用情况。
 
 <p align="center">
+  <a href="images/en/tv-home.png"><img src="images/en/tv-home.png" width="49%" alt="Android TV：首页，焦点框在电源按钮上"></a>
   <a href="images/en/tv-proxies.png"><img src="images/en/tv-proxies.png" width="49%" alt="Android TV：代理页面，焦点框在某个节点上"></a>
+</p>
+<p align="center">
+  <a href="images/en/tv-profiles.png"><img src="images/en/tv-profiles.png" width="49%" alt="Android TV：订阅页面，当前订阅和另外两个订阅"></a>
   <a href="images/en/tv-add.png"><img src="images/en/tv-add.png" width="49%" alt="Android TV：用手机扫描二维码添加订阅"></a>
 </p>
 

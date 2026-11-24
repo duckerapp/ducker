@@ -163,7 +163,11 @@ The same APK runs on Android TV and Google TV.
 - **Checked on real TVs.** Reports from other TV models are welcome.
 
 <p align="center">
+  <a href="docs/images/en/tv-home.png"><img src="docs/images/en/tv-home.png" width="49%" alt="Android TV: Home with the focus frame on the power button"></a>
   <a href="docs/images/en/tv-proxies.png"><img src="docs/images/en/tv-proxies.png" width="49%" alt="Android TV: the Proxies screen with the focus frame on a node"></a>
+</p>
+<p align="center">
+  <a href="docs/images/en/tv-profiles.png"><img src="docs/images/en/tv-profiles.png" width="49%" alt="Android TV: Profiles, the active subscription and two more"></a>
   <a href="docs/images/en/tv-add.png"><img src="docs/images/en/tv-add.png" width="49%" alt="Android TV: adding a subscription by scanning a QR code with the phone"></a>
 </p>
 

@@ -168,7 +168,11 @@ VPN и сборки пришла из CMFA. Сетевые протоколы п
 - **Проверено на настоящих телевизорах.** Сообщения с других моделей очень пригодятся.
 
 <p align="center">
+  <a href="images/ru/tv-home.png"><img src="images/ru/tv-home.png" width="49%" alt="Android TV: главная с рамкой фокуса на кнопке включения"></a>
   <a href="images/ru/tv-proxies.png"><img src="images/ru/tv-proxies.png" width="49%" alt="Android TV: вкладка «Прокси» с рамкой фокуса на узле"></a>
+</p>
+<p align="center">
+  <a href="images/ru/tv-profiles.png"><img src="images/ru/tv-profiles.png" width="49%" alt="Android TV: «Подписки», активная подписка и ещё две"></a>
   <a href="images/ru/tv-add.png"><img src="images/ru/tv-add.png" width="49%" alt="Android TV: добавление подписки по QR-коду с телефона"></a>
 </p>
 

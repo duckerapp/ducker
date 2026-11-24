@@ -164,7 +164,11 @@ ducker دو سبک دارد: **Air** روشن یا تیره، و **DUCKER Glass*
 - **روی تلویزیون‌های واقعی بررسی شده است.** گزارش از مدل‌های دیگر تلویزیون بسیار کمک می‌کند.
 
 <p align="center">
+  <a href="images/en/tv-home.png"><img src="images/en/tv-home.png" width="49%" alt="Android TV: صفحهٔ اصلی با قاب فوکوس روی دکمهٔ روشن و خاموش"></a>
   <a href="images/en/tv-proxies.png"><img src="images/en/tv-proxies.png" width="49%" alt="Android TV: صفحهٔ پروکسی با قاب فوکوس روی یک نود"></a>
+</p>
+<p align="center">
+  <a href="images/en/tv-profiles.png"><img src="images/en/tv-profiles.png" width="49%" alt="Android TV: اشتراک‌ها، اشتراک فعال و دو اشتراک دیگر"></a>
   <a href="images/en/tv-add.png"><img src="images/en/tv-add.png" width="49%" alt="Android TV: افزودن اشتراک با اسکن کد QR از گوشی"></a>
 </p>
 
