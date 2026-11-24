@@ -1567,6 +1567,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     BackLayer(
                         visible = showApps,
+                        // Opened from Settings' rows: in from the side as Settings' sections (the owner, 24.11).
+                        slide = !tv,
                         onBack = closeApps,
                         backdrop = screenWall,
                         backdropTone = screenTone,
@@ -1586,6 +1588,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     BackLayer(
                         visible = showLogs,
+                        // Opened from Settings' rows: in from the side as Settings' sections (the owner, 24.11).
+                        slide = !tv,
                         onBack = closeLogs,
                         backdrop = screenWall,
                         backdropTone = screenTone,
@@ -1679,6 +1683,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     BackLayer(
                         visible = showProbe,
+                        // Opened from Settings' rows: in from the side as Settings' sections (the owner, 24.11).
+                        slide = !tv,
                         onBack = closeProbe,
                         backdrop = screenWall,
                         backdropTone = screenTone,
