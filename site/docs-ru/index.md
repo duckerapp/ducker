@@ -112,7 +112,7 @@ hide:
 </div>
 </section>
 
-<section class="dk-slab dk-tv-slab" markdown>
+<section class="dk-slab dk-tv-slab dk-glass-slab" markdown>
 <div class="dk-split" markdown>
 <div markdown>
 

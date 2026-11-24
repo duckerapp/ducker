@@ -616,6 +616,15 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover),
   border: 0;
   border-radius: 0;
 }
+/* Glass: the poster's phones need the slab's whole width, so the text goes above it. */
+.dk-glass-slab .dk-split {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.6rem;
+}
+.dk-glass-slab .dk-split > :last-child p {
+  max-width: none;
+  margin-top: 0;
+}
 
 /* Providers: the User-Agent set large, the way a provider meets ducker. */
 .dk-ua {

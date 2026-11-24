@@ -112,7 +112,7 @@ When the VPN stops or a subscription fails to update, you see why and what to do
 </div>
 </section>
 
-<section class="dk-slab dk-tv-slab" markdown>
+<section class="dk-slab dk-tv-slab dk-glass-slab" markdown>
 <div class="dk-split" markdown>
 <div markdown>
 
