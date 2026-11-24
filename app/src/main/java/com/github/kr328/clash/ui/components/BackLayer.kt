@@ -113,7 +113,8 @@ fun BackLayer(
     backdropTone: Boolean? = LocalBackdropTone.current,
     /**
      * Comes in from the side the reading goes to and leaves back there, as a page turned over the one under it:
-     * Settings' sections (the owner, 24.11). Otherwise it grows in from the middle.
+     * Settings' sections and the screens opened from them, «Возможности» and its pages (the owner, 24.11). Otherwise it
+     * grows in from the middle. Released, the back gesture closes it at once, its card's flight being its exit.
      */
     slide: Boolean = false,
     content: @Composable () -> Unit,
@@ -232,6 +233,9 @@ fun BackLayer(
                 offset.snapTo(if (rtl) -width else width)
                 offset.animateTo(0f, tween(SLIDE_IN_MS, easing = SlideInEasing))
             } else offset.snapTo(0f)
+        } else if (!leaving) {
+            // Closed by the arrow: a slide back in cut short here must not leave its offset to the next opening.
+            offset.snapTo(0f)
         }
     }
 
@@ -245,9 +249,8 @@ fun BackLayer(
         else fadeOut(tween(EXIT_MS)) + scaleOut(tween(EXIT_MS), targetScale = 0.94f),
     ) {
         // Opened again after leaving by the gesture: the card's last offset, shrink and corners are cleared a frame late
-        // (the effect above), and a page sliding in from them jumped (the owner, 24.11). Until it is in, they don't
-        // count. Not while it leaves: that runs with the page settled in.
-        // A page still composed (flying out) waits beyond the edge for the effect to bring it in.
+        // (the effect above), and a page sliding in from them jumped (the owner, 24.11). Until then they don't count: a
+        // page composed anew stands in place for its own enter, one still composed (flying out) waits beyond the edge.
         val born = remember { leaving }
         DisposableEffect(Unit) {
             life.composed = true
