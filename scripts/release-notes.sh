@@ -75,7 +75,7 @@ button() { # file, image, width, alt
   # The report's address is the file's SHA-256; the report exists once the file is uploaded there.
   ( cd "$OUT" && sha256sum ./*.apk | sed 's|^\([0-9a-f]*\)  \./\(.*\)$|- `\2`: [VirusTotal](https://www.virustotal.com/gui/file/\1)|' )
   echo
-  echo "VirusTotal scan results can change and are not a guarantee of safety. The report must exist for each file before publication."
+  echo "VirusTotal scan results can change and are not a guarantee of safety."
   echo
   echo "SHA-256 of both files: \`SHA256SUMS\` below."
   echo
