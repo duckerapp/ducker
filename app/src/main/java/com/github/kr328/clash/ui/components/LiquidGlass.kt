@@ -58,6 +58,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
@@ -672,6 +676,7 @@ internal fun Modifier.liquidGlass(
     val maskShader = remember(panes, ownVeil) { if (panes && ownVeil) PaneShaders.veil else null }
     val maskBrush = remember(maskShader) { maskShader?.let(::ShaderBrush) }
     var position by remember { mutableStateOf(Offset.Zero) }
+    val drawnAt = remember { DrawnAt() }
     // How much the layers around it scale it (a pressed card around its button): measured, so its glass still shows what
     // lies right under it without every caller passing [zoom].
     var layerScale by remember { mutableStateOf(ScaleFactor(1f, 1f)) }
@@ -689,7 +694,7 @@ internal fun Modifier.liquidGlass(
                 plain((it.localToRoot(Offset(0f, height.toFloat())).y - position.y) / height),
             )
         }
-    }.drawWithCache {
+    }.then(DrawnAtElement(drawnAt)).drawWithCache {
         val outline = shape.createOutline(size, layoutDirection, this)
         val radii = extractCornerRadii(outline, size)
         val blur = MAX_BLUR.toPx() * blurPart + (blurBoost + extra).toPx()
@@ -731,6 +736,10 @@ internal fun Modifier.liquidGlass(
             // switched between the two every frame.
             val still = backdrop.still?.takeIf { (it.held || it.version == backdrop.version) && (plain || panes) }?.pictures?.get(stillKey(stillBlur, style.vibrancy))
             val pressed = press?.light() ?: 0f
+            // Where it is drawn now; [position], read for its changes, comes after the layout and missed a layer's
+            // move in the same frame: a moved subscription swapping places showed the wallpaper a card away.
+            val known = position
+            val position = drawnAt.at.takeIf { it.isSpecified } ?: known
 
             if (still == null) {
                 glass.record(paneSize) {
@@ -2380,3 +2389,21 @@ half4 main(float2 coord) {
 }
 """
 
+/** Where a pane was last drawn, in the window: read by its glass in the same draw. */
+private class DrawnAt {
+    var at = Offset.Unspecified
+}
+
+private class DrawnAtNode(var holder: DrawnAt) : Modifier.Node(), DrawModifierNode {
+    override fun ContentDrawScope.draw() {
+        holder.at = requireLayoutCoordinates().positionInRoot()
+        drawContent()
+    }
+}
+
+private data class DrawnAtElement(val holder: DrawnAt) : ModifierNodeElement<DrawnAtNode>() {
+    override fun create() = DrawnAtNode(holder)
+    override fun update(node: DrawnAtNode) {
+        node.holder = holder
+    }
+}
