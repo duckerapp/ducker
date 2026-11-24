@@ -291,7 +291,6 @@ app that is able to send these commands. ducker's own widgets, tile and shortcut
 ## Roadmap
 
 - **A desktop client** for Windows, Linux and macOS.
-- **A glass look:** translucent panels as an alternative style of the interface.
 - **"Only through VPN":** chosen apps get no internet at all while the VPN is off.
 
 No dates yet. An iOS version is not planned for now.
