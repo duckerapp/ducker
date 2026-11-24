@@ -69,10 +69,10 @@ ducker 有两种样式：**Air**（浅色或深色）和 **DUCKER Glass**（测�
 <p align="center">
   <img src="images/en/theme-wave.gif" width="240" alt="在主页切换主题：深色主题从按钮处像波纹一样扩散，随后切回浅色主题">
   &nbsp;&nbsp;
-  <img src="images/en/glass-power.gif" width="240" alt="在 DUCKER Glass 中开启和关闭 VPN：按钮在触摸下发光，玻璃卡片流畅地过渡到新状态">
+  <img src="images/en/glass-power.gif" width="240" alt="在 DUCKER Glass 中开启 VPN：按钮在触摸下发光，一道玻璃波纹把卡片带入新状态">
 </p>
 
-<p align="center"><sub>Air：主题以波纹形式在屏幕上切换。DUCKER Glass：开启和关闭 VPN 时，卡片流畅地过渡到新状态。</sub></p>
+<p align="center"><sub>Air：主题以波纹形式在屏幕上切换。DUCKER Glass：开启 VPN 时，一道玻璃波纹把卡片带入新状态。</sub></p>
 
 ## 功能
 
