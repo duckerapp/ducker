@@ -3,6 +3,8 @@ package com.github.kr328.clash.ui.home
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.layout.layout
 import com.github.kr328.clash.ui.components.glass
+import com.github.kr328.clash.ui.components.liquidGlass
+import com.github.kr328.clash.ui.components.chosenGlassTint
 import com.github.kr328.clash.ui.components.glassPress
 import com.github.kr328.clash.ui.components.glassSourceOver
 import com.github.kr328.clash.ui.components.rememberPaneUnder
@@ -309,17 +311,28 @@ private const val PICKER_SEARCH_KEY = "picker-search"
 private fun PickerNode(node: NodeState, selected: Boolean, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(20.dp)
-    val content = if (selected) scheme.onPrimary else scheme.onSurface
-    val fill = if (selected) scheme.primary else scheme.surface
-    // On a glass sheet a row is a control of glass on it; the chosen one keeps its fill, as the dock's highlight does.
+    // On a glass sheet a row is a control of glass on it; the chosen one is glass in the chosen tint, as Proxies' chosen
+    // node: its white fill stood out of the sheet (the owner, 24.11).
     val backdrop = LocalGlassBackdrop.current
-    val glass = backdrop != null && !selected
+    val glass = backdrop != null
+    val content = when {
+        !selected -> scheme.onSurface
+        glass -> scheme.onPrimaryContainer
+        else -> scheme.onPrimary
+    }
+    val fill = if (selected) scheme.primary else scheme.surface
     // The pane glass: a row swells under a finger as Proxies' cards do, the chosen one too.
     val press = rememberGlassPress()
     Row(
         modifier = modifier.fillMaxWidth().heightIn(min = 56.dp)
             .glassPress(press?.takeIf { enabled }, own = true)
-            .then(if (glass) Modifier.glass(backdrop, GlassMaterial.Control, shape, press = press) else Modifier.airShadow(shape, fill))
+            .then(
+                when {
+                    !glass -> Modifier.airShadow(shape, fill)
+                    selected -> Modifier.liquidGlass(backdrop, base = scheme.background, tint = chosenGlassTint(), shape = shape, press = press, fixedTint = true)
+                    else -> Modifier.glass(backdrop, GlassMaterial.Control, shape, press = press)
+                },
+            )
             .clip(shape)
             .then(if (glass) Modifier else Modifier.background(fill))
             .selectable(
