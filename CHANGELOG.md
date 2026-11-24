@@ -18,6 +18,7 @@ repository was closed; they are listed here for history. APK files are on the
 - The phone's settings are arranged in compact groups, with shorter labels that fit on one line and explanations below
   the groups. Sections slide in when opened.
 - In Appearance, Style comes first. The selected option slides along a single track in each of the Style and Theme controls.
+  Glass blur stays on one row on narrow screens too.
 - Features and its pages use the same compact layout. Connections shows “Active connections”, and Wi-Fi sharing is
   described as “VPN for other devices”.
 - The dock is a little wider in Air and DUCKER Glass, giving “Profiles” and “+ Add” more room inside the highlight.
