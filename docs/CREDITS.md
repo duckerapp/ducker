@@ -21,6 +21,10 @@ repository README.
   behind the country and category rules, downloaded during the build; that project builds them from
   Loyalsoldier/v2ray-rules-dat, v2fly/domain-list-community and the other sources it lists. It
   publishes only a daily `latest`, so each release's notes give the SHA-256 of the databases inside.
+- **mihomo-rule-sets** — Davoyan. Rule sets that ducker's built-in template loads from jsDelivr: Russian sites
+  (`category-ru`) and addresses (`ips-for-ru`), Telegram's extra addresses.
+- **mihomo-rule-sets** — legiz-ru. Rule sets of the same template: torrent trackers, clients and sites, Discord's
+  voice servers, sites blocked in Russia (`category-ban-ru`) and Russian apps (`ru-app-list`).
 
 ## Libraries in the app
 
