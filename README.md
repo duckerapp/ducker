@@ -115,7 +115,7 @@ New features will keep arriving here in future versions.
 - **Config editor.** Edit the profile on the device; the core checks it before it is applied. The
   profile is used as is: ducker never rewrites config keys silently.
 - **Quick access.** Home screen widgets, a Quick Settings tile, launcher shortcuts, and optional
-  [control from Tasker and similar apps](#control-from-other-apps).
+  [control from Tasker and similar apps](#external-control).
 - **Stays up.** Autostart after a reboot or an app update, and step-by-step help with the battery
   savers of Xiaomi, Samsung, Huawei, OPPO, vivo and Tecno phones that like to kill VPN apps.
 - **Privacy extras.** Hide ducker from recent apps, disguise its icon as a calculator, or put the
@@ -271,7 +271,7 @@ Provider reference: [headers](https://duckerapp.github.io/ducker/providers/heade
   ID are removed first.
 - **Only system certificates are trusted.** A certificate installed on the phone by hand cannot
   replace the provider's images or update answers.
-- **Control from other apps is off** until you turn it on.
+- **External control is off** until you turn it on.
 
 Found a vulnerability? Please report it privately: [SECURITY.md](SECURITY.md).
 
@@ -287,11 +287,12 @@ They are public in the [duckerapp/mihomo](https://github.com/duckerapp/mihomo) f
 two smaller forks, [duckerapp/utls](https://github.com/duckerapp/utls) and
 [duckerapp/sing-mux](https://github.com/duckerapp/sing-mux), carry a few more fixes.
 
-## Control from other apps
+## External control
 
-For Tasker, shortcuts and similar tools. Turn on **Settings → Privacy → Control from other apps** first: it
-is off by default, also after updating an existing installation. The permission applies to every
-app that is able to send these commands. ducker's own widgets, tile and shortcuts work without it.
+For Tasker, shortcuts and similar tools, turn on **Settings → Privacy → External control**
+("Control from other apps" on TV). It is off by default, also after updating an existing installation.
+The permission applies to every app that is able to send these commands. ducker's own widgets,
+tile and shortcuts work without it.
 
 | Action | Intent |
 |---|---|

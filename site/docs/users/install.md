@@ -72,7 +72,8 @@ Installing over `adb` is unaffected. [Google's current guidance](https://develop
 
 The app accepts intents, which are useful for Tasker and shortcuts.
 
-For external START/STOP/TOGGLE, enable **Settings → Privacy → Control from other apps**.
+For external START/STOP/TOGGLE, enable **Settings → Privacy → External control**
+("Control from other apps" on TV).
 Access is disabled by default, including on existing installations. Permission applies to
 all apps able to send these commands. Built-in widgets, the tile, and shortcuts work
 independently of this permission; importing through a URL requires confirmation.

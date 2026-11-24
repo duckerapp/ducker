@@ -16,7 +16,7 @@
 **1. Your subscription provider** — when you add or update a subscription. The request uses
 the URL you supplied and includes:
 - a `User-Agent` such as `mihomo/<core version> ducker/<app version> (android)`;
-- if **Settings → Privacy → Device ID** is enabled (the default): the device id, the word `Android`,
+- if **Settings → Privacy → Device HWID** ("Device ID" on TV) is enabled (the default): the device id, the word `Android`,
   the Android version, and the phone's manufacturer and model. The id is `ANDROID_ID`:
   on Android 8+, it is scoped to the app signing key, Android user and device, rather than being a universal device serial number.
   If it is unavailable, ducker generates a random id once. The provider uses it to count

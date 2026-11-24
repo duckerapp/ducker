@@ -231,8 +231,8 @@ changed here: Profiles → "Edit" → "Auto-update".
    the request goes directly.
 4. **"Device limit reached"** — the provider counts devices and the limit is used up. Remove an
    old device at the provider (in your account or bot) or write to them with the "Support"
-   button, then press "Update". Also check Settings → "Privacy" → "Device ID": it must be on. Without it a
-   provider that counts devices will not hand out the subscription.
+   button, then press "Update". Also make sure Settings → "Privacy" → "Device HWID"
+   ("Device ID" on TV) is on. Without it a provider that counts devices will not hand out the subscription.
 5. **"Not loaded"** — the provider did not answer or the link is wrong. If the provider sent a
    new link: "Edit" → paste it into the "Link" field → "Save".
 6. **"Expired"** — the subscription term is over. Renew it with the "Renew" button (if the

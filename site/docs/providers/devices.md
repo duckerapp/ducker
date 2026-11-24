@@ -23,7 +23,8 @@ It is `ANDROID_ID`, which Android assigns separately to each app. This has two c
   a new device slot in the panel; with a one-device limit, the old device must be unlinked.
 - Uninstalling and reinstalling ducker usually leaves the id unchanged.
 
-Users can see their id under **Settings → Privacy → Device ID** — it is hidden until tapped — and read it out to support.
+Users can see their id under **Settings → Privacy → Device HWID** ("Device ID" on TV). It is hidden
+until tapped and can be read out to support.
 
 ## The switch
 
