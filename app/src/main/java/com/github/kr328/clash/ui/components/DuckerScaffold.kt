@@ -421,7 +421,9 @@ private fun FloatingDock(
         val extent = lerp(dockSlotWidth(length), length, face.merge)
 
         return if (vertical) Rect(Offset(0f, start), Size(size.width, extent))
-        else Rect(Offset(start, 0f), Size(extent, size.height))
+        // At the bottom the one button grows over the dock's own edge too: no ring of the dock around it (the owner,
+        // 24.11). A pixel past it, so the dock's clip leaves no hairline of the dock at the rim.
+        else Rect(Offset(start, 0f), Size(extent, size.height)).inflate((DOCK_PAD.toPx() + 1f) * face.merge)
     }
 
     val tuning = LocalGlassTuning.current
@@ -439,6 +441,7 @@ private fun FloatingDock(
         shape = shape,
         color = if (backdrop != null) Color.Transparent else MaterialTheme.colorScheme.surface,
     ) {
+        Box(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth().padding(DOCK_PAD)) {
             // Подсветка — своим слоем под обеими копиями вкладок: при слиянии она растёт,
             // а вкладки гаснут, и гасить её вместе с ними нельзя.
@@ -524,7 +527,10 @@ private fun FloatingDock(
                     },
             )
 
-            SingleFace(face, single, onSingle, vertical, shape, onPill)
+            if (vertical) SingleFace(face, single, onSingle, vertical, shape, onPill)
+        }
+            // At the bottom over the whole dock, as the button there is: its press and shine reach its edge.
+            if (!vertical) SingleFace(face, single, onSingle, vertical, shape, onPill)
         }
     }
     }
