@@ -1193,15 +1193,25 @@ private fun ChipsCard(
                 val labelStyle = MaterialTheme.typography.labelLarge
                 val measurer = rememberTextMeasurer()
                 val badgeStyle = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 0.08.em)
-                val widest = options.maxOf { (value, label) ->
+                val labels = options.map { (value, label) ->
                     measurer.measure(label, labelStyle).size.width +
                         (badges[value]?.let { with(density) { measurer.measure(it, badgeStyle).size.width + 18.dp.roundToPx() } } ?: 0)
                 }
+                val widest = labels.max()
+                // A track's segments by their labels when one label outgrows an equal share but all fit together.
+                var weights: List<Float>? = null
                 val columns = with(density) {
                     val room = maxWidth.roundToPx()
                     if (compact) {
                         // A track's segment: its share of the track inside the pill's inset, less 8 dp each side.
-                        if (widest + 16.dp.roundToPx() <= (room - 2 * SegmentPillInset.roundToPx()) / options.size) options.size else 1
+                        val track = room - 2 * SegmentPillInset.roundToPx()
+                        val pad = 16.dp.roundToPx()
+                        val spare = track - labels.sum() - pad * options.size
+                        if (widest + pad <= track / options.size) options.size
+                        else if (spare >= 0) {
+                            weights = labels.map { it + pad + spare.toFloat() / options.size }
+                            options.size
+                        } else 1
                     } else if ((widest + 12.dp.roundToPx()) * options.size + 8.dp.roundToPx() * (options.size - 1) <= room) options.size else 1
                 }
                 if (compact && large) {
@@ -1210,7 +1220,7 @@ private fun ChipsCard(
                         badgeStyle, large = true,
                     )
                 } else if (compact && columns == options.size) {
-                    SegmentTrack(options, selected, onSelect, badges, labelStyle, badgeStyle)
+                    SegmentTrack(options, selected, onSelect, badges, labelStyle, badgeStyle, weights = weights)
                 } else FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -1283,9 +1293,13 @@ private fun SegmentTrack(
      * (the owner, 24.11).
      */
     large: Boolean = false,
+    /** Each segment's share of the track; null, equal shares. */
+    weights: List<Float>? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
+    val shares = weights ?: List(options.size) { 1f }
+    val starts = shares.runningFold(0f) { sum, it -> sum + it }.map { it / shares.sum() }
     val index = options.indexOfFirst { it.first == selected }.coerceAtLeast(0)
     val ride by animateFloatAsState(index.toFloat(), spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow), label = "segment")
     val position = if (large) index.toFloat() else ride
@@ -1298,10 +1312,15 @@ private fun SegmentTrack(
             val pad = (if (large) SegmentLargePillInset else SegmentPillInset).toPx()
             val height = size.height - 2 * inset
             drawRoundRect(track, Offset(0f, inset), Size(size.width, height), CornerRadius(height / 2))
-            val segment = (size.width - 2 * pad) / options.size
+            val span = size.width - 2 * pad
+            // The pill rides between the segments it is passing, its width easing from one's to the other's.
+            val from = position.toInt().coerceIn(0, options.size - 1)
+            val to = (from + 1).coerceAtMost(options.size - 1)
+            val t = position - from
+            val start = span * (starts[from] + (starts[to] - starts[from]) * t)
+            val segment = span * ((starts[from + 1] - starts[from]) + ((starts[to + 1] - starts[to]) - (starts[from + 1] - starts[from])) * t)
             val pillHeight = height - 2 * pad
-            val left = if (layoutDirection == LayoutDirection.Rtl) size.width - pad - segment * (position + 1)
-            else pad + segment * position
+            val left = if (layoutDirection == LayoutDirection.Rtl) size.width - pad - start - segment else pad + start
             drawRoundRect(pill, Offset(left, inset + pad), Size(segment, pillHeight), CornerRadius(pillHeight / 2))
         },
     ) {
@@ -1311,7 +1330,7 @@ private fun SegmentTrack(
             val fading by animateColorAsState(target, tween(180), label = "ink")
             val ink = if (large) target else fading
             Box(
-                Modifier.weight(1f).fillMaxHeight()
+                Modifier.weight(shares[i]).fillMaxHeight()
                     .selectable(selected = chosen, interactionSource = null, indication = null, role = Role.RadioButton) {
                         if (!chosen) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                         onSelect(value)
