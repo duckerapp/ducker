@@ -1534,7 +1534,7 @@ internal val SettingsRowInset = 14.dp
 internal val SettingsBodyInset = 12.dp
 internal val SettingsTextGap = 2.dp
 internal val SettingsMinTouch = 48.dp
-// In the text's colour, not grey, and a size up from 19 dp, the labels' line kept (the owner, 24.11: greyish, thin).
+// A size up from 19 dp, the labels' line kept; grey kept too, darker was tried and the grey liked more (the owner, 24.11).
 internal val SettingsIconSize = 20.dp
 private val SettingsIconGap = 10.dp
 private val SettingsLabelInset = SettingsRowInset + SettingsIconSize + SettingsIconGap
@@ -1681,7 +1681,7 @@ private fun SettingsRow(
         horizontalArrangement = Arrangement.spacedBy(if (compact) SettingsIconGap else 12.dp),
     ) {
         if (compact) {
-            if (icon != null) Icon(icon, contentDescription = null, modifier = Modifier.size(SettingsIconSize), tint = androidx.compose.material3.LocalContentColor.current)
+            if (icon != null) Icon(icon, contentDescription = null, modifier = Modifier.size(SettingsIconSize), tint = secondary)
             else if (reserveIcon) Spacer(Modifier.width(SettingsIconSize))
         } else if (icon != null) {
             SettingsIcon(icon)
