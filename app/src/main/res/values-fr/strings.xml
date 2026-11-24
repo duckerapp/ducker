@@ -224,7 +224,8 @@
     <string name="lock_prompt_title">Confirmez votre identité</string>
     <string name="features">Fonctions</string>
     <string name="connections">Connexions</string>
-    <string name="connections_hint">Quelles applis se connectent où</string>
+    <string name="connections_hint">Connexions actives</string>
+    <string name="features_share_short">VPN pour d\'autres appareils</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s connexion</item>
         <item quantity="many">%1$s connexions</item>

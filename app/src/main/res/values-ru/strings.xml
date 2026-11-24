@@ -240,7 +240,8 @@
     <string name="lock_prompt_title">Подтвердите, что это вы</string>
     <string name="features">Возможности</string>
     <string name="connections">Подключения</string>
-    <string name="connections_hint">Какие приложения куда подключаются</string>
+    <string name="connections_hint">Активные подключения</string>
+    <string name="features_share_short">VPN для других устройств</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s подключение</item>
         <item quantity="few">%1$s подключения</item>

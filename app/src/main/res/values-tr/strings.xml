@@ -224,7 +224,8 @@
     <string name="lock_prompt_title">Siz olduğunuzu doğrulayın</string>
     <string name="features">Özellikler</string>
     <string name="connections">Bağlantılar</string>
-    <string name="connections_hint">Hangi uygulama nereye bağlanıyor</string>
+    <string name="connections_hint">Etkin bağlantılar</string>
+    <string name="features_share_short">Diğer cihazlar için VPN</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s bağlantı</item>
         <item quantity="other">%1$s bağlantı</item>

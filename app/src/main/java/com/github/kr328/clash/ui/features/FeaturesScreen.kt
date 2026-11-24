@@ -35,6 +35,10 @@ import com.github.kr328.clash.ui.components.overscrollFor
 import com.github.kr328.clash.ui.components.screenInsets
 import com.github.kr328.clash.ui.components.tvEdge
 import com.github.kr328.clash.ui.components.DuckerCard as Card
+import com.github.kr328.clash.ui.settings.SettingsGroupGap
+import com.github.kr328.clash.ui.settings.SettingsNavigationDivider
+import com.github.kr328.clash.ui.settings.SettingsNavigationGroup
+import com.github.kr328.clash.ui.settings.SettingsNavigationRow
 
 /**
  * «Возможности» (stage 15): the tools that are not needed every day, behind one pill on Home so that Home stays a
@@ -58,46 +62,44 @@ fun FeaturesScreen(
         state = list,
         overscrollEffect = overscrollFor(list),
         modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(top = 16.dp + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
+        // On a phone the settings pages' spacing and rows, so the two read as one (the owner, 24.11).
+        verticalArrangement = Arrangement.spacedBy(if (tv) 12.dp else SettingsGroupGap),
+        contentPadding = PaddingValues(top = (if (tv) 16.dp else 10.dp) + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
     ) {
         item { ScreenHeader(stringResource(R.string.features), onBack = onBack) }
+
+        // The card's own short line where the page would explain the feature (the owner, 24.11).
+        val shareHint = shareStatus(share).let { if (it == R.string.share_hint) R.string.features_share_short else it }
 
         if (!tv) {
             item {
                 val settings = mobile.settings
                 val name = mobile.profileName?.asName()
-
-                ToolRow(
-                    icon = Symbols.CellWifi,
-                    title = stringResource(R.string.mobile),
-                    hint = when {
-                        !settings.on -> stringResource(R.string.mobile_card_off)
-                        name == null -> stringResource(R.string.mobile_card_no_profile)
-                        settings.nodes.isEmpty() -> name
-                        else -> pluralStringResource(R.plurals.mobile_card_nodes, settings.nodes.size, name, settings.nodes.size)
-                    },
-                    onClick = onMobile,
-                )
+                val mobileHint = when {
+                    !settings.on -> stringResource(R.string.mobile_card_off)
+                    name == null -> stringResource(R.string.mobile_card_no_profile)
+                    settings.nodes.isEmpty() -> name
+                    else -> pluralStringResource(R.plurals.mobile_card_nodes, settings.nodes.size, name, settings.nodes.size)
+                }
+                SettingsNavigationGroup(null, compact = true) {
+                    SettingsNavigationRow(stringResource(R.string.mobile), Symbols.CellWifi, onMobile, subtitle = mobileHint, compact = true)
+                    SettingsNavigationDivider(compact = true)
+                    SettingsNavigationRow(
+                        stringResource(R.string.connections), Symbols.Lan, onConnections,
+                        subtitle = stringResource(R.string.connections_hint), compact = true,
+                    )
+                    SettingsNavigationDivider(compact = true)
+                    SettingsNavigationRow(stringResource(R.string.share), Symbols.WifiTethering, onShare, subtitle = stringResource(shareHint), compact = true)
+                }
             }
-        }
+        } else {
+            item {
+                ToolRow(Symbols.Lan, stringResource(R.string.connections), stringResource(R.string.connections_hint), onConnections)
+            }
 
-        item {
-            ToolRow(
-                icon = Symbols.Lan,
-                title = stringResource(R.string.connections),
-                hint = stringResource(R.string.connections_hint),
-                onClick = onConnections,
-            )
-        }
-
-        item {
-            ToolRow(
-                icon = Symbols.WifiTethering,
-                title = stringResource(R.string.share),
-                hint = stringResource(shareStatus(share)),
-                onClick = onShare,
-            )
+            item {
+                ToolRow(Symbols.WifiTethering, stringResource(R.string.share), stringResource(shareHint), onShare)
+            }
         }
     }
 }

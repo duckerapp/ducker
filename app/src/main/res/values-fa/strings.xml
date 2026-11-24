@@ -224,7 +224,8 @@
     <string name="lock_prompt_title">تأیید کنید که خودتان هستید</string>
     <string name="features">امکانات</string>
     <string name="connections">اتصال‌ها</string>
-    <string name="connections_hint">کدام برنامه به کجا وصل می‌شود</string>
+    <string name="connections_hint">اتصال‌های فعال</string>
+    <string name="features_share_short">VPN برای دستگاه‌های دیگر</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s اتصال</item>
         <item quantity="other">%1$s اتصال</item>

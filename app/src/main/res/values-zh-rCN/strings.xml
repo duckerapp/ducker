@@ -224,7 +224,8 @@
     <string name="lock_prompt_title">请确认是您本人</string>
     <string name="features">更多功能</string>
     <string name="connections">连接</string>
-    <string name="connections_hint">查看哪些应用连接到了哪里</string>
+    <string name="connections_hint">活动连接</string>
+    <string name="features_share_short">为其他设备提供 VPN</string>
     <plurals name="connections_count">
         <item quantity="other">%1$s 个连接</item>
     </plurals>

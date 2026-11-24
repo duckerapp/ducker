@@ -251,7 +251,8 @@
     <string name="lock_prompt_title">Confirm it\'s you</string>
     <string name="features">Features</string>
     <string name="connections">Connections</string>
-    <string name="connections_hint">Which apps connect where</string>
+    <string name="connections_hint">Active connections</string>
+    <string name="features_share_short">VPN for other devices</string>
     <plurals name="connections_count">
         <item quantity="one">%1$s connection</item>
         <item quantity="other">%1$s connections</item>

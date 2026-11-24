@@ -224,7 +224,8 @@
     <string name="lock_prompt_title">أكّد أنك أنت</string>
     <string name="features">المزايا</string>
     <string name="connections">الاتصالات</string>
-    <string name="connections_hint">أي التطبيقات تتصل وإلى أين</string>
+    <string name="connections_hint">الاتصالات النشطة</string>
+    <string name="features_share_short">VPN لأجهزة أخرى</string>
     <plurals name="connections_count">
         <item quantity="zero">%1$s اتصال</item>
         <item quantity="one">اتصال واحد</item>

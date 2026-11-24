@@ -224,7 +224,8 @@
     <string name="lock_prompt_title">Xác nhận đó là bạn</string>
     <string name="features">Tính năng</string>
     <string name="connections">Kết nối</string>
-    <string name="connections_hint">Ứng dụng nào kết nối đến đâu</string>
+    <string name="connections_hint">Kết nối đang hoạt động</string>
+    <string name="features_share_short">VPN cho thiết bị khác</string>
     <plurals name="connections_count">
         <item quantity="other">%1$s kết nối</item>
     </plurals>
