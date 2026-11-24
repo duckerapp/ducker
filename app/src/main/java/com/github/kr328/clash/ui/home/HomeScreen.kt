@@ -174,6 +174,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -788,9 +789,16 @@ private fun BrandHeader(profile: Profile?, onSettings: () -> Unit, onBird: (() -
         // end, its target to the end.
         Row(verticalAlignment = Alignment.CenterVertically) {
             // After «Позже» on the update card: beside the theme button on Air, beside settings on glass.
-            if (update != null) UpdateHeaderButton(update, Modifier.width(HEADER_STEP))
+            // Each circle left of settings pulled [HEADER_PULL] further towards the start than its neighbour, so all the
+            // circles stand evenly. Glass has no theme button: the update stands next to settings.
+            if (update != null) {
+                val pulls = if (LocalGlassStyle.current.enabled) 1 else 2
+                UpdateHeaderButton(update, -HEADER_PULL * pulls, Modifier.width(HEADER_STEP))
+            }
 
-            ThemeButton { icon, description, onClick, modifier -> HeaderButton(icon, description, onClick, modifier.width(HEADER_STEP)) }
+            ThemeButton { icon, description, onClick, modifier ->
+                HeaderButton(icon, description, onClick, modifier.width(HEADER_STEP), nudge = -HEADER_PULL)
+            }
 
             // Настройки с главной: раньше до них надо было идти через вкладку подписок.
             HeaderButton(
@@ -1905,6 +1913,9 @@ private const val WAVE_MS = 650
 /** From one of Home's header icons to the next, centre to centre. */
 private val HEADER_STEP = 36.dp
 
+/** How much further towards the start each header circle left of settings sits than its right neighbour (the owner, 24.11). */
+private val HEADER_PULL = 6.dp
+
 /** The room around «Возможности»'s 40 dp pill to its 48 dp touch target, above and below. */
 private val FEATURES_TOUCH_ROOM = 4.dp
 
@@ -2130,18 +2141,19 @@ private class HeaderUpdate(val version: String, val onOpen: () -> Unit)
 
 /** The header's update button: a circled arrow with a small green dot, as an app icon's badge. */
 @Composable
-private fun UpdateHeaderButton(update: HeaderUpdate, modifier: Modifier) {
+private fun UpdateHeaderButton(update: HeaderUpdate, nudge: Dp, modifier: Modifier) {
     Box(modifier) {
         HeaderButton(
             Symbols.ArrowCircleDown,
             stringResource(R.string.app_update_card, update.version),
             update.onOpen,
+            nudge = nudge,
         )
         // Centred on the arrow's ring at its lower right (the ring: radius 10 about the 24 dp icon's centre), over it;
         // drawn in its own colour on Air and on glass.
         Box(
             Modifier.align(Alignment.Center)
-                .offset(x = 7.dp, y = 7.dp)
+                .offset(x = 7.dp + nudge, y = 7.dp)
                 .size(7.dp)
                 .background(UPDATE_DOT, CircleShape),
         )
