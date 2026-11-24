@@ -31,6 +31,7 @@ ICONS = [
     ("ArrowCircleDown", "arrow_circle_down", False, False),
     ("BatteryChargingFull", "battery_charging_full", False, False),
     ("BugReport", "bug_report", False, False),
+    ("Brush", "brush", False, False),
     ("Calculate", "calculate", False, False),
     ("Campaign", "campaign", False, False),
     ("Cancel", "cancel", True, False),
