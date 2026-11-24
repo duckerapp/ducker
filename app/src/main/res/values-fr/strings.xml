@@ -117,8 +117,7 @@
     <string name="dashboard_needs_connection">Connectez-vous d’abord : le panneau est fourni par le moteur</string>
     <string name="dashboard_failed">Impossible d’ouvrir le panneau</string>
     <string name="logs_hint">Journal du moteur. L’export masque les adresses des serveurs, les clés et les identifiants, mais conserve les sites visités</string>
-    <string name="version_app">Application %s</string>
-    <string name="version_core">Moteur %s</string>
+    <string name="version_app">Version %s</string>
     <string name="language">Langue</string>
     <string name="language_system">Selon le système</string>
     <string name="language_ru">Русский</string>

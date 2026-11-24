@@ -918,6 +918,7 @@ private fun BackgroundRow(allowed: Boolean, autostart: Boolean?, onAllow: () -> 
         SettingsNavigationDivider(compact = true)
         SettingsRow(
             title = stringResource(R.string.settings_background_steps, stringResource(vendor.names)),
+            icon = Symbols.Smartphone,
             compact = true,
             modifier = Modifier.clickable(
                 role = Role.Button,

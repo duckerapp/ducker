@@ -117,8 +117,7 @@
     <string name="dashboard_needs_connection">Hãy kết nối trước, bảng điều khiển do lõi cung cấp</string>
     <string name="dashboard_failed">Không thể mở bảng điều khiển</string>
     <string name="logs_hint">Nhật ký của lõi. Khi xuất, địa chỉ máy chủ, khóa và ID được ẩn; các trang web bạn đã truy cập vẫn được giữ lại</string>
-    <string name="version_app">Ứng dụng %s</string>
-    <string name="version_core">Lõi %s</string>
+    <string name="version_app">Phiên bản %s</string>
     <string name="language">Ngôn ngữ</string>
     <string name="language_system">Theo hệ thống</string>
     <string name="language_ru">Русский</string>

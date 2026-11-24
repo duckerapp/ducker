@@ -117,8 +117,7 @@
     <string name="dashboard_needs_connection">请先连接 VPN，面板由内核提供</string>
     <string name="dashboard_failed">无法打开面板</string>
     <string name="logs_hint">内核日志。导出时会隐藏节点地址、密钥和 ID，但会保留访问过的网站</string>
-    <string name="version_app">应用版本 %s</string>
-    <string name="version_core">内核版本 %s</string>
+    <string name="version_app">版本 %s</string>
     <string name="language">语言</string>
     <string name="language_system">跟随系统</string>
     <string name="language_ru">Русский</string>

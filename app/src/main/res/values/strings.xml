@@ -141,8 +141,7 @@
     <string name="dashboard_needs_connection">Connect first — the core serves the panel</string>
     <string name="dashboard_failed">Couldn\'t open the panel</string>
     <string name="logs_hint">Core log. Exports hide node addresses, keys and IDs; the sites you visited stay</string>
-    <string name="version_app">App %s</string>
-    <string name="version_core">Core %s</string>
+    <string name="version_app">Version %s</string>
     <string name="language">Language</string>
     <string name="language_system">System</string>
     <string name="language_ru">Русский</string>

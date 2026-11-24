@@ -117,8 +117,7 @@
     <string name="dashboard_needs_connection">ابتدا متصل شوید — پنل را هسته ارائه می‌دهد</string>
     <string name="dashboard_failed">پنل باز نشد</string>
     <string name="logs_hint">گزارش هسته. در خروجی، آدرس سرورها، کلیدها و شناسه‌ها پنهان می‌شوند؛ سایت‌هایی که باز کرده‌اید باقی می‌مانند</string>
-    <string name="version_app">برنامه %s</string>
-    <string name="version_core">هسته %s</string>
+    <string name="version_app">نسخه %s</string>
     <string name="language">زبان</string>
     <string name="language_system">سیستم</string>
     <string name="language_ru">Русский</string>

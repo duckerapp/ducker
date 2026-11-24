@@ -117,8 +117,7 @@
     <string name="dashboard_needs_connection">Conéctate primero: el núcleo proporciona el panel</string>
     <string name="dashboard_failed">No se pudo abrir el panel</string>
     <string name="logs_hint">Registro del núcleo. Al exportarlo se ocultan direcciones de servidores, claves e identificadores; los sitios que visitaste permanecen</string>
-    <string name="version_app">Aplicación %s</string>
-    <string name="version_core">Núcleo %s</string>
+    <string name="version_app">Versión %s</string>
     <string name="language">Idioma</string>
     <string name="language_system">Según el sistema</string>
     <string name="language_ru">Русский</string>

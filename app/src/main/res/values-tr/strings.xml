@@ -117,8 +117,7 @@
     <string name="dashboard_needs_connection">Önce bağlanın; paneli çekirdek sunar</string>
     <string name="dashboard_failed">Panel açılamadı</string>
     <string name="logs_hint">Çekirdek günlüğü. Dışa aktarırken sunucu adresleri, anahtarlar ve kimlikler gizlenir; ziyaret ettiğiniz siteler kalır</string>
-    <string name="version_app">Uygulama %s</string>
-    <string name="version_core">Çekirdek %s</string>
+    <string name="version_app">Sürüm %s</string>
     <string name="language">Dil</string>
     <string name="language_system">Sisteme göre</string>
     <string name="language_ru">Русский</string>

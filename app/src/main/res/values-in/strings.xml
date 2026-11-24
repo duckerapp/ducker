@@ -117,8 +117,7 @@
     <string name="dashboard_needs_connection">Hubungkan dahulu, panel disediakan oleh inti</string>
     <string name="dashboard_failed">Tidak dapat membuka panel</string>
     <string name="logs_hint">Log inti. Saat diekspor, alamat server, kunci, dan ID disembunyikan; situs yang Anda kunjungi tetap tercantum</string>
-    <string name="version_app">Aplikasi %s</string>
-    <string name="version_core">Inti %s</string>
+    <string name="version_app">Versi %s</string>
     <string name="language">Bahasa</string>
     <string name="language_system">Ikuti sistem</string>
     <string name="language_ru">Русский</string>

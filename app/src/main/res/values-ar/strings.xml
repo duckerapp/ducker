@@ -117,8 +117,7 @@
     <string name="dashboard_needs_connection">اتصل أولًا، فالنواة هي التي توفّر اللوحة</string>
     <string name="dashboard_failed">تعذّر فتح اللوحة</string>
     <string name="logs_hint">سجل النواة. عند التصدير تُخفى عناوين الخوادم والمفاتيح والمعرّفات، لكن تبقى المواقع التي زرتها</string>
-    <string name="version_app">التطبيق %s</string>
-    <string name="version_core">النواة %s</string>
+    <string name="version_app">الإصدار %s</string>
     <string name="language">اللغة</string>
     <string name="language_system">حسب النظام</string>
     <string name="language_ru">Русский</string>

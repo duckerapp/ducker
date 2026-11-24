@@ -113,7 +113,7 @@ internal fun LazyListScope.aboutItems(
             SettingsNavigationDivider(compact)
             ProjectLinkRow("GitLab", Symbols.Code, "duckerx/ducker", compact) { onLink(PROJECT_GITLAB) }
             SettingsNavigationDivider(compact)
-            ProjectLinkRow(stringResource(R.string.about_core), Symbols.Lan, stringResource(R.string.about_core_hint), compact) { onLink(PROJECT_CORE) }
+            ProjectLinkRow(stringResource(R.string.about_core), Symbols.Code, stringResource(R.string.about_core_hint), compact) { onLink(PROJECT_CORE) }
             SettingsNavigationDivider(compact)
             ProjectLinkRow(stringResource(R.string.about_license), Symbols.Article, stringResource(R.string.about_license_hint), compact) { onLink(PROJECT_LICENSE) }
         }
@@ -210,7 +210,8 @@ private fun AboutCard(appVersion: String, coreVersion: String, compact: Boolean,
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 VersionChip(stringResource(R.string.version_app, appVersion))
-                if (coreVersion.isNotEmpty()) VersionChip(stringResource(R.string.version_core, coreVersion))
+                // «mihomo 1.19.34» names itself: no «Ядро» before it (the owner, 24.11).
+                if (coreVersion.isNotEmpty()) VersionChip(coreVersion)
             }
             SupportButton(onClick = onSupport, compact = compact) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

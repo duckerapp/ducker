@@ -117,8 +117,7 @@
     <string name="dashboard_needs_connection">Conecte primeiro: o painel é fornecido pelo núcleo</string>
     <string name="dashboard_failed">Não foi possível abrir o painel</string>
     <string name="logs_hint">Registro do núcleo. Ao exportar, os endereços dos servidores, as chaves e os IDs são ocultados; os sites visitados permanecem</string>
-    <string name="version_app">Aplicativo %s</string>
-    <string name="version_core">Núcleo %s</string>
+    <string name="version_app">Versão %s</string>
     <string name="language">Idioma</string>
     <string name="language_system">Seguir o sistema</string>
     <string name="language_ru">Русский</string>

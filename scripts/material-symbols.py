@@ -93,6 +93,7 @@ ICONS = [
     ("Shield", "shield", False, False),
     ("ShieldLock", "shield_lock", False, False),
     ("SignalCellularAlt", "signal_cellular_alt", False, False),
+    ("Smartphone", "mobile", False, False),
     ("SmartToy", "smart_toy", False, False),
     ("Speed", "speed", False, False),
     ("Star", "star", True, False),

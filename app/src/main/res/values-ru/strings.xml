@@ -131,8 +131,7 @@
     <string name="dashboard_needs_connection">Сначала подключитесь: панель отдаёт само ядро</string>
     <string name="dashboard_failed">Панель не открылась</string>
     <string name="logs_hint">Журнал ядра. При выгрузке прячутся адреса узлов, ключи и идентификаторы; открытые вами сайты остаются</string>
-    <string name="version_app">Приложение %s</string>
-    <string name="version_core">Ядро %s</string>
+    <string name="version_app">Версия %s</string>
     <string name="language">Язык</string>
     <string name="language_system">Системный</string>
     <string name="language_ru">Русский</string>
