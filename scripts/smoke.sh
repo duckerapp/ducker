@@ -139,31 +139,8 @@ else
 fi
 adb shell sleep 4 >/dev/null 2>&1
 
-step "Смотрим адрес выхода БЕЗ туннеля"
-adb shell "am start -a $PKG.action.STOP_CLASH" >/dev/null 2>&1
-adb shell sleep 5 >/dev/null 2>&1
-# Туннель на месте — значит, команду не приняли. Дальше идти нельзя: «прямой» адрес
-# оказался бы адресом узла, и тест решил бы, что трафик идёт мимо.
-if tunnel_up; then
-  adb shell sleep 5 >/dev/null 2>&1
-  if tunnel_up; then
-    bad "туннель не опустился по команде: $EXTERNAL_HINT и запусти тест ещё раз"
-    exit 1
-  fi
-fi
-# The same services as through the node, IPv4 only so the two answers compare: 25.11.2026 a home network
-# timed out on ip-api.com directly while the others answered.
-IP_SERVICES="http://ip-api.com/line?fields=query https://icanhazip.com https://api.ipify.org https://ifconfig.me/ip"
-DIRECT_IP=""
-for SERVICE in $IP_SERVICES; do
-  DIRECT_IP=$(phone "curl -4 -s --max-time 12 $SERVICE" | tr -d '[:space:]')
-  [ -n "$DIRECT_IP" ] && break
-done
-if [ -n "$DIRECT_IP" ]; then
-  ok "без туннеля выходим через $DIRECT_IP"
-else
-  bad "адрес не определился — нет сети или на телефоне нет curl"
-fi
+# No step looks at the address without the tunnel: the owner forbids requests around the VPN (25.11.2026).
+# The download below proves the tunnel instead, by the bytes that cross the VPN interface.
 
 step "Поднимаем туннель"
 adb shell "am start -a $PKG.action.START_CLASH" >/dev/null 2>&1
@@ -173,26 +150,16 @@ else
   bad "не поднялся за 25 с (нет разрешения на VPN? нет активной подписки? или команду не приняли: $EXTERNAL_HINT)"
 fi
 
-step "Проверяем, что трафик идёт через узел"
-# Несколько сервисов по очереди: 23.09.2026 ip-api.com перестал отвечать через узел
-# (на 0.4.8 так же), и тест падал из-за чужого сайта. Панель провайдера может пускать
-# часть таких сервисов напрямую — поэтому засчитывается первый адрес, отличный от
-# прямого; все ответили прямым — трафик идёт мимо узла.
+step "Смотрим адрес выхода через туннель"
+# Several services in turn: 23.09.2026 ip-api.com stopped answering through the node. The address is for
+# the eyes; that traffic goes through the tunnel is proved by the download's byte count.
 VIA_IP=""
-SEEN_DIRECT=""
-for SERVICE in $IP_SERVICES; do
-  IP=$(phone "curl -4 -s --max-time 10 $SERVICE" | tr -d '[:space:]')
-  [ -z "$IP" ] && continue
-  if [ "$IP" = "$DIRECT_IP" ]; then SEEN_DIRECT=1; continue; fi
-  VIA_IP=$IP
-  break
+for SERVICE in http://ip-api.com/line?fields=query https://icanhazip.com https://api.ipify.org https://ifconfig.me/ip; do
+  VIA_IP=$(phone "curl -4 -s --max-time 10 $SERVICE" | tr -d '[:space:]')
+  [ -n "$VIA_IP" ] && break
 done
 if [ -n "$VIA_IP" ]; then
-  # Страна и провайдер — для глаз, не для проверки: ip-api.com может и не ответить.
-  VIA=$(phone "curl -s --max-time 10 http://ip-api.com/line?fields=country,isp" | tr '\n' ' ')
-  ok "через узел: $VIA_IP (${SERVICE#*://}${VIA:+, $VIA})"
-elif [ -n "$SEEN_DIRECT" ]; then
-  bad "все сервисы видят прямой адрес ($DIRECT_IP) — трафик идёт мимо узла"
+  ok "через туннель выходим через $VIA_IP (${SERVICE#*://})"
 else
   bad "адрес не определился ни одним сервисом"
 fi
@@ -212,10 +179,12 @@ for site in https://www.youtube.com https://www.google.com https://ya.ru; do
   esac
 done
 
-step "Гоняем трафик через узел"
+step "Гоняем трафик через туннель"
 # Несколько источников по очереди: 23.09.2026 proof.ovh.net перестал отвечать через узел
 # на любой сборке, и тест падал из-за чужого сайта. Берём первые 10 МБ (-r) — у Hetzner
 # файл на 100 МБ.
+tun_rx() { phone "cat /proc/net/dev" | awk '{sub(/^ +/, "")} /^tun[0-9]+:/ {sub(/^tun[0-9]+: */, ""); n += $1} END {print n + 0}'; }
+RX_BEFORE=$(tun_rx)
 SPEED=""
 for SOURCE in https://nbg1-speed.hetzner.com/100MB.bin http://speedtest.tele2.net/10MB.zip \
               https://proof.ovh.net/files/10Mb.dat; do
@@ -227,6 +196,12 @@ for SOURCE in https://nbg1-speed.hetzner.com/100MB.bin http://speedtest.tele2.ne
 done
 if [ -n "$SPEED" ] && [ "$SPEED" -gt 200000 ] 2>/dev/null; then
   ok "10 МБ прокачались на $(( SPEED / 1024 )) КБ/с (${SOURCE#*://})"
+  RX=$(( $(tun_rx) - RX_BEFORE ))
+  if [ "$RX" -ge 9000000 ]; then
+    ok "через интерфейс VPN прошло $(( RX / 1048576 )) МБ"
+  else
+    bad "через интерфейс VPN прошло всего $RX байт — трафик идёт мимо туннеля"
+  fi
 else
   bad "прокачка не пошла ни с одного источника (последняя скорость '$SPEED' Б/с)"
 fi
