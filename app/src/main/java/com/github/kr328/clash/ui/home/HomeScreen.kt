@@ -782,22 +782,23 @@ private fun BrandHeader(profile: Profile?, onSettings: () -> Unit, onBird: (() -
     ) {
         BrandTitle(profile, onBird)
 
-        // Side by side, each a whole 48 dp target (Q-106): with the theme button 6 dp over the settings one, it took
-        // touches on 42 dp only. Their 44 dp circles stand 2 dp towards each other inside their targets, to the targets'
-        // edge, so the icons are 4 dp closer and neither target loses a touch (the owner, 23.11).
+        // Icons [HEADER_STEP] apart, half the gap whole 48 dp targets left (the owner, 24.11). Side by side, never over
+        // each other (Q-106: an overlapping theme button took the settings' touches): each target, 48 dp tall, reaches
+        // halfway to its neighbour, so a touch goes to the nearest icon. Settings keeps its place, 24 dp from the row's
+        // end, its target to the end.
         Row(verticalAlignment = Alignment.CenterVertically) {
             // After «Позже» on the update card: beside the theme button on Air, beside settings on glass.
-            if (update != null) UpdateHeaderButton(update)
+            if (update != null) UpdateHeaderButton(update, Modifier.width(HEADER_STEP))
 
-            ThemeButton { icon, description, onClick, modifier -> HeaderButton(icon, description, onClick, modifier, nudge = HEADER_NUDGE) }
+            ThemeButton { icon, description, onClick, modifier -> HeaderButton(icon, description, onClick, modifier.width(HEADER_STEP)) }
 
             // Настройки с главной: раньше до них надо было идти через вкладку подписок.
             HeaderButton(
                 icon = Symbols.Settings,
                 description = stringResource(R.string.settings),
                 onClick = onSettings,
-                // Alone on glass (dark only, no theme button): in its place.
-                nudge = if (LocalGlassStyle.current.enabled) 0.dp else -HEADER_NUDGE,
+                modifier = Modifier.width(HEADER_STEP / 2 + 24.dp),
+                nudge = (HEADER_STEP / 2 - 24.dp) / 2,
             )
         }
     }
@@ -1901,8 +1902,8 @@ private const val NODE_IN_MS = 220
 
 private const val WAVE_MS = 650
 
-/** How far Home's theme and settings circles stand towards each other inside their 48 dp targets: to the targets' edge. */
-private val HEADER_NUDGE = 2.dp
+/** From one of Home's header icons to the next, centre to centre. */
+private val HEADER_STEP = 36.dp
 
 /** The room around «Возможности»'s 40 dp pill to its 48 dp touch target, above and below. */
 private val FEATURES_TOUCH_ROOM = 4.dp
@@ -2129,13 +2130,12 @@ private class HeaderUpdate(val version: String, val onOpen: () -> Unit)
 
 /** The header's update button: a circled arrow with a small green dot, as an app icon's badge. */
 @Composable
-private fun UpdateHeaderButton(update: HeaderUpdate) {
-    Box {
+private fun UpdateHeaderButton(update: HeaderUpdate, modifier: Modifier) {
+    Box(modifier) {
         HeaderButton(
             Symbols.ArrowCircleDown,
             stringResource(R.string.app_update_card, update.version),
             update.onOpen,
-            nudge = HEADER_NUDGE,
         )
         // Centred on the arrow's ring at its lower right (the ring: radius 10 about the 24 dp icon's centre), over it;
         // drawn in its own colour on Air and on glass.

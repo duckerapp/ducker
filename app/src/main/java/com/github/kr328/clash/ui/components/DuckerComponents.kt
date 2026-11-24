@@ -50,6 +50,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -771,7 +772,8 @@ fun HeaderButton(
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            Modifier.offset(x = nudge).size(44.dp).clip(CircleShape).indication(interaction, LocalIndication.current),
+            // Its own size even in a narrower target: Home's header packs its buttons closer than 48 dp.
+            Modifier.offset(x = nudge).requiredSize(44.dp).clip(CircleShape).indication(interaction, LocalIndication.current),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = description, tint = MaterialTheme.colorScheme.onSurface)
