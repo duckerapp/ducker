@@ -78,6 +78,7 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -747,7 +748,12 @@ internal fun Modifier.liquidGlass(
                     translate(margin, margin) {
                         scale(1f / scaled.scaleX, 1f / scaled.scaleY, pivot = Offset.Zero) {
                             translate(backdrop.origin.x - position.x, backdrop.origin.y - position.y) {
-                                drawLayer(backdrop.layer)
+                                val left = position.x - backdrop.origin.x - margin * scaled.scaleX
+                                val top = position.y - backdrop.origin.y - margin * scaled.scaleY
+                                drawLayerClamped(
+                                    backdrop.layer,
+                                    androidx.compose.ui.geometry.Rect(left, top, left + paneSize.width * scaled.scaleX, top + paneSize.height * scaled.scaleY),
+                                )
                             }
                         }
                     }
@@ -850,6 +856,41 @@ internal val INNER_BLUR = 6.dp
 
 /** How much more again Home's power button blurs than a button on a card. */
 internal val POWER_BLUR_BOOST = 4.dp
+
+/**
+ * [layer] with its edge pixels stretched outwards wherever [seen] (in its coordinates) reaches past it, as a still
+ * picture's CLAMP shader shows the screen beyond its edges. Plain, the live glass had nothing there: a pane near the
+ * screen's side drew its rim dark until the still picture was made — opening the app, the connect wave (the owner, 24.11).
+ */
+private fun DrawScope.drawLayerClamped(layer: GraphicsLayer, seen: androidx.compose.ui.geometry.Rect) {
+    drawLayer(layer)
+    val w = layer.size.width.toFloat()
+    val h = layer.size.height.toFloat()
+    if (w <= 0f || h <= 0f) return
+    // Each side's span: before the layer, the layer, past it.
+    fun span(side: Int, end: Float) = when (side) {
+        -1 -> -EDGE_STRETCH to 0f
+        0 -> 0f to end
+        else -> end to end + EDGE_STRETCH
+    }
+    for (i in -1..1) for (j in -1..1) {
+        if (i == 0 && j == 0) continue
+        if (i < 0 && seen.left >= 0f || i > 0 && seen.right <= w || j < 0 && seen.top >= 0f || j > 0 && seen.bottom <= h) continue
+        val (l, r) = span(i, w)
+        val (t, b) = span(j, h)
+        // The edge's one-pixel row stretched over the whole span, mirrored out from the edge.
+        clipRect(l, t, r, b) {
+            scale(
+                if (i == 0) 1f else -EDGE_STRETCH,
+                if (j == 0) 1f else -EDGE_STRETCH,
+                pivot = Offset(if (i > 0) w else 0f, if (j > 0) h else 0f),
+            ) { drawLayer(layer) }
+        }
+    }
+}
+
+// How far past the backdrop's edge [drawLayerClamped] stretches it, in pixels: beyond any pane's reach.
+private const val EDGE_STRETCH = 1000f
 
 // How long a changed still backdrop rests before it is drawn again for the panes.
 private const val STILL_SETTLE_MS = 250L
