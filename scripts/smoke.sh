@@ -151,7 +151,14 @@ if tunnel_up; then
     exit 1
   fi
 fi
-DIRECT_IP=$(phone "curl -s --max-time 12 http://ip-api.com/line?fields=query")
+# The same services as through the node, IPv4 only so the two answers compare: 25.11.2026 a home network
+# timed out on ip-api.com directly while the others answered.
+IP_SERVICES="http://ip-api.com/line?fields=query https://icanhazip.com https://api.ipify.org https://ifconfig.me/ip"
+DIRECT_IP=""
+for SERVICE in $IP_SERVICES; do
+  DIRECT_IP=$(phone "curl -4 -s --max-time 12 $SERVICE" | tr -d '[:space:]')
+  [ -n "$DIRECT_IP" ] && break
+done
 if [ -n "$DIRECT_IP" ]; then
   ok "без туннеля выходим через $DIRECT_IP"
 else
@@ -173,9 +180,8 @@ step "Проверяем, что трафик идёт через узел"
 # прямого; все ответили прямым — трафик идёт мимо узла.
 VIA_IP=""
 SEEN_DIRECT=""
-for SERVICE in http://ip-api.com/line?fields=query https://icanhazip.com https://api.ipify.org \
-               https://ifconfig.me/ip; do
-  IP=$(phone "curl -s --max-time 10 $SERVICE" | tr -d '[:space:]')
+for SERVICE in $IP_SERVICES; do
+  IP=$(phone "curl -4 -s --max-time 10 $SERVICE" | tr -d '[:space:]')
   [ -z "$IP" ] && continue
   if [ "$IP" = "$DIRECT_IP" ]; then SEEN_DIRECT=1; continue; fi
   VIA_IP=$IP
