@@ -1702,6 +1702,8 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     BackLayer(
                         visible = showFeatures,
+                        // «Возможности» and its pages: in from the side as Settings' (the owner, 24.11).
+                        slide = !tv,
                         onBack = closeFeatures,
                         backdrop = screenWall,
                         backdropTone = screenTone,
@@ -1728,6 +1730,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     BackLayer(
                         visible = showConnections,
+                        slide = !tv,
                         onBack = closeConnections,
                         backdrop = screenWall,
                         backdropTone = screenTone,
@@ -1747,6 +1750,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     BackLayer(
                         visible = showMobile,
+                        slide = !tv,
                         onBack = closeMobile,
                         backdrop = screenWall,
                         backdropTone = screenTone,
@@ -1766,6 +1770,7 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
 
                     BackLayer(
                         visible = showShare,
+                        slide = !tv,
                         onBack = closeShare,
                         backdrop = screenWall,
                         backdropTone = screenTone,
