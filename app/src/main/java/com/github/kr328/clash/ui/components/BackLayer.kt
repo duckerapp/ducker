@@ -19,7 +19,20 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
+import android.os.Build
+import android.view.RoundedCorner
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.util.lerp
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
@@ -98,9 +111,25 @@ fun BackLayer(
     backdrop: GlassBackdrop? = LocalGlassBackdrop.current,
     /** The picture's tone at the top, for the header drawn on it, see [BackdropTone]. */
     backdropTone: Boolean? = LocalBackdropTone.current,
+    /**
+     * Comes in from the side the reading goes to and leaves back there, as a page turned over the one under it:
+     * Settings' sections (the owner, 24.11). Otherwise it grows in from the middle.
+     */
+    slide: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    // The card's corners: from the screen's own from the gesture's start, so they meet the display's (the owner,
+    // 24.11), to at least [CORNER] at its end. Android tells the display's from 12; before it, a modest guess.
+    val view = LocalView.current
+    val density = LocalDensity.current
+    val screenCorner = remember(view, density) {
+        val corner = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            view.display?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius?.toFloat()
+        } else null
+        maxOf(corner ?: 0f, with(density) { FALLBACK_CORNER.toPx() })
+    }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     // Not `LocalWindowInfo.containerSize`: it can lag a turn of the phone behind (D-478).
     val width = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
 
@@ -185,25 +214,40 @@ fun BackLayer(
 
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(tween(ENTER_MS)) + scaleIn(tween(ENTER_MS), initialScale = 0.96f),
+        // A sliding page moves itself, below; the screen under it only dims.
+        enter = if (slide) EnterTransition.None else fadeIn(tween(ENTER_MS)) + scaleIn(tween(ENTER_MS), initialScale = 0.96f),
         // Ушёл жестом — карточка уже за краем, гасить нечего. Обычное закрытие ещё и
         // уменьшает от центра и подтягивало бы уехавшую карточку обратно к экрану.
-        exit = if (leaving) ExitTransition.None
+        exit = if (leaving || slide) ExitTransition.None
         else fadeOut(tween(EXIT_MS)) + scaleOut(tween(EXIT_MS), targetScale = 0.94f),
     ) {
+        // How far a sliding page has come in: the screen under it dims as it is covered.
+        val covered = if (slide) transition.animateFloat(
+            transitionSpec = { tween(if (targetState == EnterExitState.Visible) SLIDE_IN_MS else SLIDE_OUT_MS, easing = LinearEasing) },
+            label = "covered",
+        ) { if (it == EnterExitState.Visible) 1f else 0f } else null
+
         // Под уменьшенным экраном — главная того же цвета, и без затемнения и тени край
         // экрана не читался: казалось, что настройки просто съехали вбок.
         Box(
             Modifier.fillMaxSize().drawBehind {
                 // Затемнение тает по мере того, как карточка уходит с экрана.
                 val gone = if (width > 0f) (abs(offset.value) / width).coerceIn(0f, 1f) else 0f
+                val dim = maxOf(SCRIM * eased(progress.value), SLIDE_SCRIM * (covered?.value ?: 0f))
 
-                drawRect(Color.Black, alpha = SCRIM * eased(progress.value) * (1f - gone))
+                drawRect(Color.Black, alpha = dim * (1f - gone))
             },
         )
 
         Box(
             Modifier.fillMaxSize()
+                .then(
+                    if (slide) Modifier.animateEnterExit(
+                        enter = slideInHorizontally(tween(SLIDE_IN_MS, easing = SlideInEasing)) { if (rtl) -it else it },
+                        exit = if (leaving) ExitTransition.None
+                        else slideOutHorizontally(tween(SLIDE_OUT_MS, easing = SlideOutEasing)) { if (rtl) -it else it },
+                    ) else Modifier,
+                )
                 .graphicsLayer {
                     // Читается здесь, а не в композиции: каждый кадр жеста трогает
                     // только этот слой.
@@ -213,7 +257,7 @@ fun BackLayer(
                     scaleX = scale
                     scaleY = scale
                     translationX = offset.value
-                    shape = RoundedCornerShape(CORNER * p)
+                    shape = RoundedCornerShape(lerp(screenCorner, maxOf(screenCorner, CORNER.toPx()), p))
                     clip = p > 0f
                     shadowElevation = ELEVATION.toPx() * p
                 }
@@ -377,11 +421,21 @@ private const val ENTER_MS = 220
 private const val EXIT_MS = 180
 private const val CANCEL_MS = 200
 
-/** Насколько экран уменьшается к концу жеста: ровно чтобы читался как карточка. */
-private const val SHRINK = 0.08f
+/** How much the screen shrinks by the gesture's end: 0.08 before, a quarter more on the owner's word (24.11). */
+private const val SHRINK = 0.10f
 private const val SCRIM = 0.2f
 private val ELEVATION = 16.dp
 private val CORNER = 32.dp
+/** The card's least corners from the gesture's start: where Android does not tell the display's (before 12), or it is square. */
+private val FALLBACK_CORNER = 16.dp
+
+/** A section page sliding in over Settings and out again: Material's emphasized curves. */
+private const val SLIDE_IN_MS = 340
+private const val SLIDE_OUT_MS = 240
+private val SlideInEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
+private val SlideOutEasing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
+/** How dark the screen under a sliding page gets once covered; below the gesture's [SCRIM]. */
+private const val SLIDE_SCRIM = 0.12f
 
 /**
  * How a card or the tabs follow the finger of a back gesture: by a spring, as the system already eases the gesture's
