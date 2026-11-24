@@ -628,7 +628,7 @@
     <string name="about_license_hint">GPL-3.0، مفتوح المصدر</string>
     <string name="about_author">المؤلف</string>
     <string name="donate_cryptobot">عبر CryptoBot</string>
-    <string name="donate_cryptobot_hint">أي عملة داخل Telegram مباشرة، دون اختيار عنوان أو شبكة</string>
+    <string name="donate_cryptobot_hint">أي عملة داخل Telegram مباشرة</string>
     <string name="donate_cryptobot_open">فتح CryptoBot</string>
     <string name="donate_wallet">إلى محفظة</string>
     <string name="donate_coin">العملة</string>
@@ -636,6 +636,10 @@
     <string name="donate_copy">نسخ العنوان</string>
     <string name="donate_only_network">أرسل %1$s عبر شبكة %2$s فقط. التحويل من شبكة أخرى لن يصل.</string>
     <string name="settings_category_updates">التحديثات</string>
+    <string name="settings_oled_short">لشاشات OLED</string>
+    <string name="settings_dynamic_color_short">ألوان من خلفيتك</string>
+    <string name="settings_update_tap">اضغط للتحقق</string>
+    <string name="settings_community_short">أسئلة ونقاشات</string>
     <string name="settings_external_title">التحكم الخارجي</string>
     <string name="settings_lock_needs_screen">يتطلب قفل الشاشة</string>
     <string name="settings_disguise_title">تغيير الأيقونة</string>
@@ -648,7 +652,7 @@
     <string name="settings_privacy_access">الوصول</string>
     <string name="settings_connection_help">التشغيل التلقائي أم VPN الدائم؟</string>
     <string name="settings_privacy_help">كيف تعمل هذه الإعدادات</string>
-    <string name="settings_background_steps">خطوات %1$s</string>
+    <string name="settings_background_steps">لهواتف %1$s</string>
     <string name="settings_background_settings">إعدادات ducker</string>
     <string name="settings_background_allowed">مسموح</string>
     <string name="settings_always_on_short">في إعدادات Android</string>
@@ -752,7 +756,6 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">النمط</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">الخلفية</string>
     <string name="glass_backdrop_fern">سرخس</string>
     <string name="glass_backdrop_liquid">معدن سائل</string>

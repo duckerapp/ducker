@@ -104,7 +104,7 @@ internal fun LazyListScope.aboutItems(
         SettingsNavigationGroup(stringResource(R.string.settings_project_community), compact) {
             ProjectLinkRow(stringResource(R.string.channel), Symbols.Campaign, stringResource(R.string.channel_hint), compact) { onLink(PROJECT_NEWS) }
             SettingsNavigationDivider(compact)
-            ProjectLinkRow(stringResource(R.string.community), Symbols.Forum, stringResource(R.string.community_hint), compact) { onLink(COMMUNITY) }
+            ProjectLinkRow(stringResource(R.string.community), Symbols.Forum, stringResource(if (compact) R.string.settings_community_short else R.string.community_hint), compact) { onLink(COMMUNITY) }
         }
     }
     item(key = "about-source") {

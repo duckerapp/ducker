@@ -614,7 +614,7 @@
     <string name="about_license_hint">GPL-3.0, code source ouvert</string>
     <string name="about_author">Auteur</string>
     <string name="donate_cryptobot">Via CryptoBot</string>
-    <string name="donate_cryptobot_hint">N\'importe quelle cryptomonnaie dans Telegram, sans adresse ni réseau à choisir</string>
+    <string name="donate_cryptobot_hint">N\'importe quelle crypto dans Telegram</string>
     <string name="donate_cryptobot_open">Ouvrir CryptoBot</string>
     <string name="donate_wallet">Vers un portefeuille</string>
     <string name="donate_coin">Cryptomonnaie</string>
@@ -622,6 +622,10 @@
     <string name="donate_copy">Copier l\'adresse</string>
     <string name="donate_only_network">Envoyez %1$s uniquement sur le réseau %2$s. Un transfert depuis un autre réseau n\'arrivera pas.</string>
     <string name="settings_category_updates">Mises à jour</string>
+    <string name="settings_oled_short">Pour les écrans OLED</string>
+    <string name="settings_dynamic_color_short">Couleurs de votre fond</string>
+    <string name="settings_update_tap">Touchez pour vérifier</string>
+    <string name="settings_community_short">Questions et échanges</string>
     <string name="settings_external_title">Contrôle externe</string>
     <string name="settings_lock_needs_screen">Verrouillage d\'écran requis</string>
     <string name="settings_disguise_title">Changer l\'icône</string>
@@ -634,7 +638,7 @@
     <string name="settings_privacy_access">Accès</string>
     <string name="settings_connection_help">Démarrage auto ou VPN permanent ?</string>
     <string name="settings_privacy_help">Fonctionnement de ces réglages</string>
-    <string name="settings_background_steps">Étapes pour %1$s</string>
+    <string name="settings_background_steps">Pour %1$s</string>
     <string name="settings_background_settings">Paramètres de ducker</string>
     <string name="settings_background_allowed">Autorisé</string>
     <string name="settings_always_on_short">Dans les paramètres Android</string>
@@ -726,7 +730,6 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Style</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Arrière-plan</string>
     <string name="glass_backdrop_fern">Fougère</string>
     <string name="glass_backdrop_liquid">Métal liquide</string>

@@ -614,7 +614,7 @@
     <string name="about_license_hint">GPL-3.0, código aberto</string>
     <string name="about_author">Autor</string>
     <string name="donate_cryptobot">Pelo CryptoBot</string>
-    <string name="donate_cryptobot_hint">Qualquer moeda no próprio Telegram, sem endereço nem rede para escolher</string>
+    <string name="donate_cryptobot_hint">Qualquer moeda no próprio Telegram</string>
     <string name="donate_cryptobot_open">Abrir CryptoBot</string>
     <string name="donate_wallet">Para uma carteira</string>
     <string name="donate_coin">Moeda</string>
@@ -622,6 +622,10 @@
     <string name="donate_copy">Copiar endereço</string>
     <string name="donate_only_network">Envie %1$s somente pela rede %2$s. Uma transferência de outra rede não chegará.</string>
     <string name="settings_category_updates">Atualizações</string>
+    <string name="settings_oled_short">Para telas OLED</string>
+    <string name="settings_dynamic_color_short">Cores do seu papel de parede</string>
+    <string name="settings_update_tap">Toque para verificar</string>
+    <string name="settings_community_short">Perguntas e conversas</string>
     <string name="settings_external_title">Controle externo</string>
     <string name="settings_lock_needs_screen">Requer bloqueio de tela</string>
     <string name="settings_disguise_title">Trocar ícone</string>
@@ -634,7 +638,7 @@
     <string name="settings_privacy_access">Acesso</string>
     <string name="settings_connection_help">Início automático ou VPN sempre ativa?</string>
     <string name="settings_privacy_help">Como funcionam estas configurações</string>
-    <string name="settings_background_steps">Passos para %1$s</string>
+    <string name="settings_background_steps">Para %1$s</string>
     <string name="settings_background_settings">Configurações do ducker</string>
     <string name="settings_background_allowed">Permitido</string>
     <string name="settings_always_on_short">Nas configurações do Android</string>
@@ -726,7 +730,6 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Estilo</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Fundo</string>
     <string name="glass_backdrop_fern">Samambaia</string>
     <string name="glass_backdrop_liquid">Metal líquido</string>

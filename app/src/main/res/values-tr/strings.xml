@@ -608,7 +608,7 @@
     <string name="about_license_hint">GPL-3.0, açık kaynak</string>
     <string name="about_author">Yazar</string>
     <string name="donate_cryptobot">CryptoBot ile</string>
-    <string name="donate_cryptobot_hint">Telegram içinde her coin, adres ya da ağ seçmeden</string>
+    <string name="donate_cryptobot_hint">Telegram içinde her coin</string>
     <string name="donate_cryptobot_open">CryptoBot\'u aç</string>
     <string name="donate_wallet">Cüzdana</string>
     <string name="donate_coin">Coin</string>
@@ -616,6 +616,10 @@
     <string name="donate_copy">Adresi kopyala</string>
     <string name="donate_only_network">%1$s yalnızca %2$s ağında gönderin. Başka ağdan gelen transfer ulaşmaz.</string>
     <string name="settings_category_updates">Güncellemeler</string>
+    <string name="settings_oled_short">OLED ekranlar için</string>
+    <string name="settings_dynamic_color_short">Duvar kâğıdınızın renkleri</string>
+    <string name="settings_update_tap">Denetlemek için dokunun</string>
+    <string name="settings_community_short">Sorular ve tartışmalar</string>
     <string name="settings_external_title">Dış kontrol</string>
     <string name="settings_lock_needs_screen">Ekran kilidi gerekir</string>
     <string name="settings_disguise_title">Simgeyi değiştir</string>
@@ -628,7 +632,7 @@
     <string name="settings_privacy_access">Erişim</string>
     <string name="settings_connection_help">Otomatik başlatma mı, Her zaman açık VPN mi?</string>
     <string name="settings_privacy_help">Bu ayarlar nasıl çalışır?</string>
-    <string name="settings_background_steps">%1$s için adımlar</string>
+    <string name="settings_background_steps">%1$s için</string>
     <string name="settings_background_settings">ducker ayarları</string>
     <string name="settings_background_allowed">İzin verildi</string>
     <string name="settings_always_on_short">Android ayarlarında</string>
@@ -716,7 +720,6 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Stil</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Arka plan</string>
     <string name="glass_backdrop_fern">Eğrelti otu</string>
     <string name="glass_backdrop_liquid">Sıvı metal</string>

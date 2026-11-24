@@ -640,7 +640,7 @@
     <string name="about_license_hint">GPL-3.0, открытый код</string>
     <string name="about_author">Автор</string>
     <string name="donate_cryptobot">Через CryptoBot</string>
-    <string name="donate_cryptobot_hint">Любая монета прямо в Telegram — без адреса и выбора сети</string>
+    <string name="donate_cryptobot_hint">Любая монета прямо в Telegram</string>
     <string name="donate_cryptobot_open">Открыть CryptoBot</string>
     <string name="donate_wallet">На кошелёк</string>
     <string name="donate_coin">Монета</string>
@@ -648,6 +648,10 @@
     <string name="donate_copy">Скопировать адрес</string>
     <string name="donate_only_network">Отправляйте %1$s только в сети %2$s. Из другой сети перевод не дойдёт.</string>
     <string name="settings_category_updates">Обновления</string>
+    <string name="settings_oled_short">Для OLED-экранов</string>
+    <string name="settings_dynamic_color_short">Цвета из ваших обоев</string>
+    <string name="settings_update_tap">Нажмите, чтобы проверить</string>
+    <string name="settings_community_short">Вопросы и обсуждения</string>
     <string name="settings_external_title">Внешнее управление</string>
     <string name="settings_lock_needs_screen">Нужна блокировка экрана</string>
     <string name="settings_disguise_title">Смена иконки</string>
@@ -660,7 +664,7 @@
     <string name="settings_privacy_access">Доступ</string>
     <string name="settings_connection_help">Автозапуск или постоянный VPN?</string>
     <string name="settings_privacy_help">Как работают эти настройки</string>
-    <string name="settings_background_steps">Шаги для %1$s</string>
+    <string name="settings_background_steps">Для %1$s</string>
     <string name="settings_background_settings">Настройки ducker</string>
     <string name="settings_background_allowed">Разрешена</string>
     <string name="settings_always_on_short">В настройках Android</string>
@@ -755,7 +759,6 @@
     <!-- The liquid glass style (phones with Android 13+); its strings are in English and Russian only for now -->
     <string name="style">Стиль</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Фон</string>
     <string name="glass_backdrop_fern">Папоротник</string>
     <string name="glass_backdrop_liquid">Жидкий металл</string>

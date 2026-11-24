@@ -609,7 +609,7 @@
     <string name="about_license_hint">GPL-3.0، متن‌باز</string>
     <string name="about_author">سازنده</string>
     <string name="donate_cryptobot">با CryptoBot</string>
-    <string name="donate_cryptobot_hint">هر رمزارزی درون Telegram، بدون انتخاب نشانی یا شبکه</string>
+    <string name="donate_cryptobot_hint">هر رمزارزی درون Telegram</string>
     <string name="donate_cryptobot_open">باز کردن CryptoBot</string>
     <string name="donate_wallet">به کیف پول</string>
     <string name="donate_coin">ارز</string>
@@ -617,6 +617,10 @@
     <string name="donate_copy">کپی نشانی</string>
     <string name="donate_only_network">%1$s را فقط در شبکه %2$s بفرستید. انتقال از شبکه دیگر نمی‌رسد.</string>
     <string name="settings_category_updates">به‌روزرسانی‌ها</string>
+    <string name="settings_oled_short">برای صفحه‌های OLED</string>
+    <string name="settings_dynamic_color_short">رنگ‌ها از تصویر زمینه</string>
+    <string name="settings_update_tap">برای بررسی بزنید</string>
+    <string name="settings_community_short">پرسش و گفتگو</string>
     <string name="settings_external_title">کنترل از بیرون</string>
     <string name="settings_lock_needs_screen">به قفل صفحه نیاز دارد</string>
     <string name="settings_disguise_title">تغییر آیکون</string>
@@ -629,7 +633,7 @@
     <string name="settings_privacy_access">دسترسی</string>
     <string name="settings_connection_help">اجرای خودکار یا VPN همیشه روشن؟</string>
     <string name="settings_privacy_help">این تنظیمات چگونه کار می‌کنند</string>
-    <string name="settings_background_steps">مراحل برای %1$s</string>
+    <string name="settings_background_steps">برای %1$s</string>
     <string name="settings_background_settings">تنظیمات ducker</string>
     <string name="settings_background_allowed">مجاز</string>
     <string name="settings_always_on_short">در تنظیمات اندروید</string>
@@ -717,7 +721,6 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">سبک</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">پس‌زمینه</string>
     <string name="glass_backdrop_fern">سرخس</string>
     <string name="glass_backdrop_liquid">فلز مایع</string>

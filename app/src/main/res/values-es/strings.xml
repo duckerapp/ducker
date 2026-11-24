@@ -613,7 +613,7 @@
     <string name="about_license_hint">GPL-3.0, código abierto</string>
     <string name="about_author">Autor</string>
     <string name="donate_cryptobot">Con CryptoBot</string>
-    <string name="donate_cryptobot_hint">Cualquier moneda en Telegram, sin dirección ni red que elegir</string>
+    <string name="donate_cryptobot_hint">Cualquier moneda en Telegram</string>
     <string name="donate_cryptobot_open">Abrir CryptoBot</string>
     <string name="donate_wallet">A una cartera</string>
     <string name="donate_coin">Moneda</string>
@@ -621,6 +621,10 @@
     <string name="donate_copy">Copiar dirección</string>
     <string name="donate_only_network">Envía %1$s solo por la red %2$s. Una transferencia desde otra red no llegará.</string>
     <string name="settings_category_updates">Actualizaciones</string>
+    <string name="settings_oled_short">Para pantallas OLED</string>
+    <string name="settings_dynamic_color_short">Colores de tu fondo</string>
+    <string name="settings_update_tap">Toca para comprobar</string>
+    <string name="settings_community_short">Preguntas y debates</string>
     <string name="settings_external_title">Control externo</string>
     <string name="settings_lock_needs_screen">Requiere bloqueo de pantalla</string>
     <string name="settings_disguise_title">Cambiar icono</string>
@@ -633,7 +637,7 @@
     <string name="settings_privacy_access">Acceso</string>
     <string name="settings_connection_help">¿Inicio automático o VPN siempre activa?</string>
     <string name="settings_privacy_help">Cómo funcionan estos ajustes</string>
-    <string name="settings_background_steps">Pasos para %1$s</string>
+    <string name="settings_background_steps">Para %1$s</string>
     <string name="settings_background_settings">Ajustes de ducker</string>
     <string name="settings_background_allowed">Permitido</string>
     <string name="settings_always_on_short">En los ajustes de Android</string>
@@ -725,7 +729,6 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Estilo</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Fondo</string>
     <string name="glass_backdrop_fern">Helecho</string>
     <string name="glass_backdrop_liquid">Metal líquido</string>

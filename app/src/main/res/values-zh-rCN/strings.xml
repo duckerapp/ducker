@@ -603,7 +603,7 @@
     <string name="about_license_hint">GPL-3.0，开源</string>
     <string name="about_author">作者</string>
     <string name="donate_cryptobot">通过 CryptoBot</string>
-    <string name="donate_cryptobot_hint">在 Telegram 内直接使用任意币种，无需选择地址或网络</string>
+    <string name="donate_cryptobot_hint">在 Telegram 内直接使用任意币种</string>
     <string name="donate_cryptobot_open">打开 CryptoBot</string>
     <string name="donate_wallet">转入钱包</string>
     <string name="donate_coin">币种</string>
@@ -611,6 +611,10 @@
     <string name="donate_copy">复制地址</string>
     <string name="donate_only_network">%1$s 只能通过 %2$s 网络发送。从其他网络转账将无法到账。</string>
     <string name="settings_category_updates">更新</string>
+    <string name="settings_oled_short">适用于 OLED 屏幕</string>
+    <string name="settings_dynamic_color_short">取自壁纸的颜色</string>
+    <string name="settings_update_tap">点按检查</string>
+    <string name="settings_community_short">提问与交流</string>
     <string name="settings_external_title">外部控制</string>
     <string name="settings_lock_needs_screen">需要设置锁屏</string>
     <string name="settings_disguise_title">更换图标</string>
@@ -623,7 +627,7 @@
     <string name="settings_privacy_access">访问</string>
     <string name="settings_connection_help">自动启动还是始终开启的 VPN？</string>
     <string name="settings_privacy_help">这些设置如何生效</string>
-    <string name="settings_background_steps">%1$s 的设置步骤</string>
+    <string name="settings_background_steps">适用于 %1$s</string>
     <string name="settings_background_settings">ducker 设置</string>
     <string name="settings_background_allowed">已允许</string>
     <string name="settings_always_on_short">在 Android 设置中</string>
@@ -707,7 +711,6 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">样式</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">背景</string>
     <string name="glass_backdrop_fern">蕨类</string>
     <string name="glass_backdrop_liquid">液态金属</string>

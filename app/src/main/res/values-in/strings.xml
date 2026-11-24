@@ -603,7 +603,7 @@
     <string name="about_license_hint">GPL-3.0, sumber terbuka</string>
     <string name="about_author">Pembuat</string>
     <string name="donate_cryptobot">Lewat CryptoBot</string>
-    <string name="donate_cryptobot_hint">Koin apa pun langsung di Telegram, tanpa memilih alamat atau jaringan</string>
+    <string name="donate_cryptobot_hint">Koin apa pun langsung di Telegram</string>
     <string name="donate_cryptobot_open">Buka CryptoBot</string>
     <string name="donate_wallet">Ke dompet</string>
     <string name="donate_coin">Koin</string>
@@ -611,6 +611,10 @@
     <string name="donate_copy">Salin alamat</string>
     <string name="donate_only_network">Kirim %1$s hanya lewat jaringan %2$s. Transfer dari jaringan lain tidak akan sampai.</string>
     <string name="settings_category_updates">Pembaruan</string>
+    <string name="settings_oled_short">Untuk layar OLED</string>
+    <string name="settings_dynamic_color_short">Warna dari wallpaper</string>
+    <string name="settings_update_tap">Ketuk untuk memeriksa</string>
+    <string name="settings_community_short">Tanya jawab dan diskusi</string>
     <string name="settings_external_title">Kontrol eksternal</string>
     <string name="settings_lock_needs_screen">Perlu kunci layar</string>
     <string name="settings_disguise_title">Ganti ikon</string>
@@ -623,7 +627,7 @@
     <string name="settings_privacy_access">Akses</string>
     <string name="settings_connection_help">Mulai otomatis atau VPN selalu aktif?</string>
     <string name="settings_privacy_help">Cara kerja pengaturan ini</string>
-    <string name="settings_background_steps">Langkah untuk %1$s</string>
+    <string name="settings_background_steps">Untuk %1$s</string>
     <string name="settings_background_settings">Setelan ducker</string>
     <string name="settings_background_allowed">Diizinkan</string>
     <string name="settings_always_on_short">Di setelan Android</string>
@@ -707,7 +711,6 @@
     <!-- Liquid glass appearance settings. -->
     <string name="style">Gaya</string>
     <string name="style_air">Air</string>
-    <string name="style_glass">DUCKER Glass</string>
     <string name="glass_backdrop">Latar</string>
     <string name="glass_backdrop_fern">Pakis</string>
     <string name="glass_backdrop_liquid">Logam cair</string>

@@ -319,6 +319,7 @@ fun SettingsScreen(
                                     update.checked == false -> stringResource(R.string.app_update_check_failed)
                                     update.checked == true -> stringResource(R.string.app_update_latest)
                                     // Always a second line, so the row keeps its height while a check starts.
+                                    compact -> stringResource(R.string.settings_update_tap)
                                     else -> stringResource(R.string.app_update_check_hint)
                                 },
                                 icon = Symbols.Update,
@@ -422,12 +423,14 @@ fun SettingsScreen(
                                     icon = Symbols.Brush,
                                     options = listOf(
                                         SettingsStore.STYLE_AIR to stringResource(R.string.style_air),
-                                        SettingsStore.STYLE_GLASS to stringResource(R.string.style_glass),
+                                        // The short name: «BETA» beside it says the rest (the owner, 24.11).
+                                        SettingsStore.STYLE_GLASS to "Glass",
                                     ),
                                     selected = state.style,
                                     onSelect = onStyle,
                                     badges = mapOf(SettingsStore.STYLE_GLASS to "BETA"),
                                     compact = true,
+                                    large = true,
                                 )
                             }
                         }
@@ -487,7 +490,7 @@ fun SettingsScreen(
                                 add {
                                     SwitchRow(
                                         title = stringResource(R.string.oled),
-                                        subtitle = stringResource(R.string.oled_hint),
+                                        subtitle = stringResource(if (compact) R.string.settings_oled_short else R.string.oled_hint),
                                         checked = state.oled,
                                         onChange = onOled, icon = Symbols.Contrast, compact = compact,
                                     )
@@ -497,7 +500,7 @@ fun SettingsScreen(
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) add {
                                 SwitchRow(
                                     title = stringResource(R.string.dynamic_color),
-                                    subtitle = stringResource(R.string.dynamic_color_hint),
+                                    subtitle = stringResource(if (compact) R.string.settings_dynamic_color_short else R.string.dynamic_color_hint),
                                     checked = state.dynamicColor,
                                     onChange = onDynamicColor, icon = Symbols.Palette, compact = compact,
                                 )
@@ -693,7 +696,7 @@ fun SettingsScreen(
                         settingsRows("help-support", R.string.support, compact, rows = listOf({
                             LinkRow(
                                 title = stringResource(R.string.community),
-                                subtitle = stringResource(R.string.community_hint),
+                                subtitle = stringResource(if (compact) R.string.settings_community_short else R.string.community_hint),
                                 onClick = { onLink(COMMUNITY) }, icon = Symbols.Forum,
                                 compact = compact, destinationIcon = Symbols.OpenInNew,
                             )
@@ -732,10 +735,12 @@ fun SettingsScreen(
             onBack = { sectionOpen = false },
             // The Settings layer around it draws the fade.
             fade = false,
+            // A section turns in from the side like a page; on TV it keeps the plain fade.
+            slide = !tv,
         ) {
             pageContent(SettingsPage.valueOf(destination)) { sectionOpen = false }
         }
-        BackLayer(visible = supportOpen, enabled = active, onBack = { supportOpen = false }, fade = false) {
+        BackLayer(visible = supportOpen, enabled = active, onBack = { supportOpen = false }, fade = false, slide = !tv) {
             pageContent(SettingsPage.Project) { supportOpen = false }
         }
     }
@@ -1152,6 +1157,8 @@ private fun ChipsCard(
     badges: Map<String, String> = emptyMap(),
     compact: Boolean = false,
     grouped: Boolean = false,
+    /** The style's choice: a larger track, always one row, see [SegmentTrack]. */
+    large: Boolean = false,
 ) {
     val content: @Composable () -> Unit = {
         Column(
@@ -1185,7 +1192,12 @@ private fun ChipsCard(
                         if (widest + 16.dp.roundToPx() <= (room - 2 * SegmentPillInset.roundToPx()) / options.size) options.size else 1
                     } else if ((widest + 12.dp.roundToPx()) * options.size + 8.dp.roundToPx() * (options.size - 1) <= room) options.size else 1
                 }
-                if (compact && columns == options.size) {
+                if (compact && large) {
+                    SegmentTrack(
+                        options, selected, onSelect, badges, MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                        badgeStyle, large = true,
+                    )
+                } else if (compact && columns == options.size) {
                     SegmentTrack(options, selected, onSelect, badges, labelStyle, badgeStyle)
                 } else FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1254,18 +1266,24 @@ private fun SegmentTrack(
     badges: Map<String, String>,
     labelStyle: TextStyle,
     badgeStyle: TextStyle,
+    /**
+     * Taller, and the pill moves at once: the style's choice redraws the whole app, which would cut the ride short
+     * (the owner, 24.11).
+     */
+    large: Boolean = false,
 ) {
     val scheme = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
     val index = options.indexOfFirst { it.first == selected }.coerceAtLeast(0)
-    val position by animateFloatAsState(index.toFloat(), spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow), label = "segment")
+    val ride by animateFloatAsState(index.toFloat(), spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow), label = "segment")
+    val position = if (large) index.toFloat() else ride
     val track = if (LocalGlassBackdrop.current != null) scheme.surfaceVariant.copy(alpha = GlassMaterial.Control.tint)
     else scheme.surfaceVariant
     val pill = chosenFill()
     Row(
-        Modifier.fillMaxWidth().height(SettingsMinTouch).selectableGroup().drawBehind {
+        Modifier.fillMaxWidth().height(if (large) SegmentLargeHeight else SettingsMinTouch).selectableGroup().drawBehind {
             val inset = SegmentTrackInset.toPx()
-            val pad = SegmentPillInset.toPx()
+            val pad = (if (large) SegmentLargePillInset else SegmentPillInset).toPx()
             val height = size.height - 2 * inset
             drawRoundRect(track, Offset(0f, inset), Size(size.width, height), CornerRadius(height / 2))
             val segment = (size.width - 2 * pad) / options.size
@@ -1277,7 +1295,9 @@ private fun SegmentTrack(
     ) {
         options.forEachIndexed { i, (value, label) ->
             val chosen = i == index
-            val ink by animateColorAsState(if (chosen) scheme.onPrimaryContainer else scheme.onSurfaceVariant, tween(180), label = "ink")
+            val target = if (chosen) scheme.onPrimaryContainer else scheme.onSurfaceVariant
+            val fading by animateColorAsState(target, tween(180), label = "ink")
+            val ink = if (large) target else fading
             Box(
                 Modifier.weight(1f).fillMaxHeight()
                     .selectable(selected = chosen, interactionSource = null, indication = null, role = Role.RadioButton) {
@@ -1302,6 +1322,9 @@ private fun SegmentTrack(
 
 private val SegmentTrackInset = 4.dp
 private val SegmentPillInset = 3.dp
+/** The style's track: 48 dp drawn, 8 dp taller than the theme's. */
+private val SegmentLargeHeight = 56.dp
+private val SegmentLargePillInset = 4.dp
 
 /**
  * The glass style's backdrop: every choice as a small round sample of itself, the own picture as its thumbnail. Nine
@@ -1716,17 +1739,17 @@ private fun SettingsSwitch(checked: Boolean, onChange: (Boolean) -> Unit, press:
 }
 
 /**
- * A group's footer that opens the longer explanation: 8 dp under the group, its icon on the rows' icon line and its
- * text on their labels' line. The touch target runs on below the text, away from the group it belongs to.
+ * A group's footer that opens the longer explanation: its icon on the rows' icon line and its text on their labels'
+ * line, the same room above and below the text, so the next group does not start after a gap (the owner, 24.11).
  */
 @Composable
 private fun SettingsFooter(@StringRes text: Int, onClick: () -> Unit) {
     val style = settingsSupportingStyle()
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
     Row(
-        Modifier.fillMaxWidth().heightIn(min = SettingsMinTouch).clip(MaterialTheme.shapes.small)
+        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(start = SettingsRowInset, end = SettingsRowInset, top = 8.dp, bottom = 8.dp),
+            .padding(horizontal = SettingsRowInset, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(SettingsIconGap),
     ) {
         Box(Modifier.width(SettingsIconSize).height(with(LocalDensity.current) { style.lineHeight.toDp() }), contentAlignment = Alignment.Center) {
