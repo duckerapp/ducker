@@ -169,6 +169,18 @@ fun BackLayer(
                 else -> -1f
             }
 
+            // A sliding page is closed at once and its flight is its exit: a tap on the screen under it meanwhile opens
+            // the next page, which slides in, instead of being lost to a page about to close (the owner, 24.11).
+            if (slide) {
+                onBack()
+                try {
+                    offset.animateTo(direction * width * LEAVE_DISTANCE, tween(LEAVE_MS, easing = LinearOutSlowInEasing))
+                } catch (_: CancellationException) {
+                    // Opened again during the flight: the effect below took the card over.
+                }
+                return@PredictiveBackHandler
+            }
+
             offset.animateTo(direction * width * LEAVE_DISTANCE, tween(LEAVE_MS, easing = LinearOutSlowInEasing))
 
             onBack()
@@ -204,11 +216,22 @@ fun BackLayer(
     }
 
     // Открыли снова — от прошлого жеста не должно остаться сдвинутой карточки.
+    // Whether the page is composed, and whether anew for this opening: see the effect below. The transition's own
+    // current state was found already gone while the flying page was still on screen.
+    val life = remember { PageLife() }
+
     LaunchedEffect(visible) {
         if (visible) {
+            // Opened again while the gesture's card is still flying out (its page lives on as the exit): it comes back
+            // in from the side as a page opening does. A page composed anew slides in by its own enter.
+            val back = slide && leaving && life.composed && !life.reborn
+            life.reborn = false
             progress.snapTo(0f)
-            offset.snapTo(0f)
             leaving = false
+            if (back) {
+                offset.snapTo(if (rtl) -width else width)
+                offset.animateTo(0f, tween(SLIDE_IN_MS, easing = SlideInEasing))
+            } else offset.snapTo(0f)
         }
     }
 
@@ -224,13 +247,29 @@ fun BackLayer(
         // Opened again after leaving by the gesture: the card's last offset, shrink and corners are cleared a frame late
         // (the effect above), and a page sliding in from them jumped (the owner, 24.11). Until it is in, they don't
         // count. Not while it leaves: that runs with the page settled in.
-        val stale = { leaving && transition.currentState != EnterExitState.Visible && transition.targetState == EnterExitState.Visible }
-        val pull = { if (stale()) 0f else progress.value }
-        val shift = { if (stale()) 0f else offset.value }
+        // A page still composed (flying out) waits beyond the edge for the effect to bring it in.
+        val born = remember { leaving }
+        DisposableEffect(Unit) {
+            life.composed = true
+            life.reborn = born
+            onDispose { life.composed = false }
+        }
+        val reopened = { leaving && transition.targetState == EnterExitState.Visible }
+        val pull = { if (reopened()) 0f else progress.value }
+        val shift = {
+            when {
+                !reopened() -> offset.value
+                life.reborn -> 0f
+                else -> if (rtl) -width else width
+            }
+        }
 
         // How far a sliding page has come in: the screen under it dims as it is covered.
         val covered = if (slide) transition.animateFloat(
-            transitionSpec = { tween(if (targetState == EnterExitState.Visible) SLIDE_IN_MS else SLIDE_OUT_MS, easing = LinearEasing) },
+            // After the gesture it lasts the card's flight, which keeps the page composed until it is gone.
+            transitionSpec = {
+                tween(if (targetState == EnterExitState.Visible) SLIDE_IN_MS else if (leaving) LEAVE_MS else SLIDE_OUT_MS, easing = LinearEasing)
+            },
             label = "covered",
         ) { if (it == EnterExitState.Visible) 1f else 0f } else null
 
@@ -418,6 +457,15 @@ internal fun screenWallMode(tuning: GlassTuning?): Int = if (tuning?.enabled == 
 
 /** iOS's `systemGroupedBackground` in the light (its Settings); black in the dark. */
 private val IOS_GROUPED_LIGHT = Color(0xFFF2F2F7)
+
+/**
+ * The page of a [BackLayer]: composed or not (read by its effect, not drawn — no state), and composed anew while the
+ * gesture's leave was still marked, that is for a reopening, whose own enter brings it in.
+ */
+private class PageLife {
+    var composed = false
+    var reborn by mutableStateOf(false)
+}
 
 /** Whether the focus is inside the layer; read by its focus request, not drawn — no state. */
 private class RoomFocus {
