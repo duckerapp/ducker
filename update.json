@@ -1,0 +1,31 @@
+{
+  "stable": null,
+  "beta": {
+    "version": "1.0.0",
+    "code": 59,
+    "minSdk": 26,
+    "notes": {
+      "en": "• The first public release: the source, the releases and the updates are open. Updates from inside the app now work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.\n• TLS fingerprints of current browsers: chrome is Chrome 155 and firefox is Firefox 160, so connections that use them look like today's browsers (since 0.4.51 and 0.4.53).\n• DUCKER Glass (beta), a second look beside Air: cards, the dock, sheets and buttons are glass over a picture. Settings → Appearance; Android 13 and later, dark theme only (since 0.4.53).\n• The phone's settings are arranged in compact groups, with shorter labels that fit on one line and explanations below the groups. Sections slide in when opened.\n• In Appearance, Style comes first. The selected option slides along a single track in each of the Style and Theme controls. Glass blur stays on one row on narrow screens too.\n• Features and its pages use the same compact layout. Connections shows “Active connections”, and Wi-Fi sharing is described as “VPN for other devices”.\n• The dock is a little wider in Air and DUCKER Glass, giving “Profiles” and “+ Add” more room inside the highlight.\n• During the back gesture, the page keeps the display's rounded corners and shrinks a little more. When you pause midway through the gesture and then release, the page slides off the screen smoothly.\n• With “Download updates in advance” on, the download now stops when Android interrupts it, for example when Wi-Fi drops or the battery is low. The interrupted background download no longer shows a failure message.",
+      "ru": "• Первый открытый выпуск: исходный код, выпуски и обновления открыты. Обновления из приложения теперь работают у всех — с GitHub, а если он не отвечает, с зеркала на GitLab или jsDelivr.\n• Отпечатки TLS как у нынешних браузеров: chrome — Chrome 155, firefox — Firefox 160, так что подключения с ними похожи на сегодняшние браузеры (с 0.4.51 и 0.4.53).\n• DUCKER Glass (бета) — второе оформление рядом с Air: карточки, док, шторки и кнопки из стекла поверх картинки. Настройки → Оформление; Android 13 и новее, только тёмная тема (с 0.4.53).\n• Настройки на телефоне собраны в компактные группы. Короткие подписи помещаются в одну строку, пояснения — под группами. Разделы выезжают сбоку.\n• В «Оформлении» выбор стиля теперь первый. У стиля и темы по одной полосе, по которой скользит выделение. «Размытие стекла» и на узких экранах помещается в одну строку.\n• «Возможности» и их страницы оформлены так же компактно. У «Подключений» подпись «Активные подключения», у «Раздачи по Wi-Fi» — «VPN для других устройств».\n• Док стал чуть шире в Air и DUCKER Glass. У «Подписок» и «+ Добавить» больше места внутри выделения.\n• При жесте назад страница сохраняет скругления экрана и уменьшается чуть сильнее. Если задержать жест на середине и отпустить палец, страница плавно уедет за край экрана.\n• С включённой опцией «Скачивать обновления заранее» загрузка теперь останавливается, когда её прерывает Android, например при потере Wi-Fi или низком заряде. Прерванная фоновая загрузка больше не показывает ошибку."
+    },
+    "apk": {
+      "arm64-v8a": {
+        "sha256": "38a41566ae7a0ece0acc8ba6d30de6ba840bda28ff3973b23825a2b4c2215df6",
+        "size": 78873512,
+        "urls": [
+          "https://github.com/duckerapp/ducker/releases/download/v1.0.0/ducker-1.0.0-arm64-v8a.apk",
+          "https://gitlab.com/api/v4/projects/duckerx%2Fducker/packages/generic/ducker/1.0.0/ducker-1.0.0-arm64-v8a.apk"
+        ]
+      },
+      "armeabi-v7a": {
+        "sha256": "35ff5b13290fcf0d45f56a604d3289bfd1a90946349711e22b16f314f0dfd8ea",
+        "size": 74522412,
+        "urls": [
+          "https://github.com/duckerapp/ducker/releases/download/v1.0.0/ducker-1.0.0-armeabi-v7a.apk",
+          "https://gitlab.com/api/v4/projects/duckerx%2Fducker/packages/generic/ducker/1.0.0/ducker-1.0.0-armeabi-v7a.apk"
+        ]
+      }
+    }
+  },
+  "mirrors": []
+}
