@@ -360,13 +360,6 @@ val ACTION_SIZE = 56.dp
 internal val DOCK_PAD = 4.dp
 
 /**
- * Air's room beside a tab's widest label: 14 dp a side, clear of the solid highlight's ends, where 20 dp left «Подписки»
- * and «+ Добавить» against them (the owner, 24.11). The glass dock keeps [DockGlass.LABEL_ROOM]: its lens was tuned to
- * its width.
- */
-private val AIR_LABEL_ROOM = 28.dp
-
-/**
  * The side dock: its gap to the start edge, its width, a tab's height and the highlight's corner. Narrow and tall:
  * 108 dp wide looked a blob beside the cards.
  */
@@ -437,7 +430,7 @@ private fun FloatingDock(
     CompositionLocalProvider(LocalGlassStyle provides tuning.optics(GlassTuningGroup.Dock, LocalGlassStyle.current)) {
     Surface(
         // At the bottom as wide as the glass dock, and its icons as large ([dockWidth], [DockGlass.ICON]).
-        modifier = modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.width(dockWidth(AIR_LABEL_ROOM))).airShadow(shape)
+        modifier = modifier.then(if (vertical) Modifier.width(RAIL_WIDTH) else Modifier.width(dockWidth())).airShadow(shape)
             .liquidGlass(
                 backdrop,
                 base = screen,

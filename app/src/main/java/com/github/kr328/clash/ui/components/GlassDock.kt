@@ -83,18 +83,18 @@ import com.github.kr328.clash.R
  */
 /**
  * The phone dock as wide as its tabs need, on glass and Air alike: English's tab ([DockGlass.TAB_MIN]), or the widest
- * label (or «+ Добавить») with [labelRoom] beside it, Air's a little more; a narrow screen still squeezes it. Air's dock spread over the screen's
+ * label (or «+ Добавить») with a little room; a narrow screen still squeezes it. Air's dock spread over the screen's
  * width, up to 420 dp, and read massive beside the glass one (the owner, 23.11).
  */
 @Composable
-internal fun dockWidth(labelRoom: Dp = DockGlass.LABEL_ROOM): Dp {
+internal fun dockWidth(): Dp {
     val labelStyle = dockLabelStyle()
     val labels = DockTabItems.map { stringResource(it.first) } + stringResource(R.string.add)
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
-    return remember(labels, labelStyle, density, labelRoom) {
+    return remember(labels, labelStyle, density) {
         val widest = labels.maxOf { measurer.measure(it, labelStyle, maxLines = 1, softWrap = false).size.width }
-        with(density) { maxOf(DockGlass.TAB_MIN, maxOf(widest.toDp(), DockGlass.ICON) + labelRoom) * TABS + DOCK_PAD * 2 }
+        with(density) { maxOf(DockGlass.TAB_MIN, maxOf(widest.toDp(), DockGlass.ICON) + DockGlass.LABEL_ROOM) * TABS + DOCK_PAD * 2 }
     }
 }
 
@@ -168,7 +168,9 @@ internal object DockGlass {
      * (the owner, 23.11: «на англ все норм а на ру нет»).
      */
     val TAB_MIN = 46.dp + TAB_GAP
-    val LABEL_ROOM = 20.dp
+    // 14 dp a side, clear of the highlight's ends: 20 dp left «Подписки» and «+ Добавить» against them; Air first,
+    // then the glass dock as well — «просторнее, но без перегиба» (the owner, 24.11).
+    val LABEL_ROOM = 28.dp
 
     /** The tabs' icons, a little larger than Air's 20 dp (the owner, 18.11); the labels unchanged. */
     val ICON = 23.dp
