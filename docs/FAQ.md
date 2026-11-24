@@ -340,9 +340,10 @@ ducker updates itself: there is no need to download each new version by hand.
   press "Update". After the installation the VPN comes back by itself.
 - The first time, Android asks to allow installs from this source: turn it on and go back — the
   update continues by itself.
-- Without tapping anything: ⚙ Settings → "Update automatically". New versions then download over
-  Wi-Fi and install while the screen is off, usually at night. This needs Android 12 or newer; on
-  Android 8–11 Android asks to confirm each update.
+- Download ahead: ⚙ Settings → "Download updates in advance". New versions then download over
+  Wi-Fi by themselves; the notification "ducker … is ready to install" opens the update, and
+  Android asks to confirm the install. Until it is installed, the notification comes back every
+  three days.
 - To check right now: ⚙ Settings → "Check for updates".
 - "Beta versions" in the same place enables early access to test releases.
 
@@ -425,7 +426,7 @@ previous configuration. These recovery paths are not an explicit template select
 
 **Settings → Beta versions** is off by default. Off means stable releases only; on means
 the newest compatible release from stable or beta. Both use the same app, signing key
-and version numbers. **Update automatically** is a separate preference and follows the
+and version numbers. **Download updates in advance** is a separate preference and follows the
 selected channels.
 
 Turning beta off does not downgrade an already installed beta. You keep it until a

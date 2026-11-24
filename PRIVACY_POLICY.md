@@ -67,7 +67,7 @@ one-time key from the QR code. The TV listens on the network only while the code
 not respond, or, failing both, from a copy of that file on the jsDelivr CDN. The request
 contains no information about you or the phone: only a `User-Agent` such as
 `ducker/<app version>`. The new version itself is downloaded from GitHub or GitLab, only after
-you tap **Update** or, if you turned on **Update automatically**, over Wi-Fi while the screen is off. Like any server, GitHub, GitLab, and jsDelivr see your IP address — or the
+you tap **Update** or, if you turned on **Download updates in advance**, over Wi-Fi in the background. Like any server, GitHub, GitLab, and jsDelivr see your IP address — or the
 provider node's address if the VPN is enabled. Before installation, the app checks the file's
 checksum and signature: it will not install a file from someone else.
 
@@ -103,8 +103,8 @@ and copies only the prepared report. Nothing is sent automatically.
 - **App list** — to let you choose apps that bypass the VPN. The list stays on the phone.
 - **Background work and start after reboot** — to prevent the VPN from stopping on its own.
 
-- **Install packages and update without user action** — to install verified app updates;
-  Android may require confirmation. Automatic updates are optional.
+- **Install packages** — to install verified app updates; Android asks to confirm each one.
+  Downloading updates in advance is optional.
 
 ## Changes
 

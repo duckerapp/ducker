@@ -92,7 +92,7 @@ ducker comes in two styles: **Air**, light or dark, and **DUCKER Glass** (beta),
   directly. Encrypted subscriptions open with the key from your provider.
 - **Nodes.** Groups from your config with their icons, delay check, favorites, search, sorting by
   delay, and a node test that shows loss, minimum, average and maximum delay.
-- **Updates itself.** A new version is one tap from Home; or let it install by itself at night.
+- **Updates itself.** A new version is one tap from Home, and it can download ahead over Wi-Fi.
   See [Updates](#updates).
 - **Light and dark.** A black-and-white look in both themes; switching runs as a wave across the
   screen.
@@ -193,9 +193,9 @@ You install ducker by hand once; after that it updates itself.
 - **It checks by itself** twice a day and when you open it. A new version shows up on Home and in
   a notification, with what's new; one tap downloads and installs it, and the VPN comes back by
   itself.
-- **Update automatically** (Settings): new versions download over Wi-Fi and install while the
-  screen is off, usually at night. Off until you say yes. Android 12 and newer; on Android 8–11
-  Android asks for a confirmation each time.
+- **Download updates in advance** (Settings): new versions download over Wi-Fi by themselves, and
+  a notification says when one is ready; installing takes a tap and Android's confirmation. Off
+  until you say yes.
 - **Beta versions** (Settings): early access to test releases. A beta that goes well
   is then given to everyone as the very same file.
 - **Where from.** The list of versions comes from GitHub, or from the
