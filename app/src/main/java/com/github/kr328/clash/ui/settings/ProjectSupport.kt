@@ -14,7 +14,6 @@ import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -97,35 +96,37 @@ internal val DonationCoins: List<Pair<String, List<DonationNetwork>>> = listOf(
 )
 
 /** «О приложении» as the project's card (D-524). */
-internal fun LazyListScope.aboutItems(appVersion: String, coreVersion: String, onLink: (String) -> Unit, onSupport: () -> Unit) {
-    item(key = "about-card") { AboutCard(appVersion, coreVersion, onSupport) }
+internal fun LazyListScope.aboutItems(
+    appVersion: String, coreVersion: String, compact: Boolean, onLink: (String) -> Unit, onSupport: () -> Unit,
+) {
+    item(key = "about-card") { AboutCard(appVersion, coreVersion, compact, onSupport) }
     item(key = "about-community") {
-        SettingsNavigationGroup(stringResource(R.string.settings_project_community)) {
-            ProjectLinkRow(stringResource(R.string.channel), Symbols.Campaign, stringResource(R.string.channel_hint)) { onLink(PROJECT_NEWS) }
-            SettingsNavigationDivider()
-            ProjectLinkRow(stringResource(R.string.community), Symbols.Forum, stringResource(R.string.community_hint)) { onLink(COMMUNITY) }
+        SettingsNavigationGroup(stringResource(R.string.settings_project_community), compact) {
+            ProjectLinkRow(stringResource(R.string.channel), Symbols.Campaign, stringResource(R.string.channel_hint), compact) { onLink(PROJECT_NEWS) }
+            SettingsNavigationDivider(compact)
+            ProjectLinkRow(stringResource(R.string.community), Symbols.Forum, stringResource(R.string.community_hint), compact) { onLink(COMMUNITY) }
         }
     }
     item(key = "about-source") {
-        SettingsNavigationGroup(stringResource(R.string.settings_project_source)) {
-            ProjectLinkRow("GitHub", Symbols.Code, "duckerapp/ducker") { onLink(PROJECT_GITHUB) }
-            SettingsNavigationDivider()
-            ProjectLinkRow("GitLab", Symbols.Code, "duckerx/ducker") { onLink(PROJECT_GITLAB) }
-            SettingsNavigationDivider()
-            ProjectLinkRow(stringResource(R.string.about_core), Symbols.Lan, stringResource(R.string.about_core_hint)) { onLink(PROJECT_CORE) }
-            SettingsNavigationDivider()
-            ProjectLinkRow(stringResource(R.string.about_license), Symbols.Article, stringResource(R.string.about_license_hint)) { onLink(PROJECT_LICENSE) }
+        SettingsNavigationGroup(stringResource(R.string.settings_project_source), compact) {
+            ProjectLinkRow("GitHub", Symbols.Code, "duckerapp/ducker", compact) { onLink(PROJECT_GITHUB) }
+            SettingsNavigationDivider(compact)
+            ProjectLinkRow("GitLab", Symbols.Code, "duckerx/ducker", compact) { onLink(PROJECT_GITLAB) }
+            SettingsNavigationDivider(compact)
+            ProjectLinkRow(stringResource(R.string.about_core), Symbols.Lan, stringResource(R.string.about_core_hint), compact) { onLink(PROJECT_CORE) }
+            SettingsNavigationDivider(compact)
+            ProjectLinkRow(stringResource(R.string.about_license), Symbols.Article, stringResource(R.string.about_license_hint), compact) { onLink(PROJECT_LICENSE) }
         }
     }
     item(key = "about-author") {
-        SettingsNavigationGroup(stringResource(R.string.about_author)) {
+        SettingsNavigationGroup(stringResource(R.string.about_author), compact) {
             FlowRow(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                Modifier.fillMaxWidth().padding(horizontal = if (compact) SettingsRowInset else 16.dp, vertical = 10.dp),
                 // The pills go under the name together when a large font leaves no room beside it.
                 horizontalArrangement = Arrangement.SpaceBetween,
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(AUTHOR, Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Text(AUTHOR, Modifier.padding(end = 8.dp), style = if (compact) settingsTitleStyle() else MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Pill("Telegram", onClick = { onLink(AUTHOR_TELEGRAM) }, onCard = true)
                     Pill("GitHub", onClick = { onLink(AUTHOR_GITHUB) }, onCard = true)
@@ -136,27 +137,36 @@ internal fun LazyListScope.aboutItems(appVersion: String, coreVersion: String, o
 }
 
 /** «Поддержать проект»: only the ways to give (D-524). */
-internal fun LazyListScope.projectSupportItems(onLink: (String) -> Unit, onMail: () -> Unit) {
+internal fun LazyListScope.projectSupportItems(compact: Boolean, onLink: (String) -> Unit, onMail: () -> Unit) {
     item(key = "thanks") {
         Text(
             stringResource(R.string.settings_project_thanks),
-            modifier = Modifier.padding(horizontal = 4.dp),
+            modifier = Modifier.padding(horizontal = if (compact) SettingsRowInset else 4.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    item(key = "cryptobot") { CryptoBotCard { onLink(CRYPTOBOT) } }
+    item(key = "cryptobot") { CryptoBotCard(compact) { onLink(CRYPTOBOT) } }
     item(key = "wallet") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ProjectSection(stringResource(R.string.donate_wallet))
-            WalletCard()
+        Column(verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 8.dp)) {
+            SettingsSectionHeading(stringResource(R.string.donate_wallet), compact)
+            WalletCard(compact)
         }
     }
     item(key = "mail") {
-        SupportButton(onClick = onMail, outlined = true) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Icon(Symbols.Email, contentDescription = null, modifier = Modifier.size(22.dp))
-                Text(stringResource(R.string.settings_project_mail), style = MaterialTheme.typography.bodyLarge)
+        if (compact) {
+            SettingsSurface(compact = true) {
+                SettingsNavigationRow(
+                    stringResource(R.string.settings_project_mail), Symbols.Email, onMail,
+                    compact = true, destinationIcon = Symbols.OpenInNew,
+                )
+            }
+        } else {
+            SupportButton(onClick = onMail, outlined = true) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(Symbols.Email, contentDescription = null, modifier = Modifier.size(22.dp))
+                    Text(stringResource(R.string.settings_project_mail), style = MaterialTheme.typography.bodyLarge)
+                }
             }
         }
     }
@@ -164,12 +174,16 @@ internal fun LazyListScope.projectSupportItems(onLink: (String) -> Unit, onMail:
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AboutCard(appVersion: String, coreVersion: String, onSupport: () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+private fun AboutCard(appVersion: String, coreVersion: String, compact: Boolean, onSupport: () -> Unit) {
+    val markSize = if (compact) 56.dp else 72.dp
+    SettingsSurface(compact) {
         Column(
-            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 20.dp),
+            Modifier.fillMaxWidth().then(
+                if (compact) Modifier.padding(horizontal = SettingsRowInset, vertical = SettingsBodyInset)
+                else Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 20.dp),
+            ),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) SettingsBodyInset else 14.dp),
         ) {
             // The tile as on the launcher (D-291): the mark of the other theme, so that it
             // stands out from the card instead of blending into it.
@@ -177,16 +191,18 @@ private fun AboutCard(appVersion: String, coreVersion: String, onSupport: () -> 
                 bitmap = smoothResource(
                     if (MaterialTheme.colorScheme.background.luminance() < 0.5f) R.drawable.ducker_mark_light
                     else R.drawable.ducker_mark_dark,
-                    72.dp,
+                    markSize,
                 ),
                 contentDescription = null,
-                modifier = Modifier.size(72.dp).clip(RoundedCornerShape(percent = 22)),
+                modifier = Modifier.size(markSize).clip(RoundedCornerShape(percent = 22)),
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("ducker", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("ducker", style = if (compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall,
+                    fontWeight = if (compact) FontWeight.SemiBold else FontWeight.Bold)
                 Text(
                     stringResource(R.string.about_tagline), textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = if (compact) settingsSupportingStyle() else MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             FlowRow(
@@ -196,10 +212,11 @@ private fun AboutCard(appVersion: String, coreVersion: String, onSupport: () -> 
                 VersionChip(stringResource(R.string.version_app, appVersion))
                 if (coreVersion.isNotEmpty()) VersionChip(stringResource(R.string.version_core, coreVersion))
             }
-            SupportButton(onClick = onSupport) {
+            SupportButton(onClick = onSupport, compact = compact) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Symbols.Favorite, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Text(stringResource(R.string.settings_project), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    Icon(Symbols.Favorite, contentDescription = null, modifier = Modifier.size(if (compact) SettingsIconSize else 20.dp))
+                    Text(stringResource(R.string.settings_project), style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -211,8 +228,15 @@ private fun AboutCard(appVersion: String, coreVersion: String, onSupport: () -> 
  * 23.11); elsewhere Material's as before, [outlined] or filled.
  */
 @Composable
-private fun SupportButton(onClick: () -> Unit, outlined: Boolean = false, content: @Composable RowScope.() -> Unit) {
-    val modifier = Modifier.fillMaxWidth().heightIn(min = if (outlined) 56.dp else 52.dp)
+private fun SupportButton(
+    onClick: () -> Unit, outlined: Boolean = false, compact: Boolean = false, content: @Composable RowScope.() -> Unit,
+) {
+    val height = when {
+        compact -> SettingsMinTouch
+        outlined -> 56.dp
+        else -> 52.dp
+    }
+    val modifier = Modifier.fillMaxWidth().heightIn(min = height)
     when {
         glassPanesOn() -> GlassCardButton(onClick = onClick, modifier = modifier, padding = 16.dp, content = content)
         outlined -> OutlinedButton(onClick = onClick, modifier = modifier, shape = MaterialTheme.shapes.extraLarge, content = content)
@@ -236,7 +260,18 @@ private fun VersionChip(text: String) {
 }
 
 @Composable
-private fun CryptoBotCard(onOpen: () -> Unit) {
+private fun CryptoBotCard(compact: Boolean, onOpen: () -> Unit) {
+    if (compact) {
+        SettingsSurface(compact = true) {
+            SettingsNavigationRow(
+                title = stringResource(R.string.donate_cryptobot_open),
+                subtitle = stringResource(R.string.donate_cryptobot_hint),
+                icon = Symbols.SmartToy, onClick = onOpen, compact = true, destinationIcon = Symbols.OpenInNew,
+            )
+        }
+        return
+    }
+
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -267,7 +302,7 @@ private fun CryptoBotCard(onOpen: () -> Unit) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun WalletCard() {
+private fun WalletCard(compact: Boolean) {
     val context = LocalContext.current
     val copied = stringResource(R.string.settings_wallet_copied)
     var coinIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -275,8 +310,12 @@ private fun WalletCard() {
     val (coin, networks) = DonationCoins[coinIndex]
     val network = networks[networkIndex.coerceIn(networks.indices)]
 
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    SettingsSurface(compact) {
+        Column(
+            if (compact) Modifier.padding(horizontal = SettingsRowInset, vertical = SettingsBodyInset)
+            else Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(SettingsBodyInset),
+        ) {
             WalletLabel(stringResource(R.string.donate_coin))
             FlowRow(
                 Modifier.fillMaxWidth().selectableGroup(),
@@ -308,7 +347,8 @@ private fun WalletCard() {
             SelectionContainer {
                 Text(
                     network.address,
-                    Modifier.fillMaxWidth().plate(MaterialTheme.shapes.medium).padding(horizontal = 14.dp, vertical = 12.dp),
+                    Modifier.fillMaxWidth().plate(if (compact) MaterialTheme.shapes.small else MaterialTheme.shapes.medium)
+                        .padding(horizontal = SettingsRowInset, vertical = SettingsBodyInset),
                     style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace,
                 )
             }
@@ -319,10 +359,12 @@ private fun WalletCard() {
                 )
                 Text(
                     stringResource(R.string.donate_only_network, coin, network.label),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = if (compact) settingsSupportingStyle() else MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             SupportButton(
+                compact = compact,
                 onClick = {
                     context.getSystemService(ClipboardManager::class.java)?.let { clipboard ->
                         clipboard.setPrimaryClip(ClipData.newPlainText("$coin · ${network.label}", network.address))
@@ -332,8 +374,9 @@ private fun WalletCard() {
                 },
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Symbols.ContentCopy, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Text(stringResource(R.string.donate_copy), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    Icon(Symbols.ContentCopy, contentDescription = null, modifier = Modifier.size(if (compact) SettingsIconSize else 20.dp))
+                    Text(stringResource(R.string.donate_copy), style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -345,30 +388,10 @@ private fun WalletLabel(text: String) {
     Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
-@Composable
-private fun ProjectSection(title: String) {
-    Text(
-        title, modifier = Modifier.padding(start = 4.dp, top = 4.dp).semantics { heading() },
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
-
 /** A row of a settings group that opens a page outside the app. */
 @Composable
-private fun ProjectLinkRow(title: String, icon: ImageVector, subtitle: String, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 61.dp)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Icon(Symbols.OpenInNew, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
+private fun ProjectLinkRow(title: String, icon: ImageVector, subtitle: String, compact: Boolean, onClick: () -> Unit) {
+    SettingsNavigationRow(
+        title, icon, onClick, subtitle = subtitle, compact = compact, destinationIcon = Symbols.OpenInNew,
+    )
 }

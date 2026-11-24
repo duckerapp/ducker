@@ -113,7 +113,7 @@
     <string name="debug_log">Log terperinci</string>
     <string name="logs">Log</string>
     <string name="dashboard">zashboard</string>
-    <string name="dashboard_hint">Panel web inti: koneksi, aturan, DNS. Tersedia saat terhubung</string>
+    <string name="dashboard_hint">Koneksi, aturan, dan DNS saat VPN aktif</string>
     <string name="dashboard_needs_connection">Hubungkan dahulu, panel disediakan oleh inti</string>
     <string name="dashboard_failed">Tidak dapat membuka panel</string>
     <string name="logs_hint">Log inti. Saat diekspor, alamat server, kunci, dan ID disembunyikan; situs yang Anda kunjungi tetap tercantum</string>
@@ -347,7 +347,7 @@
     <string name="shortcut_disconnect">Putuskan</string>
     <string name="background_title">Aktivitas latar belakang</string>
     <string name="background_allowed">Android tidak akan menidurkan ducker, jadi VPN tetap berjalan saat layar mati.</string>
-    <string name="background_restricted">Android mungkin menidurkan ducker sehingga VPN terputus saat layar mati.</string>
+    <string name="background_restricted">VPN bisa terputus di latar belakang</string>
     <string name="background_allow">Izinkan</string>
     <string name="background_autostart">Mulai otomatis MIUI</string>
     <string name="background_autostart_on">Mulai otomatis MIUI: aktif</string>
@@ -355,7 +355,6 @@
     <string name="background_battery">Baterai: tanpa batasan</string>
     <string name="background_app_settings">Buka setelan aplikasi ducker</string>
     <string name="background_hint_action">Atur</string>
-    <string name="background_vendor">Pada %1$s, ini belum cukup: sistem ponsel juga menutup aplikasi latar belakang.</string>
     <string name="background_hint">Ponsel %1$s menutup aplikasi latar belakang sehingga VPN bisa terputus. Pengaturannya hanya perlu sekitar satu menit.</string>
     <string name="vendor_xiaomi">Xiaomi, Redmi, dan POCO</string>
     <string name="vendor_huawei">Huawei dan Honor</string>
@@ -583,6 +582,8 @@
     <string name="settings_connection_summary">VPN dan aplikasi</string>
     <string name="settings_privacy_summary">Visibilitas, perangkat, aplikasi lain</string>
     <string name="settings_help">Bantuan dan diagnostik</string>
+    <string name="settings_logs_short">Situs yang dikunjungi tetap ada di log ekspor</string>
+    <string name="settings_probe_short">Latensi dan kehilangan dari 20 permintaan</string>
     <string name="settings_help_summary">Log, uji node, dukungan</string>
     <string name="settings_project">Dukung proyek</string>
     <string name="settings_project_summary">Kripto lewat CryptoBot atau ke dompet</string>
@@ -616,6 +617,8 @@
     <string name="settings_privacy_device">Perangkat</string>
     <string name="settings_connection_help">Mulai otomatis dan VPN selalu aktif</string>
     <string name="settings_privacy_help">Cara kerja pengaturan ini</string>
+    <string name="settings_background_steps">Langkah tambahan</string>
+    <string name="settings_background_settings">Setelan ducker</string>
     <string name="settings_background_allowed">Diizinkan</string>
     <string name="settings_always_on_short">Di setelan Android</string>
     <string name="settings_auto_restart_short">Setelah mulai ulang atau pembaruan aplikasi</string>
@@ -624,7 +627,7 @@
     <string name="settings_disguise_short">Aplikasi mungkin tertutup</string>
     <string name="settings_external_short">Aplikasi lain dapat mengaktifkan dan menonaktifkan VPN</string>
     <string name="settings_hwid_short">Dikirim ke penyedia</string>
-    <string name="settings_auto_update_title">Unduh pembaruan otomatis</string>
+    <string name="settings_auto_update_title">Unduh lebih awal</string>
     <string name="settings_connection_help_title">Memulai VPN</string>
     <string name="settings_auto_update_short">Hanya lewat Wi-Fi</string>
     <string name="settings_category_interface">Antarmuka</string>

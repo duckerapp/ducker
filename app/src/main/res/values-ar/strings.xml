@@ -113,7 +113,7 @@
     <string name="debug_log">السجل التفصيلي</string>
     <string name="logs">السجل</string>
     <string name="dashboard">zashboard</string>
-    <string name="dashboard_hint">لوحة ويب للنواة: الاتصالات والقواعد وDNS. تعمل أثناء الاتصال</string>
+    <string name="dashboard_hint">الاتصالات والقواعد وDNS عند تشغيل VPN</string>
     <string name="dashboard_needs_connection">اتصل أولًا، فالنواة هي التي توفّر اللوحة</string>
     <string name="dashboard_failed">تعذّر فتح اللوحة</string>
     <string name="logs_hint">سجل النواة. عند التصدير تُخفى عناوين الخوادم والمفاتيح والمعرّفات، لكن تبقى المواقع التي زرتها</string>
@@ -357,7 +357,7 @@
     <string name="shortcut_disconnect">قطع الاتصال</string>
     <string name="background_title">العمل في الخلفية</string>
     <string name="background_allowed">لن يضع Android تطبيق ducker في وضع السكون، لذا سيواصل VPN العمل عند إطفاء الشاشة.</string>
-    <string name="background_restricted">قد يضع Android تطبيق ducker في وضع السكون، وينقطع VPN عند إطفاء الشاشة.</string>
+    <string name="background_restricted">قد ينقطع VPN في الخلفية</string>
     <string name="background_allow">سماح</string>
     <string name="background_autostart">التشغيل التلقائي في MIUI</string>
     <string name="background_autostart_on">التشغيل التلقائي في MIUI: مفعّل</string>
@@ -365,7 +365,6 @@
     <string name="background_battery">البطارية: بلا قيود</string>
     <string name="background_app_settings">فتح إعدادات ducker</string>
     <string name="background_hint_action">إعداد</string>
-    <string name="background_vendor">على هواتف %1$s، لا يكفي ذلك: فنظام الهاتف نفسه يغلق التطبيقات في الخلفية.</string>
     <string name="background_hint">هواتف %1$s تغلق التطبيقات في الخلفية، مما قد يقطع VPN. يستغرق حل ذلك دقيقة.</string>
     <string name="vendor_xiaomi">Xiaomi وRedmi وPOCO</string>
     <string name="vendor_huawei">Huawei وHonor</string>
@@ -608,6 +607,8 @@
     <string name="settings_connection_summary">VPN والتطبيقات</string>
     <string name="settings_privacy_summary">إظهار التطبيق، الجهاز، التطبيقات الأخرى</string>
     <string name="settings_help">المساعدة والتشخيص</string>
+    <string name="settings_logs_short">المواقع التي زرتها تبقى في السجل المُصدَّر</string>
+    <string name="settings_probe_short">زمن الاستجابة والفقد عبر 20 طلبًا</string>
     <string name="settings_help_summary">السجلات وفحص العقد والدعم</string>
     <string name="settings_project">دعم المشروع</string>
     <string name="settings_project_summary">عملات مشفرة عبر CryptoBot أو إلى محفظة</string>
@@ -641,6 +642,8 @@
     <string name="settings_privacy_device">الجهاز</string>
     <string name="settings_connection_help">التشغيل التلقائي وVPN الدائم</string>
     <string name="settings_privacy_help">كيف تعمل هذه الإعدادات</string>
+    <string name="settings_background_steps">خطوات إضافية</string>
+    <string name="settings_background_settings">إعدادات ducker</string>
     <string name="settings_background_allowed">مسموح</string>
     <string name="settings_always_on_short">في إعدادات Android</string>
     <string name="settings_auto_restart_short">بعد إعادة التشغيل أو تحديث التطبيق</string>
@@ -649,7 +652,7 @@
     <string name="settings_disguise_short">قد يُغلق التطبيق</string>
     <string name="settings_external_short">يمكن للتطبيقات الأخرى تشغيل VPN وإيقافه</string>
     <string name="settings_hwid_short">يُرسل إلى مزود الخدمة</string>
-    <string name="settings_auto_update_title">تنزيل التحديثات تلقائيًا</string>
+    <string name="settings_auto_update_title">التنزيل مسبقًا</string>
     <string name="settings_connection_help_title">بدء تشغيل VPN</string>
     <string name="settings_auto_update_short">عبر Wi-Fi فقط</string>
     <string name="settings_category_interface">الواجهة</string>

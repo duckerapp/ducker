@@ -113,7 +113,7 @@
     <string name="debug_log">گزارش جزئیات</string>
     <string name="logs">گزارش</string>
     <string name="dashboard">zashboard</string>
-    <string name="dashboard_hint">پنل وب هسته: اتصالات، قوانین، DNS. هنگام اتصال کار می‌کند</string>
+    <string name="dashboard_hint">اتصال‌ها، قواعد و DNS با VPN روشن</string>
     <string name="dashboard_needs_connection">ابتدا متصل شوید — پنل را هسته ارائه می‌دهد</string>
     <string name="dashboard_failed">پنل باز نشد</string>
     <string name="logs_hint">گزارش هسته. در خروجی، آدرس سرورها، کلیدها و شناسه‌ها پنهان می‌شوند؛ سایت‌هایی که باز کرده‌اید باقی می‌مانند</string>
@@ -350,7 +350,7 @@
     <string name="shortcut_disconnect">قطع اتصال</string>
     <string name="background_title">کار در پس‌زمینه</string>
     <string name="background_allowed">Android برنامه ducker را به خواب نمی‌برد، بنابراین VPN با صفحه خاموش هم به کار خود ادامه می‌دهد.</string>
-    <string name="background_restricted">ممکن است Android برنامه ducker را به خواب ببرد و با خاموش شدن صفحه، VPN قطع شود.</string>
+    <string name="background_restricted">ممکن است VPN در پس‌زمینه قطع شود</string>
     <string name="background_allow">اجازه دادن</string>
     <string name="background_autostart">اجرای خودکار MIUI</string>
     <string name="background_autostart_on">اجرای خودکار MIUI: روشن</string>
@@ -358,7 +358,6 @@
     <string name="background_battery">باتری: بدون محدودیت</string>
     <string name="background_app_settings">باز کردن تنظیمات ducker</string>
     <string name="background_hint_action">تنظیم</string>
-    <string name="background_vendor">در %1$s این کافی نیست: سیستم خود گوشی برنامه‌های پس‌زمینه را می‌بندد.</string>
     <string name="background_hint">گوشی‌های %1$s برنامه‌های پس‌زمینه را می‌بندند و ممکن است VPN قطع شود. تنظیم آن یک دقیقه وقت می‌گیرد.</string>
     <string name="vendor_xiaomi">Xiaomi، Redmi و POCO</string>
     <string name="vendor_huawei">Huawei و Honor</string>
@@ -589,6 +588,8 @@
     <string name="settings_connection_summary">VPN و برنامه‌ها</string>
     <string name="settings_privacy_summary">نمایش برنامه، دستگاه، برنامه‌های دیگر</string>
     <string name="settings_help">راهنما و عیب‌یابی</string>
+    <string name="settings_logs_short">وب‌سایت‌های بازدیدشده در گزارش خروجی باقی می‌مانند</string>
+    <string name="settings_probe_short">تأخیر و افت در ۲۰ درخواست</string>
     <string name="settings_help_summary">گزارش‌ها، بررسی گره و پشتیبانی</string>
     <string name="settings_project">حمایت از پروژه</string>
     <string name="settings_project_summary">رمزارز با CryptoBot یا به کیف پول</string>
@@ -622,6 +623,8 @@
     <string name="settings_privacy_device">دستگاه</string>
     <string name="settings_connection_help">راه‌اندازی خودکار و VPN همیشه‌روشن</string>
     <string name="settings_privacy_help">این تنظیمات چگونه کار می‌کنند</string>
+    <string name="settings_background_steps">مراحل تکمیلی</string>
+    <string name="settings_background_settings">تنظیمات ducker</string>
     <string name="settings_background_allowed">مجاز</string>
     <string name="settings_always_on_short">در تنظیمات اندروید</string>
     <string name="settings_auto_restart_short">پس از راه‌اندازی دوباره یا به‌روزرسانی برنامه</string>
@@ -630,7 +633,7 @@
     <string name="settings_disguise_short">ممکن است برنامه بسته شود</string>
     <string name="settings_external_short">برنامه‌های دیگر می‌توانند VPN را روشن و خاموش کنند</string>
     <string name="settings_hwid_short">برای ارائه‌دهنده ارسال می‌شود</string>
-    <string name="settings_auto_update_title">دانلود خودکار به‌روزرسانی‌ها</string>
+    <string name="settings_auto_update_title">دانلود از پیش</string>
     <string name="settings_connection_help_title">راه‌اندازی VPN</string>
     <string name="settings_auto_update_short">فقط از طریق Wi-Fi</string>
     <string name="settings_category_interface">رابط کاربری</string>

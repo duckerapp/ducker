@@ -113,7 +113,7 @@
     <string name="debug_log">Ayrıntılı günlük</string>
     <string name="logs">Günlük</string>
     <string name="dashboard">zashboard</string>
-    <string name="dashboard_hint">Çekirdeğin web paneli: bağlantılar, kurallar, DNS. Bağlıyken çalışır</string>
+    <string name="dashboard_hint">VPN açıkken bağlantılar, kurallar ve DNS</string>
     <string name="dashboard_needs_connection">Önce bağlanın; paneli çekirdek sunar</string>
     <string name="dashboard_failed">Panel açılamadı</string>
     <string name="logs_hint">Çekirdek günlüğü. Dışa aktarırken sunucu adresleri, anahtarlar ve kimlikler gizlenir; ziyaret ettiğiniz siteler kalır</string>
@@ -349,7 +349,7 @@
     <string name="shortcut_disconnect">Bağlantıyı kes</string>
     <string name="background_title">Arka planda çalışma</string>
     <string name="background_allowed">Android ducker uygulamasını uykuya almıyor; ekran kapalıyken de VPN çalışmaya devam eder.</string>
-    <string name="background_restricted">Android ducker uygulamasını uykuya alabilir; bu durumda ekran kapalıyken VPN bağlantısı kesilir.</string>
+    <string name="background_restricted">VPN arka planda kesilebilir</string>
     <string name="background_allow">İzin ver</string>
     <string name="background_autostart">MIUI otomatik başlatma</string>
     <string name="background_autostart_on">MIUI otomatik başlatma: açık</string>
@@ -357,7 +357,6 @@
     <string name="background_battery">Pil: kısıtlama yok</string>
     <string name="background_app_settings">ducker uygulama ayarlarını aç</string>
     <string name="background_hint_action">Ayarla</string>
-    <string name="background_vendor">%1$s cihazlarda bu yeterli değil: telefonun kendi sistemi arka plandaki uygulamaları kapatıyor.</string>
     <string name="background_hint">%1$s telefonlar arka plandaki uygulamaları kapattığı için VPN bağlantısı kesilebilir. Ayarlamak bir dakika sürer.</string>
     <string name="vendor_xiaomi">Xiaomi, Redmi ve POCO</string>
     <string name="vendor_huawei">Huawei ve Honor</string>
@@ -588,6 +587,8 @@
     <string name="settings_connection_summary">VPN ve uygulamalar</string>
     <string name="settings_privacy_summary">Görünürlük, cihaz, diğer uygulamalar</string>
     <string name="settings_help">Yardım ve tanılama</string>
+    <string name="settings_logs_short">Ziyaret edilen siteler dışa aktarılan günlükte kalır</string>
+    <string name="settings_probe_short">20 istekte gecikme ve kayıp</string>
     <string name="settings_help_summary">Günlükler, düğüm testi, destek</string>
     <string name="settings_project">Projeyi destekle</string>
     <string name="settings_project_summary">CryptoBot ile ya da cüzdana kripto</string>
@@ -621,6 +622,8 @@
     <string name="settings_privacy_device">Cihaz</string>
     <string name="settings_connection_help">Otomatik başlatma ve Her zaman açık VPN</string>
     <string name="settings_privacy_help">Bu ayarlar nasıl çalışır?</string>
+    <string name="settings_background_steps">Ek adımlar</string>
+    <string name="settings_background_settings">ducker ayarları</string>
     <string name="settings_background_allowed">İzin verildi</string>
     <string name="settings_always_on_short">Android ayarlarında</string>
     <string name="settings_auto_restart_short">Yeniden başlatma veya uygulama güncellemesinden sonra</string>
@@ -629,7 +632,7 @@
     <string name="settings_disguise_short">Uygulama kapanabilir</string>
     <string name="settings_external_short">Diğer uygulamalar VPN’i açıp kapatabilir</string>
     <string name="settings_hwid_short">Sağlayıcıya gönderilir</string>
-    <string name="settings_auto_update_title">Güncellemeleri otomatik indir</string>
+    <string name="settings_auto_update_title">Önceden indir</string>
     <string name="settings_connection_help_title">VPN başlatma</string>
     <string name="settings_auto_update_short">Yalnızca Wi-Fi üzerinden</string>
     <string name="settings_category_interface">Arayüz</string>

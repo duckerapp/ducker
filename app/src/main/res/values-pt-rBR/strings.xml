@@ -113,7 +113,7 @@
     <string name="debug_log">Registro detalhado</string>
     <string name="logs">Registro</string>
     <string name="dashboard">zashboard</string>
-    <string name="dashboard_hint">Painel web do núcleo: conexões, regras e DNS. Disponível enquanto houver conexão</string>
+    <string name="dashboard_hint">Conexões, regras e DNS com a VPN ligada</string>
     <string name="dashboard_needs_connection">Conecte primeiro: o painel é fornecido pelo núcleo</string>
     <string name="dashboard_failed">Não foi possível abrir o painel</string>
     <string name="logs_hint">Registro do núcleo. Ao exportar, os endereços dos servidores, as chaves e os IDs são ocultados; os sites visitados permanecem</string>
@@ -352,7 +352,7 @@
     <string name="shortcut_disconnect">Desconectar</string>
     <string name="background_title">Funcionamento em segundo plano</string>
     <string name="background_allowed">O Android não colocará o ducker em suspensão, por isso a VPN continuará funcionando com a tela apagada.</string>
-    <string name="background_restricted">O Android pode colocar o ducker em suspensão, e a VPN será desconectada com a tela apagada.</string>
+    <string name="background_restricted">A VPN pode cair em segundo plano</string>
     <string name="background_allow">Permitir</string>
     <string name="background_autostart">Inicialização automática da MIUI</string>
     <string name="background_autostart_on">Inicialização automática da MIUI: ativada</string>
@@ -360,7 +360,6 @@
     <string name="background_battery">Bateria: sem restrições</string>
     <string name="background_app_settings">Abrir configurações do ducker</string>
     <string name="background_hint_action">Configurar</string>
-    <string name="background_vendor">Nos celulares %1$s, isso não basta: o sistema do fabricante fecha aplicativos em segundo plano.</string>
     <string name="background_hint">Os celulares %1$s fecham aplicativos em segundo plano, e a VPN pode cair. Leva um minuto para resolver.</string>
     <string name="vendor_xiaomi">Xiaomi, Redmi e POCO</string>
     <string name="vendor_huawei">Huawei e Honor</string>
@@ -594,6 +593,8 @@
     <string name="settings_connection_summary">VPN e aplicativos</string>
     <string name="settings_privacy_summary">Visibilidade, dispositivo, outros aplicativos</string>
     <string name="settings_help">Ajuda e diagnóstico</string>
+    <string name="settings_logs_short">O registro exportado mantém os sites visitados</string>
+    <string name="settings_probe_short">Latência e perda em 20 solicitações</string>
     <string name="settings_help_summary">Registros, teste de nós e suporte</string>
     <string name="settings_project">Apoiar o projeto</string>
     <string name="settings_project_summary">Cripto pelo CryptoBot ou para uma carteira</string>
@@ -627,6 +628,8 @@
     <string name="settings_privacy_device">Dispositivo</string>
     <string name="settings_connection_help">Início automático e VPN sempre ativa</string>
     <string name="settings_privacy_help">Como funcionam estas configurações</string>
+    <string name="settings_background_steps">Etapas adicionais</string>
+    <string name="settings_background_settings">Configurações do ducker</string>
     <string name="settings_background_allowed">Permitido</string>
     <string name="settings_always_on_short">Nas configurações do Android</string>
     <string name="settings_auto_restart_short">Após reiniciar ou atualizar o app</string>
@@ -635,7 +638,7 @@
     <string name="settings_disguise_short">O app pode fechar</string>
     <string name="settings_external_short">Outros apps podem ligar e desligar a VPN</string>
     <string name="settings_hwid_short">Enviado ao provedor</string>
-    <string name="settings_auto_update_title">Baixar atualizações automaticamente</string>
+    <string name="settings_auto_update_title">Baixar com antecedência</string>
     <string name="settings_connection_help_title">Inicialização da VPN</string>
     <string name="settings_auto_update_short">Somente por Wi-Fi</string>
     <string name="settings_category_interface">Interface</string>

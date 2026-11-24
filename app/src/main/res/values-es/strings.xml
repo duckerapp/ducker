@@ -113,7 +113,7 @@
     <string name="debug_log">Registro detallado</string>
     <string name="logs">Registro</string>
     <string name="dashboard">zashboard</string>
-    <string name="dashboard_hint">Panel web del núcleo: conexiones, reglas y DNS. Disponible mientras estás conectado</string>
+    <string name="dashboard_hint">Conexiones, reglas y DNS con la VPN activa</string>
     <string name="dashboard_needs_connection">Conéctate primero: el núcleo proporciona el panel</string>
     <string name="dashboard_failed">No se pudo abrir el panel</string>
     <string name="logs_hint">Registro del núcleo. Al exportarlo se ocultan direcciones de servidores, claves e identificadores; los sitios que visitaste permanecen</string>
@@ -351,7 +351,7 @@
     <string name="shortcut_disconnect">Desconectar</string>
     <string name="background_title">Funcionamiento en segundo plano</string>
     <string name="background_allowed">Android no pondrá ducker en reposo, así que la VPN seguirá funcionando con la pantalla apagada.</string>
-    <string name="background_restricted">Android puede poner ducker en reposo y la VPN se desconectará con la pantalla apagada.</string>
+    <string name="background_restricted">La VPN puede desconectarse en segundo plano</string>
     <string name="background_allow">Permitir</string>
     <string name="background_autostart">Inicio automático de MIUI</string>
     <string name="background_autostart_on">Inicio automático de MIUI: activado</string>
@@ -359,7 +359,6 @@
     <string name="background_battery">Batería: sin restricciones</string>
     <string name="background_app_settings">Abrir ajustes de ducker</string>
     <string name="background_hint_action">Configurar</string>
-    <string name="background_vendor">En los teléfonos %1$s no basta con eso: el sistema del fabricante cierra las aplicaciones en segundo plano.</string>
     <string name="background_hint">Los teléfonos %1$s cierran aplicaciones en segundo plano y la VPN puede desconectarse. Se soluciona en un minuto.</string>
     <string name="vendor_xiaomi">Xiaomi, Redmi y POCO</string>
     <string name="vendor_huawei">Huawei y Honor</string>
@@ -593,6 +592,8 @@
     <string name="settings_connection_summary">VPN y aplicaciones</string>
     <string name="settings_privacy_summary">Visibilidad, dispositivo, otras aplicaciones</string>
     <string name="settings_help">Ayuda y diagnóstico</string>
+    <string name="settings_logs_short">El registro exportado conserva los sitios visitados</string>
+    <string name="settings_probe_short">Latencia y pérdida en 20 solicitudes</string>
     <string name="settings_help_summary">Registros, prueba de nodos y soporte</string>
     <string name="settings_project">Apoyar el proyecto</string>
     <string name="settings_project_summary">Cripto con CryptoBot o a una cartera</string>
@@ -626,6 +627,8 @@
     <string name="settings_privacy_device">Dispositivo</string>
     <string name="settings_connection_help">Inicio automático y VPN siempre activa</string>
     <string name="settings_privacy_help">Cómo funcionan estos ajustes</string>
+    <string name="settings_background_steps">Pasos adicionales</string>
+    <string name="settings_background_settings">Ajustes de ducker</string>
     <string name="settings_background_allowed">Permitido</string>
     <string name="settings_always_on_short">En los ajustes de Android</string>
     <string name="settings_auto_restart_short">Tras reiniciar o actualizar la app</string>
@@ -634,7 +637,7 @@
     <string name="settings_disguise_short">La app puede cerrarse</string>
     <string name="settings_external_short">Otras apps pueden activar y desactivar la VPN</string>
     <string name="settings_hwid_short">Se envía al proveedor</string>
-    <string name="settings_auto_update_title">Descarga automática de actualizaciones</string>
+    <string name="settings_auto_update_title">Descargar de antemano</string>
     <string name="settings_connection_help_title">Inicio de la VPN</string>
     <string name="settings_auto_update_short">Solo por Wi-Fi</string>
     <string name="settings_category_interface">Interfaz</string>

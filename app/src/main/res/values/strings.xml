@@ -137,7 +137,7 @@
          пункт настроек называются одинаково. -->
     <string name="logs">Log</string>
     <string name="dashboard">zashboard</string>
-    <string name="dashboard_hint">Core web panel: connections, rules, DNS. Works while connected</string>
+    <string name="dashboard_hint">Connections, rules and DNS with the VPN on</string>
     <string name="dashboard_needs_connection">Connect first — the core serves the panel</string>
     <string name="dashboard_failed">Couldn\'t open the panel</string>
     <string name="logs_hint">Core log. Exports hide node addresses, keys and IDs; the sites you visited stay</string>
@@ -383,7 +383,7 @@
     <string name="shortcut_disconnect">Disconnect</string>
     <string name="background_title">Background work</string>
     <string name="background_allowed">Android won\'t put ducker to sleep, so the VPN keeps working with the screen off.</string>
-    <string name="background_restricted">Android may put ducker to sleep, and the VPN will drop when the screen is off.</string>
+    <string name="background_restricted">VPN may disconnect in the background</string>
     <string name="background_allow">Allow</string>
     <string name="background_autostart">MIUI autostart</string>
     <string name="background_autostart_on">MIUI autostart: on</string>
@@ -391,7 +391,6 @@
     <string name="background_battery">Battery: no restrictions</string>
     <string name="background_app_settings">Open ducker settings</string>
     <string name="background_hint_action">Set up</string>
-    <string name="background_vendor">On %1$s that\'s not enough: the phone\'s own system closes background apps.</string>
     <string name="background_hint">%1$s phones close background apps, so the VPN may drop. It takes a minute to fix.</string>
     <string name="vendor_xiaomi">Xiaomi, Redmi and POCO</string>
     <string name="vendor_huawei">Huawei and Honor</string>
@@ -624,6 +623,8 @@
     <string name="settings_connection_summary">VPN and apps</string>
     <string name="settings_privacy_summary">Visibility, device, other apps</string>
     <string name="settings_help">Help and diagnostics</string>
+    <string name="settings_logs_short">Exported logs retain visited sites</string>
+    <string name="settings_probe_short">Latency and loss over 20 requests</string>
     <string name="settings_help_summary">Logs, node checks, support</string>
     <string name="settings_project">Support the project</string>
     <string name="settings_project_summary">Crypto through CryptoBot or to a wallet</string>
@@ -657,6 +658,8 @@
     <string name="settings_privacy_device">Device</string>
     <string name="settings_connection_help">Autostart and Always-on VPN</string>
     <string name="settings_privacy_help">How these settings work</string>
+    <string name="settings_background_steps">Additional steps</string>
+    <string name="settings_background_settings">ducker settings</string>
     <string name="settings_background_allowed">Allowed</string>
     <string name="settings_always_on_short">In Android settings</string>
     <string name="settings_auto_restart_short">After a reboot or app update</string>
@@ -665,7 +668,7 @@
     <string name="settings_disguise_short">The app may close</string>
     <string name="settings_external_short">Other apps can start and stop the VPN</string>
     <string name="settings_hwid_short">Shared with the provider</string>
-    <string name="settings_auto_update_title">Download updates automatically</string>
+    <string name="settings_auto_update_title">Download in advance</string>
     <string name="settings_connection_help_title">VPN startup</string>
     <string name="settings_auto_update_short">Wi-Fi only</string>
     <string name="settings_category_interface">Interface</string>

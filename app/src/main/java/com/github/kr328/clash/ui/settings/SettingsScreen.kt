@@ -103,6 +103,11 @@ import com.github.kr328.clash.ui.components.glassPanesOn
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.runtime.getValue
@@ -275,16 +280,16 @@ fun SettingsScreen(
     val pageContent: @Composable (SettingsPage, () -> Unit) -> Unit = { page, back ->
         pages.SaveableStateProvider(page.name) {
             val list = rememberLazyListState()
-            val compact = !tv && (page == SettingsPage.Root || page == SettingsPage.Connection || page == SettingsPage.Privacy)
+            val compact = !tv
             TvLazyColumn(
                 state = list,
                 overscrollEffect = null,
                 modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp)
                     .then(if (LocalTv.current) Modifier.focusRestorer() else Modifier),
-                verticalArrangement = Arrangement.spacedBy(if (compact) 16.dp else 12.dp),
+                verticalArrangement = Arrangement.spacedBy(if (compact) SettingsGroupGap else 12.dp),
                 contentPadding = PaddingValues(
                     top = (if (compact) 10.dp else 16.dp) + tvEdge(),
-                    bottom = 16.dp + tvEdge() + navigationRoom(),
+                    bottom = SettingsGroupGap + tvEdge() + navigationRoom(),
                 ),
             ) {
                 item(key = "header") {
@@ -393,42 +398,44 @@ fun SettingsScreen(
                         }
                     }
                     SettingsPage.Appearance -> {
-                        // Ducker Glass is dark only: no theme to choose while it is on.
-                        if (tv || !glassSupported || state.style != SettingsStore.STYLE_GLASS) item {
-                            ChipsCard(
-                                title = stringResource(R.string.theme),
-                                icon = Symbols.DarkMode,
-                                options = listOf(
-                                    SettingsStore.THEME_SYSTEM to stringResource(R.string.theme_system),
-                                    SettingsStore.THEME_LIGHT to stringResource(R.string.theme_light),
-                                    SettingsStore.THEME_DARK to stringResource(R.string.theme_dark),
-                                ),
-                                selected = state.theme,
-                                onSelect = onTheme,
-                            )
-                        }
-
-                        // Ducker Glass lies on its pictures: pure black has nothing to do there.
-                        if (tv || !glassSupported || state.style != SettingsStore.STYLE_GLASS) item {
-                            SwitchRow(
-                                title = stringResource(R.string.oled),
-                                subtitle = stringResource(R.string.oled_hint),
-                                checked = state.oled,
-                                onChange = onOled,
-                                icon = Symbols.Contrast,
-                            )
-                        }
-
-                        // The wallpaper gives its colour from Android 8.1.
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) item {
-                            SwitchRow(
-                                title = stringResource(R.string.dynamic_color),
-                                subtitle = stringResource(R.string.dynamic_color_hint),
-                                checked = state.dynamicColor,
-                                onChange = onDynamicColor,
-                                icon = Symbols.Palette,
-                            )
-                        }
+                        // Ducker Glass is dark only and does not offer pure black.
+                        val themeChoices = tv || !glassSupported || state.style != SettingsStore.STYLE_GLASS
+                        settingsRows("appearance-theme", compact = compact, rows = buildList {
+                            if (themeChoices) {
+                                add {
+                                    ChipsCard(
+                                        title = stringResource(R.string.theme),
+                                        icon = Symbols.DarkMode,
+                                        options = listOf(
+                                            SettingsStore.THEME_SYSTEM to stringResource(R.string.theme_system),
+                                            SettingsStore.THEME_LIGHT to stringResource(R.string.theme_light),
+                                            SettingsStore.THEME_DARK to stringResource(R.string.theme_dark),
+                                        ),
+                                        selected = state.theme,
+                                        onSelect = onTheme,
+                                        compact = compact,
+                                        grouped = compact,
+                                    )
+                                }
+                                add {
+                                    SwitchRow(
+                                        title = stringResource(R.string.oled),
+                                        subtitle = stringResource(R.string.oled_hint),
+                                        checked = state.oled,
+                                        onChange = onOled, icon = Symbols.Contrast, compact = compact,
+                                    )
+                                }
+                            }
+                            // The wallpaper gives its colour from Android 8.1.
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) add {
+                                SwitchRow(
+                                    title = stringResource(R.string.dynamic_color),
+                                    subtitle = stringResource(R.string.dynamic_color_hint),
+                                    checked = state.dynamicColor,
+                                    onChange = onDynamicColor, icon = Symbols.Palette, compact = compact,
+                                )
+                            }
+                        })
 
                         // Only where the glass is drawn: phones with Android 13+.
                         if (!tv && glassSupported) {
@@ -443,6 +450,7 @@ fun SettingsScreen(
                                     selected = state.style,
                                     onSelect = onStyle,
                                     badges = mapOf(SettingsStore.STYLE_GLASS to "BETA"),
+                                    compact = true,
                                 )
                             }
                         }
@@ -455,12 +463,15 @@ fun SettingsScreen(
                             // The own picture is not offered for now (the owner, 23.11), see SettingsStore.glassBackdrop.
                             if (state.glassBackdrop == SettingsStore.BACKDROP_IMAGE) {
                                 item {
-                                    LinkRow(
-                                        title = stringResource(R.string.glass_image_pick),
-                                        subtitle = stringResource(R.string.glass_image_pick_hint),
-                                        onClick = onPickGlassImage,
-                                        icon = Symbols.PhotoLibrary,
-                                    )
+                                    SettingsSurface(compact = true) {
+                                        SettingsNavigationRow(
+                                            title = stringResource(R.string.glass_image_pick),
+                                            subtitle = stringResource(R.string.glass_image_pick_hint),
+                                            onClick = onPickGlassImage,
+                                            icon = Symbols.PhotoLibrary,
+                                            compact = true,
+                                        )
+                                    }
                                 }
                             }
 
@@ -474,12 +485,13 @@ fun SettingsScreen(
                                     },
                                     selected = state.glassBlurBoost.toString(),
                                     onSelect = { onGlassBlurBoost(it.toInt()) },
+                                    compact = true,
                                 )
                             }
                         }
                     }
                     SettingsPage.Connection -> {
-                        settingsRows("connection-vpn", compact = compact, rows = buildList {
+                        settingsRows("connection-vpn", compact = compact, literalTitle = "VPN", rows = buildList {
                             // TV has no background permission prompt (F-346).
                             if (!tv) add {
                                 BackgroundRow(state.backgroundAllowed, state.autostart, onAllowBackground, onVendor)
@@ -668,58 +680,50 @@ fun SettingsScreen(
                         }
                     }
                     SettingsPage.Help -> {
-                        // «Подробный журнал» — переключателем на самом экране журнала, второй здесь не нужен.
-                        item {
-                            LinkRow(
-                                title = stringResource(R.string.logs),
-                                subtitle = stringResource(R.string.logs_hint),
-                                onClick = onLogs,
-                                icon = Symbols.BugReport,
-                            )
-                        }
-
-                        item {
-                            LinkRow(
-                                title = stringResource(R.string.probe),
-                                subtitle = stringResource(R.string.probe_hint),
-                                onClick = onProbe,
-                                icon = Symbols.Speed,
-                            )
-                        }
-
-                        // Not on a TV: a web panel is heavy for a TV's memory, hard to drive with a remote, and Back did
-                        // not lead out of it.
-                        if (!tv) item {
-                            LinkRow(
-                                title = stringResource(R.string.dashboard),
-                                subtitle = stringResource(R.string.dashboard_hint),
-                                onClick = onDashboard,
-                                icon = Symbols.Monitoring,
-                            )
-                        }
-                        item {
+                        settingsRows("help-diagnostics", compact = compact, rows = buildList {
+                            add {
+                                LinkRow(
+                                    title = stringResource(R.string.logs),
+                                    subtitle = stringResource(if (compact) R.string.settings_logs_short else R.string.logs_hint),
+                                    onClick = onLogs, icon = Symbols.BugReport, compact = compact,
+                                )
+                            }
+                            add {
+                                LinkRow(
+                                    title = stringResource(R.string.probe),
+                                    subtitle = stringResource(if (compact) R.string.settings_probe_short else R.string.probe_hint),
+                                    onClick = onProbe, icon = Symbols.Speed, compact = compact,
+                                )
+                            }
+                            // The web panel is designed for touch and does not handle remote Back on TV.
+                            if (!tv) add {
+                                SettingsNavigationRow(
+                                    title = stringResource(R.string.dashboard),
+                                    subtitle = stringResource(R.string.dashboard_hint),
+                                    onClick = onDashboard, icon = Symbols.Monitoring, compact = true,
+                                )
+                            }
+                        })
+                        settingsRows("help-support", R.string.support, compact, rows = listOf({
                             LinkRow(
                                 title = stringResource(R.string.community),
                                 subtitle = stringResource(R.string.community_hint),
-                                onClick = { onLink(COMMUNITY) },
-                                icon = Symbols.Forum,
+                                onClick = { onLink(COMMUNITY) }, icon = Symbols.Forum,
+                                compact = compact, destinationIcon = Symbols.OpenInNew,
                             )
-                        }
-
-                        item {
+                        }, {
                             LinkRow(
                                 title = stringResource(R.string.mail),
-                                subtitle = MAIL,
-                                onClick = onMail,
-                                icon = Symbols.Email,
+                                subtitle = MAIL, onClick = onMail, icon = Symbols.Email,
+                                compact = compact, destinationIcon = Symbols.OpenInNew,
                             )
-                        }
+                        }))
                     }
                     SettingsPage.Project -> {
-                        projectSupportItems(onLink = onLink, onMail = onMail)
+                        projectSupportItems(compact = compact, onLink = onLink, onMail = onMail)
                     }
                     SettingsPage.About -> {
-                        aboutItems(state.appVersion, state.coreVersion, onLink = onLink, onSupport = { supportOpen = true })
+                        aboutItems(state.appVersion, state.coreVersion, compact = compact, onLink = onLink, onSupport = { supportOpen = true })
                     }
                 }
             }
@@ -838,7 +842,7 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
                     trailing = { SettingsChevron(if (shown) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown) },
                 )
                 if (shown) {
-                    SelectionContainer(Modifier.padding(start = SettingsRowInset + SettingsIconSize + SettingsIconGap,
+                    SelectionContainer(Modifier.padding(start = SettingsLabelInset,
                         end = SettingsRowInset, bottom = 12.dp)) {
                         Text(hwid, style = MaterialTheme.typography.bodyMedium)
                     }
@@ -880,7 +884,7 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
                 text = stringResource(R.string.hwid_disabled_warning),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
-                modifier = if (compact) Modifier.padding(start = SettingsRowInset + SettingsIconSize + SettingsIconGap,
+                modifier = if (compact) Modifier.padding(start = SettingsLabelInset,
                     end = SettingsRowInset, bottom = 12.dp) else Modifier,
             )
         }
@@ -898,75 +902,67 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
     }
 }
 
-/**
- * Работа в фоне (D-106, D-107). Без исключения из экономии батареи Android усыпляет службу,
- * и VPN отваливается при выключенном экране. Оболочки Xiaomi, Huawei, vivo, OPPO, Samsung,
- * Transsion сверх того закрывают приложения сами (F-116, F-121) — им нужны шаги в их
- * собственных настройках, и показываем только шаги своей оболочки.
- *
- * Когда Android уже разрешил, хватает двух строк с галочкой (этап 13). Шаги оболочки
- * приложение проверить не может, поэтому они не пропадают, а раскрываются касанием по карточке.
- */
+/** Android permission and the device maker's own instructions are independent (D-106, D-107). */
 @Composable
 private fun BackgroundRow(allowed: Boolean, autostart: Boolean?, onAllow: () -> Unit, onVendor: (Shortcut?) -> Unit) {
     val vendor = Vendor.current
     var stepsOpen by rememberSaveable { mutableStateOf(false) }
-    val foldable = allowed && vendor != null
-    val fold = if (foldable) {
-        Modifier.clickable(
-            interactionSource = null,
-            indication = LocalIndication.current,
-            onClickLabel = stringResource(R.string.background_vendor_steps, stringResource(vendor.names)),
-            role = Role.Button,
-        ) { stepsOpen = !stepsOpen }
-    } else Modifier
-
     SettingsRow(
         title = stringResource(R.string.background_title),
         subtitle = if (allowed) null else stringResource(R.string.background_restricted),
         value = if (allowed) stringResource(R.string.settings_background_allowed) else null,
         icon = Symbols.BatteryChargingFull,
-        modifier = fold,
         compact = true,
-        trailing = when {
-            foldable -> ({ SettingsChevron(if (stepsOpen) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown) })
-            allowed -> ({ SettingsChevron(Symbols.Check) })
-            else -> null
-        },
+        trailing = if (allowed) ({ SettingsChevron(Symbols.Check) }) else null,
     )
-    if (!allowed || vendor != null) {
-        Column(Modifier.padding(horizontal = 14.dp)) {
-            if (!allowed) {
-                Pill(
-                    text = stringResource(R.string.background_allow),
-                    onClick = onAllow,
-                    modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth().heightIn(min = 48.dp),
-                    selected = true,
+    if (!allowed) {
+        SettingsNavigationDivider(compact = true)
+        SettingsNavigationRow(
+            title = stringResource(R.string.background_allow),
+            icon = null, onClick = onAllow, compact = true, destinationIcon = Symbols.OpenInNew,
+        )
+    }
+    if (vendor != null) {
+        SettingsNavigationDivider(compact = true)
+        SettingsRow(
+            title = stringResource(R.string.settings_background_steps),
+            compact = true,
+            modifier = Modifier.clickable(
+                role = Role.Button,
+                onClickLabel = stringResource(R.string.background_vendor_steps, stringResource(vendor.names)),
+            ) { stepsOpen = !stepsOpen },
+            trailing = { SettingsChevron(if (stepsOpen) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown) },
+        )
+        SettingsDisclosure(visible = stepsOpen) {
+            Column(Modifier.fillMaxWidth()) {
+                Text(
+                    stringResource(vendor.steps),
+                    modifier = Modifier.padding(start = SettingsLabelInset, end = SettingsRowInset, bottom = SettingsBodyInset),
+                    style = settingsSupportingStyle(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            }
-
-            if (vendor != null) {
-                AnimatedVisibility(visible = !foldable || stepsOpen) {
-                    Column(Modifier.padding(top = if (allowed) 2.dp else 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            stringResource(R.string.background_vendor, stringResource(vendor.names)) +
-                                " " + stringResource(vendor.steps),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        vendor.shortcuts.ifEmpty { listOf(null) }.forEach { shortcut ->
-                            Pill(
-                                text = stringResource(shortcut.labelWith(autostart)),
-                                onClick = { onVendor(shortcut) },
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                                onCard = true,
-                            )
-                        }
-                    }
+                vendor.shortcuts.ifEmpty { listOf(null) }.forEach { shortcut ->
+                    SettingsNavigationDivider(compact = true)
+                    SettingsNavigationRow(
+                        title = stringResource(if (shortcut == null) R.string.settings_background_settings
+                            else shortcut.labelWith(autostart)),
+                        icon = null, onClick = { onVendor(shortcut) }, compact = true, destinationIcon = Symbols.OpenInNew,
+                    )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun SettingsDisclosure(visible: Boolean, content: @Composable () -> Unit) {
+    // Keep the full width throughout the transition, clipping only the height below the header.
+    AnimatedVisibility(
+        visible = visible,
+        modifier = Modifier.fillMaxWidth(),
+        enter = expandVertically(tween(200, easing = LinearOutSlowInEasing), expandFrom = Alignment.Top),
+        exit = shrinkVertically(tween(160, easing = FastOutSlowInEasing), shrinkTowards = Alignment.Top),
+    ) { content() }
 }
 
 /**
@@ -982,23 +978,23 @@ private fun ExpandableCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val press = rememberGlassPress()
     if (compact) {
         SettingsRow(
             title = title, subtitle = subtitle, icon = icon, compact = true,
             modifier = Modifier.clickable(role = Role.Button) { expanded = !expanded },
             trailing = { SettingsChevron(if (expanded) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown) },
         )
-        AnimatedVisibility(visible = expanded) {
+        SettingsDisclosure(visible = expanded) {
             Column(
-                modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = SettingsRowInset, end = SettingsRowInset, bottom = SettingsBodyInset),
+                verticalArrangement = Arrangement.spacedBy(SettingsBodyInset),
                 content = content,
             )
         }
         return
     }
 
+    val press = rememberGlassPress()
     Card(modifier = Modifier.fillMaxWidth(), resizing = true, press = press) {
         Column {
             Row(
@@ -1048,22 +1044,23 @@ private fun InnerSwitch(
     onChange: (Boolean) -> Unit,
 ) {
     val press = remember { MutableInteractionSource() }
+    val compact = !LocalTv.current
     Row(
-        modifier = Modifier.fillMaxWidth().then(if (LocalTv.current) Modifier else Modifier.heightIn(min = 48.dp))
+        modifier = Modifier.fillMaxWidth().then(if (compact) Modifier.heightIn(min = SettingsMinTouch) else Modifier)
             .toggleable(value = checked, interactionSource = press, indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyMedium)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(if (compact) SettingsTextGap else 0.dp)) {
+            Text(title, style = if (compact) settingsTitleStyle() else MaterialTheme.typography.bodyMedium)
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                style = if (compact) settingsSupportingStyle() else MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
-        DuckerSwitch(checked = checked, onDrag = onChange, pressed = press)
+        SettingsSwitch(checked, onChange, press, compact)
     }
 }
 
@@ -1078,14 +1075,26 @@ private fun ChipsCard(
     onSelect: (String) -> Unit,
     /** A small mark beside a choice's label, by its value: «BETA» on Ducker Glass. */
     badges: Map<String, String> = emptyMap(),
+    compact: Boolean = false,
+    grouped: Boolean = false,
 ) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SettingsIcon(icon)
-                Text(title, style = MaterialTheme.typography.titleSmall.syllables())
+    val content: @Composable () -> Unit = {
+        Column(
+            if (compact) Modifier else Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 0.dp else 12.dp),
+        ) {
+            if (compact) {
+                SettingsRow(title, compact = true, icon = icon)
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SettingsIcon(icon)
+                    Text(title, style = MaterialTheme.typography.titleSmall.syllables())
+                }
             }
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
+            BoxWithConstraints(Modifier.fillMaxWidth().then(
+                if (compact) Modifier.padding(start = SettingsRowInset, end = SettingsRowInset, bottom = SettingsBodyInset)
+                else Modifier,
+            )) {
                 val density = LocalDensity.current
                 val labelStyle = MaterialTheme.typography.labelLarge
                 val measurer = rememberTextMeasurer()
@@ -1113,7 +1122,7 @@ private fun ChipsCard(
                         val press = rememberGlassPress()
                         val shape = MaterialTheme.shapes.extraLarge
                         Box(
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                            modifier = Modifier.weight(1f).heightIn(min = SettingsMinTouch)
                                 .then(
                                     if (press != null) Modifier.glassPress(press, own = true)
                                         .glass(LocalGlassBackdrop.current, GlassMaterial.Control, shape, press = press)
@@ -1129,8 +1138,12 @@ private fun ChipsCard(
                             val badge = badges[value]
                             if (badge == null) {
                                 Text(label, modifier = Modifier.fillMaxWidth(), style = labelStyle, textAlign = TextAlign.Center, color = ink)
-                            } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(label, style = labelStyle, color = ink, maxLines = 1)
+                            } else FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                                itemVerticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(label, style = labelStyle, color = ink)
                                 Text(
                                     badge,
                                     style = badgeStyle,
@@ -1146,6 +1159,7 @@ private fun ChipsCard(
             }
         }
     }
+    if (grouped) content() else SettingsSurface(compact) { content() }
 }
 
 /**
@@ -1160,17 +1174,12 @@ private fun BackdropCard(selected: String, onSelect: (String) -> Unit) {
     )
     val scheme = MaterialTheme.colorScheme
 
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SettingsIcon(Symbols.Wallpaper)
-                Text(stringResource(R.string.glass_backdrop), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Text(
-                    options.firstOrNull { it.first == selected }?.second.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = scheme.onSurfaceVariant,
-                )
-            }
+    SettingsSurface(compact = true) {
+        SettingsRow(
+            stringResource(R.string.glass_backdrop), compact = true, icon = Symbols.Wallpaper,
+            value = options.firstOrNull { it.first == selected }?.second,
+        )
+        Column(Modifier.padding(start = SettingsRowInset, end = SettingsRowInset, bottom = SettingsBodyInset)) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -1265,9 +1274,16 @@ private fun SwitchRow(
 }
 
 @Composable
-private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit, icon: ImageVector, compact: Boolean = false) {
+private fun LinkRow(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    icon: ImageVector,
+    compact: Boolean = false,
+    destinationIcon: ImageVector = Symbols.KeyboardArrowRight,
+) {
     if (compact) {
-        SettingsNavigationRow(title, icon, onClick, subtitle = subtitle, compact = true)
+        SettingsNavigationRow(title, icon, onClick, subtitle = subtitle, compact = true, destinationIcon = destinationIcon)
         return
     }
 
@@ -1340,19 +1356,33 @@ private fun SettingsIcon(icon: ImageVector) {
 }
 
 private val SettingsGroupShape = RoundedCornerShape(16.dp)
-private val SettingsRowInset = 14.dp
-private val SettingsIconSize = 19.dp
+internal val SettingsGroupGap = 16.dp
+internal val SettingsRowInset = 14.dp
+internal val SettingsBodyInset = 12.dp
+internal val SettingsTextGap = 2.dp
+internal val SettingsMinTouch = 48.dp
+internal val SettingsIconSize = 19.dp
 private val SettingsIconGap = 11.dp
+private val SettingsLabelInset = SettingsRowInset + SettingsIconSize + SettingsIconGap
+
+@Composable
+internal fun settingsTitleStyle() =
+    MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, lineHeight = 21.sp).syllables()
+
+@Composable
+internal fun settingsSupportingStyle() =
+    MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 17.sp)
 
 private fun LazyListScope.settingsRows(
     key: String,
     @StringRes title: Int? = null,
     compact: Boolean,
+    literalTitle: String? = null,
     rows: List<@Composable () -> Unit>,
 ) {
     if (compact) {
         item(key = key) {
-            SettingsNavigationGroup(title?.let { stringResource(it) } ?: "VPN", compact = true) {
+            SettingsNavigationGroup(title?.let { stringResource(it) } ?: literalTitle, compact = true) {
                 rows.forEachIndexed { index, row ->
                     if (index > 0) SettingsNavigationDivider(compact = true)
                     row()
@@ -1365,45 +1395,53 @@ private fun LazyListScope.settingsRows(
 }
 
 @Composable
+internal fun SettingsSectionHeading(title: String, compact: Boolean) {
+    Text(
+        title,
+        modifier = Modifier.padding(start = if (compact) SettingsRowInset else 4.dp, top = if (compact) 2.dp else 4.dp)
+            .semantics { heading() },
+        style = if (compact) settingsSupportingStyle().copy(fontWeight = FontWeight.Medium) else MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
 internal fun SettingsNavigationGroup(
-    title: String,
+    title: String?,
     compact: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val spacing = if (compact) 6.dp else 8.dp
-    val shape = if (compact) SettingsGroupShape else MaterialTheme.shapes.large
-    Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
-        Text(
-            title,
-            modifier = Modifier.padding(start = if (compact) 12.dp else 4.dp, top = if (compact) 2.dp else 4.dp)
-                .semantics { heading() },
-            style = if (compact) MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium)
-            else MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (compact && !glassPanesOn()) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(), shape = shape, color = MaterialTheme.colorScheme.surface,
-                border = airEdge(),
-            ) {
-                Column(content = content)
-            }
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = shape,
-                surfaceModifier = Modifier.clip(shape),
-                content = content,
-            )
+    if (title == null) {
+        SettingsSurface(compact, content)
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 8.dp)) {
+            SettingsSectionHeading(title, compact)
+            SettingsSurface(compact, content)
         }
     }
 }
 
 @Composable
-internal fun SettingsNavigationDivider(compact: Boolean = false) {
+internal fun SettingsSurface(compact: Boolean, content: @Composable ColumnScope.() -> Unit) {
+    val shape = if (compact) SettingsGroupShape else MaterialTheme.shapes.large
+    if (compact && !glassPanesOn()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(), shape = shape, color = MaterialTheme.colorScheme.surface,
+            border = airEdge(),
+        ) { Column(content = content) }
+    } else {
+        Card(
+            modifier = Modifier.fillMaxWidth(), shape = shape,
+            surfaceModifier = Modifier.clip(shape), content = content,
+        )
+    }
+}
+
+@Composable
+internal fun SettingsNavigationDivider(compact: Boolean = false, reserveIcon: Boolean = true) {
+    val inset = if (compact) SettingsRowInset else 16.dp
     HorizontalDivider(
-        Modifier.padding(start = if (compact) SettingsRowInset + SettingsIconSize + SettingsIconGap else 16.dp,
-            end = if (compact) SettingsRowInset else 16.dp),
+        Modifier.padding(start = if (compact && reserveIcon) SettingsLabelInset else inset, end = inset),
         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (compact) 0.75f else 0.45f),
     )
 }
@@ -1414,9 +1452,9 @@ private fun SettingsChevron(icon: ImageVector) {
 }
 
 @Composable
-private fun SettingsNavigationRow(
+internal fun SettingsNavigationRow(
     title: String,
-    icon: ImageVector,
+    icon: ImageVector?,
     onClick: () -> Unit,
     subtitle: String? = null,
     value: String? = null,
@@ -1424,6 +1462,7 @@ private fun SettingsNavigationRow(
     /** An action runs in place and only shows a progress indicator while it runs. */
     action: Boolean = false,
     compact: Boolean = false,
+    destinationIcon: ImageVector = Symbols.KeyboardArrowRight,
 ) {
     SettingsRow(
         title = title, subtitle = subtitle, value = value, icon = icon, compact = compact,
@@ -1432,8 +1471,9 @@ private fun SettingsNavigationRow(
             busy -> ({ CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) })
             // Reserve the progress width so that the text doesn't reflow when it appears.
             action -> ({ Spacer(Modifier.size(20.dp)) })
-            compact -> ({ SettingsChevron(Symbols.KeyboardArrowRight) })
-            else -> ({ Icon(Symbols.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp)) })
+            compact -> ({ SettingsChevron(destinationIcon) })
+            else -> ({ Icon(destinationIcon, contentDescription = null, modifier = Modifier.size(20.dp),
+                tint = if (destinationIcon == Symbols.OpenInNew) MaterialTheme.colorScheme.onSurfaceVariant else androidx.compose.material3.LocalContentColor.current) })
         },
     )
 }
@@ -1446,28 +1486,29 @@ private fun SettingsRow(
     subtitle: String? = null,
     value: String? = null,
     icon: ImageVector? = null,
+    reserveIcon: Boolean = true,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val typography = MaterialTheme.typography
-    val titleStyle = if (compact) typography.bodyLarge.copy(fontWeight = FontWeight.Medium, lineHeight = 21.sp)
+    val titleStyle = if (compact) settingsTitleStyle()
     else typography.bodyLarge.syllables()
-    val valueStyle = if (compact) typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 17.sp) else typography.bodyMedium
+    val valueStyle = if (compact) settingsSupportingStyle() else typography.bodyMedium
     val supportingStyle = if (compact) valueStyle else typography.bodySmall
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
     val inset = if (compact) SettingsRowInset else 16.dp
     Row(
         Modifier.fillMaxWidth().heightIn(min = if (compact) 50.dp else 61.dp).then(modifier)
-            .padding(horizontal = inset, vertical = if (compact) 8.dp else 10.dp),
+            .padding(horizontal = inset, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (compact) SettingsIconGap else 12.dp),
     ) {
         if (compact) {
-            if (icon == null) Spacer(Modifier.width(SettingsIconSize))
-            else Icon(icon, contentDescription = null, modifier = Modifier.size(SettingsIconSize), tint = secondary)
+            if (icon != null) Icon(icon, contentDescription = null, modifier = Modifier.size(SettingsIconSize), tint = secondary)
+            else if (reserveIcon) Spacer(Modifier.width(SettingsIconSize))
         } else if (icon != null) {
             SettingsIcon(icon)
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 3.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(if (compact) SettingsTextGap else 3.dp)) {
             if (value == null) {
                 Text(title, style = titleStyle)
             } else {
@@ -1483,7 +1524,7 @@ private fun SettingsRow(
                             Text(value, style = valueStyle, color = secondary)
                         }
                     } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(SettingsTextGap)) {
                             Text(title, style = titleStyle)
                             Text(value, style = valueStyle, color = secondary)
                         }
@@ -1510,27 +1551,30 @@ private fun SettingsSwitchRow(
         title = title, subtitle = subtitle, icon = icon, compact = compact,
         modifier = Modifier.toggleable(value = checked, interactionSource = press,
             indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange),
-        trailing = {
-            if (compact && !glassPanesOn()) {
-                // Only the track is scaled. The full row remains the switch's touch and accessibility target.
-                Box(Modifier.width(44.dp), contentAlignment = Alignment.Center) {
-                    DuckerSwitch(checked, modifier = Modifier.requiredWidth(52.dp).graphicsLayer {
-                        scaleX = 0.82f
-                        scaleY = 0.82f
-                    })
-                }
-            } else {
-                DuckerSwitch(checked = checked, onDrag = onChange, pressed = press)
-            }
-        },
+        trailing = { SettingsSwitch(checked, onChange, press, compact) },
     )
+}
+
+@Composable
+private fun SettingsSwitch(checked: Boolean, onChange: (Boolean) -> Unit, press: MutableInteractionSource, compact: Boolean) {
+    if (compact && !glassPanesOn()) {
+        // The row handles input. Scale just the visible track.
+        Box(Modifier.width(44.dp), contentAlignment = Alignment.Center) {
+            DuckerSwitch(checked, modifier = Modifier.requiredWidth(52.dp).graphicsLayer {
+                scaleX = 0.82f
+                scaleY = 0.82f
+            })
+        }
+    } else {
+        DuckerSwitch(checked = checked, onDrag = onChange, pressed = press)
+    }
 }
 
 @Composable
 private fun SettingsDetailsLink(@StringRes title: Int, onClick: () -> Unit) {
     Box(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(MaterialTheme.shapes.small)
-            .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().heightIn(min = SettingsMinTouch).clip(MaterialTheme.shapes.small)
+            .clickable(role = Role.Button, onClick = onClick).padding(horizontal = SettingsRowInset, vertical = 8.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
@@ -1548,7 +1592,7 @@ private fun SettingsDetailsSheet(page: SettingsPage, open: Boolean, onDismiss: (
         title = stringResource(if (connection) R.string.settings_connection_help_title else R.string.settings_privacy_help),
         busy = false, onDismiss = onDismiss, onClosed = onClosed,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(SettingsGroupGap)) {
             if (connection) {
                 SettingsExplanation(R.string.auto_restart, R.string.auto_restart_hint)
                 SettingsExplanation(R.string.always_on, R.string.always_on_hint)
@@ -1564,8 +1608,8 @@ private fun SettingsDetailsSheet(page: SettingsPage, open: Boolean, onDismiss: (
 
 @Composable
 private fun SettingsExplanation(@StringRes title: Int, @StringRes description: Int) {
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Text(stringResource(title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+    Column(verticalArrangement = Arrangement.spacedBy(SettingsTextGap)) {
+        Text(stringResource(title), style = settingsTitleStyle(), modifier = Modifier.semantics { heading() })
         Text(stringResource(description), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
@@ -1591,28 +1635,30 @@ private fun SettingsLanguageSheet(
     onDismiss: () -> Unit,
     onClosed: () -> Unit,
 ) {
+    val compact = !LocalTv.current
     val systemLocale = android.content.res.Resources.getSystem().configuration.locales[0] ?: Locale.getDefault()
     val systemName = systemLocale.getDisplayLanguage(systemLocale)
     DuckerSheet(
         open = open, title = stringResource(R.string.language), busy = false,
         heightFraction = 0.78f, onDismiss = onDismiss, onClosed = onClosed,
     ) {
-        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(SettingsBodyInset)) {
+            SettingsSurface(compact) {
                 LanguageChoice(
                     label = stringResource(R.string.settings_language_system),
                     hint = stringResource(R.string.settings_system_language, systemName),
-                    selected = selected.isEmpty(), onSelect = { onSelect("") },
+                    selected = selected.isEmpty(), compact = compact, onSelect = { onSelect("") },
                 )
             }
-            Card(Modifier.fillMaxWidth()) {
-                options.filter { it.first.isNotEmpty() }.forEach { (value, label) ->
-                    LanguageChoice(label, selected = selected == value, onSelect = { onSelect(value) })
+            SettingsSurface(compact) {
+                options.filter { it.first.isNotEmpty() }.forEachIndexed { index, (value, label) ->
+                    if (compact && index > 0) SettingsNavigationDivider(compact = true, reserveIcon = false)
+                    LanguageChoice(label, selected = selected == value, compact = compact, onSelect = { onSelect(value) })
                 }
             }
             Text(
                 stringResource(R.string.settings_language_immediate),
-                modifier = Modifier.padding(horizontal = 4.dp),
+                modifier = Modifier.padding(horizontal = if (compact) SettingsRowInset else 4.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1621,7 +1667,17 @@ private fun SettingsLanguageSheet(
 }
 
 @Composable
-private fun LanguageChoice(label: String, selected: Boolean, onSelect: () -> Unit, hint: String? = null) {
+private fun LanguageChoice(label: String, selected: Boolean, compact: Boolean, onSelect: () -> Unit, hint: String? = null) {
+    if (compact) {
+        SettingsRow(
+            title = label, subtitle = hint, compact = true, reserveIcon = false,
+            modifier = Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
+            trailing = { if (selected) SettingsChevron(Symbols.Check) else Spacer(Modifier.size(16.dp)) },
+        )
+        return
+    }
+
+
     Row(
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
             .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)

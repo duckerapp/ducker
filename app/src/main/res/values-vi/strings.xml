@@ -113,7 +113,7 @@
     <string name="debug_log">Nhật ký chi tiết</string>
     <string name="logs">Nhật ký</string>
     <string name="dashboard">zashboard</string>
-    <string name="dashboard_hint">Bảng điều khiển web của lõi: kết nối, quy tắc, DNS. Hoạt động khi đã kết nối</string>
+    <string name="dashboard_hint">Kết nối, quy tắc và DNS khi bật VPN</string>
     <string name="dashboard_needs_connection">Hãy kết nối trước, bảng điều khiển do lõi cung cấp</string>
     <string name="dashboard_failed">Không thể mở bảng điều khiển</string>
     <string name="logs_hint">Nhật ký của lõi. Khi xuất, địa chỉ máy chủ, khóa và ID được ẩn; các trang web bạn đã truy cập vẫn được giữ lại</string>
@@ -347,7 +347,7 @@
     <string name="shortcut_disconnect">Ngắt kết nối</string>
     <string name="background_title">Hoạt động nền</string>
     <string name="background_allowed">Android không đưa ducker vào chế độ ngủ nên VPN vẫn hoạt động khi tắt màn hình.</string>
-    <string name="background_restricted">Android có thể đưa ducker vào chế độ ngủ, khiến VPN ngắt kết nối khi tắt màn hình.</string>
+    <string name="background_restricted">VPN có thể ngắt khi chạy nền</string>
     <string name="background_allow">Cho phép</string>
     <string name="background_autostart">Tự khởi động MIUI</string>
     <string name="background_autostart_on">Tự khởi động MIUI: bật</string>
@@ -355,7 +355,6 @@
     <string name="background_battery">Pin: không hạn chế</string>
     <string name="background_app_settings">Mở cài đặt ứng dụng ducker</string>
     <string name="background_hint_action">Thiết lập</string>
-    <string name="background_vendor">Trên %1$s, như vậy vẫn chưa đủ: hệ thống riêng của điện thoại vẫn đóng ứng dụng nền.</string>
     <string name="background_hint">Điện thoại %1$s đóng ứng dụng nền nên VPN có thể bị ngắt. Việc thiết lập chỉ mất khoảng một phút.</string>
     <string name="vendor_xiaomi">Xiaomi, Redmi và POCO</string>
     <string name="vendor_huawei">Huawei và Honor</string>
@@ -583,6 +582,8 @@
     <string name="settings_connection_summary">VPN và ứng dụng</string>
     <string name="settings_privacy_summary">Hiển thị, thiết bị, ứng dụng khác</string>
     <string name="settings_help">Trợ giúp và chẩn đoán</string>
+    <string name="settings_logs_short">Nhật ký xuất vẫn chứa các trang đã truy cập</string>
+    <string name="settings_probe_short">Độ trễ và mất gói qua 20 yêu cầu</string>
     <string name="settings_help_summary">Nhật ký, kiểm tra nút, hỗ trợ</string>
     <string name="settings_project">Ủng hộ dự án</string>
     <string name="settings_project_summary">Tiền mã hóa qua CryptoBot hoặc vào ví</string>
@@ -616,6 +617,8 @@
     <string name="settings_privacy_device">Thiết bị</string>
     <string name="settings_connection_help">Tự khởi động và VPN luôn bật</string>
     <string name="settings_privacy_help">Cách các cài đặt này hoạt động</string>
+    <string name="settings_background_steps">Các bước bổ sung</string>
+    <string name="settings_background_settings">Cài đặt ducker</string>
     <string name="settings_background_allowed">Đã cho phép</string>
     <string name="settings_always_on_short">Trong cài đặt Android</string>
     <string name="settings_auto_restart_short">Sau khi khởi động lại hoặc cập nhật ứng dụng</string>
@@ -624,7 +627,7 @@
     <string name="settings_disguise_short">Ứng dụng có thể đóng</string>
     <string name="settings_external_short">Ứng dụng khác có thể bật và tắt VPN</string>
     <string name="settings_hwid_short">Gửi cho nhà cung cấp</string>
-    <string name="settings_auto_update_title">Tự động tải bản cập nhật</string>
+    <string name="settings_auto_update_title">Tải xuống trước</string>
     <string name="settings_connection_help_title">Khởi động VPN</string>
     <string name="settings_auto_update_short">Chỉ qua Wi-Fi</string>
     <string name="settings_category_interface">Giao diện</string>

@@ -127,7 +127,7 @@
     <string name="debug_log">Подробный журнал</string>
     <string name="logs">Журнал</string>
     <string name="dashboard">zashboard</string>
-    <string name="dashboard_hint">Веб-панель ядра: соединения, правила, DNS. Работает при включённом подключении</string>
+    <string name="dashboard_hint">Соединения, правила и DNS. Нужен VPN</string>
     <string name="dashboard_needs_connection">Сначала подключитесь: панель отдаёт само ядро</string>
     <string name="dashboard_failed">Панель не открылась</string>
     <string name="logs_hint">Журнал ядра. При выгрузке прячутся адреса узлов, ключи и идентификаторы; открытые вами сайты остаются</string>
@@ -374,7 +374,7 @@
     <string name="shortcut_disconnect">Отключить</string>
     <string name="background_title">Работа в фоне</string>
     <string name="background_allowed">Android не усыпляет ducker: VPN держится и при выключенном экране.</string>
-    <string name="background_restricted">Android может усыплять ducker, и VPN будет отключаться при выключенном экране.</string>
+    <string name="background_restricted">VPN может отключаться в фоне</string>
     <string name="background_allow">Разрешить</string>
     <string name="background_autostart">Автозапуск MIUI</string>
     <string name="background_autostart_on">Автозапуск MIUI: включён</string>
@@ -382,7 +382,6 @@
     <string name="background_battery">Батарея: без ограничений</string>
     <string name="background_app_settings">Открыть настройки ducker</string>
     <string name="background_hint_action">Настроить</string>
-    <string name="background_vendor">На %1$s этого мало: оболочка телефона сама закрывает приложения в фоне.</string>
     <string name="background_hint">%1$s закрывают приложения в фоне, и VPN может отключаться. Настройка займёт минуту.</string>
     <string name="vendor_xiaomi">Xiaomi, Redmi и POCO</string>
     <string name="vendor_huawei">Huawei и Honor</string>
@@ -620,6 +619,8 @@
     <string name="settings_connection_summary">VPN и приложения</string>
     <string name="settings_privacy_summary">Видимость, устройство, другие приложения</string>
     <string name="settings_help">Помощь и диагностика</string>
+    <string name="settings_logs_short">В выгрузке остаются посещённые сайты</string>
+    <string name="settings_probe_short">Задержка и потери по 20 запросам</string>
     <string name="settings_help_summary">Журнал, проверка узла, поддержка</string>
     <string name="settings_project">Поддержать проект</string>
     <string name="settings_project_summary">Криптовалюта через CryptoBot или на кошелёк</string>
@@ -653,6 +654,8 @@
     <string name="settings_privacy_device">Устройство</string>
     <string name="settings_connection_help">Автозапуск и постоянный VPN</string>
     <string name="settings_privacy_help">Как работают эти настройки</string>
+    <string name="settings_background_steps">Дополнительные шаги</string>
+    <string name="settings_background_settings">Настройки ducker</string>
     <string name="settings_background_allowed">Разрешена</string>
     <string name="settings_always_on_short">В настройках Android</string>
     <string name="settings_auto_restart_short">После перезагрузки или обновления</string>
@@ -661,7 +664,7 @@
     <string name="settings_disguise_short">Приложение может закрыться</string>
     <string name="settings_external_short">Могут включать и выключать VPN</string>
     <string name="settings_hwid_short">Отправляется провайдеру</string>
-    <string name="settings_auto_update_title">Автозагрузка обновлений</string>
+    <string name="settings_auto_update_title">Скачивать заранее</string>
     <string name="settings_connection_help_title">Запуск VPN</string>
     <string name="settings_auto_update_short">Только по Wi-Fi</string>
     <string name="settings_category_interface">Интерфейс</string>

@@ -113,7 +113,7 @@
     <string name="debug_log">Journal détaillé</string>
     <string name="logs">Journal</string>
     <string name="dashboard">zashboard</string>
-    <string name="dashboard_hint">Panneau web du moteur : connexions, règles, DNS. Disponible pendant la connexion</string>
+    <string name="dashboard_hint">Connexions, règles et DNS avec le VPN actif</string>
     <string name="dashboard_needs_connection">Connectez-vous d’abord : le panneau est fourni par le moteur</string>
     <string name="dashboard_failed">Impossible d’ouvrir le panneau</string>
     <string name="logs_hint">Journal du moteur. L’export masque les adresses des serveurs, les clés et les identifiants, mais conserve les sites visités</string>
@@ -352,7 +352,7 @@
     <string name="shortcut_disconnect">Déconnecter</string>
     <string name="background_title">Fonctionnement en arrière-plan</string>
     <string name="background_allowed">Android ne mettra pas ducker en veille. Le VPN continuera donc de fonctionner lorsque l’écran sera éteint.</string>
-    <string name="background_restricted">Android peut mettre ducker en veille. Le VPN sera alors déconnecté lorsque l’écran sera éteint.</string>
+    <string name="background_restricted">Le VPN peut se couper en arrière-plan</string>
     <string name="background_allow">Autoriser</string>
     <string name="background_autostart">Démarrage automatique MIUI</string>
     <string name="background_autostart_on">Démarrage automatique MIUI : activé</string>
@@ -360,7 +360,6 @@
     <string name="background_battery">Batterie : sans restriction</string>
     <string name="background_app_settings">Ouvrir les paramètres de ducker</string>
     <string name="background_hint_action">Configurer</string>
-    <string name="background_vendor">Sur les téléphones %1$s, cela ne suffit pas : le système du fabricant ferme les applications en arrière-plan.</string>
     <string name="background_hint">Les téléphones %1$s ferment les applications en arrière-plan, ce qui peut déconnecter le VPN. Une minute suffit pour y remédier.</string>
     <string name="vendor_xiaomi">Xiaomi, Redmi et POCO</string>
     <string name="vendor_huawei">Huawei et Honor</string>
@@ -594,6 +593,8 @@
     <string name="settings_connection_summary">VPN et applications</string>
     <string name="settings_privacy_summary">Visibilité, appareil, autres applications</string>
     <string name="settings_help">Aide et diagnostic</string>
+    <string name="settings_logs_short">Les sites visités restent dans le journal exporté</string>
+    <string name="settings_probe_short">Latence et pertes sur 20 requêtes</string>
     <string name="settings_help_summary">Journaux, test de nœud, assistance</string>
     <string name="settings_project">Soutenir le projet</string>
     <string name="settings_project_summary">Crypto via CryptoBot ou vers un portefeuille</string>
@@ -627,6 +628,8 @@
     <string name="settings_privacy_device">Appareil</string>
     <string name="settings_connection_help">Démarrage automatique et VPN permanent</string>
     <string name="settings_privacy_help">Fonctionnement de ces réglages</string>
+    <string name="settings_background_steps">Étapes supplémentaires</string>
+    <string name="settings_background_settings">Paramètres de ducker</string>
     <string name="settings_background_allowed">Autorisé</string>
     <string name="settings_always_on_short">Dans les paramètres Android</string>
     <string name="settings_auto_restart_short">Après un redémarrage ou une mise à jour</string>
@@ -635,7 +638,7 @@
     <string name="settings_disguise_short">L’application peut se fermer</string>
     <string name="settings_external_short">D’autres applications peuvent activer et désactiver le VPN</string>
     <string name="settings_hwid_short">Envoyé au fournisseur</string>
-    <string name="settings_auto_update_title">Téléchargement automatique des mises à jour</string>
+    <string name="settings_auto_update_title">Télécharger à l’avance</string>
     <string name="settings_connection_help_title">Démarrage du VPN</string>
     <string name="settings_auto_update_short">Uniquement en Wi-Fi</string>
     <string name="settings_category_interface">Interface</string>
