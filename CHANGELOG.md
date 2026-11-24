@@ -6,15 +6,10 @@ What changed in each version of ducker. [Русская версия](docs/CHANG
 repository was closed; they are listed here for history. APK files are on the
 [Releases](https://github.com/duckerapp/ducker/releases) page.
 
-## 1.0.0 — draft
-<!-- Draft until the 1.0.0 build: set the date then. Keep every line inside the list: publish.sh
-     joins any other line to the item above it, and the in-app "What's new" shows the result. -->
+## 1.0.0 — 2026-11-25
 
 - The first public release: the source, the releases and the updates are open. Updates from inside the app now
   work for everyone, from GitHub or, when it does not answer, from a mirror on GitLab or jsDelivr.
-
-## 0.4.55 — draft
-
 - The phone's settings are arranged in compact groups, with shorter labels that fit on one line and explanations below
   the groups. Sections slide in when opened.
 - In Appearance, Style comes first. The selected option slides along a single track in each of the Style and Theme controls.
