@@ -62,6 +62,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -70,6 +74,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -78,6 +83,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -89,7 +95,11 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.github.kr328.clash.ui.components.airEdge
+import com.github.kr328.clash.ui.components.glassPanesOn
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import androidx.compose.animation.AnimatedVisibility
@@ -243,6 +253,12 @@ fun SettingsScreen(
     var languageMounted by rememberSaveable { mutableStateOf(false) }
     var languageOpen by rememberSaveable { mutableStateOf(false) }
     var pendingLanguage by rememberSaveable { mutableStateOf<String?>(null) }
+    var detailsPage by rememberSaveable { mutableStateOf<String?>(null) }
+    var detailsOpen by rememberSaveable { mutableStateOf(false) }
+    val openDetails: (SettingsPage) -> Unit = { page ->
+        detailsPage = page.name
+        detailsOpen = true
+    }
     val languages = settingsLanguages()
     val theme = when (state.theme) {
         SettingsStore.THEME_LIGHT -> stringResource(R.string.theme_light)
@@ -259,100 +275,118 @@ fun SettingsScreen(
     val pageContent: @Composable (SettingsPage, () -> Unit) -> Unit = { page, back ->
         pages.SaveableStateProvider(page.name) {
             val list = rememberLazyListState()
+            val compact = !tv && (page == SettingsPage.Root || page == SettingsPage.Connection || page == SettingsPage.Privacy)
             TvLazyColumn(
                 state = list,
                 overscrollEffect = null,
                 modifier = modifier.fillMaxSize().screenInsets().padding(horizontal = 16.dp)
                     .then(if (LocalTv.current) Modifier.focusRestorer() else Modifier),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(top = 16.dp + tvEdge(), bottom = 16.dp + tvEdge() + navigationRoom()),
+                verticalArrangement = Arrangement.spacedBy(if (compact) 16.dp else 12.dp),
+                contentPadding = PaddingValues(
+                    top = (if (compact) 10.dp else 16.dp) + tvEdge(),
+                    bottom = 16.dp + tvEdge() + navigationRoom(),
+                ),
             ) {
                 item(key = "header") {
                     ScreenHeader(stringResource(page.title), onBack = back)
                 }
                 when (page) {
                     SettingsPage.Root -> {
+                        val updateRows: @Composable () -> Unit = {
+                            SettingsNavigationRow(
+                                title = stringResource(R.string.app_update_check),
+                                subtitle = when {
+                                    update.checking -> stringResource(R.string.app_update_checking)
+                                    update.release != null -> stringResource(R.string.app_update_available, update.release.version)
+                                    update.checked == false -> stringResource(R.string.app_update_check_failed)
+                                    update.checked == true -> stringResource(R.string.app_update_latest)
+                                    compact -> null
+                                    else -> stringResource(R.string.app_update_check_hint)
+                                },
+                                icon = Symbols.Update,
+                                busy = update.checking, onClick = onUpdate, action = true, compact = compact,
+                            )
+                            SettingsNavigationDivider(compact)
+                            SettingsSwitchRow(
+                                title = stringResource(if (compact) R.string.settings_auto_update_title else R.string.app_update_auto),
+                                subtitle = stringResource(if (compact) R.string.settings_auto_update_short else R.string.app_update_auto_hint),
+                                icon = Symbols.SystemUpdate,
+                                checked = update.auto == true,
+                                onChange = onAutoUpdate,
+                                compact = compact,
+                            )
+                            SettingsNavigationDivider(compact)
+                            SettingsSwitchRow(
+                                title = stringResource(R.string.app_update_beta),
+                                subtitle = if (compact) null else stringResource(R.string.app_update_beta_hint),
+                                icon = Symbols.Science,
+                                checked = state.betaUpdates,
+                                onChange = onBetaUpdates,
+                                compact = compact,
+                            )
+                        }
                         item(key = "interface") {
-                            SettingsNavigationGroup(stringResource(R.string.settings_category_interface)) {
+                            SettingsNavigationGroup(stringResource(R.string.settings_category_interface), compact) {
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.language), value = language,
-                                    icon = Symbols.Translate,
+                                    icon = Symbols.Translate, compact = compact,
                                     onClick = { languageMounted = true; languageOpen = true },
                                 )
-                                SettingsNavigationDivider()
+                                SettingsNavigationDivider(compact)
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.settings_appearance), value = theme,
-                                    icon = Symbols.DarkMode,
+                                    icon = Symbols.DarkMode, compact = compact,
                                     onClick = { navigate(SettingsPage.Appearance) },
                                 )
                             }
                         }
                         item(key = "vpn") {
-                            SettingsNavigationGroup("VPN") {
+                            SettingsNavigationGroup("VPN", compact) {
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.section_connection),
-                                    subtitle = stringResource(R.string.settings_connection_summary),
-                                    icon = Symbols.Link,
+                                    subtitle = if (compact) null else stringResource(R.string.settings_connection_summary),
+                                    icon = Symbols.Link, compact = compact,
                                     onClick = { navigate(SettingsPage.Connection) },
                                 )
-                                SettingsNavigationDivider()
+                                SettingsNavigationDivider(compact)
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.section_privacy),
-                                    subtitle = stringResource(R.string.settings_privacy_summary),
-                                    icon = Symbols.ShieldLock,
+                                    subtitle = if (compact) null else stringResource(R.string.settings_privacy_summary),
+                                    icon = Symbols.ShieldLock, compact = compact,
                                     onClick = { navigate(SettingsPage.Privacy) },
                                 )
                             }
                         }
+                        if (compact) item(key = "updates") {
+                            SettingsNavigationGroup(stringResource(R.string.settings_category_updates), compact = true) {
+                                updateRows()
+                            }
+                        }
                         item(key = "information") {
-                            SettingsNavigationGroup(stringResource(R.string.settings_category_information)) {
+                            SettingsNavigationGroup(stringResource(R.string.settings_category_information), compact) {
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.settings_help),
-                                    subtitle = stringResource(R.string.settings_help_summary),
-                                    icon = Symbols.SupportAgent,
+                                    subtitle = if (compact) null else stringResource(R.string.settings_help_summary),
+                                    icon = Symbols.SupportAgent, compact = compact,
                                     onClick = { navigate(SettingsPage.Help) },
                                 )
-                                SettingsNavigationDivider()
-                                SettingsNavigationRow(
-                                    title = stringResource(R.string.app_update_check),
-                                    subtitle = when {
-                                        update.checking -> stringResource(R.string.app_update_checking)
-                                        update.release != null -> stringResource(R.string.app_update_available, update.release.version)
-                                        update.checked == false -> stringResource(R.string.app_update_check_failed)
-                                        update.checked == true -> stringResource(R.string.app_update_latest)
-                                        else -> stringResource(R.string.app_update_check_hint)
-                                    },
-                                    icon = Symbols.Update,
-                                    busy = update.checking, onClick = onUpdate, action = true,
-                                )
-                                SettingsNavigationDivider()
-                                SettingsSwitchRow(
-                                    title = stringResource(R.string.app_update_auto),
-                                    subtitle = stringResource(R.string.app_update_auto_hint),
-                                    icon = Symbols.SystemUpdate,
-                                    checked = update.auto == true,
-                                    onChange = onAutoUpdate,
-                                )
-                                SettingsNavigationDivider()
-                                SettingsSwitchRow(
-                                    title = stringResource(R.string.app_update_beta),
-                                    subtitle = stringResource(R.string.app_update_beta_hint),
-                                    icon = Symbols.Science,
-                                    checked = state.betaUpdates,
-                                    onChange = onBetaUpdates,
-                                )
-                                SettingsNavigationDivider()
+                                SettingsNavigationDivider(compact)
+                                if (!compact) {
+                                    updateRows()
+                                    SettingsNavigationDivider()
+                                }
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.settings_project),
-                                    subtitle = stringResource(R.string.settings_project_summary),
-                                    icon = Symbols.Favorite,
+                                    subtitle = if (compact) null else stringResource(R.string.settings_project_summary),
+                                    icon = Symbols.Favorite, compact = compact,
                                     onClick = { supportOpen = true },
                                 )
-                                SettingsNavigationDivider()
+                                SettingsNavigationDivider(compact)
                                 SettingsNavigationRow(
                                     title = stringResource(R.string.settings_about),
-                                    subtitle = stringResource(R.string.version_app, state.appVersion),
-                                    icon = Symbols.Info,
+                                    subtitle = if (compact) null else stringResource(R.string.version_app, state.appVersion),
+                                    value = state.appVersion.takeIf { compact && it.isNotEmpty() },
+                                    icon = Symbols.Info, compact = compact,
                                     onClick = { navigate(SettingsPage.About) },
                                 )
                             }
@@ -445,77 +479,63 @@ fun SettingsScreen(
                         }
                     }
                     SettingsPage.Connection -> {
-                        // Not on a TV, as Home's prompt (F-346).
-                        if (!tv) {
-                            item {
-                                BackgroundCard(state.backgroundAllowed, state.autostart, onAllowBackground, onVendor)
+                        settingsRows("connection-vpn", compact = compact, rows = buildList {
+                            // TV has no background permission prompt (F-346).
+                            if (!tv) add {
+                                BackgroundRow(state.backgroundAllowed, state.autostart, onAllowBackground, onVendor)
                             }
-                        }
-
-                        item {
-                            LinkRow(
-                                title = stringResource(R.string.access_control),
-                                subtitle = stringResource(R.string.access_control_hint),
-                                onClick = onAccessControl,
-                                icon = Symbols.Apps,
-                            )
-                        }
-
-                        // Плитка в быстрых настройках есть давно, но найти её в редакторе шторки умеют
-                        // немногие. С Android 13 система может предложить добавить её сама (D-87). A TV has no
-                        // quick-settings shade.
-                        if (onAddTile != null && !tv) {
-                            item {
+                            add {
                                 LinkRow(
-                                    title = stringResource(R.string.add_tile),
-                                    subtitle = stringResource(R.string.add_tile_hint),
-                                    onClick = onAddTile,
-                                    icon = Symbols.ToggleOn,
+                                    title = stringResource(R.string.access_control),
+                                    subtitle = stringResource(R.string.access_control_hint),
+                                    onClick = onAccessControl, icon = Symbols.Apps, compact = compact,
                                 )
                             }
-                        }
-
-                        item {
-                            SwitchRow(
-                                title = stringResource(R.string.auto_restart),
-                                subtitle = stringResource(R.string.auto_restart_hint),
-                                checked = state.autoRestart,
-                                onChange = onAutoRestart,
-                                icon = Symbols.RestartAlt,
-                            )
-                        }
-
-                        // Автозапуск ждёт своей очереди среди событий загрузки — на слабом телефоне полторы
-                        // минуты (D-128). Сразу поднимает только «Постоянный VPN» Android (этап 10). Google TV has
-                        // no screen for it (F-346).
-                        if (state.alwaysOnSettings) {
-                            item {
+                            add {
+                                SwitchRow(
+                                    title = stringResource(R.string.auto_restart),
+                                    subtitle = stringResource(if (compact) R.string.settings_auto_restart_short else R.string.auto_restart_hint),
+                                    checked = state.autoRestart,
+                                    onChange = onAutoRestart, icon = Symbols.RestartAlt, compact = compact,
+                                )
+                            }
+                            // Google TV does not expose Android's Always-on VPN screen (F-346).
+                            if (state.alwaysOnSettings) add {
+                                val subtitle = when {
+                                    state.alwaysOn -> R.string.always_on_enabled
+                                    compact -> R.string.settings_always_on_short
+                                    else -> R.string.always_on_hint
+                                }
                                 LinkRow(
                                     title = stringResource(R.string.always_on),
-                                    subtitle = stringResource(if (state.alwaysOn) R.string.always_on_enabled else R.string.always_on_hint),
-                                    onClick = onAlwaysOn,
-                                    icon = Symbols.VpnLock,
+                                    subtitle = stringResource(subtitle),
+                                    onClick = onAlwaysOn, icon = Symbols.VpnLock, compact = compact,
                                 )
                             }
-                        }
-
-                        // Not on a TV: it has no notification shade to show the speed in.
-                        if (!tv) item {
-                            SwitchRow(
-                                title = stringResource(R.string.traffic_notification),
-                                subtitle = stringResource(R.string.traffic_notification_hint),
-                                checked = state.trafficNotification,
-                                onChange = onTrafficNotification,
-                                icon = Symbols.Notifications,
-                            )
-                        }
-                        item { SectionTitle(stringResource(R.string.section_advanced)) }
-
-                        item {
+                        })
+                        if (!tv) settingsRows("connection-notifications", R.string.settings_group_notifications, compact = true, rows = buildList {
+                            // The system can offer to place the tile starting on Android 13 (D-87).
+                            if (onAddTile != null) add {
+                                SettingsNavigationRow(
+                                    title = stringResource(R.string.add_tile),
+                                    onClick = onAddTile, icon = Symbols.ToggleOn, compact = true,
+                                )
+                            }
+                            add {
+                                SettingsSwitchRow(
+                                    title = stringResource(R.string.traffic_notification),
+                                    subtitle = stringResource(R.string.settings_traffic_short),
+                                    checked = state.trafficNotification,
+                                    onChange = onTrafficNotification, icon = Symbols.Notifications, compact = true,
+                                )
+                            }
+                        })
+                        if (!compact) item { SectionTitle(stringResource(R.string.section_advanced)) }
+                        settingsRows("connection-advanced", R.string.section_advanced, compact, rows = listOf({
                             ExpandableCard(
                                 title = stringResource(R.string.advanced),
                                 subtitle = stringResource(R.string.advanced_hint),
-                                icon = Symbols.Tune,
+                                icon = Symbols.Tune, compact = compact,
                             ) {
                                 InnerSwitch(
                                     title = stringResource(R.string.ipv6),
@@ -593,56 +613,58 @@ fun SettingsScreen(
                                     onChange = onAllowBypass,
                                 )
                             }
+                        }))
+                        if (compact && state.alwaysOnSettings) item(key = "connection-details") {
+                            SettingsDetailsLink(R.string.settings_connection_help) { openDetails(SettingsPage.Connection) }
                         }
                     }
                     SettingsPage.Privacy -> {
-                        // Not on a TV unless it is on: a TV has no screen lock to check against.
-                        if (!tv || state.lockSensitive) item {
-                            SwitchRow(
-                                title = stringResource(R.string.lock_sensitive),
-                                subtitle = stringResource(
-                                    if (state.deviceSecure) R.string.lock_sensitive_hint else R.string.lock_sensitive_no_screen_lock,
-                                ),
-                                checked = state.lockSensitive && state.deviceSecure,
-                                onChange = onLockSensitive,
-                                icon = Symbols.Lock,
-                            )
-                        }
-
-                        item {
-                            SwitchRow(
-                                title = stringResource(R.string.hide_recents),
-                                subtitle = stringResource(R.string.hide_recents_hint),
-                                checked = state.hideRecents,
-                                onChange = onHideRecents,
-                                icon = Symbols.VisibilityOff,
-                            )
-                        }
-
-                        // On a TV only while it is on, so it can be turned off: the TV's launcher went on showing the
-                        // app's own picture under the new name, and a TV is not the device people check for a VPN.
-                        if (!tv || state.disguise) item {
-                            SwitchRow(
-                                title = stringResource(R.string.disguise),
-                                subtitle = stringResource(R.string.disguise_hint),
-                                checked = state.disguise,
-                                onChange = onDisguise,
-                                icon = Symbols.Calculate,
-                            )
-                        }
-
-                        item {
+                        settingsRows("privacy-visibility", R.string.settings_privacy_protection, compact, rows = buildList {
+                            // The TV cannot initiate a screen-lock check, but can turn off an existing setting.
+                            if (!tv || state.lockSensitive) add {
+                                val subtitle = when {
+                                    !state.deviceSecure -> R.string.lock_sensitive_no_screen_lock
+                                    compact -> R.string.settings_lock_short
+                                    else -> R.string.lock_sensitive_hint
+                                }
+                                SwitchRow(
+                                    title = stringResource(R.string.lock_sensitive),
+                                    subtitle = stringResource(subtitle),
+                                    checked = state.lockSensitive && state.deviceSecure,
+                                    onChange = onLockSensitive, icon = Symbols.Lock, compact = compact,
+                                )
+                            }
+                            add {
+                                SwitchRow(
+                                    title = stringResource(R.string.hide_recents),
+                                    subtitle = if (compact) null else stringResource(R.string.hide_recents_hint),
+                                    checked = state.hideRecents,
+                                    onChange = onHideRecents, icon = Symbols.VisibilityOff, compact = compact,
+                                )
+                            }
+                            // The TV launcher can keep the original icon. Show this on TV only to turn it off.
+                            if (!tv || state.disguise) add {
+                                SwitchRow(
+                                    title = stringResource(R.string.disguise),
+                                    subtitle = stringResource(if (compact) R.string.settings_disguise_short else R.string.disguise_hint),
+                                    checked = state.disguise,
+                                    onChange = onDisguise, icon = Symbols.Calculate, compact = compact,
+                                )
+                            }
+                        })
+                        settingsRows("privacy-external", R.string.settings_privacy_access, compact, rows = listOf({
                             SwitchRow(
                                 title = stringResource(R.string.external_control),
-                                subtitle = stringResource(R.string.external_control_hint),
+                                subtitle = stringResource(if (compact) R.string.settings_external_short else R.string.external_control_hint),
                                 checked = state.allowExternalControl,
-                                onChange = onExternalControl,
-                                icon = Symbols.SmartToy,
+                                onChange = onExternalControl, icon = Symbols.SmartToy, compact = compact,
                             )
-                        }
-
-                        item {
-                            HwidCard(hwid, sendHwid, onSendHwid)
+                        }))
+                        settingsRows("privacy-device", R.string.settings_privacy_device, compact, rows = listOf({
+                            HwidCard(hwid, sendHwid, onSendHwid, compact)
+                        }))
+                        if (compact) item(key = "privacy-details") {
+                            SettingsDetailsLink(R.string.settings_privacy_help) { openDetails(SettingsPage.Privacy) }
                         }
                     }
                     SettingsPage.Help -> {
@@ -716,7 +738,7 @@ fun SettingsScreen(
         // its saved position, using the same motion as entry into Settings.
         BackLayer(
             visible = sectionOpen,
-            enabled = active && !languageMounted && !supportOpen,
+            enabled = active && !languageMounted && !supportOpen && detailsPage == null,
             onBack = { sectionOpen = false },
             // The Settings layer around it draws the fade.
             fade = false,
@@ -740,6 +762,15 @@ fun SettingsScreen(
             },
         )
     }
+
+    detailsPage?.let { page ->
+        SettingsDetailsSheet(
+            page = SettingsPage.valueOf(page),
+            open = detailsOpen,
+            onDismiss = { detailsOpen = false },
+            onClosed = { detailsPage = null },
+        )
+    }
 }
 
 /**
@@ -751,15 +782,20 @@ fun SettingsScreen(
  * настроек (D-103): найти можно, задеть мимоходом нельзя.
  */
 @Composable
-private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> Unit) {
-    // Held, the switch's thumb stands as a lens (D-541).
+private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> Unit, compact: Boolean) {
     val hwidPress = remember { MutableInteractionSource() }
     val press = rememberGlassPress()
-    Card(modifier = Modifier.fillMaxWidth(), press = press) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+    val content: @Composable ColumnScope.() -> Unit = {
+        if (compact) {
+            SettingsSwitchRow(
+                title = stringResource(R.string.hwid_title),
+                subtitle = if (sendHwid) stringResource(R.string.settings_hwid_short) else null,
+                icon = Symbols.Fingerprint,
+                checked = sendHwid,
+                onChange = onSendHwid,
+                compact = true,
+            )
+        } else {
             Row(
                 modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
                     .toggleable(value = sendHwid, interactionSource = hwidPress, indication = paneIndication(), role = Role.Switch, onValueChange = onSendHwid)
@@ -781,22 +817,33 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
 
                 DuckerSwitch(checked = sendHwid, onDrag = onSendHwid, pressed = hwidPress)
             }
+        }
 
-            if (sendHwid) {
-                // Hidden until tapped, and hidden again seven seconds later (D-292). While hidden,
-                // the text is measured and never composed: the mosaic takes its size, and a
-                // screenshot or TalkBack get nothing. Not saved on purpose: leaving settings, or
-                // scrolling the card away, hides it at once.
-                var shown by remember { mutableStateOf(false) }
+        if (sendHwid) {
+            // Never compose or expose the identifier until requested. Leaving the page hides it too (D-292).
+            var shown by remember { mutableStateOf(false) }
+            LaunchedEffect(shown) {
+                if (shown) {
+                    delay(HWID_SHOWN_MS)
+                    shown = false
+                }
+            }
 
-                LaunchedEffect(shown) {
-                    if (shown) {
-                        delay(HWID_SHOWN_MS)
-
-                        shown = false
+            if (compact) {
+                SettingsNavigationDivider(compact = true)
+                SettingsRow(
+                    title = stringResource(if (shown) R.string.hwid_hide else R.string.hwid_show),
+                    compact = true,
+                    modifier = Modifier.clickable(role = Role.Button) { shown = !shown },
+                    trailing = { SettingsChevron(if (shown) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown) },
+                )
+                if (shown) {
+                    SelectionContainer(Modifier.padding(start = SettingsRowInset + SettingsIconSize + SettingsIconGap,
+                        end = SettingsRowInset, bottom = 12.dp)) {
+                        Text(hwid, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-
+            } else {
                 val style = MaterialTheme.typography.bodyMedium
                 val measurer = rememberTextMeasurer()
                 val size = remember(hwid, style) { measurer.measure(hwid, style).size }
@@ -827,15 +874,26 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
                         }
                     }
                 }
-            } else {
-                // Прямо говорим, чем это кончится: у панели с лимитом устройств
-                // вместо профиля приходит отказ (D-36, F-52).
-                Text(
-                    text = stringResource(R.string.hwid_disabled_warning),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
             }
+        } else {
+            Text(
+                text = stringResource(R.string.hwid_disabled_warning),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = if (compact) Modifier.padding(start = SettingsRowInset + SettingsIconSize + SettingsIconGap,
+                    end = SettingsRowInset, bottom = 12.dp) else Modifier,
+            )
+        }
+    }
+    if (compact) {
+        Column(content = content)
+    } else {
+        Card(modifier = Modifier.fillMaxWidth(), press = press) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                content = content,
+            )
         }
     }
 }
@@ -850,55 +908,46 @@ private fun HwidCard(hwid: String, sendHwid: Boolean, onSendHwid: (Boolean) -> U
  * приложение проверить не может, поэтому они не пропадают, а раскрываются касанием по карточке.
  */
 @Composable
-private fun BackgroundCard(allowed: Boolean, autostart: Boolean?, onAllow: () -> Unit, onVendor: (Shortcut?) -> Unit) {
+private fun BackgroundRow(allowed: Boolean, autostart: Boolean?, onAllow: () -> Unit, onVendor: (Shortcut?) -> Unit) {
     val vendor = Vendor.current
     var stepsOpen by rememberSaveable { mutableStateOf(false) }
     val foldable = allowed && vendor != null
-
     val fold = if (foldable) {
-        Modifier.clip(MaterialTheme.shapes.large).clickable(
+        Modifier.clickable(
             interactionSource = null,
-            indication = paneIndication(),
+            indication = LocalIndication.current,
             onClickLabel = stringResource(R.string.background_vendor_steps, stringResource(vendor.names)),
             role = Role.Button,
         ) { stepsOpen = !stepsOpen }
     } else Modifier
 
-    Card(modifier = Modifier.fillMaxWidth(), surfaceModifier = fold, resizing = true, ownClick = foldable) {
-        // Отступы — у самих строк, а не общим spacedBy: общий оставался бы, пока шаги
-        // сворачиваются, и в последнем кадре карточка прыгала на 12 dp (D-140).
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingsIcon(Symbols.BatteryChargingFull)
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(stringResource(R.string.background_title), style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        stringResource(if (allowed) R.string.background_allowed else R.string.background_restricted),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                if (allowed) {
-                    Icon(Symbols.CheckCircle, contentDescription = null)
-                }
-            }
-
+    SettingsRow(
+        title = stringResource(R.string.background_title),
+        subtitle = if (allowed) null else stringResource(R.string.background_restricted),
+        value = if (allowed) stringResource(R.string.settings_background_allowed) else null,
+        icon = Symbols.BatteryChargingFull,
+        modifier = fold,
+        compact = true,
+        trailing = when {
+            foldable -> ({ SettingsChevron(if (stepsOpen) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown) })
+            allowed -> ({ SettingsChevron(Symbols.Check) })
+            else -> null
+        },
+    )
+    if (!allowed || vendor != null) {
+        Column(Modifier.padding(horizontal = 14.dp)) {
             if (!allowed) {
                 Pill(
                     text = stringResource(R.string.background_allow),
                     onClick = onAllow,
-                    modifier = Modifier.padding(top = 12.dp).fillMaxWidth().heightIn(min = 48.dp),
+                    modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth().heightIn(min = 48.dp),
                     selected = true,
                 )
             }
 
             if (vendor != null) {
                 AnimatedVisibility(visible = !foldable || stepsOpen) {
-                    Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.padding(top = if (allowed) 2.dp else 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(
                             stringResource(R.string.background_vendor, stringResource(vendor.names)) +
                                 " " + stringResource(vendor.steps),
@@ -929,10 +978,26 @@ private fun ExpandableCard(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    compact: Boolean,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val press = rememberGlassPress()
+    if (compact) {
+        SettingsRow(
+            title = title, subtitle = subtitle, icon = icon, compact = true,
+            modifier = Modifier.clickable(role = Role.Button) { expanded = !expanded },
+            trailing = { SettingsChevron(if (expanded) Symbols.KeyboardArrowUp else Symbols.KeyboardArrowDown) },
+        )
+        AnimatedVisibility(visible = expanded) {
+            Column(
+                modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                content = content,
+            )
+        }
+        return
+    }
 
     Card(modifier = Modifier.fillMaxWidth(), resizing = true, press = press) {
         Column {
@@ -984,7 +1049,8 @@ private fun InnerSwitch(
 ) {
     val press = remember { MutableInteractionSource() }
     Row(
-        modifier = Modifier.fillMaxWidth().toggleable(value = checked, interactionSource = press, indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange),
+        modifier = Modifier.fillMaxWidth().then(if (LocalTv.current) Modifier else Modifier.heightIn(min = 48.dp))
+            .toggleable(value = checked, interactionSource = press, indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -1163,11 +1229,17 @@ private fun SectionTitle(text: String) {
 @Composable
 private fun SwitchRow(
     title: String,
-    subtitle: String,
+    subtitle: String?,
     checked: Boolean,
     onChange: (Boolean) -> Unit,
     icon: ImageVector,
+    compact: Boolean = false,
 ) {
+    if (compact) {
+        SettingsSwitchRow(title, subtitle, icon, checked, onChange, compact = true)
+        return
+    }
+
     val press = remember { MutableInteractionSource() }
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1183,7 +1255,7 @@ private fun SwitchRow(
             SettingsIcon(icon)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(title, style = MaterialTheme.typography.titleSmall.syllables())
-                Text(subtitle, style = MaterialTheme.typography.bodySmall,
+                if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
@@ -1193,7 +1265,12 @@ private fun SwitchRow(
 }
 
 @Composable
-private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit, icon: ImageVector) {
+private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit, icon: ImageVector, compact: Boolean = false) {
+    if (compact) {
+        SettingsNavigationRow(title, icon, onClick, subtitle = subtitle, compact = true)
+        return
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         surfaceModifier = Modifier.clip(MaterialTheme.shapes.large)
@@ -1262,28 +1339,78 @@ private fun SettingsIcon(icon: ImageVector) {
     Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
 }
 
-@Composable
-internal fun SettingsNavigationGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            title, modifier = Modifier.padding(start = 4.dp, top = 4.dp).semantics { heading() },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            surfaceModifier = Modifier.clip(MaterialTheme.shapes.large),
-            content = content,
-        )
+private val SettingsGroupShape = RoundedCornerShape(16.dp)
+private val SettingsRowInset = 14.dp
+private val SettingsIconSize = 19.dp
+private val SettingsIconGap = 11.dp
+
+private fun LazyListScope.settingsRows(
+    key: String,
+    @StringRes title: Int? = null,
+    compact: Boolean,
+    rows: List<@Composable () -> Unit>,
+) {
+    if (compact) {
+        item(key = key) {
+            SettingsNavigationGroup(title?.let { stringResource(it) } ?: "VPN", compact = true) {
+                rows.forEachIndexed { index, row ->
+                    if (index > 0) SettingsNavigationDivider(compact = true)
+                    row()
+                }
+            }
+        }
+    } else {
+        rows.forEachIndexed { index, row -> item(key = "$key-$index") { row() } }
     }
 }
 
 @Composable
-internal fun SettingsNavigationDivider() {
+internal fun SettingsNavigationGroup(
+    title: String,
+    compact: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val spacing = if (compact) 6.dp else 8.dp
+    val shape = if (compact) SettingsGroupShape else MaterialTheme.shapes.large
+    Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+        Text(
+            title,
+            modifier = Modifier.padding(start = if (compact) 12.dp else 4.dp, top = if (compact) 2.dp else 4.dp)
+                .semantics { heading() },
+            style = if (compact) MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            else MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (compact && !glassPanesOn()) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(), shape = shape, color = MaterialTheme.colorScheme.surface,
+                border = airEdge(),
+            ) {
+                Column(content = content)
+            }
+        } else {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = shape,
+                surfaceModifier = Modifier.clip(shape),
+                content = content,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun SettingsNavigationDivider(compact: Boolean = false) {
     HorizontalDivider(
-        Modifier.padding(horizontal = 16.dp),
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+        Modifier.padding(start = if (compact) SettingsRowInset + SettingsIconSize + SettingsIconGap else 16.dp,
+            end = if (compact) SettingsRowInset else 16.dp),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (compact) 0.75f else 0.45f),
     )
+}
+
+@Composable
+private fun SettingsChevron(icon: ImageVector) {
+    Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
@@ -1294,73 +1421,152 @@ private fun SettingsNavigationRow(
     subtitle: String? = null,
     value: String? = null,
     busy: Boolean = false,
-    /** The row does something rather than open a page: no arrow, only the progress while it runs. */
+    /** An action runs in place and only shows a progress indicator while it runs. */
     action: Boolean = false,
+    compact: Boolean = false,
 ) {
+    SettingsRow(
+        title = title, subtitle = subtitle, value = value, icon = icon, compact = compact,
+        modifier = Modifier.clickable(enabled = !busy, role = Role.Button, onClick = onClick),
+        trailing = when {
+            busy -> ({ CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) })
+            // Reserve the progress width so that the text doesn't reflow when it appears.
+            action -> ({ Spacer(Modifier.size(20.dp)) })
+            compact -> ({ SettingsChevron(Symbols.KeyboardArrowRight) })
+            else -> ({ Icon(Symbols.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp)) })
+        },
+    )
+}
+
+@Composable
+private fun SettingsRow(
+    title: String,
+    compact: Boolean,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    value: String? = null,
+    icon: ImageVector? = null,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    val typography = MaterialTheme.typography
+    val titleStyle = if (compact) typography.bodyLarge.copy(fontWeight = FontWeight.Medium, lineHeight = 21.sp)
+    else typography.bodyLarge.syllables()
+    val valueStyle = if (compact) typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 17.sp) else typography.bodyMedium
+    val supportingStyle = if (compact) valueStyle else typography.bodySmall
+    val secondary = MaterialTheme.colorScheme.onSurfaceVariant
+    val inset = if (compact) SettingsRowInset else 16.dp
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 61.dp)
-            .clickable(enabled = !busy, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().heightIn(min = if (compact) 50.dp else 61.dp).then(modifier)
+            .padding(horizontal = inset, vertical = if (compact) 8.dp else 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) SettingsIconGap else 12.dp),
     ) {
-        SettingsIcon(icon)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        if (compact) {
+            if (icon == null) Spacer(Modifier.width(SettingsIconSize))
+            else Icon(icon, contentDescription = null, modifier = Modifier.size(SettingsIconSize), tint = secondary)
+        } else if (icon != null) {
+            SettingsIcon(icon)
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 3.dp)) {
             if (value == null) {
-                Text(title, style = MaterialTheme.typography.bodyLarge.syllables())
+                Text(title, style = titleStyle)
             } else {
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val measurer = rememberTextMeasurer()
-                    val titleStyle = MaterialTheme.typography.bodyLarge.syllables()
-                    val valueStyle = MaterialTheme.typography.bodyMedium
-                    val density = LocalDensity.current
-                    val fits = with(density) {
+                    val fits = with(LocalDensity.current) {
                         measurer.measure(title, titleStyle).size.width +
                             measurer.measure(value, valueStyle).size.width + 12.dp.roundToPx() <= maxWidth.roundToPx()
                     }
                     if (fits) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(title, Modifier.weight(1f), style = titleStyle)
-                            Text(value, style = valueStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(value, style = valueStyle, color = secondary)
                         }
                     } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(title, style = titleStyle)
-                            Text(value, style = valueStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(value, style = valueStyle, color = secondary)
                         }
                     }
                 }
             }
-            if (subtitle != null) {
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            if (subtitle != null) Text(subtitle, style = supportingStyle, color = secondary)
         }
-        when {
-            busy -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-            // The progress takes this place, so the text does not move when it appears.
-            action -> Spacer(Modifier.size(20.dp))
-            else -> Icon(Symbols.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp))
+        trailing?.invoke()
+    }
+}
+
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    subtitle: String?,
+    icon: ImageVector,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+    compact: Boolean = false,
+) {
+    val press = remember { MutableInteractionSource() }
+    SettingsRow(
+        title = title, subtitle = subtitle, icon = icon, compact = compact,
+        modifier = Modifier.toggleable(value = checked, interactionSource = press,
+            indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange),
+        trailing = {
+            if (compact && !glassPanesOn()) {
+                // Only the track is scaled. The full row remains the switch's touch and accessibility target.
+                Box(Modifier.width(44.dp), contentAlignment = Alignment.Center) {
+                    DuckerSwitch(checked, modifier = Modifier.requiredWidth(52.dp).graphicsLayer {
+                        scaleX = 0.82f
+                        scaleY = 0.82f
+                    })
+                }
+            } else {
+                DuckerSwitch(checked = checked, onDrag = onChange, pressed = press)
+            }
+        },
+    )
+}
+
+@Composable
+private fun SettingsDetailsLink(@StringRes title: Int, onClick: () -> Unit) {
+    Box(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(MaterialTheme.shapes.small)
+            .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(
+            stringResource(title), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, textDecoration = TextDecoration.Underline,
+        )
+    }
+}
+
+@Composable
+private fun SettingsDetailsSheet(page: SettingsPage, open: Boolean, onDismiss: () -> Unit, onClosed: () -> Unit) {
+    val connection = page == SettingsPage.Connection
+    DuckerSheet(
+        open = open,
+        title = stringResource(if (connection) R.string.settings_connection_help_title else R.string.settings_privacy_help),
+        busy = false, onDismiss = onDismiss, onClosed = onClosed,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            if (connection) {
+                SettingsExplanation(R.string.auto_restart, R.string.auto_restart_hint)
+                SettingsExplanation(R.string.always_on, R.string.always_on_hint)
+            } else {
+                SettingsExplanation(R.string.lock_sensitive, R.string.lock_sensitive_hint)
+                SettingsExplanation(R.string.disguise, R.string.disguise_hint)
+                SettingsExplanation(R.string.external_control, R.string.external_control_hint)
+                SettingsExplanation(R.string.hwid_title, R.string.hwid_explained)
+            }
         }
     }
 }
 
-/** A row of a settings group, like [SettingsNavigationRow], that holds a switch. */
 @Composable
-private fun SettingsSwitchRow(title: String, subtitle: String, icon: ImageVector, checked: Boolean, onChange: (Boolean) -> Unit) {
-    val press = remember { MutableInteractionSource() }
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 61.dp)
-            .toggleable(value = checked, interactionSource = press, indication = LocalIndication.current, role = Role.Switch, onValueChange = onChange)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        SettingsIcon(icon)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge.syllables())
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        DuckerSwitch(checked = checked, onDrag = onChange, pressed = press)
+private fun SettingsExplanation(@StringRes title: Int, @StringRes description: Int) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(stringResource(title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+        Text(stringResource(description), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
