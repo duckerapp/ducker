@@ -285,9 +285,16 @@ fun SettingsScreen(
     }
     val language = languages.firstOrNull { it.first == state.language && it.first.isNotEmpty() }?.second
         ?: stringResource(if (tv) R.string.language_system else R.string.settings_language_system)
+    // Every opening starts at the page's top, as it was never opened: no scroll or unfolded part from the last time
+    // (the owner, 24.11). A page still on screen keeps its state until it leaves.
     val navigate: (SettingsPage) -> Unit = {
+        pages.removeState(it.name)
         destination = it.name
         sectionOpen = true
+    }
+    val openSupport = {
+        pages.removeState(SettingsPage.Project.name)
+        supportOpen = true
     }
 
     val pageContent: @Composable (SettingsPage, () -> Unit) -> Unit = { page, back ->
@@ -398,7 +405,7 @@ fun SettingsScreen(
                                     title = stringResource(R.string.settings_project),
                                     subtitle = if (compact) null else stringResource(R.string.settings_project_summary),
                                     icon = Symbols.Favorite, compact = compact,
-                                    onClick = { supportOpen = true },
+                                    onClick = openSupport,
                                 )
                                 SettingsNavigationDivider(compact)
                                 SettingsNavigationRow(
@@ -712,7 +719,7 @@ fun SettingsScreen(
                         projectSupportItems(compact = compact, onLink = onLink, onMail = onMail)
                     }
                     SettingsPage.About -> {
-                        aboutItems(state.appVersion, state.coreVersion, compact = compact, onLink = onLink, onSupport = { supportOpen = true })
+                        aboutItems(state.appVersion, state.coreVersion, compact = compact, onLink = onLink, onSupport = openSupport)
                     }
                 }
             }
