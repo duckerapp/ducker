@@ -273,7 +273,7 @@ fun ProxyScreen(
                 val fold = if (query.isBlank()) folds[group.name] else null
                 val open = query.isNotBlank() || ((index == 0) != (group.name in flipped))
                 val rows = fold?.rows ?: if (open) (group.proxies.size + columns - 1) / columns else 0
-                add(header.toFloat())
+                add((rowMeasure.headers[group.name] ?: header).toFloat())
                 for (i in 0 until rows) add(fold?.let { (it.shown - i * row).coerceIn(0f, row.toFloat()) } ?: row.toFloat())
             }
         }
@@ -502,7 +502,10 @@ fun ProxyScreen(
                                 onHealthCheck = { onHealthCheck(group.name) },
                                 // Пульт входит на «Прокси» на шапку первой группы: дальше вправо — замер,
                                 // вниз — узлы (этап 6).
-                                modifier = Modifier.onSizeChanged { rowMeasure.header = it.height }
+                                modifier = Modifier.onSizeChanged {
+                                    rowMeasure.header = it.height
+                                    rowMeasure.headers[group.name] = it.height
+                                }
                                     .padding(top = ITEM_GAP)
                                     .then(if (tv) Modifier.onFocusChanged { if (it.hasFocus) column[0] = 0 } else Modifier)
                                     .then(if (index == 0) Modifier.tabEntry().focusRequester(firstGroup) else Modifier)
@@ -856,11 +859,17 @@ private class Fold(shown: Float, val rows: Int) {
 
 /**
  * The rows' and the group headers' heights with their gap, as last measured: all rows are alike (two lines of name, the
- * type and the delay), and all headers.
+ * type and the delay); [header] is the last header's, for one not measured yet.
  */
 private class RowMeasure {
     var height = 0
     var header = 0
+    /**
+     * Each group's header as measured: not all alike — a group that picks by itself carries a line more («Узлов: 8 ·
+     * автовыбор»), a long name two lines. Counted as one, a group's travel below it fell short by that line, and the
+     * title and the search snapped the rest down as the fold ended (the owner, 24.11).
+     */
+    val headers = HashMap<String, Int>()
     /** The screen's title and the search's slot, the items above the groups. */
     var title = 0
     var search = 0
