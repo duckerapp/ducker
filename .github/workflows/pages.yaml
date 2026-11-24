@@ -2,30 +2,28 @@ name: Site
 
 # Сайт документации: собирается из site/ и выкладывается на GitHub Pages.
 #
-# Пока запускается только вручную (Actions → Site → Run workflow): бесплатный GitHub публикует
-# Pages только у открытых репозиториев. Включить после открытия:
-#   1. Settings → Pages → Source: GitHub Actions.
-#   2. Раскомментировать push ниже — сайт будет обновляться сам после каждого слияния в main.
+# Repository open since 25.11.2026 (1.0.0): the site rebuilds itself after each change to its sources in main;
+# Actions → Site → Run workflow still works by hand.
 on:
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - "site/**"
-  #     - "docs/FAQ.md"
-  #     - "docs/FAQ.ru.md"
-  #     - "CONTRIBUTING.md"
-  #     - "docs/CONTRIBUTING.ru.md"
-  #     - "docs/CREDITS.md"
-  #     - "docs/CREDITS.ru.md"
-  #     - "docs/images/en/**"
-  #     - "docs/images/ru/**"
-  #     - "PRIVACY_POLICY.md"
-  #     - "docs/PRIVACY_POLICY.ru.md"
-  #     - "SECURITY.md"
-  #     - "docs/SECURITY.ru.md"
-  #     - ".github/workflows/pages.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "site/**"
+      - "docs/FAQ.md"
+      - "docs/FAQ.ru.md"
+      - "CONTRIBUTING.md"
+      - "docs/CONTRIBUTING.ru.md"
+      - "docs/CREDITS.md"
+      - "docs/CREDITS.ru.md"
+      - "docs/images/en/**"
+      - "docs/images/ru/**"
+      - "PRIVACY_POLICY.md"
+      - "docs/PRIVACY_POLICY.ru.md"
+      - "SECURITY.md"
+      - "docs/SECURITY.ru.md"
+      - ".github/workflows/pages.yaml"
 
 permissions:
   contents: read
