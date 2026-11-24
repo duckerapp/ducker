@@ -31,10 +31,9 @@ Android 8+ · Нужна своя подписка · [Скачать APK](https
 
 <br>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="images/ru/hero-dark.png">
-  <img src="images/ru/hero-light.png" width="840" alt="ducker на телевизоре и на телефоне: главная с кнопкой включения, текущим узлом и подпиской">
-</picture>
+<p align="center">
+  <img src="images/ru/hero.png" width="840" alt="ducker на трёх телефонах: главная в светлой теме Air, в DUCKER Glass поверх «Жидкого металла» и в тёмной теме Air">
+</p>
 
 </div>
 
@@ -50,18 +49,25 @@ VPN и сборки пришла из CMFA. Сетевые протоколы п
 
 ## Снимки экрана
 
+У ducker два стиля: **Air**, светлый или тёмный, и **DUCKER Glass** (бета) — жидкое стекло поверх картинки на телефонах с Android 13 и новее. Переключается в **«Настройки» → «Оформление» → «Стиль»**.
+
 <p align="center">
-  <a href="images/ru/phone-home.png"><img src="images/ru/phone-home.png" width="32%" alt="Главная: кнопка включения, текущий узел с задержкой, срок подписки, трафик и «Возможности»"></a>
-  <a href="images/ru/phone-groups.png"><img src="images/ru/phone-groups.png" width="32%" alt="Прокси: группы из конфига, у каждой свой значок"></a>
-  <a href="images/ru/phone-subscriptions.png"><img src="images/ru/phone-subscriptions.png" width="32%" alt="Подписки: активная подписка с правилами и запасными адресами и ещё две подписки"></a>
-</p>
-<p align="center">
-  <a href="images/ru/phone-proxies.png"><img src="images/ru/phone-proxies.png" width="32%" alt="Прокси: открытая группа, узлы с задержками и избранным"></a>
-  <a href="images/ru/phone-features.png"><img src="images/ru/phone-features.png" width="32%" alt="Возможности: мобильная сеть, подключения и раздача по Wi-Fi"></a>
-  <a href="images/ru/phone-settings.png"><img src="images/ru/phone-settings.png" width="32%" alt="Настройки: интерфейс, VPN, помощь, обновления и бета-версии"></a>
+  <a href="images/ru/air.png"><img src="images/ru/air.png" width="840" alt="Air: главная и «Прокси» в светлой теме, узлы открытой группы и «Подписки» в тёмной"></a>
 </p>
 
-<p align="center"><sub>Главная · Группы · Подписки · Узлы · Возможности · Настройки. Подписки и серверы на снимках выдуманы.</sub></p>
+<p align="center"><sub>Air · Главная · Прокси · Узлы · Подписки</sub></p>
+
+<p align="center">
+  <a href="images/ru/glass.png"><img src="images/ru/glass.png" width="840" alt="DUCKER Glass: главная, узлы открытой группы и шторка «Все узлы» поверх «Жидкого металла» и главная поверх «Папоротника»"></a>
+</p>
+
+<p align="center"><sub>DUCKER Glass · Главная · Узлы · Все узлы · Главная на «Папоротнике»</sub></p>
+
+<p align="center">
+  <a href="images/ru/more.png"><img src="images/ru/more.png" width="840" alt="«Возможности» и «Настройки» в Air, «Подписки» в DUCKER Glass"></a>
+</p>
+
+<p align="center"><sub>Возможности · Настройки · Подписки в стекле. Подписки и серверы на снимках выдуманы.</sub></p>
 
 <p align="center">
   <img src="images/ru/theme-wave.gif" width="240" alt="Смена темы на главной: тёмная тема расходится волной от кнопки, затем возвращается светлая">

@@ -31,10 +31,9 @@ Android 8+ · 需要自备订阅 · [下载 APK](https://github.com/duckerapp/du
 
 <br>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="images/en/hero-dark.png">
-  <img src="images/en/hero-light.png" width="840" alt="电视和手机上的 ducker：主页上有电源按钮、当前节点和订阅信息">
-</picture>
+<p align="center">
+  <img src="images/en/hero.png" width="840" alt="三部手机上的 ducker：Air 浅色主题的首页、“液态金属”背景上的 DUCKER Glass 首页，以及 Air 深色主题的首页">
+</p>
 
 </div>
 
@@ -47,18 +46,25 @@ ducker 是基于 mihomo 的 Android VPN 客户端，需要添加服务商提供�
 
 ## 截图
 
+ducker 有两种样式：**Air**（浅色或深色）和 **DUCKER Glass**（测试版），在图片上叠加液态玻璃，适用于 Android 13 及更新版本的手机。在 **设置 → 外观 → 样式** 中切换。
+
 <p align="center">
-  <a href="images/en/phone-home.png"><img src="images/en/phone-home.png" width="32%" alt="首页：电源按钮、当前节点及其延迟、订阅期限和流量，以及“更多功能”"></a>
-  <a href="images/en/phone-groups.png"><img src="images/en/phone-groups.png" width="32%" alt="代理：配置中的分组，每个分组都有自己的图标"></a>
-  <a href="images/en/phone-subscriptions.png"><img src="images/en/phone-subscriptions.png" width="32%" alt="订阅：当前订阅及其规则和备用地址，另有两个订阅"></a>
-</p>
-<p align="center">
-  <a href="images/en/phone-proxies.png"><img src="images/en/phone-proxies.png" width="32%" alt="代理：展开的分组，节点的延迟和收藏"></a>
-  <a href="images/en/phone-features.png"><img src="images/en/phone-features.png" width="32%" alt="更多功能：移动网络、连接和 Wi-Fi 共享"></a>
-  <a href="images/en/phone-settings.png"><img src="images/en/phone-settings.png" width="32%" alt="设置：界面、VPN、帮助、更新和测试版"></a>
+  <a href="images/en/air.png"><img src="images/en/air.png" width="840" alt="Air：浅色主题的首页和代理，深色主题的展开分组节点和订阅"></a>
 </p>
 
-<p align="center"><sub>首页 · 分组 · 订阅 · 节点 · 更多功能 · 设置。截图中的订阅和服务器均为虚构。</sub></p>
+<p align="center"><sub>Air · 首页 · 代理 · 节点 · 订阅</sub></p>
+
+<p align="center">
+  <a href="images/en/glass.png"><img src="images/en/glass.png" width="840" alt="DUCKER Glass：“液态金属”背景上的首页、展开分组的节点和“所有节点”面板，以及“蕨类”背景上的首页"></a>
+</p>
+
+<p align="center"><sub>DUCKER Glass · 首页 · 节点 · 所有节点 · “蕨类”背景的首页</sub></p>
+
+<p align="center">
+  <a href="images/en/more.png"><img src="images/en/more.png" width="840" alt="Air 中的更多功能和设置，DUCKER Glass 中的订阅"></a>
+</p>
+
+<p align="center"><sub>更多功能 · 设置 · 玻璃样式的订阅。截图中的订阅和服务器均为虚构。</sub></p>
 
 <p align="center">
   <img src="images/en/theme-wave.gif" width="240" alt="在主页切换主题：深色主题从按钮处像波纹一样扩散，随后切回浅色主题">

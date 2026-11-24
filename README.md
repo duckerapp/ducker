@@ -31,10 +31,9 @@ Android 8+ · Bring your own subscription · [Download APKs](https://github.com/
 
 <br>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/en/hero-dark.png">
-  <img src="docs/images/en/hero-light.png" width="840" alt="ducker on a TV and on a phone: the Home screen with the power button, the current node and the subscription">
-</picture>
+<p align="center">
+  <img src="docs/images/en/hero.png" width="840" alt="ducker on three phones: Home in Air's light theme, in DUCKER Glass over Liquid metal, and in Air's dark theme">
+</p>
 
 </div>
 
@@ -49,18 +48,25 @@ the VPN service and build foundations from CMFA. The VPN protocols come from mih
 
 ## Screenshots
 
+ducker comes in two styles: **Air**, light or dark, and **DUCKER Glass** (beta), liquid glass over a picture on phones with Android 13 and newer. Switch in **Settings → Appearance → Style**.
+
 <p align="center">
-  <a href="docs/images/en/phone-home.png"><img src="docs/images/en/phone-home.png" width="32%" alt="Home: the power button, the current node with its delay, the subscription term and traffic, and Features"></a>
-  <a href="docs/images/en/phone-groups.png"><img src="docs/images/en/phone-groups.png" width="32%" alt="Proxies: the config's groups, each with its own icon"></a>
-  <a href="docs/images/en/phone-subscriptions.png"><img src="docs/images/en/phone-subscriptions.png" width="32%" alt="Profiles: the active subscription with its rules and backup addresses, and two more subscriptions"></a>
-</p>
-<p align="center">
-  <a href="docs/images/en/phone-proxies.png"><img src="docs/images/en/phone-proxies.png" width="32%" alt="Proxies: an open group, its nodes with delays and favorites"></a>
-  <a href="docs/images/en/phone-features.png"><img src="docs/images/en/phone-features.png" width="32%" alt="Features: Mobile network, Connections and Wi-Fi sharing"></a>
-  <a href="docs/images/en/phone-settings.png"><img src="docs/images/en/phone-settings.png" width="32%" alt="Settings: interface, VPN, help, updates and beta versions"></a>
+  <a href="docs/images/en/air.png"><img src="docs/images/en/air.png" width="840" alt="Air: Home and Proxies in the light theme, an open group's nodes and Profiles in the dark theme"></a>
 </p>
 
-<p align="center"><sub>Home · Groups · Profiles · Nodes · Features · Settings. The subscriptions and servers on the screenshots are made up.</sub></p>
+<p align="center"><sub>Air · Home · Proxies · Nodes · Profiles</sub></p>
+
+<p align="center">
+  <a href="docs/images/en/glass.png"><img src="docs/images/en/glass.png" width="840" alt="DUCKER Glass: Home, an open group's nodes and the All nodes sheet over Liquid metal, and Home over Fern"></a>
+</p>
+
+<p align="center"><sub>DUCKER Glass · Home · Nodes · All nodes · Home over Fern</sub></p>
+
+<p align="center">
+  <a href="docs/images/en/more.png"><img src="docs/images/en/more.png" width="840" alt="Features and Settings in Air, Profiles in DUCKER Glass"></a>
+</p>
+
+<p align="center"><sub>Features · Settings · Profiles on glass. The subscriptions and servers on the screenshots are made up.</sub></p>
 
 <p align="center">
   <img src="docs/images/en/theme-wave.gif" width="240" alt="Switching the theme on Home: the dark theme spreads from the button as a wave, then the light one comes back">

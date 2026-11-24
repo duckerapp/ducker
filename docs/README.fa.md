@@ -31,10 +31,9 @@ Android 8+ · به اشتراک خودتان نیاز دارید · [دانلو�
 
 <br>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="images/en/hero-dark.png">
-  <img src="images/en/hero-light.png" width="840" alt="ducker روی تلویزیون و گوشی: صفحهٔ اصلی با دکمهٔ روشن و خاموش، نود فعلی و اشتراک">
-</picture>
+<p align="center">
+  <img src="images/en/hero.png" width="840" alt="ducker روی سه گوشی: صفحهٔ اصلی با تم روشن Air، با DUCKER Glass روی «فلز مایع» و با تم تیرهٔ Air">
+</p>
 
 </div>
 
@@ -54,18 +53,25 @@ ducker یک کلاینت VPN برای Android بر پایهٔ mihomo است و �
 
 ## تصاویر
 
+ducker دو سبک دارد: **Air** روشن یا تیره، و **DUCKER Glass** (بتا)، شیشهٔ مایع روی یک تصویر، در گوشی‌های Android 13 و جدیدتر. تغییر در **تنظیمات ← ظاهر ← سبک**.
+
 <p align="center">
-  <a href="images/en/phone-home.png"><img src="images/en/phone-home.png" width="32%" alt="خانه: دکمهٔ روشن و خاموش، نود فعلی و تأخیر آن، مدت اشتراک و حجم، و «امکانات»"></a>
-  <a href="images/en/phone-groups.png"><img src="images/en/phone-groups.png" width="32%" alt="پروکسی: گروه‌های کانفیگ، هر کدام با آیکون خودش"></a>
-  <a href="images/en/phone-subscriptions.png"><img src="images/en/phone-subscriptions.png" width="32%" alt="اشتراک‌ها: اشتراک فعال با قانون‌ها و نشانی‌های پشتیبانش، و دو اشتراک دیگر"></a>
-</p>
-<p align="center">
-  <a href="images/en/phone-proxies.png"><img src="images/en/phone-proxies.png" width="32%" alt="پروکسی: یک گروه باز، نودها با تأخیر و علاقه‌مندی‌ها"></a>
-  <a href="images/en/phone-features.png"><img src="images/en/phone-features.png" width="32%" alt="امکانات: شبکهٔ همراه، اتصال‌ها و اشتراک‌گذاری با Wi-Fi"></a>
-  <a href="images/en/phone-settings.png"><img src="images/en/phone-settings.png" width="32%" alt="تنظیمات: رابط، VPN، راهنما، به‌روزرسانی و نسخه‌های آزمایشی"></a>
+  <a href="images/en/air.png"><img src="images/en/air.png" width="840" alt="Air: خانه و پروکسی با تم روشن، نودهای یک گروه باز و اشتراک‌ها با تم تیره"></a>
 </p>
 
-<p align="center"><sub>خانه · گروه‌ها · اشتراک‌ها · نودها · امکانات · تنظیمات — اشتراک‌ها و سرورهای داخل تصاویر ساختگی‌اند.</sub></p>
+<p align="center"><sub>Air · خانه · پروکسی · نودها · اشتراک‌ها</sub></p>
+
+<p align="center">
+  <a href="images/en/glass.png"><img src="images/en/glass.png" width="840" alt="DUCKER Glass: خانه، نودهای یک گروه باز و برگهٔ «همه سرورها» روی «فلز مایع»، و خانه روی «سرخس»"></a>
+</p>
+
+<p align="center"><sub>DUCKER Glass · خانه · نودها · همه سرورها · خانه روی «سرخس»</sub></p>
+
+<p align="center">
+  <a href="images/en/more.png"><img src="images/en/more.png" width="840" alt="امکانات و تنظیمات در Air، اشتراک‌ها در DUCKER Glass"></a>
+</p>
+
+<p align="center"><sub>امکانات · تنظیمات · اشتراک‌ها روی شیشه — اشتراک‌ها و سرورهای داخل تصاویر ساختگی‌اند.</sub></p>
 
 <p align="center">
   <img src="images/en/theme-wave.gif" width="240" alt="تغییر تم در صفحهٔ اصلی: تم تیره مثل موجی از دکمه پخش می‌شود و سپس تم روشن برمی‌گردد">
