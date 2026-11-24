@@ -61,13 +61,7 @@ VPN и сборки пришла из CMFA. Сетевые протоколы п
   <a href="images/ru/glass.png"><img src="images/ru/glass.png" width="840" alt="DUCKER Glass: главная, узлы открытой группы и шторка «Все узлы» поверх «Жидкого металла» и главная поверх «Папоротника»"></a>
 </p>
 
-<p align="center"><sub>DUCKER Glass · Главная · Узлы · Все узлы · Главная на «Папоротнике»</sub></p>
-
-<p align="center">
-  <a href="images/ru/more.png"><img src="images/ru/more.png" width="840" alt="«Возможности» и «Настройки» в Air, «Подписки» в DUCKER Glass"></a>
-</p>
-
-<p align="center"><sub>Возможности · Настройки · Подписки в стекле. Подписки и серверы на снимках выдуманы.</sub></p>
+<p align="center"><sub>DUCKER Glass · Главная · Узлы · Все узлы · Главная на «Папоротнике». Подписки и серверы на снимках выдуманы.</sub></p>
 
 <p align="center">
   <img src="images/ru/theme-wave.gif" width="240" alt="Смена темы на главной: тёмная тема расходится волной от кнопки, затем возвращается светлая">

@@ -60,13 +60,7 @@ ducker comes in two styles: **Air**, light or dark, and **DUCKER Glass** (beta),
   <a href="docs/images/en/glass.png"><img src="docs/images/en/glass.png" width="840" alt="DUCKER Glass: Home, an open group's nodes and the All nodes sheet over Liquid metal, and Home over Fern"></a>
 </p>
 
-<p align="center"><sub>DUCKER Glass · Home · Nodes · All nodes · Home over Fern</sub></p>
-
-<p align="center">
-  <a href="docs/images/en/more.png"><img src="docs/images/en/more.png" width="840" alt="Features and Settings in Air, Profiles in DUCKER Glass"></a>
-</p>
-
-<p align="center"><sub>Features · Settings · Profiles on glass. The subscriptions and servers on the screenshots are made up.</sub></p>
+<p align="center"><sub>DUCKER Glass · Home · Nodes · All nodes · Home over Fern. The subscriptions and servers on the screenshots are made up.</sub></p>
 
 <p align="center">
   <img src="docs/images/en/theme-wave.gif" width="240" alt="Switching the theme on Home: the dark theme spreads from the button as a wave, then the light one comes back">

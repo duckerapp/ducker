@@ -58,13 +58,7 @@ ducker 有两种样式：**Air**（浅色或深色）和 **DUCKER Glass**（测�
   <a href="images/en/glass.png"><img src="images/en/glass.png" width="840" alt="DUCKER Glass：“液态金属”背景上的首页、展开分组的节点和“所有节点”面板，以及“蕨类”背景上的首页"></a>
 </p>
 
-<p align="center"><sub>DUCKER Glass · 首页 · 节点 · 所有节点 · “蕨类”背景的首页</sub></p>
-
-<p align="center">
-  <a href="images/en/more.png"><img src="images/en/more.png" width="840" alt="Air 中的更多功能和设置，DUCKER Glass 中的订阅"></a>
-</p>
-
-<p align="center"><sub>更多功能 · 设置 · 玻璃样式的订阅。截图中的订阅和服务器均为虚构。</sub></p>
+<p align="center"><sub>DUCKER Glass · 首页 · 节点 · 所有节点 · “蕨类”背景的首页。截图中的订阅和服务器均为虚构。</sub></p>
 
 <p align="center">
   <img src="images/en/theme-wave.gif" width="240" alt="在主页切换主题：深色主题从按钮处像波纹一样扩散，随后切回浅色主题">

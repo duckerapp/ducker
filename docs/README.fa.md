@@ -65,13 +65,7 @@ ducker دو سبک دارد: **Air** روشن یا تیره، و **DUCKER Glass*
   <a href="images/en/glass.png"><img src="images/en/glass.png" width="840" alt="DUCKER Glass: خانه، نودهای یک گروه باز و برگهٔ «همه سرورها» روی «فلز مایع»، و خانه روی «سرخس»"></a>
 </p>
 
-<p align="center"><sub>DUCKER Glass · خانه · نودها · همه سرورها · خانه روی «سرخس»</sub></p>
-
-<p align="center">
-  <a href="images/en/more.png"><img src="images/en/more.png" width="840" alt="امکانات و تنظیمات در Air، اشتراک‌ها در DUCKER Glass"></a>
-</p>
-
-<p align="center"><sub>امکانات · تنظیمات · اشتراک‌ها روی شیشه — اشتراک‌ها و سرورهای داخل تصاویر ساختگی‌اند.</sub></p>
+<p align="center"><sub>DUCKER Glass · خانه · نودها · همه سرورها · خانه روی «سرخس» — اشتراک‌ها و سرورهای داخل تصاویر ساختگی‌اند.</sub></p>
 
 <p align="center">
   <img src="images/en/theme-wave.gif" width="240" alt="تغییر تم در صفحهٔ اصلی: تم تیره مثل موجی از دکمه پخش می‌شود و سپس تم روشن برمی‌گردد">
