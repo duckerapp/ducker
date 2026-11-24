@@ -221,6 +221,13 @@ fun BackLayer(
         exit = if (leaving || slide) ExitTransition.None
         else fadeOut(tween(EXIT_MS)) + scaleOut(tween(EXIT_MS), targetScale = 0.94f),
     ) {
+        // Opened again after leaving by the gesture: the card's last offset, shrink and corners are cleared a frame late
+        // (the effect above), and a page sliding in from them jumped (the owner, 24.11). Until it is in, they don't
+        // count. Not while it leaves: that runs with the page settled in.
+        val stale = { leaving && transition.currentState != EnterExitState.Visible && transition.targetState == EnterExitState.Visible }
+        val pull = { if (stale()) 0f else progress.value }
+        val shift = { if (stale()) 0f else offset.value }
+
         // How far a sliding page has come in: the screen under it dims as it is covered.
         val covered = if (slide) transition.animateFloat(
             transitionSpec = { tween(if (targetState == EnterExitState.Visible) SLIDE_IN_MS else SLIDE_OUT_MS, easing = LinearEasing) },
@@ -232,8 +239,8 @@ fun BackLayer(
         Box(
             Modifier.fillMaxSize().drawBehind {
                 // Затемнение тает по мере того, как карточка уходит с экрана.
-                val gone = if (width > 0f) (abs(offset.value) / width).coerceIn(0f, 1f) else 0f
-                val dim = maxOf(SCRIM * eased(progress.value), SLIDE_SCRIM * (covered?.value ?: 0f))
+                val gone = if (width > 0f) (abs(shift()) / width).coerceIn(0f, 1f) else 0f
+                val dim = maxOf(SCRIM * eased(pull()), SLIDE_SCRIM * (covered?.value ?: 0f))
 
                 drawRect(Color.Black, alpha = dim * (1f - gone))
             },
@@ -251,12 +258,12 @@ fun BackLayer(
                 .graphicsLayer {
                     // Читается здесь, а не в композиции: каждый кадр жеста трогает
                     // только этот слой.
-                    val p = eased(progress.value)
+                    val p = eased(pull())
                     val scale = 1f - SHRINK * p
 
                     scaleX = scale
                     scaleY = scale
-                    translationX = offset.value
+                    translationX = shift()
                     shape = RoundedCornerShape(lerp(screenCorner, maxOf(screenCorner, CORNER.toPx()), p))
                     clip = p > 0f
                     shadowElevation = ELEVATION.toPx() * p
@@ -429,8 +436,8 @@ private val CORNER = 32.dp
 /** The card's least corners from the gesture's start: where Android does not tell the display's (before 12), or it is square. */
 private val FALLBACK_CORNER = 16.dp
 
-/** A section page sliding in over Settings and out again: Material's emphasized curves. */
-private const val SLIDE_IN_MS = 340
+/** A section page sliding in over Settings and out again: Material's emphasized curves, as long both ways (the owner). */
+private const val SLIDE_IN_MS = 240
 private const val SLIDE_OUT_MS = 240
 private val SlideInEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
 private val SlideOutEasing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
