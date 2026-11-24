@@ -75,9 +75,11 @@ ducker دو سبک دارد: **Air** روشن یا تیره، و **DUCKER Glass*
 
 <p align="center">
   <img src="images/en/theme-wave.gif" width="240" alt="تغییر تم در صفحهٔ اصلی: تم تیره مثل موجی از دکمه پخش می‌شود و سپس تم روشن برمی‌گردد">
+  &nbsp;&nbsp;
+  <img src="images/en/glass-power.gif" width="240" alt="روشن و خاموش کردن VPN در DUCKER Glass: دکمه زیر لمس روشن می‌شود و کارت شیشه‌ای به حالت تازه درمی‌آید">
 </p>
 
-<p align="center"><sub>تغییر تم مثل موجی روی صفحه پخش می‌شود.</sub></p>
+<p align="center"><sub>Air: تم مثل موجی روی صفحه عوض می‌شود. DUCKER Glass: با روشن و خاموش شدن VPN، کارت به حالت تازه درمی‌آید.</sub></p>
 
 <a id="features"></a>
 

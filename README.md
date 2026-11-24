@@ -70,9 +70,11 @@ ducker comes in two styles: **Air**, light or dark, and **DUCKER Glass** (beta),
 
 <p align="center">
   <img src="docs/images/en/theme-wave.gif" width="240" alt="Switching the theme on Home: the dark theme spreads from the button as a wave, then the light one comes back">
+  &nbsp;&nbsp;
+  <img src="docs/images/en/glass-power.gif" width="240" alt="Turning the VPN on and off in DUCKER Glass: the button lights up under the touch and the glass card flows into the new state">
 </p>
 
-<p align="center"><sub>Switching between light and dark runs as a wave across the screen.</sub></p>
+<p align="center"><sub>Air: the theme changes as a wave across the screen. DUCKER Glass: the card flows into its new state as the VPN turns on and off.</sub></p>
 
 ## Features
 
