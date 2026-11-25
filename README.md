@@ -14,7 +14,7 @@
 
 <br>
 
-**An open VPN client for Android and Android TV, built on the mihomo core.**<br>
+**An open-source VPN client for Android and Android TV, built on the mihomo core.**<br>
 One button, honest status, nothing extra on the screen.
 
 **English** · [Русский](docs/README.ru.md) · [简体中文](docs/README.zh-CN.md) · [فارسی](docs/README.fa.md)
@@ -40,7 +40,7 @@ Android 8+ · Bring your own subscription · [Download APKs](https://github.com/
 ## What it is
 
 ducker connects your phone or TV to a VPN through the [mihomo](https://github.com/MetaCubeX/mihomo)
-core. You add a subscription from your provider, press one button and, if you want, pick a server.
+core. You add a subscription from your provider, tap one button and, if you want, pick a server.
 
 ducker started from [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid).
 It has its own Compose interface, subscription handling and app-update flow, while retaining
@@ -48,7 +48,7 @@ the VPN service and build foundations from CMFA. The VPN protocols come from mih
 
 ## Screenshots
 
-ducker comes in two styles: **Air**, light or dark, and **DUCKER Glass** (beta), liquid glass over a picture on phones with Android 13 and newer. Switch in **Settings → Appearance → Style**.
+ducker comes in two styles: **Air**, light or dark, and **DUCKER Glass** (beta), liquid glass over a wallpaper on phones with Android 13 and newer. Switch in **Settings → Appearance → Style**.
 
 <p align="center">
   <a href="docs/images/en/air.png"><img src="docs/images/en/air.png" width="840" alt="Air: Home and Proxies in the light theme, an open group's nodes and Profiles in the dark theme"></a>
@@ -60,15 +60,15 @@ ducker comes in two styles: **Air**, light or dark, and **DUCKER Glass** (beta),
   <a href="docs/images/en/glass.png"><img src="docs/images/en/glass.png" width="840" alt="DUCKER Glass: Home, an open group's nodes and the All nodes sheet over Liquid metal, and Home over Fern"></a>
 </p>
 
-<p align="center"><sub>DUCKER Glass · Home · Nodes · All nodes · Home over Fern. The subscriptions and servers on the screenshots are made up.</sub></p>
+<p align="center"><sub>DUCKER Glass · Home · Nodes · All nodes · Home over Fern. The subscriptions and servers in the screenshots are placeholders.</sub></p>
 
 <p align="center">
   <img src="docs/images/en/theme-wave.gif" width="240" alt="Switching the theme on Home: the dark theme spreads from the button as a wave, then the light one comes back">
   &nbsp;&nbsp;
-  <img src="docs/images/en/glass-power.gif" width="240" alt="Turning the VPN on in DUCKER Glass: the button lights up under the touch and a wave of glass carries the card into its new state">
+  <img src="docs/images/en/glass-power.gif" width="240" alt="In DUCKER Glass, the button lights up when tapped. A glass ripple transitions the card as the VPN turns on">
 </p>
 
-<p align="center"><sub>Air: the theme changes as a wave across the screen. DUCKER Glass: a wave of glass carries the card into its new state as the VPN turns on.</sub></p>
+<p align="center"><sub>Air: the theme changes as a wave across the screen. DUCKER Glass: a glass ripple transitions the card as the VPN turns on.</sub></p>
 
 ## Features
 
@@ -80,32 +80,28 @@ ducker comes in two styles: **Air**, light or dark, and **DUCKER Glass** (beta),
   through the node. If it doesn't, a card says so and offers to switch to the fastest node.
 - **Errors in plain words.** When the VPN stops or a subscription fails to update, you see why and
   what to do, not an error code — including when the phone itself closed ducker in the background.
-- **Subscriptions your way.** A link, a QR code or a file. Full mihomo configs work as they are;
+- **Flexible subscriptions.** A link, a QR code or a file. Full mihomo configs work as they are;
   plain lists of `vless://`, `vmess://`, `ss://`, `trojan://` and similar links are placed into a
   built-in profile with routing for Russia: blocked sites go through the node, Russian ones go
   directly. Encrypted subscriptions open with the key from your provider.
 - **Nodes.** Groups from your config with their icons, delay check, favorites, search, sorting by
   delay, and a node test that shows loss, minimum, average and maximum delay.
-- **Updates itself.** A new version is one tap from Home, and it can download ahead over Wi-Fi.
+- **Updates itself.** A new version is one tap from Home, and ducker can pre-download it over Wi-Fi.
   See [Updates](#updates).
-- **Light and dark.** A black-and-white look in both themes; switching runs as a wave across the
-  screen.
+- **Light and dark.** A black-and-white look in both themes.
 
-**Features** — a page under the subscription card on Home:
+**The "Features" page** — right under the subscription card on Home:
 
 - **Mobile network.** A subscription and servers of its own for when the phone leaves Wi-Fi; back
   on Wi-Fi everything is as usual.
 - **Connections.** Which apps connect where, live: the app, the site, the rule, the node, the speed.
-- **Wi-Fi sharing.** The VPN's internet for a laptop or another phone, through a proxy on your
-  network.
-
-New features will keep arriving here in future versions.
+- **Wi-Fi sharing.** Share your VPN connection with a laptop or another phone via a local proxy.
 
 **When you need more**
 
 - **Apps.** Choose which apps go through the VPN and which bypass it.
-- **My rules.** Send a website, an app, an address, a category or a whole country through the VPN,
-  past it, or block it — without touching YAML.
+- **My rules.** For a website, an app, an address, a category or a whole country, route traffic
+  through the VPN, bypass it, or block it — without touching YAML.
 - **Config editor.** Edit the profile on the device; the core checks it before it is applied. The
   profile is used as is: ducker never rewrites config keys silently.
 - **Quick access.** Home screen widgets, a Quick Settings tile, launcher shortcuts, and optional
@@ -120,6 +116,13 @@ New features will keep arriving here in future versions.
   Indonesian, Portuguese (Brazil), Turkish and Vietnamese; Persian and Arabic are laid out right to
   left.
 
+**Configuration per subscription.** In **Profiles → ⋯ → Configuration**, keep **From the subscription**
+for your provider's routing, or choose **ducker · Russia** to use its servers with ducker's
+rules: Russian sites and apps go direct, other traffic through the VPN. Switching replaces
+manual config edits. Encrypted subscriptions cannot use this template mode. A failed switch
+keeps the previous working configuration.
+[Configuration help](docs/FAQ.md#configuration-templates).
+
 **Under the hood**
 
 - **mihomo v1.19.34**, built from source with current uTLS fingerprints.
@@ -132,19 +135,7 @@ New features will keep arriving here in future versions.
 - **Measured on a budget phone.** On a Redmi Note 9S (2020, Android 12) the app cold-starts in
   about 0.4 s with the VPN running, and the VPN keeps working when Android unloads the interface.
 
-**Configuration per subscription.** In **Profiles → ⋯ → Configuration**, keep **From the subscription**
-for your provider's routing, or choose **ducker · Russia** to use its servers with ducker's
-rules: Russian sites and apps go direct, other traffic through the VPN. Switching replaces
-manual config edits. Encrypted subscriptions cannot use this template mode. A failed switch
-keeps the previous working configuration; read the error and retry or choose the source.
-[Configuration help](docs/FAQ.md#configuration-templates).
-
 ## Android TV
-
-**From an iPhone or any phone without ducker:** scan the TV's QR with the ordinary camera,
-open the page in the browser, paste your subscription link and press **Send**. No app is
-needed on the sending device. Use your own home Wi-Fi and keep the QR open on the TV.
-A computer can also open the link read from the QR. [Step-by-step guide](https://duckerapp.github.io/ducker/users/tv/#browser-transfer).
 
 The same APK runs on Android TV and Google TV.
 
@@ -155,6 +146,11 @@ The same APK runs on Android TV and Google TV.
   The link travels encrypted (AES-256-GCM) with a one-time key that exists only inside that QR
   code, and the TV listens only while the code is on the screen.
 - **Checked on real TVs.** Reports from other TV models are welcome.
+
+**From an iPhone or any phone without ducker:** scan the TV's QR with your phone's camera,
+open the page in the browser, paste your subscription link and press **Send**. No app is
+needed on the sending device. Use your own home Wi-Fi and keep the QR open on the TV.
+A computer can also open the link read from the QR. [Step-by-step guide](https://duckerapp.github.io/ducker/users/tv/#browser-transfer).
 
 <p align="center">
   <a href="docs/images/en/tv-home.png"><img src="docs/images/en/tv-home.png" width="49%" alt="Android TV: Home with the focus frame on the power button"></a>
@@ -197,15 +193,15 @@ You install ducker by hand once; after that it updates itself.
   installing, ducker checks the file's checksum and that it is signed with the same key as the
   installed app: a file from anyone else is not installed.
 
-Background checks are approximate: Android can defer them. Play Protect or device policy may ask for installation confirmation even on Android 12+. Turning beta off does not downgrade an installed beta; stable promotion uses the same APK.
+Background checks are approximate: Android can defer them. Play Protect or device policy may ask for installation confirmation even on Android 12+. Turning off beta updates does not downgrade the installed version. The same APK becomes the stable release.
 
 ### Checking the file
 
 - Each release comes with `SHA256SUMS`, the checksums of its APK files.
-- Each release's notes link a [VirusTotal](https://www.virustotal.com) report for every APK: dozens
-  of antivirus engines have looked at that exact file. You can upload your copy there yourself and
+- The release notes link to [VirusTotal](https://www.virustotal.com) reports for all APKs. Dozens
+  of antivirus engines scanned each file. You can upload your copy there yourself and
   compare.
-- The app is built from this repository; the build also downloads the zashboard panel's release (checked by its
+- The app is built from this repository. The build fetches the zashboard panel's release (checked by its
   SHA-256) and the country and site databases of MetaCubeX/meta-rules-dat. See [Build](#build) to do it yourself.
 
 A VirusTotal report describes scan results for that file at the reported time; it is not a guarantee of safety.
@@ -254,8 +250,7 @@ Provider reference: [headers](https://duckerapp.github.io/ducker/providers/heade
 
 ## Privacy and security
 
-- **No analytics or reports to the developer.** No analytics, no ads, no crash reports sent to the developer. The
-  project has no server of its own.
+- **No telemetry.** No analytics, ads or crash reporting. The project has no server of its own.
 - **What goes to the network:** the subscription request to your provider, images the
   subscription refers to, the check for a new ducker version, and your traffic through the
   provider's servers. The full list is in the [privacy policy](PRIVACY_POLICY.md).
@@ -271,15 +266,24 @@ Found a vulnerability? Please report it privately: [SECURITY.md](SECURITY.md).
 
 ## How the project is made
 
-ducker is made by one person together with an AI agent; the owner decides what to build.
-We check the app with automated tests, emulators and real devices. The source code is open:
-you can inspect how the app works and build it yourself.
+ducker is developed by one person with help from an AI agent. The author makes all decisions
+about the product and the code. Each build is checked with automated tests and on emulators and
+real devices. The source code is open: you can inspect how the app works and build it yourself.
 
 Encryption and protocols are not ours: they come from the mihomo core. The pinned core submodule records the exact upstream and community changes, including
 Xray-compatible mux and REALITY patches.
 They are public in the [duckerapp/mihomo](https://github.com/duckerapp/mihomo) fork, branch `ducker`;
 two smaller forks, [duckerapp/utls](https://github.com/duckerapp/utls) and
 [duckerapp/sing-mux](https://github.com/duckerapp/sing-mux), carry a few more fixes.
+
+## Roadmap
+
+- **A desktop client** for Windows and Linux.
+- **"Only through VPN":** chosen apps get no internet at all while the VPN is off.
+
+No dates yet. An iOS version is not planned for now.
+
+What has already been done, version by version, is in the [changelog](CHANGELOG.md).
 
 ## External control
 
@@ -294,15 +298,6 @@ tile and shortcuts work without it.
 | turn off | `am start -a app.ducker.android.action.STOP_CLASH` |
 | toggle | `am start -a app.ducker.android.action.TOGGLE_CLASH` |
 | add a subscription | `ducker://install-config?url=<link>` |
-
-## Roadmap
-
-- **A desktop client** for Windows and Linux.
-- **"Only through VPN":** chosen apps get no internet at all while the VPN is off.
-
-No dates yet. An iOS version is not planned for now.
-
-What has already been done, version by version, is in the [changelog](CHANGELOG.md).
 
 ## Build
 
@@ -331,7 +326,7 @@ Details are in [CONTRIBUTING.md](CONTRIBUTING.md); where things live in the code
 - [MetaCubeX/ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid) — the base of the VPN
   service and the build that ducker started from;
 - [Zephyruso/zashboard](https://github.com/Zephyruso/zashboard) — the built-in web panel;
-- the authors of the community core patches and of the ideas we borrowed — all named in
+- the authors of the community core patches and of the ideas used in ducker — all named in
   [docs/CREDITS.md](docs/CREDITS.md).
 
 ## Community
