@@ -89,8 +89,8 @@ it is, ask in an issue and I'll explain.
 2. **Say what and why** — and how you tested it: the phone, the Android version, what exactly you
    pressed. State what was not checked too. Device checks are needed for affected Android/VPN behavior;
    documentation and host-only changes can use appropriate local checks.
-3. **Code style** — as in the neighbouring files: Kotlin in the official style (the profile is in
-   `.idea/codeStyles`); comments explain "why", not "what".
+3. **Code style** — as in the neighbouring files: Kotlin in the official style (set in
+   `gradle.properties`); comments explain "why", not "what".
 4. **Interface strings** — only in resources. Maintain English (`values/`) and the ten shipped
    translations: Russian, Simplified Chinese, Persian, Arabic, Spanish, French, Indonesian,
    Brazilian Portuguese, Turkish and Vietnamese. Preserve placeholders and explain any

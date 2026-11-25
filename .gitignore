@@ -23,13 +23,9 @@ __pycache__/
 # Ignore IDEA config
 *.iml
 /.idea/*
-!/.idea/codeStyles
 /core/src/main/golang/.idea/*
-!/core/src/main/golang/.idea/codeStyles
 /core/src/foss/golang/.idea/*
-!/core/src/foss/golang/.idea/codeStyles
 /core/src/premium/golang/.idea/*
-!/core/src/premium/golang/.idea/codeStyles
 
 # Ignore builtin geofiles
 # ducker: исключается содержимое, а не сам каталог — иначе git не заглядывает
