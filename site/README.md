@@ -42,7 +42,7 @@ works on the published site, not under `zensical serve`.
   `fonts/` (Onest, the app's own font, SIL OFL, cut down to Latin and Cyrillic). The Russian site
   gets a copy from `sources.py`.
 - `overrides/main.html`: link previews for messengers (Open Graph tags) on every page; the cards are
-  `docs/assets/og-en.png` and `og-ru.png`, 1200×630.
+  `docs/assets/og-en.png` and `og-ru.png`, 1280×640.
 - `overrides/home.html`: the home page's template — full width, no sidebars. Both `index.md` files
   share one markup; only the texts differ.
 - `docs/assets/ducker-logo.svg`: the header logo, the app icon's tile with the duck cut by its edge.
