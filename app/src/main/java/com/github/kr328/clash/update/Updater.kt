@@ -10,6 +10,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.IntentCompat
 import com.github.kr328.clash.BuildConfig
 import com.github.kr328.clash.common.Global
@@ -355,6 +356,24 @@ object Updater {
 
             else -> fail(UpdateError.Install, intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty())
         }
+    }
+
+    /**
+     * The downloaded file for the system's own installer, after Android refused ducker's session. MIUI denies session
+     * commits from third-party installers («Permission Denied», F-625) but not its installer opening a file. Android
+     * itself refuses an update signed by another key or not newer, so the file needs no second check here.
+     */
+    fun systemInstall(): Intent? {
+        val release = _state.value.release ?: return null
+        val file = file(release).takeIf { it.isFile } ?: return null
+
+        store.installing = release.code
+
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.logs", file)
+
+        return Intent(Intent.ACTION_VIEW)
+            .setDataAndType(uri, "application/vnd.android.package-archive")
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
     /** Системное окно открыто — второй раз не открывать. */

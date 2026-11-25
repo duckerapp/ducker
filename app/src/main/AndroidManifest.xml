@@ -369,7 +369,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Журнал файлом в «Поделиться» (D-111). -->
+        <!-- Журнал файлом в «Поделиться» (D-111); the downloaded update for the system installer (Updater.systemInstall). -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.logs"

@@ -2090,6 +2090,11 @@ class HomeActivity : AppCompatActivity(), Broadcasts.Observer {
                         vpn = state.running,
                         permitted = remember(resumes.intValue) { packageManager.canRequestPackageInstalls() },
                         onInstall = { withInstallPermission { Updater.install() } },
+                        onSystemInstall = {
+                            withInstallPermission {
+                                Updater.systemInstall()?.let { runCatching { startActivity(it) } }
+                            }
+                        },
                         onAuto = { yes ->
                             if (yes) {
                                 withInstallPermission {

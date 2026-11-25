@@ -432,6 +432,7 @@
     <string name="app_update_error_download">Không thể tải bản cập nhật. Kiểm tra kết nối rồi thử lại</string>
     <string name="app_update_error_foreign">Tệp đã tải không phải bản phát hành của ducker nên không được cài đặt</string>
     <string name="app_update_error_install">Android không cài được bản cập nhật</string>
+    <string name="app_update_system_install">Cài bằng trình cài đặt của hệ thống</string>
     <string name="app_update_notice_channel">Cập nhật ứng dụng</string>
     <string name="app_update_notice_title">Có bản cập nhật: ducker %s</string>
     <string name="app_update_notice_text">Nhấn để cập nhật</string>

@@ -435,6 +435,7 @@
     <string name="app_update_error_download">Güncelleme indirilemedi. Bağlantıyı kontrol edip tekrar deneyin</string>
     <string name="app_update_error_foreign">İndirilen dosya bir ducker sürümü olmadığı için yüklenmedi</string>
     <string name="app_update_error_install">Android güncellemeyi yüklemedi</string>
+    <string name="app_update_system_install">Sistem yükleyicisiyle yükle</string>
     <string name="app_update_notice_channel">Uygulama güncellemeleri</string>
     <string name="app_update_notice_title">Güncelleme mevcut: ducker %s</string>
     <string name="app_update_notice_text">Güncellemek için dokunun</string>

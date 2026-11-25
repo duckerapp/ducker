@@ -432,6 +432,7 @@
     <string name="app_update_error_download">Tidak dapat mengunduh pembaruan. Periksa koneksi dan coba lagi</string>
     <string name="app_update_error_foreign">File yang diunduh bukan rilis ducker, jadi tidak diinstal</string>
     <string name="app_update_error_install">Android tidak menginstal pembaruan</string>
+    <string name="app_update_system_install">Instal dengan penginstal sistem</string>
     <string name="app_update_notice_channel">Pembaruan aplikasi</string>
     <string name="app_update_notice_title">Pembaruan tersedia: ducker %s</string>
     <string name="app_update_notice_text">Ketuk untuk memperbarui</string>

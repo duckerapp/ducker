@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <cache-path name="logs" path="logs/" />
+    <!-- The downloaded update, for the system's installer when Android refused ducker's own (Updater.systemInstall). -->
+    <cache-path name="update" path="update/" />
 </paths>

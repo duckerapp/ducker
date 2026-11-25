@@ -439,6 +439,7 @@
     <string name="app_update_error_download">Não foi possível baixar a atualização. Verifique a conexão e tente novamente</string>
     <string name="app_update_error_foreign">O arquivo baixado não é uma versão do ducker, por isso não foi instalado</string>
     <string name="app_update_error_install">O Android não instalou a atualização</string>
+    <string name="app_update_system_install">Instalar com o instalador do sistema</string>
     <string name="app_update_notice_channel">Atualizações do aplicativo</string>
     <string name="app_update_notice_title">Atualização disponível: ducker %s</string>
     <string name="app_update_notice_text">Toque para atualizar</string>

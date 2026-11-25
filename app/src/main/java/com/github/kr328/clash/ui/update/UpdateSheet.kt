@@ -40,6 +40,8 @@ fun UpdateSheet(
     /** Android уже разрешил ducker ставить приложения; нет — «Обновить» сначала ведёт в настройки. */
     permitted: Boolean,
     onInstall: () -> Unit,
+    /** After Android refused the install: hand the downloaded file to the system's installer. */
+    onSystemInstall: () -> Unit,
     /** The answer to “download updates in advance?”; “yes” installs this version as well. */
     onAuto: (Boolean) -> Unit,
     onDismiss: () -> Unit,
@@ -96,6 +98,12 @@ fun UpdateSheet(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+
+            if (state.error == UpdateError.Install && !state.busy) {
+                GlassTextButton(onClick = onSystemInstall, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.app_update_system_install))
                 }
             }
         }
