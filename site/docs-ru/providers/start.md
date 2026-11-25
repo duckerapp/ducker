@@ -168,6 +168,46 @@ proxy-groups:
 Названия полей — как в выгрузке правил Remnawave на октябрь 2026 года; если панель обновилась,
 сверьтесь с её документацией. Код панели править не нужно.
 
+<details markdown="1">
+<summary>Полный пример со всеми заголовками <code>ducker-*</code></summary>
+
+Оставьте нужные заголовки и подставьте свои значения. `LTE` должно совпадать с именем группы в
+конфиге. Если группа задана в YAML через `ducker.mobile-group`, применяется она.
+[Значения и действие заголовков](headers.md).
+
+```json
+{
+  "name": "Mihomo — ducker (Android)",
+  "enabled": true,
+  "operator": "AND",
+  "conditions": [
+    {
+      "headerName": "user-agent",
+      "operator": "CONTAINS",
+      "value": "ducker",
+      "caseSensitive": false
+    }
+  ],
+  "responseType": "MIHOMO",
+  "responseModifications": {
+    "headers": [
+      { "key": "ducker-brand-name", "value": "Pond" },
+      { "key": "ducker-brand-logo", "value": "https://example.com/logo.png" },
+      { "key": "ducker-buy-url", "value": "https://example.com/renew" },
+      { "key": "ducker-global", "value": "on" },
+      { "key": "ducker-local-proxy", "value": "on" },
+      { "key": "ducker-share", "value": "on" },
+      { "key": "ducker-override-user", "value": "off" },
+      { "key": "ducker-mobile-group", "value": "LTE" },
+      { "key": "ducker-mirrors", "value": "sub2.example.com, sub3.example.org" }
+    ],
+    "subscriptionTemplate": "Default"
+  }
+}
+```
+
+</details>
+
 ## Ссылка в одно касание
 
 ```

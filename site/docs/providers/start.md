@@ -167,6 +167,46 @@ In a rules export it looks like this:
 Field names match Remnawave's October 2026 rules export; if the panel has been updated,
 check its documentation. No changes to the panel code are needed.
 
+<details markdown="1">
+<summary>Full example with all <code>ducker-*</code> headers</summary>
+
+Keep the headers you need and substitute your own values. `LTE` must match a group name in
+the config. If the YAML specifies `ducker.mobile-group`, ducker uses that group.
+[Header values and their effects](headers.md).
+
+```json
+{
+  "name": "Mihomo — ducker (Android)",
+  "enabled": true,
+  "operator": "AND",
+  "conditions": [
+    {
+      "headerName": "user-agent",
+      "operator": "CONTAINS",
+      "value": "ducker",
+      "caseSensitive": false
+    }
+  ],
+  "responseType": "MIHOMO",
+  "responseModifications": {
+    "headers": [
+      { "key": "ducker-brand-name", "value": "Pond" },
+      { "key": "ducker-brand-logo", "value": "https://example.com/logo.png" },
+      { "key": "ducker-buy-url", "value": "https://example.com/renew" },
+      { "key": "ducker-global", "value": "on" },
+      { "key": "ducker-local-proxy", "value": "on" },
+      { "key": "ducker-share", "value": "on" },
+      { "key": "ducker-override-user", "value": "off" },
+      { "key": "ducker-mobile-group", "value": "LTE" },
+      { "key": "ducker-mirrors", "value": "sub2.example.com, sub3.example.org" }
+    ],
+    "subscriptionTemplate": "Default"
+  }
+}
+```
+
+</details>
+
 ## One-tap link
 
 ```
