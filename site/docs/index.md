@@ -15,7 +15,7 @@ hide:
 
 # Open-source VPN client for Android and Android TV
 
-Powered by [mihomo](https://github.com/MetaCubeX/mihomo): one button, an accurate connection status, and no clutter on the screen.
+Powered by [mihomo](https://github.com/MetaCubeX/mihomo), with one button, an accurate connection status, and no clutter on the screen. You need your own subscription from a VPN provider.
 { .dk-lede }
 
 [Install](users/install.md){ .dk-btn .dk-btn--solid } [Questions and answers](users/faq.md){ .dk-btn }
@@ -90,7 +90,7 @@ Home shows the power button, the current node with its delay, when the subscript
 
 ### Honest status
 
-Right after the tunnel comes up, ducker checks whether the selected node answers a connection probe. If it doesn't, a card says so and offers the fastest node.
+Right after connecting, ducker checks whether the selected node answers a connection probe. If it doesn't, a card says so and offers the fastest node.
 
 </div>
 <div markdown>
@@ -118,7 +118,7 @@ When the VPN stops or a subscription fails to update, you see why and what to do
 
 ## DUCKER Glass
 
-A second style for phones on Android 13 and newer: cards, the dock and sheets are liquid glass over a picture, Liquid metal or Fern. In beta; switch it in Settings → Appearance → Style.
+A second style for phones on Android 13 and newer. Cards, the dock and sheets look like liquid glass over wallpaper such as Liquid metal or Fern. Enable the beta style in Settings → Appearance → Style.
 
 Air stays as it was, light or dark.
 { .dk-quiet }
@@ -212,7 +212,7 @@ No analytics or reports to the developer.
 </div>
 <div markdown>
 
-**The core API.** Listens only on 127.0.0.1, behind a random secret created at install.
+**The core's internal interface.** Available only on the device itself (`127.0.0.1`). Access requires a random secret created at installation.
 
 </div>
 <div markdown>

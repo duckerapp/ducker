@@ -46,7 +46,7 @@ Remnawave adds these when device tracking is enabled. PasarGuard refuses with HT
 first and the second header. In either case, ducker:
 
 - does not overwrite the previous profile with the returned placeholder;
-- prevents connecting while the rejection remains in effect, so the limit is enforced;
+- blocks connections while the rejection remains in effect;
 - shows a Home card with your `announce` text and a **Support** button from `support-url`;
 - keeps the **Update** button available: after unlinking a device in the panel, the user
   taps it to retry.

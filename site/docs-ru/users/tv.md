@@ -12,9 +12,11 @@ Android TV/Google TV; iPhone только отправляет ссылку, п�
 
 ## 1. Скачайте ducker на телефон
 
-Откройте на телефоне [выпуски](https://github.com/duckerapp/ducker/releases) и скачайте файл
-[`ducker-armeabi-v7a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-armeabi-v7a.apk) — он ставится почти на любой телевизор. Для современного телевизора или приставки
-нужен [`ducker-arm64-v8a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk). Если файл не установится на шаге 5, повторите с другим.
+Откройте на телефоне [выпуски](https://github.com/duckerapp/ducker/releases) и начните с
+[`ducker-armeabi-v7a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-armeabi-v7a.apk).
+Если файл не установится на телевизор на шаге 5, попробуйте
+[`ducker-arm64-v8a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk).
+Этот вариант нужен телевизорам и приставкам на ARM, которые принимают только 64-битные приложения.
 На сам телефон устанавливать файл не нужно.
 
 ## 2. Поставьте LocalSend на телевизор
@@ -74,8 +76,8 @@ LocalSend: включите переключатель и нажмите «На�
 Если код устарел или экран приёма закрыли, откройте его заново и отсканируйте новый QR.
 Если страница не открывается, проверьте общую сеть: гостевой Wi-Fi может изолировать устройства.
 
-Страница шифрует ссылку перед отправкой на телевизор. Пользуйтесь своей домашней сетью:
-сама страница загружается по HTTP, и тот, кто управляет этой сетью, может её подменить.
+Страница шифрует ссылку перед отправкой на телевизор. Сама страница загружается по HTTP.
+Открывайте её только в своей домашней сети Wi-Fi. Тот, кто управляет сетью, может подменить страницу.
 
 ### Из ducker на Android-телефоне
 

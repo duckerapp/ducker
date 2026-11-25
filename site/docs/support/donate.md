@@ -10,7 +10,7 @@ The simplest way: any coin, right in Telegram, with no address or network to cho
 
 ## To a wallet
 
-Pick the network your wallet sends on and copy the address under it.
+Choose the network you're sending on and copy the address listed under it.
 **Send each coin only on the network listed for it:** a transfer on another network will not arrive.
 
 ### Tron (TRC-20)

@@ -2,7 +2,7 @@
 # Build it after the English site: the English build clears build/, this one writes build/ru/.
 INHERIT: mkdocs.yml
 
-site_description: Открытый VPN-клиент для Android и Android TV на ядре mihomo
+site_description: VPN-клиент с открытым исходным кодом для Android и Android TV на ядре mihomo
 site_url: !ENV [DUCKER_SITE_URL_RU, 'https://duckerapp.github.io/ducker/ru/']
 site_dir: build/ru
 docs_dir: docs-ru

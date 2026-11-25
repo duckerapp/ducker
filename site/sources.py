@@ -52,7 +52,7 @@ PAGES = {
         ]),
         "users/privacy.md": ("docs/PRIVACY_POLICY.ru.md", [
             ("# Политика конфиденциальности ducker", "# Приватность"),
-            ("[SECURITY.md](SECURITY.ru.md)", "[«Безопасность»](../help/security.md)"),
+            ("[SECURITY.ru.md](SECURITY.ru.md)", "[«Безопасность»](../help/security.md)"),
             ("в истории этого файла в репозитории",
              f"в [истории этого файла в репозитории]({GH}/commits/main/docs/PRIVACY_POLICY.ru.md)"),
         ]),
@@ -67,7 +67,7 @@ PAGES = {
              f"**Security → Report a vulnerability** ([открыть форму]({GH}/security/advisories/new))"),
         ]),
         "support/credits.md": ("docs/CREDITS.ru.md", [
-            ("Файл поддерживается в актуальном состоянии и попадает в README репозитория.\n", ""),
+            ("Файл поддерживается в актуальном состоянии. На него ссылается README репозитория.\n", ""),
         ]),
     },
 }

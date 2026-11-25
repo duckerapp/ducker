@@ -22,8 +22,9 @@ no panel code changes are needed. To return them only to ducker, see
 When the subscription's domain is blocked or its server is down, ducker tries other addresses on
 its own, and the user notices nothing.
 
-- `ducker-mirrors: sub2.example.com, sub3.example.org` — a bare host means the same link on another
-  domain, with its path and token, so one static value serves every user. A full `https://…` link
+- `ducker-mirrors: sub2.example.com, sub3.example.org` — if you give only a domain, without
+  `https://` or a path, ducker replaces the domain and keeps the original path and token.
+  One value serves every user. A full `https://…` link
   is used as is; in Remnawave, `{{SHORT_UUID}}` fills in the user's part.
 - `fallback-url: <link>` — Happ's backup link. ducker reads it too, after `ducker-mirrors`.
 - `new-url: <link>` or `new-domain: <domain>` — Happ's permanent move. ducker switches the stored
@@ -64,7 +65,7 @@ A mirror must open the same link: point its domain at the same subscription page
 on another server, or at the panel itself — wherever this path gives the subscription. If a backup
 serves it on another path, give that mirror as a full link.
 
-Clients learn mirrors from a successful update, so add them before a block, on another IP or CDN.
+Clients receive the mirror list during a successful update, so add mirrors before a block, on another IP or CDN.
 For a user whose first download is already blocked, put them in the
 [one-tap link](start.md#one-tap-link) as well.
 

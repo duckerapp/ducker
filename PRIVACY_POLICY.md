@@ -43,8 +43,9 @@ addresses specified by the provider.
 
 **3. Your traffic.** The profile, your rules and app exclusions determine what goes through
 the provider's nodes, what goes directly and what is blocked. Direct and excluded traffic is
-not protected by a node. Nodes can observe destination and connection metadata; HTTPS still
-protects its encrypted contents, subject to the destination and your trust settings.
+not protected by a node. A node can see where connections go, when they start, and how much
+data they carry. When HTTPS connects your device to the site itself, page content and form
+data are encrypted between them. This protection depends on certificate trust settings.
 
 **4. Core service requests.** These are specified by the provider's profile or the built-in
 template:
@@ -102,7 +103,6 @@ and copies only the prepared report. Nothing is sent automatically.
 - **Camera** — only to scan subscription QR codes. Frames are neither saved nor sent anywhere.
 - **App list** — to let you choose apps that bypass the VPN. The list stays on the phone.
 - **Background work and start after reboot** — to prevent the VPN from stopping on its own.
-
 - **Install packages** — to install verified app updates; Android asks to confirm each one.
   Downloading updates in advance is optional.
 

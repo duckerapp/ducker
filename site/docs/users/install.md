@@ -5,7 +5,7 @@ your phone or TV. Android will ask you to allow installation from this source; t
 normal for apps outside Play. Google Play Protect may also offer to scan the app first:
 [what to tap](faq.md#google-play-protect-asks-to-scan-the-app).
 
-Which file to choose:
+If you're unsure which APK to use for your phone, start with `arm64-v8a`.
 
 - [`arm64-v8a`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk): almost any phone newer than 2017;
 - [`armeabi-v7a`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-armeabi-v7a.apk): older phones and many TVs; use it if the first APK will not install.
@@ -33,7 +33,7 @@ subscription link on the browser page and press **Send**; no ducker app is neede
 Keep both devices on your own home Wi-Fi and keep the TV's QR screen open.
 
 If ducker is installed on an Android phone, its **Profiles → Add → Scan QR** scanner can send
-an existing subscription too. [All steps, including installing the APK on the TV](tv.md#browser-transfer).
+an existing subscription too. [All steps, including installing the APK on the TV](tv.md).
 
 ## Updates
 
@@ -53,10 +53,10 @@ an existing subscription too. [All steps, including installing the APK on the TV
 ## Checking the file
 
 - Each release comes with `SHA256SUMS`, the checksums of its APK files.
-- Each release's notes link a [VirusTotal](https://www.virustotal.com) report for every APK:
-  dozens of antivirus engines have looked at that exact file. You can upload your copy there
+- The release notes link to [VirusTotal](https://www.virustotal.com) reports for all APKs. Dozens
+  of antivirus engines scanned each file. You can upload your copy there
   yourself and compare.
-- The app is built from the [repository](https://github.com/duckerapp/ducker#build); the build also downloads
+- The app is built from the [repository](https://github.com/duckerapp/ducker#build). The build fetches
   the zashboard panel's release (checked by its SHA-256) and the country and site databases of
   MetaCubeX/meta-rules-dat. You can repeat the build yourself.
 
@@ -78,9 +78,14 @@ Access is disabled by default, including on existing installations. Permission a
 all apps able to send these commands. Built-in widgets, the tile, and shortcuts work
 independently of this permission; importing through a URL requires confirmation.
 
+<details markdown="1">
+<summary>Commands for Tasker and other apps</summary>
+
 | Action | Intent |
 |---|---|
 | start | `am start -a app.ducker.android.action.START_CLASH` |
 | stop | `am start -a app.ducker.android.action.STOP_CLASH` |
 | toggle | `am start -a app.ducker.android.action.TOGGLE_CLASH` |
 | add a subscription | `ducker://install-config?url=<subscription-url>` |
+
+</details>

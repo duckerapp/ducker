@@ -13,9 +13,9 @@ repository README.
 - **mihomo** — MetaCubeX, GPL-3.0. The core.
 - **zashboard** — Zephyruso, MIT. The diagnostics dashboard under **Help and diagnostics**: the
   release `v3.29.1` (`dist-no-fonts.zip`, checked by its SHA-256), downloaded during the build.
-- **uTLS** — The Go Authors and refraction-networking, BSD 3-Clause. TLS fingerprints for the core;
-  our fork `duckerapp/utls`, branch `ducker`.
-- **sing-mux** — nekohasekai (SagerNet), GPL-3.0 or later. Multiplexing for the core; our fork
+- **uTLS** — The Go Authors and refraction-networking, BSD 3-Clause. TLS fingerprints for the core.
+  The project fork is `duckerapp/utls`, branch `ducker`.
+- **sing-mux** — nekohasekai (SagerNet), GPL-3.0 or later. Multiplexing for the core. The project fork is
   `duckerapp/sing-mux`.
 - **meta-rules-dat** — MetaCubeX. The country and site databases (`geoip.metadb`, `geosite.dat`)
   behind the country and category rules, downloaded during the build; that project builds them from
@@ -62,20 +62,20 @@ it is an idea or code.
 | What | Source | Idea or code |
 |-----|----------|--------------|
 | Provider headers kept in a file in the profile directory; HWID from `ANDROID_ID` without hashing, with the accompanying device headers, and its screen in settings | Prizrak-Box-android, branch `prizrak`, commit `5237799` (`ProfileProcessor.kt:216-234`, `:1427-1543`, `ProfileManager.kt:268-320`, HWID dialogs); for the device headers also FlClashX, commit `dc77f6f`, `lib/utils/device_info_service.dart:112-151` | idea |
-| A single Go export for “links + template → config.yaml” | same source, `core/src/main/golang/native/convert.go:19-88` | idea; our implementation, built on `ConvertsV2Ray` |
-| Receiving a subscription on a TV over the home network | same source, `app/.../tv/TvImportServer.kt`, `app/src/main/assets/tv_import_web.html` (a local web page) | idea; ducker sends it from ducker on the phone, encrypted, by a QR code |
+| A single Go export for “links + template → config.yaml” | same source, `core/src/main/golang/native/convert.go:19-88` | idea. ducker's implementation uses `ConvertsV2Ray` |
+| Receiving a subscription on a TV over the home network | same source, `app/.../tv/TvImportServer.kt`, `app/src/main/assets/tv_import_web.html` (a local web page) | idea. Scan the TV's QR code in ducker on Android or open it in a browser on an iPhone or another device. Both methods encrypt the transfer |
 | Applying provider settings “only when adding / on every update” | FlClashX, `lib/controller.dart:302-319` | idea, for `ducker-override-user`: ducker applies it on every update |
-| Xray multiplexing (mux.cool) with UDP and XUDP; Xray-compatible REALITY (ML-KEM, ML-DSA-65) | jesus (Jolymmiles), via legiz-ru/Prizrak-Core, branch `v1-19-31`: 13 commits from `2197a3ca` to `9090c2c0`; upstream: MetaCubeX/mihomo#2980 | code, in our `ducker` core branch with the original authors |
+| Xray multiplexing (mux.cool) with UDP and XUDP; Xray-compatible REALITY (ML-KEM, ML-DSA-65) | jesus (Jolymmiles), via legiz-ru/Prizrak-Core, branch `v1-19-31`: 13 commits from `2197a3ca` to `9090c2c0`; upstream: MetaCubeX/mihomo#2980 | code in the `ducker` core branch with original authorship preserved |
 | Skipping a broken node in a provider rather than rejecting the entire provider | legiz-ru/Prizrak-Core `e265e713` (ported from Medium1992/mihomo-proxy-ros) | code |
-| ML-DSA-65 signatures for REALITY in uTLS | jesus, via legiz-ru/prizrak-utls `80ad7038` | code, in our `duckerapp/utls` fork, branch `ducker`, with the original author |
-| Settings shared between the app's processes: a `SharedPreferences` file owned by the service and a content provider for the interface | RikkaApps/RikkaX, `multiprocess` 1.0.0, MIT | idea; the library was replaced with our own code of the same design |
+| ML-DSA-65 signatures for REALITY in uTLS | jesus, via legiz-ru/prizrak-utls `80ad7038` | code in `duckerapp/utls`, branch `ducker`, with original authorship preserved |
+| Settings shared between the app's processes: a `SharedPreferences` file owned by the service and a content provider for the interface | RikkaApps/RikkaX, `multiprocess` 1.0.0, MIT | idea. ducker implements the same design in its own code |
 | Backup addresses and moves of a subscription: `fallback-url`, `new-url`, `new-domain`, and `#name: value` lines at the top of the file | Happ's conventions | idea; compatible, read as Happ writes them |
 | The generator of the Binder code between the interface and the service, and its runtime (`kaidl/`, `service/src/main/java/com/github/kr328/kaidl/`) | Kr328/kaidl, branch `main`, commit `7710f43` (version 1.15), MIT — `kaidl/LICENSE` | code; Clash Meta for Android takes it as a binary, here the generator and the runtime were rewritten on that basis and live in the tree; what differs — `kaidl/README.md` |
 
 ## Recording borrowed work
 
-1. **Code:** preserve the license header, name the source (repository, branch, commit)
+1. **When borrowing code**, preserve the license header, name the source (repository, branch, commit)
    in the commit message, and add a row to the table above.
-2. **Idea:** add a table row; write our own implementation.
+2. **When borrowing an idea**, add a table row and write a separate implementation.
 3. **Verification is mandatory.** Someone else's solution may be wrong, outdated, or intended
    for a different version. Check against the source and on a device.

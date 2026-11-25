@@ -12,10 +12,11 @@ You need a TV or a box with Android TV or Google TV and a phone, both on the sam
 
 ## 1. Download ducker on the phone
 
-On the phone, open [Releases](https://github.com/duckerapp/ducker/releases) and download
-[`ducker-armeabi-v7a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-armeabi-v7a.apk): it installs on almost any TV. A current TV or box needs
-[`ducker-arm64-v8a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk). If the file does not install at step 5, repeat with the other one. Do not install the
-file on the phone itself.
+On the phone, open [Releases](https://github.com/duckerapp/ducker/releases) and start with
+[`ducker-armeabi-v7a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-armeabi-v7a.apk).
+If it doesn't install on the TV at step 5, try
+[`ducker-arm64-v8a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk).
+ARM TVs and boxes that support only 64-bit apps need this version. Do not install the APK on the phone itself.
 
 ## 2. Install LocalSend on the TV
 
@@ -75,8 +76,8 @@ installing the APK; LocalSend's earlier QR transfers the APK file instead. If th
 expired or the receiving screen was closed, reopen it and scan the new code. If the page
 will not open, check both devices are on the same network; guest Wi-Fi may isolate them.
 
-The page encrypts the link before sending it to the TV. Use your own home network: the
-page itself loads over HTTP, so someone controlling that network could change it.
+The page encrypts the link before sending it to the TV. The page itself loads over HTTP.
+Open it only on your own home Wi-Fi. Someone controlling the network could replace the page.
 
 ### From ducker on an Android phone
 

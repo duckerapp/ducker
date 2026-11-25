@@ -69,8 +69,8 @@ GRADLE_USER_HOME=$(mktemp -d) ./gradlew --write-verification-metadata sha256 hel
 
 `help` resolves every configuration; the two tasks add what is downloaded only while a task runs,
 such as aapt2 and lint. The empty Gradle home makes it download everything again (about 600 MB):
-a cache filled earlier skips some metadata files that a fresh checkout needs. Gradle on Linux
-records only the Linux aapt2, so after an AGP update add the macOS one by hand, next to the Linux
+a cache filled earlier skips some metadata files (`.pom` and `.module`) that a fresh checkout
+needs. Gradle on Linux records only the Linux aapt2, so after an AGP update add the macOS one by hand, next to the Linux
 entry: its SHA-256 is that of `aapt2-<version>-osx.jar` from `dl.google.com/dl/android/maven2`.
 
 ## How the project is organised
@@ -81,7 +81,7 @@ are still in Russian.
 
 Marks like `D-45` and `F-49` in comments are entry numbers in the working journal of decisions and
 facts. The journal itself is not published: if you need the reason why something is done the way
-it is, ask in an issue and you will get a straight answer.
+it is, ask in an issue and I'll explain.
 
 ## Pull requests
 

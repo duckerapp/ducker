@@ -98,8 +98,8 @@ proxy-groups:
 
 - **The list** is the group's nodes that the main group also has, in your order: ducker
   switches the node of the main group, trying the list from the top and taking the first that
-  answers. If none of the nodes is in the main group but the group itself is, the list is the
-  group alone, and the group picks its node.
+  answers. If the main group contains none of those nodes but includes the group named in
+  `mobile-group`, ducker selects that group. The group picks a node according to its settings.
 - **When it applies.** A subscription with the key turns "Switch by network" on by itself
   while the user has not set up the page. Settings the user made are not replaced. With
   several such subscriptions, the first downloaded one sets it up.
@@ -182,12 +182,13 @@ header arrives, its name is shown instead; a name the user gives the subscriptio
 Without either, the card shows the link's domain.
 
 `mirror` is optional and repeats: each is a backup address written as in
-[`ducker-mirrors`](headers.md#subscription-mirrors) — a bare host or a full `https://…` link. They
-are tried at this first download when the link is already blocked. After that, the list comes from
+[`ducker-mirrors`](headers.md#subscription-mirrors) — either a domain alone (without `https://`
+or a path) or a full `https://…` link. They are tried on the first download if the link is already
+blocked. After that, the list comes from
 the header: a response from the link itself without it removes them. When a user shares the
 subscription as a QR code or sends it to a TV, ducker passes its current mirrors along.
 
-`key` is optional: the decryption key of an encrypted subscription, `AGE-SECRET-KEY-…`; it fills
-the **Decryption key** field. ducker adds it itself when a user shares an encrypted subscription as a
+`key` is an optional subscription decryption key (`AGE-SECRET-KEY-…`). The example above omits it.
+It fills the **Decryption key** field. ducker adds it when a user shares an encrypted subscription as a
 QR code or sends it to a TV. A link with the key opens the subscription with nothing else, so on a
 shared page give the key separately, as above.

@@ -24,7 +24,10 @@ in the app.
 - [Google Play Protect asks to scan the app](#google-play-protect-asks-to-scan-the-app)
 - [Android asks to allow apps from unverified developers](#android-asks-to-allow-apps-from-unverified-developers)
 - [Configuration templates](#configuration-templates)
-- [Mobile network, rules and moving to another device](#mobile-network-rules-and-moving-to-another-device)
+- [Mobile network](#mobile-network)
+- [My rules](#my-rules)
+- [Encrypted subscriptions](#encrypted-subscriptions)
+- [Moving to another device](#moving-to-another-device)
 - [Beta versions and returning to stable](#beta-versions-and-returning-to-stable)
 - [How to send a log](#how-to-send-a-log)
 - [What never to send](#what-never-to-send)
@@ -348,8 +351,8 @@ ducker updates itself: there is no need to download each new version by hand.
 - "Beta versions" in the same place enables early access to test releases.
 
 ducker installs only a file signed with the same key as the app already on your phone, and only
-if its checksum matches. To check a file you downloaded yourself, each release lists its
-`SHA256SUMS` and a VirusTotal report for every APK.
+if its checksum matches. The release includes `SHA256SUMS` and links to VirusTotal reports
+for all APKs so you can check a file you downloaded yourself.
 
 ## Google Play Protect asks to scan the app
 
@@ -390,7 +393,7 @@ Open **Profiles → ⋯ → Configuration** for a URL subscription.
 - **From the subscription** is the default: use the provider's rules and settings.
 - **ducker · Russia** takes server connections and proxy providers from the subscription,
   with ducker's groups, DNS, app list and routing. Russian sites/apps go direct; other
-  traffic uses the VPN. This is a regional policy, not protection of every connection.
+  traffic uses the VPN.
 
 Switching replaces manual config edits and may reconnect the VPN. The sheet waits for
 the result; if it fails, the previous working configuration stays in use. A requested
@@ -403,24 +406,35 @@ A new subscription with a broken provider config may use its nodes with the temp
 and show an error card. A failed update of an existing working subscription keeps its
 previous configuration. These recovery paths are not an explicit template selection.
 
-## Mobile network, rules and moving to another device
+<a id="mobile-network-rules-and-moving-to-another-device"></a>
 
-- **Home → Features → Mobile network:** choose a subscription and nodes for mobile
-  data. Wi-Fi keeps the normal selection; a manual selection can override an automatic
-  switch. Check the active subscription/node before diagnosing a routing difference.
-  A provider can fill the list: then "Provider's list" is on and follows its updates;
-  editing the list turns it off, and turning it on brings the provider's list back.
-- **My rules:** your site/app/address rules are considered before the provider's routing
-  rules. App exclusions are separate: an app outside the Android VPN does not reach the
-  core's routing rules. Start with one rule and check **Features → Connections**.
-- **Encrypted subscriptions:** enter the provider's age key in **Decryption key** when
-  adding the link. ducker's shared QR/install link and phone-to-TV transfer may include
-  that key. Treat the whole QR/link as a credential. On older versions the receiver may
-  need the key separately; the TV browser page accepts an install link containing it.
-- **Moving:** share the subscription to your own device, or add its original URL and
-  key there. Android backup transfers settings, not subscriptions/configs. A local file
-  subscription or manual config edits need a separate private copy. Uninstalling is not
-  an update-repair step: it removes local subscriptions. Do not post backup files publicly.
+## Mobile network
+
+In **Home → Features → Mobile network**, choose a subscription and nodes for mobile
+data. Wi-Fi keeps the normal selection. A manual selection can override an automatic
+switch. If traffic takes an unexpected route, first check the active subscription and
+node. A list supplied by the provider updates with the subscription. Editing the list
+turns off **Provider's list**. Turn it on again to restore the provider's list.
+
+## My rules
+
+ducker checks **My rules** before the provider's routing rules. If an app bypasses the
+VPN under **Apps**, **My rules** do not apply to it. Start with one rule and check
+**Features → Connections**.
+
+## Encrypted subscriptions
+
+Enter the provider's age key in **Decryption key** when adding the link. ducker's shared
+QR code, install link, and phone-to-TV transfer may include that key. Treat the whole
+QR code or link as a credential. Older versions may need the key separately. The TV
+browser page accepts an install link containing it.
+
+## Moving to another device
+
+Share the subscription to your own device, or add its original URL and key there.
+Android backup includes only ducker's settings. Keep a separate copy of subscriptions and configs,
+including file subscriptions and manual edits. Uninstalling the app removes local
+subscriptions. Keep backups private.
 
 ## Beta versions and returning to stable
 
@@ -452,7 +466,7 @@ ducker itself sends nothing anywhere: the log leaves the phone only when you pre
 buttons, and only to where you choose.
 
 Where to send it: to your provider's support — the "Support" button on Home, if the provider
-added it. A bug in the app itself — to the ducker developers, as described in
+added it. Report a bug in the app itself to the ducker maintainer, as described in
 [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 What is inside: the phone model and Android version, battery settings, the network type, why

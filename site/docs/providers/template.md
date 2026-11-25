@@ -8,11 +8,11 @@ health-check settings and node dependencies are retained; the template adds its 
 The provider's `ducker-override-user` does not lock the template's app rows in this mode.
 Encrypted subscriptions cannot use the explicit template mode.
 
-The switch replaces manual config edits. Failures retain the previous working config;
-a requested choice is not effective until successfully applied. Choose **From the
+The switch replaces manual config edits. The new mode takes effect once it is applied.
+If the switch fails, the previous working config stays active. Choose **From the
 subscription** to restore provider routing. See [user instructions](../users/faq.md#configuration-templates).
 
-A separate automatic fallback inserts a plain node-link list into the built-in template.
+When a subscription contains a plain list of node links, ducker puts them into the built-in template automatically.
 It can also recover nodes from a broken config for a new subscription, with a visible
 error card. An existing working subscription keeps its old config after a failed update.
 

@@ -8,7 +8,7 @@
 people who might exploit it.
 
 Report privately through **Security → Report a vulnerability** on the repository page.
-Only the project owner will see the report. If that is not possible, email
+The project maintainer receives the private report. If that is not possible, email
 [duckermihomo@proton.me](mailto:duckermihomo@proton.me).
 
 Include:
@@ -19,12 +19,12 @@ Include:
 ## Scope
 
 - The app: UI, VPN service, Go core wrapper (`core/src/main/golang`), and build setup.
-- Our mihomo changes ([duckerapp/mihomo](https://github.com/duckerapp/mihomo), branch `ducker`)
-  and our `utls` and `sing-mux` forks.
+- ducker's changes to mihomo ([duckerapp/mihomo](https://github.com/duckerapp/mihomo), branch `ducker`)
+  and the project's `utls` and `sing-mux` forks.
 
-Report upstream mihomo vulnerabilities that do not come from our changes to the core's
+Report upstream mihomo vulnerabilities that do not come from ducker's changes to the core's
 authors at [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo). Questions about a particular
-provider or its servers belong to that provider: ducker is only a client.
+provider or its servers belong to that provider. ducker is only a client.
 
 ## Supported versions
 
