@@ -327,7 +327,18 @@ class SubscriptionsViewModel : ViewModel() {
     fun openLink(given: InstallLink) {
         if (_state.value.busy) return
 
-        _state.update { it.copy(input = given.link, given = given, addError = "", linked = true).keyOf(given, it.given) }
+        _state.update {
+            it.copy(
+                input = given.link, given = given, addError = "", linked = true,
+                // The tab's other sheets give way, so «+» opens as glass over the screen, not frosted over a sheet.
+                // Not the editor (unsaved changes) nor a sheet still at work.
+                templateFor = it.templateFor.takeIf { _ -> it.templateSwitching != null },
+                addressesFor = null,
+                deleting = it.deleting.takeIf { _ -> it.deleteBusy },
+                confirmUpdate = null,
+                sendTo = it.sendTo.takeIf { _ -> it.sendBusy },
+            ).keyOf(given, it.given)
+        }
     }
 
     /**
