@@ -3,7 +3,25 @@ package com.github.kr328.clash.ui.update
 import com.github.kr328.clash.ui.components.GlassTextButton
 import com.github.kr328.clash.ui.components.sheetSurface
 import androidx.compose.foundation.layout.Arrangement
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import com.github.kr328.clash.ui.components.LocalTv
+import com.github.kr328.clash.ui.components.TvKeyScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -196,9 +214,20 @@ fun UpdatedSheet(open: Boolean, updated: Updated, onDismiss: () -> Unit, onClose
 private fun Notes(notes: Map<String, String>) {
     val language = LocalConfiguration.current.locales[0].language
     val text = notes[language] ?: notes["en"].orEmpty()
+    val tv = LocalTv.current
 
     if (text.isNotBlank()) {
         val shape = RoundedCornerShape(20.dp)
+        // On a TV the text scrolls inside its card, at most part of the screen tall; it took no focus, so a long «What's
+        // new» could not be read. As the config editor's code (D-373): the frame lands on the card, OK lets the arrows
+        // scroll it, Back puts the frame back, and from the frame Down leads straight to the buttons.
+        val scroll = rememberScrollState()
+        val scope = rememberCoroutineScope()
+        val keyScroll = remember(scroll, scope) { TvKeyScroll(scroll, scope) }
+        var reading by remember { mutableStateOf(false) }
+
+        BackHandler(enabled = reading) { reading = false }
+        val room = if (tv) Modifier.heightIn(max = (LocalConfiguration.current.screenHeightDp * TV_NOTES_HEIGHT).dp) else Modifier
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(text = stringResource(R.string.app_update_whats_new), style = MaterialTheme.typography.titleSmall)
@@ -207,9 +236,32 @@ private fun Notes(notes: Map<String, String>) {
                 text = text,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.fillMaxWidth()
+                    .then(room)
                     .sheetSurface(shape)
+                    .then(
+                        if (tv) Modifier
+                            .onFocusChanged { if (!it.isFocused) reading = false }
+                            .onKeyEvent { event ->
+                                if (!reading || event.type != KeyEventType.KeyDown) return@onKeyEvent false
+
+                                val step = scroll.viewportSize / 3f
+
+                                // While reading the arrows stay in the text, at its ends too, as the editor's cursor.
+                                when (event.key) {
+                                    Key.DirectionUp -> true.also { if (scroll.canScrollBackward) keyScroll.by(-step) }
+                                    Key.DirectionDown -> true.also { if (scroll.canScrollForward) keyScroll.by(step) }
+                                    else -> false
+                                }
+                            }
+                            // Even a short text takes focus: the sheet opens on it with its title in view, as a page is read.
+                            .clickable(interactionSource = null, indication = null) { reading = !reading }
+                            .verticalScroll(scroll)
+                        else Modifier,
+                    )
                     .padding(16.dp),
             )
         }
     }
 }
+
+private const val TV_NOTES_HEIGHT = 0.4f
