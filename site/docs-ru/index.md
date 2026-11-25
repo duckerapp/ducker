@@ -47,7 +47,7 @@ hide:
 
 ### Скачайте APK
 
-Из [выпусков](https://github.com/duckerapp/ducker/releases) на GitHub. `arm64-v8a` подходит почти любому телефону новее 2017 года; [какой файл брать](users/install.md).
+Из [выпусков](https://github.com/duckerapp/ducker/releases) на GitHub. [`arm64-v8a`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk) подходит почти любому телефону новее 2017 года; [какой файл брать](users/install.md).
 
 </div>
 <div markdown>

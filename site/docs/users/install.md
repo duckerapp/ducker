@@ -7,8 +7,8 @@ normal for apps outside Play. Google Play Protect may also offer to scan the app
 
 Which file to choose:
 
-- `arm64-v8a`: almost any phone newer than 2017;
-- `armeabi-v7a`: older phones and many TVs; use it if the first APK will not install.
+- [`arm64-v8a`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk): almost any phone newer than 2017;
+- [`armeabi-v7a`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-armeabi-v7a.apk): older phones and many TVs; use it if the first APK will not install.
 
 Android 8 or later is required. You install ducker by hand once; after that it
 [updates itself](#updates).

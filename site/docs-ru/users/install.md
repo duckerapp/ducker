@@ -7,8 +7,8 @@
 
 Какой файл брать:
 
-- `arm64-v8a` — почти любой телефон новее 2017 года;
-- `armeabi-v7a` — старые телефоны и многие телевизоры; берите, если первый не ставится.
+- [`arm64-v8a`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk) — почти любой телефон новее 2017 года;
+- [`armeabi-v7a`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-armeabi-v7a.apk) — старые телефоны и многие телевизоры; берите, если первый не ставится.
 
 Нужен Android 8 или новее. Руками ducker ставится один раз, дальше он
 [обновляется сам](#обновления).

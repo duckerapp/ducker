@@ -13,8 +13,8 @@ You need a TV or a box with Android TV or Google TV and a phone, both on the sam
 ## 1. Download ducker on the phone
 
 On the phone, open [Releases](https://github.com/duckerapp/ducker/releases) and download
-`ducker-…-armeabi-v7a.apk`: it installs on almost any TV. A current TV or box needs
-`ducker-…-arm64-v8a.apk`. If the file does not install at step 5, repeat with the other one. Do not install the
+[`ducker-armeabi-v7a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-armeabi-v7a.apk): it installs on almost any TV. A current TV or box needs
+[`ducker-arm64-v8a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk). If the file does not install at step 5, repeat with the other one. Do not install the
 file on the phone itself.
 
 ## 2. Install LocalSend on the TV

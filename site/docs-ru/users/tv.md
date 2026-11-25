@@ -13,8 +13,8 @@ Android TV/Google TV; iPhone только отправляет ссылку, п�
 ## 1. Скачайте ducker на телефон
 
 Откройте на телефоне [выпуски](https://github.com/duckerapp/ducker/releases) и скачайте файл
-`ducker-…-armeabi-v7a.apk` — он ставится почти на любой телевизор. Для современного телевизора или приставки
-нужен `ducker-…-arm64-v8a.apk`. Если файл не установится на шаге 5, повторите с другим.
+[`ducker-armeabi-v7a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-armeabi-v7a.apk) — он ставится почти на любой телевизор. Для современного телевизора или приставки
+нужен [`ducker-arm64-v8a.apk`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk). Если файл не установится на шаге 5, повторите с другим.
 На сам телефон устанавливать файл не нужно.
 
 ## 2. Поставьте LocalSend на телевизор

@@ -47,7 +47,7 @@ No ads, analytics, or reports to the developer. No analytics or tracking scripts
 
 ### Download the APK
 
-From [Releases](https://github.com/duckerapp/ducker/releases) on GitHub. `arm64-v8a` fits almost any phone made after 2017; [which file to take](users/install.md).
+From [Releases](https://github.com/duckerapp/ducker/releases) on GitHub. [`arm64-v8a`](https://github.com/duckerapp/ducker/releases/latest/download/ducker-arm64-v8a.apk) fits almost any phone made after 2017; [which file to take](users/install.md).
 
 </div>
 <div markdown>
