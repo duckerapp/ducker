@@ -11,11 +11,21 @@ no panel code changes are needed. To return them only to ducker, see
 | `ducker-brand-logo` | an `https://…` image URL or inline `data:…;base64,…` image: PNG, JPEG, WebP, or SVG | Logo to the left of the name on Home and beside the subscription on the Profiles tab. If it fails to load, the ducker icon is used. |
 | `ducker-buy-url` | URL | **Renew** button on the subscription card when fewer than three days remain, it has expired, or less than 10% of traffic remains; also used in the upcoming-expiry notification. Without this header, `support-url` is used, then `profile-web-page-url`. |
 | `ducker-global` | `off` | Hides the Global/Rules switch on the Proxy tab; the mode remains as specified in the config. Without this header or with another value, the switch is shown. |
-| `ducker-local-proxy` | `off` | Starts the tunnel with the config's local ports closed (`mixed-port`, `port`, `socks-port`, `redir-port`, `tproxy-port`), without `listeners` and without the DNS server of `dns.listen`: other apps cannot find a proxy or a DNS server at `127.0.0.1`. The config file itself is not rewritten. Without this header or with another value, the ports stay as in the config. "Wi-Fi sharing" stays as it is: `ducker-share` closes it. |
-| `ducker-share` | `off` | Keeps "Wi-Fi sharing" closed: its card says the subscription's provider turned it off. Sharing that is on goes off at the next update that brings the header. The config's local ports are not affected. Without this header or with another value, sharing is the user's choice. |
-| `ducker-override-user` | `on` | Locks the apps of the config's `tun.exclude-package` and `tun.include-package`: "Apps" and "My rules" show them, but the user cannot change them. Without this header or with another value, the user may change each of them for this subscription; the config file is not rewritten. An update that brings the header drops the user's changes. Also brings back the provider's list on "Mobile network" at every update ([details](start.md#a-list-for-the-mobile-network)). |
+| `ducker-local-proxy` | `off` | Closes the local proxy and DNS listeners from the config. [Affected settings](#local-ports-and-dns). |
+| `ducker-share` | `off` | Blocks Wi-Fi sharing. If sharing is already on, it turns off after a subscription update with this header. |
+| `ducker-override-user` | `on` | Locks the settings for apps in `tun.exclude-package` and `tun.include-package` and clears the user's changes for those apps. App settings from the **ducker · Russia** template stay editable. [Effect on the mobile list](start.md#when-the-list-applies). |
 | `ducker-mobile-group` | the name of a group in the config | The list for "Mobile network" when the config has no `ducker: {mobile-group: …}` key. See [A list for the mobile network](start.md#a-list-for-the-mobile-network). |
 | `ducker-mirrors` | up to five hosts or `https://…` links, comma-separated | Backup addresses of the subscription, tried when its own link fails. See [Subscription mirrors](#subscription-mirrors). |
+
+By default, ducker uses the ports from the config. Users control Wi-Fi sharing and
+can change settings for apps named in the subscription.
+
+## Local ports and DNS
+
+With `ducker-local-proxy: off`, ducker closes `mixed-port`, `port`, `socks-port`,
+`redir-port`, and `tproxy-port`, disables `listeners`, and clears the `dns.listen`
+address. These settings apply when the config loads, and the config file stays intact.
+Wi-Fi sharing is controlled separately by `ducker-share`.
 
 ## Subscription mirrors
 

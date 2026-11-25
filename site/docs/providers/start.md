@@ -75,10 +75,9 @@ answers, ducker tries once more directly and through the subscription's own node
 
 ## A list for the mobile network
 
-On **Features → Mobile network** ducker switches to a chosen subscription and node list when
-the phone leaves Wi-Fi. You can fill that list for your users: put the nodes that work on
-mobile data (for example, through operators' allowlists) in an ordinary group and name it
-in a top-level `ducker` key:
+Under **Features → Mobile network**, users can choose a separate subscription and nodes
+for mobile data. To fill the list in advance, put the nodes in a group and set
+`mobile-group` under the top-level `ducker` key to the group's name.
 
 ```yaml
 ducker:
@@ -96,24 +95,36 @@ proxy-groups:
     proxies: [LTE-1, LTE-2]
 ```
 
-- **The list** is the group's nodes that the main group also has, in your order: ducker
-  switches the node of the main group, trying the list from the top and taking the first that
-  answers. If the main group contains none of those nodes but includes the group named in
-  `mobile-group`, ducker selects that group. The group picks a node according to its settings.
-- **When it applies.** A subscription with the key turns "Switch by network" on by itself
-  while the user has not set up the page. Settings the user made are not replaced. With
-  several such subscriptions, the first downloaded one sets it up.
-- **Updates.** While "Provider's list" is on, every update brings your current list. A user
-  who edits the list turns it off; turning it on brings your list back. A response without
-  the key empties the list and turns switching off; the key coming back turns it on again.
-- **`ducker-override-user: on`** turns "Provider's list" and switching back on at every
-  update, unless the user chose another subscription for the mobile network. The page is not
-  locked: the user can still turn switching off until the next update.
-- **If you cannot change the YAML,** send the group's name in the
-  [`ducker-mobile-group`](headers.md) header; the group must exist in the config. The key wins
-  over the header. Not applied on a TV.
+In this example, the mobile list is `LTE-1`, then `LTE-2`. When the phone switches to mobile
+data, ducker picks the first node that responds and selects it in `Proxy`.
 
-Other apps see an ordinary group and ignore the key. The config is not rewritten.
+The list includes only nodes from `LTE` that also appear in the main group, which is the
+first group of type `select`. If `Proxy` contains `LTE` itself and none of its individual
+nodes, ducker selects `LTE`. The group then picks a node according to its settings.
+If the main group contains neither these nodes nor `LTE` itself, no mobile list is created.
+
+### Using a header
+
+If you cannot change the YAML, send the group name in the
+[`ducker-mobile-group`](headers.md) header. The group must exist in the config. If both
+the YAML and the header name a group, ducker uses the name from the YAML.
+
+### When the list applies
+
+- **First download.** If the user has yet to set up **Mobile network**, the first subscription
+  downloaded with a usable list turns on **Provider’s list** and **Switch by network**.
+- **Updates.** While **Provider’s list** is on, the list updates with the selected subscription.
+  If ducker can no longer build a list from the subscription, it clears the list and turns
+  switching off. Switching resumes when the list is available again.
+- **Manual edits.** Editing the list turns off **Provider’s list**. Turn it back on to restore
+  the list from the subscription.
+- **`ducker-override-user: on`.** An update with a mobile list and this header restores
+  **Provider’s list** and turns on **Switch by network**. This applies when the user has
+  selected this subscription for the mobile network or has yet to choose one. They can
+  turn switching off until the next such update.
+
+The list does not apply on TV. Other apps see an ordinary group and ignore the key.
+The config is not rewritten.
 
 ## Response headers
 

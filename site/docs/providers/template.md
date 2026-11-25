@@ -30,7 +30,6 @@ error card. An existing working subscription keeps its old config after a failed
 
 The file is in the repository:
 [`app/src/main/assets/ducker/template.yaml`](https://github.com/duckerapp/ducker/blob/main/app/src/main/assets/ducker/template.yaml).
-It contains detailed comments explaining each decision.
 
 ## If you need your own routing
 

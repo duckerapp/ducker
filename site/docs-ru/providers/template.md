@@ -30,7 +30,6 @@ DNS и исключения приложений — из шаблона. Зав
 
 Сам файл — в репозитории:
 [`app/src/main/assets/ducker/template.yaml`](https://github.com/duckerapp/ducker/blob/main/app/src/main/assets/ducker/template.yaml).
-В нём подробные комментарии к каждому решению.
 
 ## Если нужна своя маршрутизация
 
