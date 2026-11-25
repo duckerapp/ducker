@@ -436,7 +436,8 @@
     <string name="app_update_error_download">دانلود به‌روزرسانی ممکن نشد. اتصال را بررسی و دوباره تلاش کنید</string>
     <string name="app_update_error_foreign">فایل دانلودشده نسخه رسمی ducker نیست، بنابراین نصب نشد</string>
     <string name="app_update_error_install">Android به‌روزرسانی را نصب نکرد</string>
-    <string name="app_update_system_install">نصب با نصب‌کنندهٔ سیستم</string>
+    <string name="app_update_system_install">نصب از طریق Android</string>
+    <string name="app_update_refused_hint">این در برخی گوشی‌ها، مثل Xiaomi، پیش می‌آید. فایل از قبل دانلود شده است: دکمهٔ پایین را بزنید تا Android پنجرهٔ نصب خودش را باز کند.</string>
     <string name="app_update_notice_channel">به‌روزرسانی‌های برنامه</string>
     <string name="app_update_notice_title">به‌روزرسانی در دسترس است: ducker %s</string>
     <string name="app_update_notice_text">برای به‌روزرسانی بزنید</string>

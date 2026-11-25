@@ -463,7 +463,8 @@
     <string name="app_update_error_download">Не удалось скачать обновление. Проверьте связь и попробуйте ещё раз</string>
     <string name="app_update_error_foreign">Скачанный файл — не выпуск ducker, он не установлен</string>
     <string name="app_update_error_install">Android не установил обновление</string>
-    <string name="app_update_system_install">Установить системным установщиком</string>
+    <string name="app_update_system_install">Установить через Android</string>
+    <string name="app_update_refused_hint">Так бывает на некоторых телефонах, например Xiaomi. Файл уже скачан: нажмите кнопку ниже, и Android откроет своё окно установки.</string>
     <string name="app_update_notice_channel">Обновления приложения</string>
     <string name="app_update_notice_title">Доступно обновление ducker %s</string>
     <string name="app_update_notice_text">Нажмите, чтобы обновить</string>

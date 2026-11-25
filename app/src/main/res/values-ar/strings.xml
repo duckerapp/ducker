@@ -447,7 +447,8 @@
     <string name="app_update_error_download">تعذّر تنزيل التحديث. تحقق من الاتصال وحاول مجددًا</string>
     <string name="app_update_error_foreign">الملف المنزّل ليس إصدارًا من ducker، لذا لم يتم تثبيته</string>
     <string name="app_update_error_install">لم يثبّت Android التحديث</string>
-    <string name="app_update_system_install">التثبيت عبر مثبّت النظام</string>
+    <string name="app_update_system_install">التثبيت عبر Android</string>
+    <string name="app_update_refused_hint">يحدث هذا في بعض الهواتف، مثل Xiaomi. الملف مُنزَّل بالفعل: اضغط الزر أدناه وسيفتح Android نافذة التثبيت الخاصة به.</string>
     <string name="app_update_notice_channel">تحديثات التطبيق</string>
     <string name="app_update_notice_title">تحديث متاح: ducker %s</string>
     <string name="app_update_notice_text">اضغط للتحديث</string>

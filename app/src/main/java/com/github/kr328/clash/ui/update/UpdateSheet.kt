@@ -49,6 +49,8 @@ fun UpdateSheet(
 ) {
     // Asked once, with the first update the person opens (D-287).
     val ask = state.auto == null
+    // Android refused ducker's own install (MIUI, F-630): the main button hands the file to Android's installer.
+    val refused = !ask && state.error == UpdateError.Install && !state.busy
 
     DuckerSheet(
         open = open,
@@ -78,7 +80,11 @@ fun UpdateSheet(
         }
 
         if (state.error != null) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // On a backing like «Что нового»: what went wrong and what to do reads as one block.
+            Column(
+                modifier = Modifier.fillMaxWidth().sheetSurface(RoundedCornerShape(20.dp)).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 Text(
                     text = stringResource(
                         when (state.error) {
@@ -87,9 +93,17 @@ fun UpdateSheet(
                             UpdateError.Install -> R.string.app_update_error_install
                         }
                     ),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.error,
                 )
+
+                if (refused) {
+                    Text(
+                        text = stringResource(R.string.app_update_refused_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
 
                 // Что сказал Android — мелко: человеку это мало что скажет, поддержке — всё.
                 if (state.errorDetail.isNotBlank()) {
@@ -98,12 +112,6 @@ fun UpdateSheet(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                }
-            }
-
-            if (state.error == UpdateError.Install && !state.busy) {
-                GlassTextButton(onClick = onSystemInstall, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.app_update_system_install))
                 }
             }
         }
@@ -131,13 +139,23 @@ fun UpdateSheet(
         }
 
         SheetButton(
-            text = stringResource(if (ask) R.string.app_update_auto_yes else R.string.update),
+            text = stringResource(
+                when {
+                    ask -> R.string.app_update_auto_yes
+                    refused -> R.string.app_update_system_install
+                    else -> R.string.update
+                },
+            ),
             busyText = stringResource(
                 if (state.installing) R.string.app_update_installing else R.string.app_update_downloading,
             ),
             busy = state.busy,
             enabled = true,
-            onClick = if (ask) ({ onAuto(true) }) else onInstall,
+            onClick = when {
+                ask -> ({ onAuto(true) })
+                refused -> onSystemInstall
+                else -> onInstall
+            },
             // Установка — кнопка залита целиком: скачивание позади.
             progress = if (state.installing) 1f else state.progress,
         )

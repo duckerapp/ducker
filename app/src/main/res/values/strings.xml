@@ -470,7 +470,8 @@
     <string name="app_update_error_download">Couldn\'t download the update. Check the connection and try again</string>
     <string name="app_update_error_foreign">The downloaded file is not a ducker release, so it was not installed</string>
     <string name="app_update_error_install">Android didn\'t install the update</string>
-    <string name="app_update_system_install">Install with the system installer</string>
+    <string name="app_update_system_install">Install through Android</string>
+    <string name="app_update_refused_hint">This happens on some phones, such as Xiaomi. The file is already downloaded: tap the button below and Android will open its own install window.</string>
     <string name="app_update_notice_channel">App updates</string>
     <string name="app_update_notice_title">Update available: ducker %s</string>
     <string name="app_update_notice_text">Tap to update</string>
