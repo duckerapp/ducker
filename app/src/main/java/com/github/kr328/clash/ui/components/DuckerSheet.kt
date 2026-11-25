@@ -540,8 +540,9 @@ internal fun DuckerSheet(
                                 // it read as a stray stripe (the owner, 18.11).
                                 rimFade = SHEET_RIM_FADE,
                             )
+                            // Over another sheet, opaque: at 0.85 the lower sheet's text showed through, sharp.
                             else if (glass) Modifier
-                                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.85f), sheetShape)
+                                .background(MaterialTheme.colorScheme.background.copy(alpha = if (nested) 1f else 0.85f), sheetShape)
                                 .drawWithContent {
                                     drawContent()
                                     // Light catches the glass's top edge and fades down its sides, as on the glass sheet.
