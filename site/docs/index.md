@@ -13,9 +13,9 @@ hide:
 <div class="dk-hero__inner" markdown>
 <div markdown>
 
-# Open-source VPN client for Android and Android TV
+# VPN client for Android and Android TV { #open-source-vpn-client-for-android-and-android-tv }
 
-Powered by [mihomo](https://github.com/MetaCubeX/mihomo), with one button, an accurate connection status, and no clutter on the screen. You need your own subscription from a VPN provider.
+Open source, powered by [mihomo](https://github.com/MetaCubeX/mihomo), with one button to connect. You need your own subscription from a VPN provider.
 { .dk-lede }
 
 [Install](users/install.md){ .dk-btn .dk-btn--solid } [Questions and answers](users/faq.md){ .dk-btn }
@@ -126,7 +126,7 @@ Air stays as it was, light or dark.
 </div>
 <div markdown>
 
-![DUCKER Glass: Home, an open group's nodes and the All nodes sheet over Liquid metal, and Home over Fern](assets/shots/glass.png){ .dk-poster loading=lazy }
+[![DUCKER Glass: Home, an open group's nodes and the All nodes sheet over Liquid metal, and Home over Fern](assets/shots/glass.png){ .dk-poster loading=lazy } View full-size image](assets/shots/glass.png){ .dk-poster-link }
 
 </div>
 </div>
@@ -167,7 +167,7 @@ A dock on the left, a glowing focus frame, and every screen works with the D-pad
 </div>
 </section>
 
-<section class="dk-section dk-on-paper" markdown>
+<section class="dk-section dk-on-paper dk-providers" markdown>
 <div class="dk-wrap dk-split" markdown>
 <div markdown>
 
@@ -180,19 +180,19 @@ ducker works with any regular mihomo subscription. It asks for one with this Use
 
 Your name, logo, announcement and renewal link reach the app through response headers. No panel code changes.
 
+</div>
+<div class="dk-provider-shot" markdown>
+
+![Home with a provider's name, logo and announcement](assets/shots/brand-light.png){ .dk-brand .dk-only-light loading=lazy }
+![Home with a provider's name, logo and announcement](assets/shots/brand-dark.png){ .dk-brand .dk-only-dark loading=lazy }
+
+</div>
 <div class="dk-links" markdown>
 
 - [Subscription for ducker](providers/start.md)
 - [ducker-* headers](providers/headers.md)
 - [Devices and limits](providers/devices.md)
 - [Built-in template](providers/template.md)
-
-</div>
-</div>
-<div markdown>
-
-![Home with a provider's name, logo and announcement](assets/shots/brand-light.png){ .dk-brand .dk-only-light loading=lazy }
-![Home with a provider's name, logo and announcement](assets/shots/brand-dark.png){ .dk-brand .dk-only-dark loading=lazy }
 
 </div>
 </div>

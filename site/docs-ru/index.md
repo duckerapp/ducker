@@ -13,9 +13,9 @@ hide:
 <div class="dk-hero__inner" markdown>
 <div id="открытый-vpn-клиент-для-android-и-android-tv" markdown>
 
-# VPN-клиент с открытым исходным кодом для Android и Android TV
+# VPN-клиент для Android и Android TV { #vpn-клиент-с-открытым-исходным-кодом-для-android-и-android-tv }
 
-На ядре [mihomo](https://github.com/MetaCubeX/mihomo) — одна кнопка, честное состояние и ничего лишнего на экране. Нужна своя подписка от VPN-провайдера.
+Открытый исходный код, ядро [mihomo](https://github.com/MetaCubeX/mihomo) и одна кнопка для подключения. Нужна своя подписка от VPN-провайдера.
 { .dk-lede }
 
 [Установить](users/install.md){ .dk-btn .dk-btn--solid } [Вопросы и ответы](users/faq.md){ .dk-btn }
@@ -126,7 +126,7 @@ Air остаётся прежним — светлым или тёмным.
 </div>
 <div markdown>
 
-![DUCKER Glass: главная, узлы открытой группы и шторка «Все узлы» поверх «Жидкого металла» и главная поверх «Папоротника»](assets/shots/glass.png){ .dk-poster loading=lazy }
+[![DUCKER Glass: главная, узлы открытой группы и шторка «Все узлы» поверх «Жидкого металла» и главная поверх «Папоротника»](assets/shots/glass.png){ .dk-poster loading=lazy } Открыть в полном размере](assets/shots/glass.png){ .dk-poster-link }
 
 </div>
 </div>
@@ -167,7 +167,7 @@ Air остаётся прежним — светлым или тёмным.
 </div>
 </section>
 
-<section class="dk-section dk-on-paper" markdown>
+<section class="dk-section dk-on-paper dk-providers" markdown>
 <div class="dk-wrap dk-split" markdown>
 <div markdown>
 
@@ -180,19 +180,19 @@ ducker работает с обычной подпиской mihomo. Он зап
 
 Название, логотип, объявление и ссылка на продление попадают в приложение заголовками ответа. Код панели править не нужно.
 
+</div>
+<div class="dk-provider-shot" markdown>
+
+![Главная с названием, логотипом и объявлением провайдера](assets/shots/brand-light.png){ .dk-brand .dk-only-light loading=lazy }
+![Главная с названием, логотипом и объявлением провайдера](assets/shots/brand-dark.png){ .dk-brand .dk-only-dark loading=lazy }
+
+</div>
 <div class="dk-links" markdown>
 
 - [Подписка для ducker](providers/start.md)
 - [Заголовки ducker-*](providers/headers.md)
 - [Устройства и лимит](providers/devices.md)
 - [Встроенный шаблон](providers/template.md)
-
-</div>
-</div>
-<div markdown>
-
-![Главная с названием, логотипом и объявлением провайдера](assets/shots/brand-light.png){ .dk-brand .dk-only-light loading=lazy }
-![Главная с названием, логотипом и объявлением провайдера](assets/shots/brand-dark.png){ .dk-brand .dk-only-dark loading=lazy }
 
 </div>
 </div>
