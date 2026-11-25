@@ -112,8 +112,21 @@ class PublishTest(unittest.TestCase):
         self.assertEqual(json.loads((self.root/'update.json').read_text())['stable'],beta)
         self.assertTrue((self.state/'stable').exists())
         # The immutable uploads remain byte-identical on both hosts.
-        for p in (self.state/'github').iterdir():
-            self.assertEqual(p.read_bytes(),(self.state/'gitlab'/p.name).read_bytes())
+        for p in (self.state/'gitlab').iterdir():
+            self.assertEqual(p.read_bytes(),(self.state/'github'/p.name).read_bytes())
+        # GitHub alone also carries unversioned copies for releases/latest/download/ links.
+        self.assertEqual({p.name for p in (self.state/'github').iterdir()}-{p.name for p in (self.state/'gitlab').iterdir()},
+                         {'ducker-arm64-v8a.apk','ducker-armeabi-v7a.apk'})
+        for abi in ('arm64-v8a','armeabi-v7a'):
+            self.assertEqual((self.state/f'github/ducker-{abi}.apk').read_bytes(),(self.state/f'github/ducker-1.0.0-{abi}.apk').read_bytes())
+
+    def test_changed_unversioned_copy_blocks_stable_promotion(self):
+        first=self.publish();self.assertEqual(first.returncode,0,first.stderr)
+        (self.state/'github/ducker-armeabi-v7a.apk').write_bytes(b'foreign bytes')
+        result=self.publish('--stable')
+        self.assertNotEqual(result.returncode,0)
+        self.assertIn('GitHub artifact differs: ducker-armeabi-v7a.apk',result.stderr)
+        self.assertFalse((self.state/'stable').exists())
 
     def test_changed_uploaded_apk_is_never_clobbered(self):
         first=self.publish();self.assertEqual(first.returncode,0,first.stderr)

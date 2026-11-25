@@ -16,6 +16,12 @@ GITLAB_FILES="https://gitlab.com/api/v4/projects/duckerx%2Fducker/packages/gener
 read -r -a BASES <<< "${APK_BASES:-https://github.com/$REPO/releases/download/$TAG/ $GITLAB_FILES/}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
+has_asset() {
+  python3 - "$TMP/release.json" "$1" <<'PY'
+import json, sys
+sys.exit(0 if any(a['name']==sys.argv[2] for a in json.load(open(sys.argv[1]))['assets']) else 1)
+PY
+}
 ARGS=()
 if [ "$STABLE" -eq 1 ] && [ "$LOCAL" -eq 0 ]; then
   git rev-parse --verify "refs/tags/$TAG^{commit}" >/dev/null
@@ -81,11 +87,7 @@ if r['body'].replace('\r\n', '\n').strip() != pathlib.Path(sys.argv[2]).read_tex
     sys.exit('GitHub release notes differ from the sealed candidate')
 PY
   for name in "ducker-$VERSION-arm64-v8a.apk" "ducker-$VERSION-armeabi-v7a.apk" SHA256SUMS release-manifest.json; do
-    if python3 - "$TMP/release.json" "$name" <<'PY'
-import json, sys
-sys.exit(0 if any(a['name']==sys.argv[2] for a in json.load(open(sys.argv[1]))['assets']) else 1)
-PY
-    then
+    if has_asset "$name"; then
       gh release download "$TAG" -R "$REPO" --pattern "$name" --dir "$TMP"
       cmp "$OUT/$name" "$TMP/$name" || { echo "GitHub artifact differs: $name" >&2; exit 1; }
     else
@@ -100,6 +102,18 @@ PY
         --upload-file "$OUT/$name" "$GITLAB_FILES/$name" >/dev/null;;
       *) echo "GitLab artifact check failed: HTTP $status" >&2; exit 1;;
     esac
+  done
+  # Unversioned copies give provider pages a fixed releases/latest/download/ link. GitHub only:
+  # the GitLab registry has no "latest" route, and OTA and checksums use the versioned names.
+  for abi in arm64-v8a armeabi-v7a; do
+    name=ducker-$abi.apk
+    if has_asset "$name"; then
+      gh release download "$TAG" -R "$REPO" --pattern "$name" --dir "$TMP"
+      cmp "$OUT/ducker-$VERSION-$abi.apk" "$TMP/$name" || { echo "GitHub artifact differs: $name" >&2; exit 1; }
+    else
+      cp "$OUT/ducker-$VERSION-$abi.apk" "$TMP/$name"
+      gh release upload "$TAG" -R "$REPO" "$TMP/$name"
+    fi
   done
   gh release edit "$TAG" -R "$REPO" --draft=false --prerelease --latest=false
   MESSAGE="release: $VERSION to beta"
@@ -118,6 +132,10 @@ PY
     curl --location --proto '=https' --proto-redir '=https' --fail --silent --show-error \
       --output "$TMP/gitlab-file" "$GITLAB_FILES/$name"
     cmp "$OUT/$name" "$TMP/gitlab-file" || { echo "GitLab artifact differs: $name" >&2; exit 1; }
+  done
+  for abi in arm64-v8a armeabi-v7a; do
+    gh release download "$TAG" -R "$REPO" --pattern "ducker-$abi.apk" --dir "$TMP"
+    cmp "$OUT/ducker-$VERSION-$abi.apk" "$TMP/ducker-$abi.apk" || { echo "GitHub artifact differs: ducker-$abi.apk" >&2; exit 1; }
   done
   gh release edit "$TAG" -R "$REPO" --prerelease=false --latest
   MESSAGE="release: $VERSION for everyone"

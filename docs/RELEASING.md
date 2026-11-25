@@ -92,7 +92,9 @@ The initial publication validates the sealed build, requires a clean `main`, ver
 creates the tag, uploads missing immutable files to GitHub/GitLab, makes the GitHub beta
 visible, then commits/pushes the feed. Existing assets are downloaded and compared; they
 are never clobbered. The metadata manifest is available alongside the APKs and SHA256SUMS.
-Promotion checks both hosts against those same files, removes GitHub's pre-release marker,
+GitHub also gets unversioned copies `ducker-arm64-v8a.apk` and `ducker-armeabi-v7a.apk`, so
+`releases/latest/download/ducker-<abi>.apk` always serves the current stable APK for provider pages.
+Promotion checks both hosts and the unversioned copies against those same files, removes GitHub's pre-release marker,
 marks it latest and copies beta to stable without changing the version or APKs. Promotion
 can use the sealed release tag even when main has later app changes.
 
