@@ -297,7 +297,7 @@ tile and shortcuts work without it.
 
 ## Roadmap
 
-- **A desktop client** for Windows, Linux and macOS.
+- **A desktop client** for Windows and Linux.
 - **"Only through VPN":** chosen apps get no internet at all while the VPN is off.
 
 No dates yet. An iOS version is not planned for now.

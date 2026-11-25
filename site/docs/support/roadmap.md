@@ -1,6 +1,6 @@
 # Roadmap
 
-- **A desktop client** for Windows, Linux and macOS.
+- **A desktop client** for Windows and Linux.
 - **A glass look:** translucent panels as an alternative style of the interface.
 - **"Only through VPN":** chosen apps get no internet at all while the VPN is off.
 
